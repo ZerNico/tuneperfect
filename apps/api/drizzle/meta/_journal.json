@@ -5,57 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1734013185579,
-      "tag": "0000_silly_whirlwind",
+      "when": 1743690294666,
+      "tag": "0000_workable_eddie_brock",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1734457933986,
-      "tag": "0001_powerful_blue_blade",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1734528009620,
-      "tag": "0002_early_vargas",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1734622975726,
-      "tag": "0003_groovy_white_queen",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1736939334847,
-      "tag": "0004_abnormal_stepford_cuckoos",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1738590542275,
-      "tag": "0005_safe_sentry",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1740743313093,
-      "tag": "0006_quick_golden_guardian",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1740744693910,
-      "tag": "0007_certain_sabretooth",
+      "when": 1743751609849,
+      "tag": "0001_thankful_warlock",
       "breakpoints": true
     }
   ]

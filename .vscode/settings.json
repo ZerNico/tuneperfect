@@ -14,5 +14,9 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "rust-analyzer.linkedProjects": ["apps/toolbox/src-tauri/Cargo.toml", "apps/game/src-tauri/Cargo.toml"],
-  "tailwindCSS.experimental.classRegex": [["classList={{([^;]*)}}", "\\s*?[\"'`]([^\"'`]*).*?:"]]
+  "tailwindCSS.experimental.classRegex": [
+    ["classList={{([^;]*)}}", "\\s*?[\"'`]([^\"'`]*).*?:"],
+    ["cva\\(((?:[^()]|\\([^()]*\\))*)\\)", "[\"'`]?([^\"'`]+)[\"'`]?"],
+    ["cx\\(((?:[^()]|\\([^()]*\\))*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ]
 }

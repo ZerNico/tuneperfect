@@ -1,10 +1,9 @@
 import { Show, createEffect, createSignal, on } from "solid-js";
-import { twMerge } from "tailwind-merge";
 import { joinURL } from "ufo";
 
 interface AvatarProps {
   user: {
-    picture?: string | null;
+    image?: string | null;
     username?: string | null;
   };
   class?: string;
@@ -25,19 +24,24 @@ export default function Avatar(props: AvatarProps) {
   const fallback = () => props.user?.username?.at(0) || "?";
 
   const pictureUrl = () => {
-    if (props.user?.picture?.startsWith("/")) {
-      return joinURL(import.meta.env.VITE_API_URL, props.user.picture);
+    if (props.user?.image?.startsWith("/")) {
+      return joinURL(import.meta.env.VITE_API_URL, props.user.image);
     }
 
-    return props.user?.picture || undefined;
+    return props.user?.image || undefined;
   };
 
   return (
-    <div class={twMerge("grid h-10 w-10", props.class)}>
-      <div class="gradient-settings col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-gradient-to-tr">
+    <div
+      class="grid h-10 w-10"
+      classList={{
+        [props.class || ""]: !!props.class,
+      }}
+    >
+      <div class="gradient-settings col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-gradient-to-tr text-white">
         {fallback()}
       </div>
-      <Show when={!error() && props.user?.picture}>
+      <Show when={!error() && props.user?.image}>
         <img
           onError={() => setError(true)}
           src={pictureUrl()}

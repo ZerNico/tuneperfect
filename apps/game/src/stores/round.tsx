@@ -1,4 +1,4 @@
-import { useNavigate } from "@solidjs/router";
+import { useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
@@ -24,12 +24,12 @@ export function useRoundStore() {
   const startRound = (settings: RoundSettings) => {
     setSettings(settings);
     setScores([]);
-    navigate("/game");
+    navigate({ to: "/game" });
   };
 
   const endRound = (scores: Score[]) => {
     setScores(scores);
-    navigate("/game/score");
+    navigate({ to: "/game/score" });
   };
 
   return {

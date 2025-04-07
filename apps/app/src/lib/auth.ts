@@ -1,21 +1,8 @@
-import { useNavigate } from "@solidjs/router";
-import { createQuery, useQueryClient } from "@tanstack/solid-query";
-import { v1 } from "./api";
-import { profileQueryOptions } from "./queries";
+import { lobbyClient, usernameClient } from "@tuneperfect/api/auth";
+import { createAuthClient } from "better-auth/solid";
+import { joinURL } from "ufo";
 
-export function useAuth() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const profileQuery = createQuery(() => profileQueryOptions());
-
-  const logout = async () => {
-    await v1.auth.logout.post({ credentials: "include" });
-    queryClient.resetQueries();
-    navigate("/sign-in");
-  };
-
-  return {
-    profile: () => profileQuery.data,
-    logout,
-  };
-}
+export const authClient = createAuthClient({
+  baseURL: joinURL(import.meta.env.VITE_API_URL, "/api/v1.0/auth"),
+  plugins: [usernameClient(), lobbyClient()],
+});

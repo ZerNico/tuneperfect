@@ -1,12 +1,10 @@
 import * as i18n from "@solid-primitives/i18n";
 import { makePersisted } from "@solid-primitives/storage";
 import { createMemo, createSignal } from "solid-js";
-import * as de from "~/translations/de";
-import * as en from "~/translations/en";
+import * as en from "~/i18n/en";
 
 const dictionaries = {
   en: en.dict,
-  de: de.dict,
 };
 type Locale = keyof typeof dictionaries;
 export type Dictionary = i18n.Flatten<en.Dict>;

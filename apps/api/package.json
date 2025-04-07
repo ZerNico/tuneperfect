@@ -3,32 +3,31 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./auth": "./src/config/auth/client.ts"
   },
   "scripts": {
     "dev": "bun --watch --hot src/index.ts",
     "build": "bun build.ts",
+    "auth:generate": "bunx --bun @better-auth/cli generate --config src/config/auth.ts --output src/config/db/schema.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@kobalte/core": "^0.13.7",
-    "@nokijs/server": "0.0.1-alpha.36",
-    "@tuneperfect/email": "*",
-    "arctic": "^3.2.0",
-    "drizzle-orm": "^0.38.4",
-    "jose": "^5.9.6",
-    "nodemailer": "^6.9.16",
-    "pg": "^8.13.1",
-    "postgres": "^3.4.5",
-    "sharp": "^0.33.5",
-    "ufo": "^1.5.4",
-    "valibot": "1.0.0-beta.9"
+    "@trpc/server": "^11.0.1",
+    "better-auth": "^1.2.4",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^1.0.0-beta.1-7946562",
+    "nodemailer": "^6.10.0",
+    "trpc-bun-adapter": "^1.2.2",
+    "valibot": "^1.0.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.18",
+    "@babel/core": "^7.26.10",
+    "@better-auth/cli": "^1.2.4",
+    "@types/bun": "^1.2.5",
     "@types/nodemailer": "^6.4.17",
-    "@types/pg": "^8.11.10",
-    "drizzle-kit": "^0.30.2"
+    "drizzle-kit": "^1.0.0-beta.1-7946562",
+    "pg": "^8.14.1"
   }
 }

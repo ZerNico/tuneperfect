@@ -1,57 +1,22 @@
-import { type BaseContext, RouteBuilder } from "@nokijs/server";
+import { env } from "../config/env";
 
-export interface CorsOptions {
-  origin: string | string[];
-  allowMethods?: string[];
-  allowHeaders?: string[];
-  maxAge?: number;
-  credentials?: boolean;
-  exposeHeaders?: string[];
+function isOriginAllowed(origin: string) {
+  return origin === env.APP_URL || origin === "http://localhost:1420";
 }
 
-const defaultOptions = {
-  origin: "*",
-  allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"],
-  allowHeaders: [],
-  exposeHeaders: [],
-};
+export function createCorsHeaders(origin: string) {
+  return {
+    "Access-Control-Allow-Origin": isOriginAllowed(origin) ? origin : env.APP_URL,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+  };
+}
 
-function isOriginAllowed(allowedOrigins: string | string[], requestOrigin: string): boolean {
-  if (allowedOrigins === "*") return true;
-  if (Array.isArray(allowedOrigins)) {
-    return allowedOrigins.includes(requestOrigin);
+export function setCorsHeaders(res: Response, origin: string) {
+  const headers = createCorsHeaders(origin);
+  for (const [key, value] of Object.entries(headers)) {
+    res.headers.set(key, value);
   }
-  return allowedOrigins === requestOrigin;
-}
-
-export function cors(options: CorsOptions): RouteBuilder {
-  const opts = { ...defaultOptions, ...options };
-
-  return new RouteBuilder().before((context) => {
-    const requestOrigin = context.headers.origin ?? "";
-
-    if (isOriginAllowed(opts.origin, requestOrigin)) {
-      context.res.headers.set("access-control-allow-origin", requestOrigin);
-    }
-
-    if (options.credentials) {
-      context.res.headers.set("access-control-allow-credentials", "true");
-    }
-
-    if (options.maxAge) {
-      context.res.headers.set("access-control-max-age", String(options.maxAge));
-    }
-
-    if (opts.allowMethods) {
-      context.res.headers.set("access-control-allow-methods", opts.allowMethods.join(", "));
-    }
-
-    if (opts.allowHeaders) {
-      context.res.headers.set("access-control-allow-headers", opts.allowHeaders.join(", "));
-    }
-
-    if (opts.exposeHeaders) {
-      context.res.headers.set("access-control-expose-headers", opts.exposeHeaders.join(", "));
-    }
-  });
 }

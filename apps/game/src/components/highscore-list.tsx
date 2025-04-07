@@ -9,6 +9,7 @@ interface HighscoreListProps {
     user: User;
   }[];
   class?: string;
+  classList?: Record<string, boolean>;
 }
 
 export default function HighscoreList(props: HighscoreListProps) {

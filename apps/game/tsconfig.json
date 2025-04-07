@@ -1,11 +1,12 @@
 {
+  "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
+    "target": "ES2022",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-    "skipLibCheck": true,
-    "types": ["unplugin-icons/types/solid"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "unplugin-icons/types/solid"],
     "paths": {
       "~/*": ["./src/*"]
     },
@@ -13,18 +14,15 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
 
     /* Linting */
+    "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true
-  },
-  "include": ["src"]
+    "noUncheckedSideEffectImports": true
+  }
 }

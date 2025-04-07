@@ -1,9 +1,15 @@
-export class ApiError extends Error {
-  public code: string;
+export class AuthError extends Error {
+  status: number;
+  statusText: string;
 
-  constructor({ code }: { code: string }) {
-    super(code);
-    this.name = "ApiError";
-    this.code = code;
+  constructor(error: {
+    message?: string | undefined;
+    status: number;
+    statusText: string;
+  }) {
+    super(error.message ?? error.statusText);
+    this.name = "AuthError";
+    this.status = error.status;
+    this.statusText = error.statusText;
   }
 }

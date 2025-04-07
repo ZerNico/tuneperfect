@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX IF NOT EXISTS "username_unique_index" ON "users" USING btree (lower("username"));

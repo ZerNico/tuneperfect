@@ -1,23 +1,57 @@
-import { Noki, groupRoutes } from "@nokijs/server";
+import { createBunHttpHandler, createBunServeHandler } from "trpc-bun-adapter";
+import { auth } from "./config/auth";
+import { highscoreRouter } from "./modules/highscore/highscore.router";
+import { lobbyRouter } from "./modules/lobby/lobby.router";
+import { createContext, router } from "./trpc";
+import { createCorsHeaders, setCorsHeaders } from "./utils/cors";
 
-import { preflightRoute } from "./base";
-import { authRoutes } from "./modules/auth/auth.controller";
-import { highscoresRoutes } from "./modules/highscores/highscores.controller";
-import { lobbiesRoutes } from "./modules/lobbies/lobbies.controller";
-import { oauthRoutes } from "./modules/oauth/oauth.controller";
-import { usersRoutes } from "./modules/users/users.controller";
-
-const routes = groupRoutes([...authRoutes, ...usersRoutes, ...oauthRoutes, ...lobbiesRoutes, ...highscoresRoutes, preflightRoute], {
-  prefix: "/v1.0",
+const appRouter = router({
+  lobby: lobbyRouter,
+  highscore: highscoreRouter,
 });
 
-const noki = new Noki(routes);
+export type AppRouter = typeof appRouter;
+
+const bunHandler = createBunHttpHandler({
+  router: appRouter,
+  endpoint: "/trpc",
+  createContext,
+  responseMeta(opts) {
+    const origin = opts.ctx?.headers.get("origin");
+
+    return {
+      headers: {
+        ...createCorsHeaders(origin ?? ""),
+      },
+    };
+  },
+  batching: {
+    enabled: true,
+  },
+  emitWsUpgrades: false,
+});
 
 const server = Bun.serve({
-  fetch: noki.fetch,
   port: 3002,
+  async fetch(request, server) {
+    const path = new URL(request.url).pathname;
+
+    if (request.method === "OPTIONS") {
+      const response = new Response();
+      setCorsHeaders(response, request.headers.get("origin") ?? "");
+
+      return response;
+    }
+
+    if (path.startsWith("/api/v1.0/auth")) {
+      const response = await auth.handler(request);
+      setCorsHeaders(response, request.headers.get("origin") ?? "");
+
+      return response;
+    }
+
+    return bunHandler(request, server) ?? new Response("Not found", { status: 404 });
+  },
 });
 
-console.log(`Listening on ${server.url}`);
-
-export type App = typeof noki;
+console.log(`Server is running on ${server.url}`);

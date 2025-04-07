@@ -22,7 +22,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
   const [audioGainNode, setAudioGainNode] = createSignal<GainNode>();
   const [videoGainNode, setVideoGainNode] = createSignal<GainNode>();
-  let syncTimeout: NodeJS.Timeout | undefined = undefined;
+  let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   const audioContext = new AudioContext();
 
   createEffect(

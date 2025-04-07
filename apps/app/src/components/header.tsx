@@ -1,11 +1,12 @@
-import { useNavigate } from "@solidjs/router";
-import { useQueryClient } from "@tanstack/solid-query";
+import { createQuery, useQueryClient } from "@tanstack/solid-query";
+import { useNavigate } from "@tanstack/solid-router";
 import { Show } from "solid-js";
-import { v1 } from "~/lib/api";
-import { useAuth } from "~/lib/auth";
+import { authClient } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
-import { profileQueryOptions } from "~/lib/queries";
+import { sessionQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
+import { trpc } from "~/lib/trpc";
+import { tryCatch } from "~/lib/utils/try-catch";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 import IconBan from "~icons/lucide/ban";
@@ -17,23 +18,39 @@ import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
 
 export default function Header() {
-  const { profile, logout } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const sessionQuery = createQuery(() => sessionQueryOptions());
+  const navigate = useNavigate();
 
-  const leaveLobby = async () => {
-    const response = await v1.lobbies.leave.post();
+  const logout = async () => {
+    const { error } = await authClient.signOut();
 
-    if (response.ok) {
-      await queryClient.invalidateQueries(profileQueryOptions());
-      navigate("/join");
+    if (error) {
+      notify({
+        message: t("error.unknown"),
+        intent: "error",
+      });
       return;
     }
 
-    notify({
-      message: t("error.unknown"),
-      intent: "error",
-    });
+    queryClient.invalidateQueries(sessionQueryOptions());
+    navigate({ to: "/sign-in" });
+  };
+
+  const leaveLobby = async () => {
+    const [_data, error] = await tryCatch(trpc.lobby.leave.mutate());
+
+    if (error) {
+      notify({
+        message: t("error.unknown"),
+        intent: "error",
+      });
+      return;
+    }
+
+    await queryClient.invalidateQueries(sessionQueryOptions());
+    navigate({ to: "/join" });
+    return;
   };
 
   return (
@@ -45,24 +62,24 @@ export default function Header() {
             <span class="font-bold text-lg">{t("header.app_name")}</span>
           </div>
           <div class="flex flex-grow justify-center">
-            <Show when={profile()}>
+            <Show when={sessionQuery.data}>
               <NavItems class="hidden md:flex" />
             </Show>
           </div>
           <div class="flex justify-end gap-2">
-            <Show when={profile()}>
-              {(profile) => (
+            <Show when={sessionQuery.data}>
+              {(session) => (
                 <DropdownMenu
                   trigger={
                     <DropdownMenu.Trigger class="cursor-pointer rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-white">
-                      <Avatar class="rounded-full" user={profile()} />
+                      <Avatar class="rounded-full" user={session().user} />
                     </DropdownMenu.Trigger>
                   }
                 >
-                  <DropdownMenu.Item onClick={() => navigate("/edit-profile")}>
+                  <DropdownMenu.Item onClick={() => navigate({ to: "/edit-profile" })}>
                     <IconUser /> {t("header.edit_profile")}
                   </DropdownMenu.Item>
-                  <Show when={profile().lobbyId}>
+                  <Show when={session().user.lobbyId}>
                     <DropdownMenu.Item onClick={leaveLobby}>
                       <IconBan /> {t("header.leave_lobby")}
                     </DropdownMenu.Item>
@@ -84,7 +101,7 @@ export default function Header() {
               <DropdownMenu.Item onClick={() => setLocale("en")}>
                 <IconEnUs /> English
               </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => setLocale("de")}>
+              <DropdownMenu.Item onClick={() => setLocale("en")}>
                 <IconDe /> Deutsch
               </DropdownMenu.Item>
             </DropdownMenu>

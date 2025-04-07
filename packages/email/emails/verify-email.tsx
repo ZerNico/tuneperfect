@@ -58,7 +58,6 @@ const tailwindConfig: TailwindConfig = {
 };
 
 export interface VerifyEmailProps {
-  code: string;
   url: string;
   supportUrl: string;
 }
@@ -77,14 +76,9 @@ export function VerifyEmail(props: VerifyEmailProps) {
           </Container>
           <Container className="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
             <Heading className="m-0 font-semibold text-[20px]">Verify your E-Mail</Heading>
-            <Text className="m-0 text-slate-500">Enter the following code to verify your email address.</Text>
-            <Text className="m-0 py-12 text-center ">
-              <span className="inline-block rounded border border-white/10 border-solid font-bold text-[40px] tracking-[6px]">
-                {props.code}
-              </span>
-            </Text>
+            <Text className="m-0 text-slate-500">Click the button below to verify your email address.</Text>
 
-            <Text className="m-0 pb-8 text-center">
+            <Text className="m-0 py-12 text-center">
               <a
                 href={props.url}
                 target="_blank"
@@ -94,9 +88,10 @@ export function VerifyEmail(props: VerifyEmailProps) {
                   background: "linear-gradient(to right, #36d1dc, #5b86e5)",
                 }}
               >
-                Visit Tune Perfect
+                Verify Email Address
               </a>
             </Text>
+
             <Text className="m-0">If you didn't request this, you can just ignore this email.</Text>
           </Container>
           <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
@@ -115,8 +110,7 @@ export function VerifyEmail(props: VerifyEmailProps) {
 }
 
 VerifyEmail.PreviewProps = {
-  code: "D4F8H3J2",
-  url: "https://tuneperfect.localhost",
+  url: "https://tuneperfect.localhost/verify-email?token=example-token",
   supportUrl: "mailto:support@tuneperfect.localhost",
 } satisfies VerifyEmailProps;
 
