@@ -79,18 +79,22 @@ export const lobbies = p.pgTable(
   (table) => [uniqueIndex("id_unique_index").on(table.id)],
 );
 
-export const highscores = p.pgTable("highscores", {
-  hash: p.text("hash").notNull(),
-  userId: p
-    .text("user_id")
-    .references(() => users.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    })
-    .notNull(),
-  score: p.integer("score").notNull(),
-  ...timestampColumns,
-});
+export const highscores = p.pgTable(
+  "highscores",
+  {
+    hash: p.text("hash").notNull(),
+    userId: p
+      .text("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
+      .notNull(),
+    score: p.integer("score").notNull(),
+    ...timestampColumns,
+  },
+  (table) => [p.primaryKey({ columns: [table.hash, table.userId] })],
+);
 
 export function lower(email: AnyPgColumn): SQL {
   return sql`lower(${email})`;
