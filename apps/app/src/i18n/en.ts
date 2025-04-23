@@ -45,6 +45,17 @@ const en = {
     username_already_taken: "Username is already taken",
     submit: "Complete profile",
   },
+  edit_profile: {
+    title: "Edit Profile",
+    username: "Username",
+    username_min_length: "Username must be at least 3 characters",
+    username_max_length: "Username must be at most 20 characters",
+    username_invalid: "Username can only contain letters, numbers, and underscores",
+    username_already_taken: "Username is already taken",
+    save: "Save Changes",
+    change_password: "Change Password",
+    success: "Profile updated successfully",
+  },
   join: {
     title: "Join Lobby",
     description: "Enter the code of the lobby you want to join",

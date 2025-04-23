@@ -1,18 +1,32 @@
-import { TRPCClientError, httpBatchLink } from "@trpc/client";
+import { TRPCClientError, httpBatchLink, httpLink, isNonJsonSerializable, splitLink } from "@trpc/client";
 import { createTRPCClient } from "@trpc/client";
 import type { AppRouter } from "@tuneperfect/api";
 import { joinURL } from "ufo";
 
+const TRPC_URL = joinURL(import.meta.env.VITE_API_URL, "/trpc");
+
 export const trpc = createTRPCClient<AppRouter>({
   links: [
-    httpBatchLink({
-      url: joinURL(import.meta.env.VITE_API_URL, "/trpc"),
-      fetch(url, options) {
-        return fetch(url, {
-          ...options,
-          credentials: "include",
-        });
-      },
+    splitLink({
+      condition: (op) => isNonJsonSerializable(op.input),
+      true: httpLink({
+        url: TRPC_URL,
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: "include",
+          });
+        },
+      }),
+      false: httpBatchLink({
+        url: TRPC_URL,
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: "include",
+          });
+        },
+      }),
     }),
   ],
 });

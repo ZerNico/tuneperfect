@@ -2,12 +2,14 @@ import { createBunHttpHandler, createBunServeHandler } from "trpc-bun-adapter";
 import { auth } from "./config/auth";
 import { highscoreRouter } from "./modules/highscore/highscore.router";
 import { lobbyRouter } from "./modules/lobby/lobby.router";
+import { userRouter } from "./modules/user/user.router";
 import { createContext, router } from "./trpc";
 import { createCorsHeaders, setCorsHeaders } from "./utils/cors";
 
 const appRouter = router({
   lobby: lobbyRouter,
   highscore: highscoreRouter,
+  user: userRouter,
 });
 
 export type AppRouter = typeof appRouter;
