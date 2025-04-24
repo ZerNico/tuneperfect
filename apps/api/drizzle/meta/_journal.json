@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1743690294666,
-      "tag": "0000_workable_eddie_brock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1743751609849,
-      "tag": "0001_thankful_warlock",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1744038482245,
-      "tag": "0002_lying_giant_girl",
+      "when": 1745408182205,
+      "tag": "0000_wise_hobgoblin",
       "breakpoints": true
     }
   ]

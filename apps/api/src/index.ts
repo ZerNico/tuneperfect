@@ -1,58 +1,65 @@
-import { createBunHttpHandler, createBunServeHandler } from "trpc-bun-adapter";
-import { auth } from "./config/auth";
-import { highscoreRouter } from "./modules/highscore/highscore.router";
-import { lobbyRouter } from "./modules/lobby/lobby.router";
-import { userRouter } from "./modules/user/user.router";
-import { createContext, router } from "./trpc";
-import { createCorsHeaders, setCorsHeaders } from "./utils/cors";
+import { OpenAPIGenerator } from "@orpc/openapi";
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
+import { RPCHandler } from "@orpc/server/fetch";
+import { CORSPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
+import { experimental_ValibotToJsonSchemaConverter } from "@orpc/valibot";
+import { authRouter } from "./auth/router";
 
-const appRouter = router({
-  lobby: lobbyRouter,
-  highscore: highscoreRouter,
-  user: userRouter,
+const router = {
+  auth: authRouter,
+};
+
+const rpcHandler = new RPCHandler(router, {
+  plugins: [new CORSPlugin(), new ResponseHeadersPlugin()],
 });
 
-export type AppRouter = typeof appRouter;
+const openAPIHandler = new OpenAPIHandler(router, {
+  plugins: [new CORSPlugin(), new ResponseHeadersPlugin()],
+});
 
-const bunHandler = createBunHttpHandler({
-  router: appRouter,
-  endpoint: "/trpc",
-  createContext,
-  responseMeta(opts) {
-    const origin = opts.ctx?.headers.get("origin");
-
-    return {
-      headers: {
-        ...createCorsHeaders(origin ?? ""),
-      },
-    };
-  },
-  batching: {
-    enabled: true,
-  },
-  emitWsUpgrades: false,
+const openAPIGenerator = new OpenAPIGenerator({
+  schemaConverters: [new experimental_ValibotToJsonSchemaConverter()],
 });
 
 const server = Bun.serve({
-  port: 3002,
-  async fetch(request, server) {
+  async fetch(request: Request) {
+    const rpcResponse = await rpcHandler.handle(request, {
+      prefix: "/rpc",
+      context: {},
+    });
+
+    if (rpcResponse.matched) {
+      return rpcResponse.response;
+    }
+
+    const openAPIResponse = await openAPIHandler.handle(request, {
+      prefix: "/v1",
+      context: {},
+    });
+
+    if (openAPIResponse.matched) {
+      return openAPIResponse.response;
+    }
+
     const path = new URL(request.url).pathname;
 
-    if (request.method === "OPTIONS") {
-      const response = new Response();
-      setCorsHeaders(response, request.headers.get("origin") ?? "");
+    if (path === "/spec.json") {
+      const spec = await openAPIGenerator.generate(router, {
+        info: {
+          title: "Tune Perfect",
+          version: "1.0.0",
+        },
+        servers: [{ url: "/v1" }],
+      });
 
-      return response;
+      return new Response(JSON.stringify(spec), {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     }
 
-    if (path.startsWith("/api/v1.0/auth")) {
-      const response = await auth.handler(request);
-      setCorsHeaders(response, request.headers.get("origin") ?? "");
-
-      return response;
-    }
-
-    return bunHandler(request, server) ?? new Response("Not found", { status: 404 });
+    return new Response("Not found", { status: 404 });
   },
 });
 

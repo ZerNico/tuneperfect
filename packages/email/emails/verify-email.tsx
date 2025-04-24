@@ -58,7 +58,7 @@ const tailwindConfig: TailwindConfig = {
 };
 
 export interface VerifyEmailProps {
-  url: string;
+  verifyUrl: string;
   supportUrl: string;
 }
 
@@ -80,7 +80,7 @@ export function VerifyEmail(props: VerifyEmailProps) {
 
             <Text className="m-0 py-12 text-center">
               <a
-                href={props.url}
+                href={props.verifyUrl}
                 target="_blank"
                 className="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
                 rel="noreferrer"
@@ -110,7 +110,7 @@ export function VerifyEmail(props: VerifyEmailProps) {
 }
 
 VerifyEmail.PreviewProps = {
-  url: "https://tuneperfect.localhost/verify-email?token=example-token",
+  verifyUrl: "https://tuneperfect.localhost/verify-email?token=example-token",
   supportUrl: "mailto:support@tuneperfect.localhost",
 } satisfies VerifyEmailProps;
 

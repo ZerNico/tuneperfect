@@ -4,10 +4,10 @@ import { ResetPassword } from "./emails/reset-password";
 import type { ResetPasswordProps } from "./emails/reset-password";
 import { VerifyEmail, type VerifyEmailProps } from "./emails/verify-email";
 
-export function renderVerifyEmail(props: VerifyEmailProps, options?: Options) {
-  return render(<VerifyEmail {...props} />, options);
+export async function renderVerifyEmail(props: VerifyEmailProps) {
+  return { html: await render(<VerifyEmail {...props} />), text: await render(<VerifyEmail {...props} />) };
 }
 
-export function renderResetPassword(props: ResetPasswordProps, options?: Options) {
-  return render(<ResetPassword {...props} />, options);
+export async function renderResetPassword(props: ResetPasswordProps) {
+  return { html: await render(<ResetPassword {...props} />), text: await render(<ResetPassword {...props} />) };
 }
