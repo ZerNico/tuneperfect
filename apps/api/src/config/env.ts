@@ -11,6 +11,8 @@ const ConfigSchema = v.object({
   COOKIE_DOMAIN: v.string(),
   GOOGLE_CLIENT_ID: v.string(),
   GOOGLE_CLIENT_SECRET: v.string(),
+  DISCORD_CLIENT_ID: v.string(),
+  DISCORD_CLIENT_SECRET: v.string(),
 });
 
 export const env = v.parse(ConfigSchema, process.env);

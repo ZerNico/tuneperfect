@@ -3,10 +3,10 @@ import * as v from "valibot";
 import { base } from "../base";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
-import { oauthRouter } from "../oauth/router";
 import { userService } from "../user/service";
 import { setTokenCookie } from "../utils/cookie";
 import { executeWithConstantTime } from "../utils/security";
+import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
 
 export const authRouter = os.prefix("/auth").router({
@@ -133,5 +133,5 @@ export const authRouter = os.prefix("/auth").router({
       context.resHeaders?.set("location", input.redirect || env.APP_URL);
     }),
 
-  oauth: oauthRouter,
+  providers: oauthRouter,
 });

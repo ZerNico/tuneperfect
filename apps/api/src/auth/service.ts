@@ -56,7 +56,7 @@ class AuthService {
 
     const token = await this.createAndStoreVerificationToken(user.id, "email_verification");
 
-    const url = withQuery(joinURL(env.API_URL, "/v1/auth/verify-email"), { token, redirect });
+    const url = withQuery(joinURL(env.API_URL, "/v1.0/auth/verify-email"), { token, redirect });
     const { html, text } = await renderVerifyEmail({ verifyUrl: url, supportUrl: env.SUPPORT_URL });
 
     try {

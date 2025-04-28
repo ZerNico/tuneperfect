@@ -55,7 +55,7 @@ const server = Bun.serve({
     }
 
     const openAPIResponse = await openAPIHandler.handle(request, {
-      prefix: "/v1",
+      prefix: "/v1.0",
       context: {
         headers: request.headers,
       },
@@ -73,7 +73,7 @@ const server = Bun.serve({
           title: "Tune Perfect",
           version: "1.0.0",
         },
-        servers: [{ url: "/v1" }],
+        servers: [{ url: "/v1.0" }],
       });
 
       return new Response(JSON.stringify(spec), {

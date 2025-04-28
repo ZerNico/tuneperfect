@@ -13,6 +13,17 @@ export class UserService {
     });
   }
 
+  async getByOAuthAccount(provider: string, providerAccountId: string) {
+    return await db.query.users.findFirst({
+      where: {
+        oauthAccounts: {
+          provider,
+          providerAccountId,
+        },
+      },
+    });
+  }
+
   async createUser(email: string, password: string) {
     const hashedPassword = await authService.hashPassword(password);
 

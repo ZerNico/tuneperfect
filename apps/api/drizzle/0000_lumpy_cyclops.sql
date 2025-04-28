@@ -19,7 +19,7 @@ CREATE TABLE "refresh_tokens" (
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"username" text,
-	"password" text NOT NULL,
+	"password" text,
 	"email" text NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
 	"image" text,
