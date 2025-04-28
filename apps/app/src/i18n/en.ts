@@ -29,11 +29,12 @@ const en = {
   },
   verify_email: {
     title: "Verify your email",
-    description: "Please check your email for a verification link. If you haven't received it, you can request a new one below.",
+    description:
+      "Please check your email for a verification link. If you haven't received it, you can request a new one below.",
     email: "Email",
     email_invalid: "Invalid email",
     resend: "Resend verification email",
-    success: "Verification email sent successfully",
+    success: "Verification email sent if account exists",
     error: "Failed to send verification email",
   },
   complete_profile: {

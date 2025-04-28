@@ -31,24 +31,23 @@ export const users = p.pgTable(
 );
 
 export const refreshTokens = p.pgTable("refresh_tokens", {
-  id: p.uuid("id").primaryKey().defaultRandom(),
+  token: p.text("token").primaryKey(),
   userId: p.uuid("user_id").references(() => users.id, {
     onDelete: "cascade",
     onUpdate: "cascade",
-  }),
+  }).notNull(),
   userAgent: p.text("user_agent").notNull(),
-  token: p.text("token").notNull(),
+  expires: p.timestamp("expires").notNull(),
   ...timestampColumns,
 });
 
 export const verificationTokens = p.pgTable("verification_tokens", {
-  id: p.uuid("id").primaryKey().defaultRandom(),
+  token: p.text("token").primaryKey(),
   userId: p.uuid("user_id").references(() => users.id, {
     onDelete: "cascade",
     onUpdate: "cascade",
-  }),
+  }).notNull(),
   type: p.text("type", { enum: ["email_verification", "password_reset"] }).notNull(),
-  token: p.text("token").notNull(),
   expires: p.timestamp("expires").notNull(),
   ...timestampColumns,
 });

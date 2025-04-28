@@ -8,7 +8,6 @@ import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
-import { sessionQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
 import { isTRPCClientError, trpc } from "~/lib/trpc";
 import IconPencilLine from "~icons/lucide/pencil-line";
@@ -21,11 +20,11 @@ function EditProfileComponent() {
   const queryClient = useQueryClient();
   const [fileInputElement, setFileInputElement] = createSignal<HTMLInputElement | null>(null);
   const [file, setFile] = createSignal<File | null>(null);
-  const sessionQuery = createQuery(() => sessionQueryOptions());
+  //const sessionQuery = createQuery(() => sessionQueryOptions());
 
   const form = createForm(() => ({
     defaultValues: {
-      username: sessionQuery.data?.user.username ?? "",
+      username: "",
     },
     onSubmit: async ({ value }) => {
       try {
@@ -40,7 +39,7 @@ function EditProfileComponent() {
           username: value.username,
         });
 
-        await queryClient.invalidateQueries(sessionQueryOptions());
+        //await queryClient.invalidateQueries(sessionQueryOptions());
         notify({
           message: t("edit_profile.success"),
           intent: "success",

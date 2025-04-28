@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { joinURL } from "ufo";
-import { authClient } from "~/lib/auth";
+//import { authClient } from "~/lib/auth";
 import GoogleIcon from "~icons/logos/google-icon";
 import Button from "./ui/button";
 
@@ -14,10 +14,10 @@ export default function GoogleLogin(props: GoogleLoginProps) {
   const login = async () => {
     setLoading(true);
 
-    await authClient.signIn.social({
+    /*await authClient.signIn.social({
       provider: "google",
       callbackURL: joinURL(`${window.location.origin}`, props.redirect ?? ""),
-    });
+    });*/
 
     setLoading(false);
   };

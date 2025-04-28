@@ -5,9 +5,7 @@ import * as v from "valibot";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
-import { authClient } from "~/lib/auth";
 import { t } from "~/lib/i18n";
-import { sessionQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_auth/complete-profile")({
@@ -27,7 +25,7 @@ function RouteComponent() {
       username: "",
     },
     onSubmit: async ({ value }) => {
-      const { error } = await authClient.updateUser({
+    /*  const { error } = await authClient.updateUser({
         username: value.username,
       });
 
@@ -49,6 +47,7 @@ function RouteComponent() {
       }
 
       navigate({ to: search().redirect ?? "/" });
+      */
     },
     validators: {
       onChange: v.object({

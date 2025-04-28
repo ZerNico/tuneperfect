@@ -3,7 +3,6 @@ import { Outlet, createRootRouteWithContext } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 import Header from "~/components/header";
 import { ToastRegion } from "~/components/ui/toast";
-import { sessionQueryOptions } from "~/lib/queries";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -12,7 +11,7 @@ interface RouterContext {
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   beforeLoad: async ({ context }) => {
-    await context.queryClient.prefetchQuery(sessionQueryOptions());
+    //await context.queryClient.prefetchQuery(sessionQueryOptions());
   },
 });
 

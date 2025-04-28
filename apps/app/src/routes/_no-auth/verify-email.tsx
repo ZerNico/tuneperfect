@@ -1,42 +1,50 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute } from "@tanstack/solid-router";
+import { joinURL } from "ufo";
 import * as v from "valibot";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
-import { authClient } from "~/lib/auth";
 import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_no-auth/verify-email")({
   component: VerifyEmailComponent,
+  validateSearch: v.object({
+    redirect: v.optional(v.string()),
+  }),
 });
 
 function VerifyEmailComponent() {
-  const navigate = useNavigate();
+  const search = Route.useSearch();
 
   const form = createForm(() => ({
     defaultValues: {
       email: "",
     },
     onSubmit: async ({ value }) => {
-      const { error } = await authClient.sendVerificationEmail({
-        email: value.email,
-        callbackURL: window.location.origin,
-      });
+      const absoluteRedirect = search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
+
+      const [error, _data] = await safe(
+        client.auth.resendVerificationEmail({
+          email: value.email,
+          redirect: absoluteRedirect,
+        })
+      );
 
       if (error) {
         notify({
-          message: t("verify_email.error"),
+          message: t("error.unknown"),
           intent: "error",
         });
-      } else {
-        notify({
-          message: t("verify_email.success"),
-          intent: "success",
-        });
-        navigate({ to: "/" });
       }
+
+      notify({
+        message: t("verify_email.success"),
+        intent: "success",
+      });
     },
     validators: {
       onChange: v.object({

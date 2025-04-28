@@ -6,7 +6,6 @@ import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
-import { sessionQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
 import { isTRPCClientError, trpc } from "~/lib/trpc";
 import { tryCatch } from "~/lib/utils/try-catch";
@@ -44,7 +43,7 @@ function JoinComponent() {
         return;
       }
 
-      await queryClient.invalidateQueries(sessionQueryOptions());
+     // await queryClient.invalidateQueries(sessionQueryOptions());
       navigate({ to: "/" });
     },
     validators: {

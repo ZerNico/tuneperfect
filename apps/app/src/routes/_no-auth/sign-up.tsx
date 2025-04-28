@@ -1,5 +1,5 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { useQueryClient } from "@tanstack/solid-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
@@ -8,9 +8,8 @@ import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
-import { authClient } from "~/lib/auth";
 import { t } from "~/lib/i18n";
-import { sessionQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_no-auth/sign-up")({
@@ -24,7 +23,6 @@ export const Route = createFileRoute("/_no-auth/sign-up")({
 function SignUpComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const queryClient = useQueryClient();
 
   const form = createForm(() => ({
     defaultValues: {
@@ -33,38 +31,32 @@ function SignUpComponent() {
       confirmPassword: "",
     },
     onSubmit: async ({ value }) => {
-      if (value.password !== value.confirmPassword) {
+      const absoluteRedirect = search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
+
+      const [error, _data, isDefined] = await safe(
+        client.auth.signUp({
+          email: value.email,
+          password: value.password,
+          redirect: absoluteRedirect,
+        })
+      );
+
+      if (error) {
+        if (isDefined && error.code === "EMAIL_ALREADY_EXISTS") {
+          notify({
+            message: t("sign_up.email_already_exists"),
+            intent: "error",
+          });
+          return;
+        }
         notify({
-          message: t("sign_up.passwords_dont_match"),
+          message: t("error.unknown"),
           intent: "error",
         });
         return;
       }
 
-      const { error } = await authClient.signUp.email({
-        email: value.email,
-        password: value.password,
-        name: "",
-        callbackURL: joinURL(window.location.origin, search().redirect ?? ""),
-      });
-
-      queryClient.invalidateQueries(sessionQueryOptions());
-
-      if (error) {
-        if (error.code === "EMAIL_ALREADY_EXISTS") {
-          notify({
-            message: t("sign_up.email_already_exists"),
-            intent: "error",
-          });
-        } else {
-          notify({
-            message: t("error.unknown"),
-            intent: "error",
-          });
-        }
-      } else {
-        navigate({ to: "/verify-email" });
-      }
+      navigate({ to: "/verify-email" });
     },
     validators: {
       onChange: v.pipe(

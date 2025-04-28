@@ -1,16 +1,15 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { joinURL } from "ufo";
 import * as v from "valibot";
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
-import { authClient } from "~/lib/auth";
 import { t } from "~/lib/i18n";
-import { sessionQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_no-auth/sign-in")({
@@ -31,28 +30,28 @@ function SignInComponent() {
       password: "",
     },
     onSubmit: async ({ value }) => {
-      const { error } = await authClient.signIn.email({
-        email: value.email,
-        password: value.password,
-        rememberMe: true,
-        callbackURL: joinURL(window.location.origin, search().redirect ?? ""),
-      });
-
-      queryClient.invalidateQueries(sessionQueryOptions());
+      const [error, _data, isDefined] = await safe(
+        client.auth.signIn({
+          email: value.email,
+          password: value.password,
+        })
+      );
 
       if (error) {
-        if (error.code === "INVALID_EMAIL_OR_PASSWORD") {
-          notify({
-            message: t("sign_in.invalid_email_or_password"),
-            intent: "error",
-          });
-          return;
-        }
-        if (error.code === "EMAIL_NOT_VERIFIED") {
-          navigate({
-            to: "/verify-email",
-          });
-          return;
+        if (isDefined) {
+          if (error.code === "INVALID_CREDENTIALS") {
+            notify({
+              message: t("sign_in.invalid_email_or_password"),
+              intent: "error",
+            });
+            return;
+          }
+          if (error.code === "EMAIL_NOT_VERIFIED") {
+            navigate({
+              to: "/verify-email",
+            });
+            return;
+          }
         }
 
         notify({
@@ -62,7 +61,7 @@ function SignInComponent() {
         return;
       }
 
-      navigate({ to: search().redirect ?? "/" });
+      //navigate({ to: search().redirect ?? "/" });
     },
     validators: {
       onChange: v.object({

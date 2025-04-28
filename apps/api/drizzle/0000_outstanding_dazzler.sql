@@ -8,10 +8,10 @@ CREATE TABLE "oauth_accounts" (
 );
 --> statement-breakpoint
 CREATE TABLE "refresh_tokens" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid,
+	"token" text PRIMARY KEY NOT NULL,
+	"user_id" uuid NOT NULL,
 	"user_agent" text NOT NULL,
-	"token" text NOT NULL,
+	"expires" timestamp NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL
 );
@@ -30,10 +30,9 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 CREATE TABLE "verification_tokens" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid,
+	"token" text PRIMARY KEY NOT NULL,
+	"user_id" uuid NOT NULL,
 	"type" text NOT NULL,
-	"token" text NOT NULL,
 	"expires" timestamp NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL

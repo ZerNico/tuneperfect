@@ -1,6 +1,8 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { authService } from "../auth/service";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
+import type { User } from "../types";
 
 export class UserService {
   async getUserByEmail(email: string) {
@@ -12,9 +14,15 @@ export class UserService {
   }
 
   async createUser(email: string, password: string) {
-    const hashedPassword = await Bun.password.hash(password);
+    const hashedPassword = await authService.hashPassword(password);
 
     const [user] = await db.insert(schema.users).values({ email, password: hashedPassword }).returning();
+
+    return user;
+  }
+
+  async updateUser(id: string, data: Partial<User>) {
+    const [user] = await db.update(schema.users).set(data).where(eq(schema.users.id, id)).returning();
 
     return user;
   }

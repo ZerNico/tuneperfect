@@ -12,6 +12,7 @@
     "@iconify-json/logos": "^1.2.4",
     "@iconify-json/lucide": "^1.2.32",
     "@kobalte/core": "^0.13.9",
+    "@orpc/client": "^1.1.0",
     "@solid-primitives/i18n": "^2.2.0",
     "@solid-primitives/storage": "^4.3.1",
     "@tailwindcss/vite": "^4.0.6",

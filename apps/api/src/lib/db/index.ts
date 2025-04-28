@@ -9,7 +9,3 @@ const client = new SQL(env.POSTGRES_URL);
 export const db = drizzle({ client, schema, relations });
 
 await migrate(db, { migrationsFolder: "drizzle" });
-
-import.meta.hot.dispose(() => {
-  db.$client.close();
-});

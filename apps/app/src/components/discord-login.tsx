@@ -1,6 +1,5 @@
 import { createSignal } from "solid-js";
 import { joinURL } from "ufo";
-import { authClient } from "~/lib/auth";
 import DiscordIcon from "~icons/logos/discord-icon";
 import Button from "./ui/button";
 
@@ -14,10 +13,10 @@ export default function DiscordLogin(props: DiscordLoginProps) {
   const login = async () => {
     setLoading(true);
 
-    await authClient.signIn.social({
+    /*await authClient.signIn.social({
       provider: "discord",
       callbackURL: joinURL(`${window.location.origin}`, props.redirect ?? ""),
-    });
+    });*/
 
     setLoading(false);
   };

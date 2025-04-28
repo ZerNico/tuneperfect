@@ -7,7 +7,7 @@
     "./auth": "./src/config/auth/client.ts"
   },
   "scripts": {
-    "dev": "bun --watch --hot src/index.ts",
+    "dev": "bun --watch src/index.ts",
     "build": "bun build.ts",
     "auth:generate": "bunx --bun @better-auth/cli generate --config src/config/auth.ts --output src/config/db/schema.ts",
     "db:generate": "drizzle-kit generate",
@@ -20,12 +20,15 @@
     "@orpc/valibot": "^1.1.0",
     "@trpc/server": "^11.0.1",
     "@tuneperfect/email": "*",
+    "arctic": "^3.6.0",
     "better-auth": "^1.2.4",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^1.0.0-beta.1-00df263",
+    "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.10.0",
     "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
     "trpc-bun-adapter": "^1.2.2",
     "ufo": "^1.6.1",
     "valibot": "^1.0.0"
@@ -34,6 +37,7 @@
     "@babel/core": "^7.26.10",
     "@better-auth/cli": "^1.2.4",
     "@types/bun": "^1.2.5",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/nodemailer": "^6.4.17",
     "drizzle-kit": "^1.0.0-beta.1-00df263",
     "pg": "^8.14.1"
