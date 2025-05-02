@@ -95,14 +95,14 @@ export const oauthRouter = os.prefix("/providers").router({
       );
 
       if (tokenError) {
-        logger.error({ tokenError }, "Failed to exchange code for access token");
+        logger.error(tokenError, "Failed to exchange code for access token");
         throw errors.BAD_REQUEST();
       }
 
       const [user, userError] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
 
       if (userError || !user) {
-        logger.error({ userError }, "Failed to get or create user");
+        logger.error(userError, "Failed to get or create user");
         throw errors.BAD_REQUEST();
       }
 

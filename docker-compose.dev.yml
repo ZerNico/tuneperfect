@@ -19,3 +19,9 @@ services:
       - 8025:8025
     volumes:
       - .tmp/mailpit:/data
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    volumes:
+      - .tmp/redis:/data

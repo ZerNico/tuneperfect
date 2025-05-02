@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { base } from "../base";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
+import type { RateLimitMetadata } from "../lib/orpc/rate-limit";
 import { userService } from "../user/service";
 import { defaultCookieOptions, setTokenCookie } from "../utils/cookie";
 import { executeWithConstantTime } from "../utils/security";
@@ -14,6 +15,12 @@ export const authRouter = os.prefix("/auth").router({
     .errors({
       EMAIL_ALREADY_EXISTS: {
         status: 400,
+      },
+    })
+    .meta({
+      rateLimit: {
+        limit: 10,
+        windowMs: 1000 * 60 * 5,
       },
     })
     .input(
@@ -39,7 +46,7 @@ export const authRouter = os.prefix("/auth").router({
       try {
         await authService.sendVerificationEmail(user, { redirect: input.redirect });
       } catch (error) {
-        logger.warn({ error }, "Failed to send verification email");
+        logger.warn(error, "Failed to send verification email");
       }
     }),
 
@@ -54,6 +61,12 @@ export const authRouter = os.prefix("/auth").router({
       },
       EMAIL_NOT_VERIFIED: {
         status: 403,
+      },
+    })
+    .meta({
+      rateLimit: {
+        limit: 50,
+        windowMs: 1000 * 60 * 5,
       },
     })
     .input(v.object({ email: v.string(), password: v.string() }))
@@ -97,6 +110,12 @@ export const authRouter = os.prefix("/auth").router({
       path: "/resend-verification-email",
       method: "POST",
     })
+    .meta({
+      rateLimit: {
+        limit: 3,
+        windowMs: 1000 * 60 * 5,
+      },
+    })
     .input(
       v.object({
         email: v.pipe(v.string(), v.email()),
@@ -126,6 +145,12 @@ export const authRouter = os.prefix("/auth").router({
         status: 404,
       },
     })
+    .meta({
+      rateLimit: {
+        limit: 20,
+        windowMs: 1000 * 60 * 5,
+      },
+    })
     .input(v.object({ token: v.string(), redirect: v.optional(v.string()) }))
     .handler(async ({ input, context, errors }) => {
       const verificationToken = await authService.verifyAndDeleteVerificationToken(input.token, "email_verification");
@@ -143,6 +168,12 @@ export const authRouter = os.prefix("/auth").router({
     .route({
       path: "/request-password-reset",
       method: "POST",
+    })
+    .meta({
+      rateLimit: {
+        limit: 3,
+        windowMs: 1000 * 60 * 5,
+      },
     })
     .input(
       v.object({
@@ -172,6 +203,12 @@ export const authRouter = os.prefix("/auth").router({
       },
       PASSWORD_TOO_SHORT: {
         status: 400,
+      },
+    })
+    .meta({
+      rateLimit: {
+        limit: 5,
+        windowMs: 1000 * 60 * 5,
       },
     })
     .input(

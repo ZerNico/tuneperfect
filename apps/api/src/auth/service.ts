@@ -62,7 +62,7 @@ class AuthService {
     try {
       await sendEmail(user.email, "Verify your E-Mail", html, text);
     } catch (error) {
-      logger.error({ error }, "Failed to send verification email");
+      logger.error(error, "Failed to send verification email");
     }
   }
 
@@ -78,7 +78,7 @@ class AuthService {
     try {
       await sendEmail(user.email, "Reset your Password", html, text);
     } catch (error) {
-      logger.error({ error }, "Failed to send password reset email");
+      logger.error(error, "Failed to send password reset email");
     }
 
     return token;
