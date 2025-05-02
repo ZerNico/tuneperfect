@@ -4,7 +4,7 @@ import { base } from "../base";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { userService } from "../user/service";
-import { setTokenCookie } from "../utils/cookie";
+import { defaultCookieOptions, setTokenCookie } from "../utils/cookie";
 import { executeWithConstantTime } from "../utils/security";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
@@ -81,8 +81,14 @@ export const authRouter = os.prefix("/auth").router({
           context.headers?.get("user-agent") || "unknown",
         );
 
-        setTokenCookie("access", accessToken.token, accessToken.expires, context.resHeaders ?? new Headers());
-        setTokenCookie("refresh", refreshToken.token, refreshToken.expires, context.resHeaders ?? new Headers());
+        context.setCookie?.("access", accessToken.token, {
+          ...defaultCookieOptions,
+          maxAge: accessToken.expires.getTime() - Date.now(),
+        });
+        context.setCookie?.("refresh", refreshToken.token, {
+          ...defaultCookieOptions,
+          maxAge: refreshToken.expires.getTime() - Date.now(),
+        });
       }, 500);
     }),
 

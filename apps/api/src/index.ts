@@ -1,43 +1,55 @@
-import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
+import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import type { RouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
-import { CORSPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
+import { CORSPlugin, ResponseHeadersPlugin, StrictGetMethodPlugin } from "@orpc/server/plugins";
 import { experimental_ValibotToJsonSchemaConverter } from "@orpc/valibot";
 import { authRouter } from "./auth/router";
 import { env } from "./config/env";
 import { logger } from "./lib/logger";
+import { CookiesPlugin } from "./lib/orpc/cookies";
+import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
 
 const router = {
   auth: authRouter,
 };
 
+const plugins = [
+  new CORSPlugin({
+    origin: [env.APP_URL],
+    credentials: true,
+    allowHeaders: ["Content-Type", "Authorization"],
+    exposeHeaders: ["Content-Type", "Authorization"],
+  }),
+  new ResponseHeadersPlugin(),
+  new CsrfProtectionPlugin({
+    allowedOrigin: env.APP_URL,
+  }),
+  new StrictGetMethodPlugin(),
+  new CookiesPlugin(),
+];
+
 const rpcHandler = new RPCHandler(router, {
-  plugins: [
-    new CORSPlugin({
-      origin: [env.APP_URL],
-      credentials: true,
-      allowHeaders: ["Content-Type", "Authorization"],
-      exposeHeaders: ["Content-Type", "Authorization"],
-    }),
-    new ResponseHeadersPlugin(),
-  ],
+  plugins,
 });
 
 const openAPIHandler = new OpenAPIHandler(router, {
   plugins: [
-    new CORSPlugin({
-      origin: [env.APP_URL],
-      credentials: true,
-      allowHeaders: ["Content-Type", "Authorization"],
-      exposeHeaders: ["Content-Type", "Authorization"],
+    ...plugins,
+    new OpenAPIReferencePlugin({
+      schemaConverters: [new experimental_ValibotToJsonSchemaConverter()],
+      specGenerateOptions: {
+        info: {
+          title: "Tune Perfect",
+          version: "1.0.0",
+        },
+        servers: [{ url: "/v1.0" }],
+      },
+      docsConfig: {
+        url: "/v1.0/spec.json",
+      },
     }),
-    new ResponseHeadersPlugin(),
   ],
-});
-
-const openAPIGenerator = new OpenAPIGenerator({
-  schemaConverters: [new experimental_ValibotToJsonSchemaConverter()],
 });
 
 const server = Bun.serve({
@@ -63,24 +75,6 @@ const server = Bun.serve({
 
     if (openAPIResponse.matched) {
       return openAPIResponse.response;
-    }
-
-    const path = new URL(request.url).pathname;
-
-    if (path === "/spec.json") {
-      const spec = await openAPIGenerator.generate(router, {
-        info: {
-          title: "Tune Perfect",
-          version: "1.0.0",
-        },
-        servers: [{ url: "/v1.0" }],
-      });
-
-      return new Response(JSON.stringify(spec), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
     }
 
     return new Response("Not found", { status: 404 });

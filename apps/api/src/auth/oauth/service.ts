@@ -1,4 +1,3 @@
-import * as arctic from "arctic";
 import { googleOAuthClient } from "./google";
 
 class OAuthService {
@@ -7,7 +6,7 @@ class OAuthService {
   };
 
   async createAuthorizationURL(provider: keyof typeof this.oauthClients) {
-    return this.oauthClients[provider].getAuthorizationURL();
+    return await this.oauthClients[provider].getAuthorizationURL();
   }
 
   async exchangeCodeForAccessToken(provider: keyof typeof this.oauthClients, code: string, codeVerifier: string) {
@@ -17,7 +16,6 @@ class OAuthService {
 
   async getOrCreateUser(provider: keyof typeof this.oauthClients, token: string) {
     const user = await this.oauthClients[provider].getOrCreateUser(token);
-
     return user;
   }
 }

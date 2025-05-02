@@ -6,6 +6,7 @@ import { db } from "../../lib/db";
 import * as schema from "../../lib/db/schema";
 import type { User } from "../../types";
 import { userService } from "../../user/service";
+import { tryCatch } from "../../utils/try-catch";
 import { type GoogleProfile, googleProfileSchema } from "./models";
 
 class GoogleOAuthClient {
@@ -18,8 +19,12 @@ class GoogleOAuthClient {
   public async getAuthorizationURL() {
     const state = arctic.generateState();
     const codeVerifier = arctic.generateCodeVerifier();
-
-    const url = this.client.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"]);
+    const [url, error] = await tryCatch(
+      this.client.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"]),
+    );
+    if (error) {
+      throw new Error("Failed to generate Google authorization URL", { cause: error });
+    }
     return { url, state, codeVerifier };
   }
 
@@ -38,32 +43,22 @@ class GoogleOAuthClient {
       return null;
     }
 
-    const profile = await response.json();
-    const result = v.safeParse(googleProfileSchema, profile);
-
-    if (!result.success) {
-      return null;
-    }
-
-    return result.output;
+    return v.parse(googleProfileSchema, await response.json());
   }
 
   public async createOrMergeUser(profile: GoogleProfile) {
     if (!profile || !profile.email_verified) {
       return null;
     }
-
     const user = await userService.getUserByEmail(profile.email);
-
-    if (user) {
-      if (!user.emailVerified) {
-        return null;
-      }
-
-      return await this.mergeUser(user, profile);
+    if (!user) {
+      return await this.createUser(profile);
+    }
+    if (!user.emailVerified) {
+      return null;
     }
 
-    return await this.createUser(profile);
+    return await this.mergeUser(user, profile);
   }
 
   public async mergeUser(user: User, profile: GoogleProfile) {
@@ -71,7 +66,7 @@ class GoogleOAuthClient {
     if (!mergedUser.image) {
       mergedUser.image = profile.picture;
     }
-
+    
     await db.transaction(async (tx) => {
       if (!user.image) {
         await tx
@@ -81,7 +76,6 @@ class GoogleOAuthClient {
           })
           .where(eq(schema.users.id, user.id));
       }
-
       await tx.insert(schema.oauthAccounts).values({
         userId: user.id,
         provider: "google",
@@ -93,47 +87,45 @@ class GoogleOAuthClient {
   }
 
   public async createUser(profile: GoogleProfile) {
-    const user = await db.transaction(async (tx) => {
-      const [user] = await tx
-        .insert(schema.users)
-        .values({
-          email: profile.email,
-          emailVerified: true,
-          image: profile.picture,
-        })
-        .returning();
-
-      if (!user) {
-        tx.rollback();
-        throw new Error("Failed to create user");
-      }
-
-      await tx.insert(schema.oauthAccounts).values({
-        userId: user.id,
-        provider: "google",
-        providerAccountId: profile.sub,
-      });
-
-      return user;
-    });
-
+    const [user, error] = await tryCatch(
+      db.transaction(async (tx) => {
+        const [user] = await tx
+          .insert(schema.users)
+          .values({
+            email: profile.email,
+            emailVerified: true,
+            image: profile.picture,
+          })
+          .returning();
+        if (!user) {
+          throw new Error("Failed to create user");
+        }
+        await tx.insert(schema.oauthAccounts).values({
+          userId: user.id,
+          provider: "google",
+          providerAccountId: profile.sub,
+        });
+        return user;
+      }),
+    );
+    if (error) {
+      throw new Error("Failed to create Google user", { cause: error });
+    }
     return user;
   }
 
   public async getOrCreateUser(token: string) {
     const profile = await this.getProfile(token);
-
     if (!profile) {
       return null;
     }
 
     const user = await userService.getByOAuthAccount("google", profile.sub);
-
-    if (user) {
-      return user;
+    if (!user) {
+      return await this.createOrMergeUser(profile);
     }
 
-    return await this.createOrMergeUser(profile);
+    return user;
   }
 }
 

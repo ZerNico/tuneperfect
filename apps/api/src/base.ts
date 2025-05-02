@@ -2,8 +2,9 @@ import { os, onError } from "@orpc/server";
 import type { ResponseHeadersPluginContext } from "@orpc/server/plugins";
 import { db } from "./lib/db";
 import { logger } from "./lib/logger";
+import type { CookiesPluginContext } from "./lib/orpc/cookies";
 
-interface ORPCContext extends ResponseHeadersPluginContext {
+interface ORPCContext extends ResponseHeadersPluginContext, CookiesPluginContext {
   headers?: Headers;
 }
 

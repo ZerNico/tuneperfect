@@ -24,6 +24,8 @@ function SignUpComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
+  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
+
   const form = createForm(() => ({
     defaultValues: {
       email: "",
@@ -31,13 +33,11 @@ function SignUpComponent() {
       confirmPassword: "",
     },
     onSubmit: async ({ value }) => {
-      const absoluteRedirect = search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
-
       const [error, _data, isDefined] = await safe(
         client.auth.signUp({
           email: value.email,
           password: value.password,
-          redirect: absoluteRedirect,
+          redirect: absoluteRedirect(),
         })
       );
 
@@ -149,8 +149,8 @@ function SignUpComponent() {
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
         </div>
         <div class="flex flex-wrap gap-4">
-          <DiscordLogin redirect={search().redirect} />
-          <GoogleLogin redirect={search().redirect} />
+          <DiscordLogin redirect={absoluteRedirect()} />
+          <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
         <p class="text-slate-500 text-sm">

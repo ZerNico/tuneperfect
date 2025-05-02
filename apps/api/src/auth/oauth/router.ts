@@ -2,7 +2,9 @@ import { os } from "@orpc/server";
 import * as v from "valibot";
 import { base } from "../../base";
 import { env } from "../../config/env";
-import { setTokenCookie } from "../../utils/cookie";
+import { logger } from "../../lib/logger";
+import { createCookie, defaultCookieOptions, deleteCookie, setTokenCookie } from "../../utils/cookie";
+import { isValidRedirectUrl } from "../../utils/security";
 import { tryCatch } from "../../utils/try-catch";
 import { authService } from "../service";
 import { oauthService } from "./service";
@@ -17,6 +19,7 @@ export const oauthRouter = os.prefix("/providers").router({
     .input(
       v.object({
         provider: v.picklist(["google"]),
+        redirect: v.optional(v.string()),
       }),
     )
     .handler(async ({ context, errors, input }) => {
@@ -26,29 +29,24 @@ export const oauthRouter = os.prefix("/providers").router({
         throw errors.INTERNAL_SERVER_ERROR();
       }
 
-      const stateCookie = new Bun.Cookie("state", result.state, {
-        path: "/",
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+      const redirectUrl = isValidRedirectUrl(input.redirect, [env.APP_URL]) ? input.redirect : undefined;
+
+      context.setCookie?.("state", result.state, {
+        ...defaultCookieOptions,
         maxAge: 60 * 10, // 10 minutes
-        domain: env.COOKIE_DOMAIN,
       });
-
-      const codeVerifierCookie = new Bun.Cookie("codeVerifier", result.codeVerifier, {
-        path: "/",
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+      context.setCookie?.("codeVerifier", result.codeVerifier, {
+        ...defaultCookieOptions,
         maxAge: 60 * 10, // 10 minutes
-        domain: env.COOKIE_DOMAIN,
       });
+      if (redirectUrl) {
+        context.setCookie?.("redirect", redirectUrl, {
+          ...defaultCookieOptions,
+          maxAge: 60 * 10, // 10 minutes
+        });
+      }
 
-      const url = await result.url;
-
-      context.resHeaders?.append("set-cookie", stateCookie.serialize());
-      context.resHeaders?.append("set-cookie", codeVerifierCookie.serialize());
-      context.resHeaders?.append("location", url.href);
+      context.resHeaders?.append("location", result.url.href);
     }),
 
   callback: base
@@ -70,9 +68,19 @@ export const oauthRouter = os.prefix("/providers").router({
       }),
     )
     .handler(async ({ context, errors, input }) => {
-      const cookies = new Bun.CookieMap(context.headers?.get("cookie") ?? undefined);
-      const storedState = cookies.get("state");
-      const storedCodeVerifier = cookies.get("codeVerifier");
+      const storedState = context.cookies?.get("state");
+      const storedCodeVerifier = context.cookies?.get("codeVerifier");
+      const storedRedirect = context.cookies?.get("redirect");
+
+      context.deleteCookie?.("state", {
+        ...defaultCookieOptions,
+      });
+      context.deleteCookie?.("codeVerifier", {
+        ...defaultCookieOptions,
+      });
+      context.deleteCookie?.("redirect", {
+        ...defaultCookieOptions,
+      });
 
       if (!input.state || !input.code || !storedState || !storedCodeVerifier) {
         throw errors.BAD_REQUEST();
@@ -87,12 +95,14 @@ export const oauthRouter = os.prefix("/providers").router({
       );
 
       if (tokenError) {
+        logger.error({ tokenError }, "Failed to exchange code for access token");
         throw errors.BAD_REQUEST();
       }
 
       const [user, userError] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
 
       if (userError || !user) {
+        logger.error({ userError }, "Failed to get or create user");
         throw errors.BAD_REQUEST();
       }
 
@@ -104,6 +114,6 @@ export const oauthRouter = os.prefix("/providers").router({
 
       setTokenCookie("access", accessToken.token, accessToken.expires, context.resHeaders ?? new Headers());
       setTokenCookie("refresh", refreshToken.token, refreshToken.expires, context.resHeaders ?? new Headers());
-      context.resHeaders?.append("location", "/");
+      context.resHeaders?.append("location", storedRedirect ?? "/");
     }),
 });

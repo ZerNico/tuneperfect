@@ -1,7 +1,7 @@
 import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { useQueryClient } from "@tanstack/solid-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { joinURL } from "ufo";
 import * as v from "valibot";
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_no-auth/sign-in")({
 function SignInComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const queryClient = useQueryClient();
+
+  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
 
   const form = createForm(() => ({
     defaultValues: {
@@ -130,8 +131,8 @@ function SignInComponent() {
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
         </div>
         <div class="flex flex-wrap gap-4">
-          <DiscordLogin redirect={search().redirect} />
-          <GoogleLogin redirect={search().redirect} />
+          <DiscordLogin redirect={absoluteRedirect()} />
+          <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
         <p class="text-slate-500 text-sm">

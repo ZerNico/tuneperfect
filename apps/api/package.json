@@ -14,10 +14,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@orpc/client": "^1.1.0",
-    "@orpc/openapi": "^1.1.0",
-    "@orpc/server": "^1.1.0",
-    "@orpc/valibot": "^1.1.0",
+    "@orpc/client": "^1.1.1",
+    "@orpc/openapi": "^1.1.1",
+    "@orpc/server": "^1.1.1",
+    "@orpc/valibot": "^1.1.1",
     "@trpc/server": "^11.0.1",
     "@tuneperfect/email": "*",
     "arctic": "^3.6.0",
