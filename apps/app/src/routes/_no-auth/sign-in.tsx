@@ -62,7 +62,7 @@ function SignInComponent() {
         return;
       }
 
-      //navigate({ to: search().redirect ?? "/" });
+      navigate({ to: search().redirect ?? "/" });
     },
     validators: {
       onChange: v.object({
@@ -109,6 +109,12 @@ function SignInComponent() {
               />
             )}
           </form.Field>
+
+          <div class="flex items-center justify-between">
+            <Link to="/forgot-password" class="text-slate-600 text-sm hover:text-slate-800">
+              {t("sign_in.forgot_password")}
+            </Link>
+          </div>
 
           <div class="flex flex-col gap-2">
             <form.Subscribe

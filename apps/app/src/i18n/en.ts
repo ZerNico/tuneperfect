@@ -27,6 +27,32 @@ const en = {
     have_account: "Already have an account?",
     sign_in: "Sign in",
   },
+  forgot_password: {
+    title: "Forgot Password",
+    description: "Enter your email and we'll send you a link to reset your password.",
+    email_sent: "If an account exists with this email, a password reset link has been sent.",
+    send_reset_link: "Send Reset Link",
+    remembered_password: "Remembered your password?",
+  },
+  reset_password: {
+    title: "Reset Password",
+    description: "Enter your new password below to complete the password reset process.",
+    code: "Reset Code",
+    code_placeholder: "Enter the code from your email",
+    token: "Reset Token",
+    new_password: "New Password",
+    confirm_password: "Confirm Password",
+    reset_password: "Reset Password",
+    success: "Your password has been reset successfully. Redirecting to sign in...",
+    remembered_password: "Remembered your password?",
+    passwords_dont_match: "Passwords do not match",
+    invalid_or_expired_token: "Invalid or expired reset link",
+    password_too_short: "Password must be at least 8 characters",
+    password_min_length: "Password must be at least 8 characters",
+  },
+  common: {
+    back_to_sign_in: "Back to Sign In",
+  },
   verify_email: {
     title: "Verify your email",
     description:

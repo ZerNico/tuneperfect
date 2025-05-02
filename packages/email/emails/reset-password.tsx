@@ -58,8 +58,7 @@ const tailwindConfig: TailwindConfig = {
 };
 
 export interface ResetPasswordProps {
-  code: string;
-  url: string;
+  resetUrl: string;
   supportUrl: string;
 }
 
@@ -77,16 +76,11 @@ export function ResetPassword(props: ResetPasswordProps) {
           </Container>
           <Container className="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
             <Heading className="m-0 font-semibold text-[20px]">Reset your Password</Heading>
-            <Text className="m-0 text-slate-500">Enter the following code to reset your password.</Text>
-            <Text className="m-0 py-12 text-center ">
-              <span className="inline-block rounded border border-white/10 border-solid font-bold text-[40px] tracking-[6px]">
-                {props.code}
-              </span>
-            </Text>
+            <Text className="m-0 text-slate-500">Click the button below to reset your password.</Text>
 
-            <Text className="m-0 pb-8 text-center">
+            <Text className="m-0 py-12 text-center">
               <a
-                href={`${props.url}?code=${props.code}`}
+                href={props.resetUrl}
                 target="_blank"
                 className="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
                 rel="noreferrer"
@@ -97,6 +91,7 @@ export function ResetPassword(props: ResetPasswordProps) {
                 Reset Password
               </a>
             </Text>
+
             <Text className="m-0">If you didn't request this, you can safely ignore this email.</Text>
           </Container>
           <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
@@ -115,8 +110,7 @@ export function ResetPassword(props: ResetPasswordProps) {
 }
 
 ResetPassword.PreviewProps = {
-  code: "D4F8H3J2",
-  url: "https://tuneperfect.localhost/auth/reset-password",
+  resetUrl: "https://tuneperfect.localhost/reset-password?token=example-token",
   supportUrl: "mailto:support@tuneperfect.localhost",
 } satisfies ResetPasswordProps;
 

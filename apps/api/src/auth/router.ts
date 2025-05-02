@@ -139,5 +139,57 @@ export const authRouter = os.prefix("/auth").router({
       context.resHeaders?.set("location", input.redirect || env.APP_URL);
     }),
 
+  requestPasswordReset: base
+    .route({
+      path: "/request-password-reset",
+      method: "POST",
+    })
+    .input(
+      v.object({
+        email: v.pipe(v.string(), v.email()),
+      }),
+    )
+    .handler(async ({ input, errors }) => {
+      await executeWithConstantTime(async () => {
+        const user = await userService.getUserByEmail(input.email);
+
+        if (!user) {
+          return;
+        }
+
+        await authService.sendPasswordResetEmail(user);
+      }, 500);
+    }),
+
+  resetPassword: base
+    .route({
+      path: "/reset-password",
+      method: "POST",
+    })
+    .errors({
+      RESET_TOKEN_NOT_FOUND: {
+        status: 404,
+      },
+      PASSWORD_TOO_SHORT: {
+        status: 400,
+      },
+    })
+    .input(
+      v.object({
+        token: v.string(),
+        password: v.pipe(v.string(), v.minLength(8)),
+      }),
+    )
+    .handler(async ({ input, errors }) => {
+      const verificationToken = await authService.verifyAndDeleteVerificationToken(input.token, "password_reset");
+
+      if (!verificationToken) {
+        throw errors.RESET_TOKEN_NOT_FOUND();
+      }
+
+      const hashedPassword = await authService.hashPassword(input.password);
+      await userService.updateUser(verificationToken.userId, { password: hashedPassword });
+    }),
+
   providers: oauthRouter,
 });

@@ -16,6 +16,8 @@ import { Route as AuthImport } from './routes/_auth'
 import { Route as NoAuthVerifyEmailImport } from './routes/_no-auth/verify-email'
 import { Route as NoAuthSignUpImport } from './routes/_no-auth/sign-up'
 import { Route as NoAuthSignInImport } from './routes/_no-auth/sign-in'
+import { Route as NoAuthResetPasswordImport } from './routes/_no-auth/reset-password'
+import { Route as NoAuthForgotPasswordImport } from './routes/_no-auth/forgot-password'
 import { Route as AuthEditProfileImport } from './routes/_auth/edit-profile'
 import { Route as AuthCompleteProfileImport } from './routes/_auth/complete-profile'
 import { Route as AuthNoLobbyImport } from './routes/_auth/_no-lobby'
@@ -50,6 +52,18 @@ const NoAuthSignUpRoute = NoAuthSignUpImport.update({
 const NoAuthSignInRoute = NoAuthSignInImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+
+const NoAuthResetPasswordRoute = NoAuthResetPasswordImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+
+const NoAuthForgotPasswordRoute = NoAuthForgotPasswordImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => NoAuthRoute,
 } as any)
 
@@ -133,6 +147,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthEditProfileImport
       parentRoute: typeof AuthImport
     }
+    '/_no-auth/forgot-password': {
+      id: '/_no-auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof NoAuthForgotPasswordImport
+      parentRoute: typeof NoAuthImport
+    }
+    '/_no-auth/reset-password': {
+      id: '/_no-auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof NoAuthResetPasswordImport
+      parentRoute: typeof NoAuthImport
+    }
     '/_no-auth/sign-in': {
       id: '/_no-auth/sign-in'
       path: '/sign-in'
@@ -214,12 +242,16 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface NoAuthRouteChildren {
+  NoAuthForgotPasswordRoute: typeof NoAuthForgotPasswordRoute
+  NoAuthResetPasswordRoute: typeof NoAuthResetPasswordRoute
   NoAuthSignInRoute: typeof NoAuthSignInRoute
   NoAuthSignUpRoute: typeof NoAuthSignUpRoute
   NoAuthVerifyEmailRoute: typeof NoAuthVerifyEmailRoute
 }
 
 const NoAuthRouteChildren: NoAuthRouteChildren = {
+  NoAuthForgotPasswordRoute: NoAuthForgotPasswordRoute,
+  NoAuthResetPasswordRoute: NoAuthResetPasswordRoute,
   NoAuthSignInRoute: NoAuthSignInRoute,
   NoAuthSignUpRoute: NoAuthSignUpRoute,
   NoAuthVerifyEmailRoute: NoAuthVerifyEmailRoute,
@@ -232,6 +264,8 @@ export interface FileRoutesByFullPath {
   '': typeof AuthNoLobbyRouteWithChildren
   '/complete-profile': typeof AuthCompleteProfileRoute
   '/edit-profile': typeof AuthEditProfileRoute
+  '/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/reset-password': typeof NoAuthResetPasswordRoute
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
@@ -243,6 +277,8 @@ export interface FileRoutesByTo {
   '': typeof AuthNoLobbyRouteWithChildren
   '/complete-profile': typeof AuthCompleteProfileRoute
   '/edit-profile': typeof AuthEditProfileRoute
+  '/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/reset-password': typeof NoAuthResetPasswordRoute
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
@@ -258,6 +294,8 @@ export interface FileRoutesById {
   '/_auth/_no-lobby': typeof AuthNoLobbyRouteWithChildren
   '/_auth/complete-profile': typeof AuthCompleteProfileRoute
   '/_auth/edit-profile': typeof AuthEditProfileRoute
+  '/_no-auth/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/_no-auth/reset-password': typeof NoAuthResetPasswordRoute
   '/_no-auth/sign-in': typeof NoAuthSignInRoute
   '/_no-auth/sign-up': typeof NoAuthSignUpRoute
   '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
@@ -271,6 +309,8 @@ export interface FileRouteTypes {
     | ''
     | '/complete-profile'
     | '/edit-profile'
+    | '/forgot-password'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
@@ -281,6 +321,8 @@ export interface FileRouteTypes {
     | ''
     | '/complete-profile'
     | '/edit-profile'
+    | '/forgot-password'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
@@ -294,6 +336,8 @@ export interface FileRouteTypes {
     | '/_auth/_no-lobby'
     | '/_auth/complete-profile'
     | '/_auth/edit-profile'
+    | '/_no-auth/forgot-password'
+    | '/_no-auth/reset-password'
     | '/_no-auth/sign-in'
     | '/_no-auth/sign-up'
     | '/_no-auth/verify-email'
@@ -338,6 +382,8 @@ export const routeTree = rootRoute
     "/_no-auth": {
       "filePath": "_no-auth.tsx",
       "children": [
+        "/_no-auth/forgot-password",
+        "/_no-auth/reset-password",
         "/_no-auth/sign-in",
         "/_no-auth/sign-up",
         "/_no-auth/verify-email"
@@ -364,6 +410,14 @@ export const routeTree = rootRoute
     "/_auth/edit-profile": {
       "filePath": "_auth/edit-profile.tsx",
       "parent": "/_auth"
+    },
+    "/_no-auth/forgot-password": {
+      "filePath": "_no-auth/forgot-password.tsx",
+      "parent": "/_no-auth"
+    },
+    "/_no-auth/reset-password": {
+      "filePath": "_no-auth/reset-password.tsx",
+      "parent": "/_no-auth"
     },
     "/_no-auth/sign-in": {
       "filePath": "_no-auth/sign-in.tsx",

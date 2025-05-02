@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { renderVerifyEmail } from "@tuneperfect/email";
+import { renderResetPassword, renderVerifyEmail } from "@tuneperfect/email";
 import { addDays, addHours, addMinutes, differenceInSeconds, isBefore } from "date-fns";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
@@ -64,6 +64,24 @@ class AuthService {
     } catch (error) {
       logger.error({ error }, "Failed to send verification email");
     }
+  }
+
+  async sendPasswordResetEmail(user: User) {
+    const token = await this.createAndStoreVerificationToken(user.id, "password_reset");
+
+    const resetUrl = withQuery(joinURL(env.APP_URL, "/reset-password"), { token });
+    const { html, text } = await renderResetPassword({
+      resetUrl,
+      supportUrl: env.SUPPORT_URL,
+    });
+
+    try {
+      await sendEmail(user.email, "Reset your Password", html, text);
+    } catch (error) {
+      logger.error({ error }, "Failed to send password reset email");
+    }
+
+    return token;
   }
 
   async comparePasswords(password: string, hashedPassword: string) {
