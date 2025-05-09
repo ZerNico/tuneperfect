@@ -1,5 +1,6 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import Fuse from "fuse.js";
 import { For, type Ref, Show, batch, createMemo, createSignal } from "solid-js";
 import { Transition } from "solid-transition-group";
 import KeyHints from "~/components/key-hints";
@@ -256,12 +257,23 @@ function SongScroller(props: SongScrollerProps) {
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
   const [animating, setAnimating] = createSignal<null | "left" | "right">(null);
 
+  const fuseInstance = createMemo(() => {
+    return new Fuse(props.songs, {
+      keys: ['title', 'artist'],
+      threshold: 0.2,
+      includeScore: true,
+      ignoreLocation: true,
+    });
+  });
+
   const sortedSongs = createMemo(() => {
     let songs = props.songs;
 
     if (props.searchQuery.trim()) {
       const query = props.searchQuery.toLowerCase().trim();
-      songs = songs.filter((song) => song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query));
+      
+      const searchResults = fuseInstance().search(query);
+      songs = searchResults.map(result => result.item);
     }
 
     if (songs.length === 0) {
