@@ -7,8 +7,7 @@ import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
-import { highscoresQueryOptions } from "~/lib/queries";
-import { trpc } from "~/lib/trpc";
+import { client } from "~/lib/orpc";
 import type { User } from "~/lib/types";
 import { getMaxScore } from "~/lib/ultrastar/voice";
 import { getColorVar } from "~/lib/utils/color";
@@ -51,7 +50,9 @@ const getRelativeScore = (score: Score, maxScore: Score) => {
 function ScoreComponent() {
   const roundStore = useRoundStore();
   const navigate = useNavigate();
-  const highscoresQuery = createQuery(() => highscoresQueryOptions(roundStore.settings()?.song?.hash ?? ""));
+  const highscoresQuery = createQuery(() =>
+    client.highscore.getHighscores.queryOptions({ input: { hash: roundStore.settings()?.song?.hash ?? "" } })
+  );
   const [showHighscores, setShowHighscores] = createSignal(false);
 
   const scoreData = createMemo<PlayerScoreData[]>(() => {
@@ -97,7 +98,7 @@ function ScoreComponent() {
         if ("type" in score.player) continue;
         if (score.totalScore <= 0) continue;
 
-        await trpc.highscore.createOrUpdate.mutate({
+        await client.highscore.setHighscore.call({
           hash: songHash,
           userId: score.player.id.toString(),
           score: score.totalScore,

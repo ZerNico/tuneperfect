@@ -8,7 +8,7 @@ import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { createQRCode } from "~/hooks/qrcode";
-import { lobbyQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 import { lobbyStore } from "~/stores/lobby";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPartyPopper from "~icons/lucide/party-popper";
@@ -80,7 +80,11 @@ function HomeComponent() {
     width: 1024,
   });
 
-  const lobbyQuery = createQuery(() => lobbyQueryOptions());
+  const lobbyQuery = createQuery(() =>
+    client.lobby.currentLobby.queryOptions({
+      refetchInterval: 1000 * 5,
+    })
+  );
 
   return (
     <Layout

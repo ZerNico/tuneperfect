@@ -1,3 +1,4 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
@@ -5,12 +6,12 @@ import * as v from "valibot";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
+import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import { isTRPCClientError, trpc } from "~/lib/trpc";
-import { tryCatch } from "~/lib/utils/try-catch";
 
-export const Route = createFileRoute("/_auth/_no-lobby/join")({
+export const Route = createFileRoute("/_auth/_no-lobby/join/")({
   component: JoinComponent,
 });
 
@@ -23,17 +24,15 @@ function JoinComponent() {
       lobbyCode: "",
     },
     onSubmit: async ({ value }) => {
-      const [_data, error] = await tryCatch(trpc.lobby.join.mutate({ lobbyId: value.lobbyCode }));
+      const [error, _data, isDefined] = await safe(client.lobby.joinLobby.call({ lobbyId: value.lobbyCode }));
 
       if (error) {
-        if (isTRPCClientError(error)) {
-          if (error.data?.code === "NOT_FOUND") {
-            notify({
-              message: t("join.lobby_not_found"),
-              intent: "error",
-            });
-            return;
-          }
+        if (isDefined && error.code === "NOT_FOUND") {
+          notify({
+            message: t("join.lobby_not_found"),
+            intent: "error",
+          });
+          return;
         }
 
         notify({
@@ -43,12 +42,13 @@ function JoinComponent() {
         return;
       }
 
-     // await queryClient.invalidateQueries(sessionQueryOptions());
-      navigate({ to: "/" });
+      await queryClient.invalidateQueries(sessionQueryOptions());
+      await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
+      await navigate({ to: "/" });
     },
     validators: {
       onChange: v.object({
-        lobbyCode: v.pipe(v.string(), v.minLength(6, t("join.code_min_length")), v.maxLength(6, t("join.code_max_length"))),
+        lobbyCode: v.pipe(v.string(), v.minLength(6, t("join.code_min_length")), v.maxLength(8, t("join.code_max_length"))),
       }),
     },
   }));

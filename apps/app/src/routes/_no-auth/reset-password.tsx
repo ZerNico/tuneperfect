@@ -39,7 +39,7 @@ function ResetPasswordComponent() {
       }
 
       const [error, _data, isDefined] = await safe(
-        client.auth.resetPassword({
+        client.auth.resetPassword.call({
           token: value.token,
           password: value.password,
         })

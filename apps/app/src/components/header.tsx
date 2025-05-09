@@ -1,10 +1,13 @@
-import { createQuery, useQueryClient } from "@tanstack/solid-query";
+import { safe } from "@orpc/client";
+import { createQuery } from "@tanstack/solid-query";
 import { useNavigate } from "@tanstack/solid-router";
 import { Show } from "solid-js";
+import { sessionQueryOptions } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import { trpc } from "~/lib/trpc";
 import { tryCatch } from "~/lib/utils/try-catch";
+import { queryClient } from "~/main";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 import IconBan from "~icons/lucide/ban";
@@ -14,29 +17,29 @@ import IconUser from "~icons/lucide/user";
 import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
-
 export default function Header() {
-  const queryClient = useQueryClient();
-  //const sessionQuery = createQuery(() => sessionQueryOptions());
+  const sessionQuery = createQuery(() => sessionQueryOptions());
+
   const navigate = useNavigate();
 
   const logout = async () => {
-    /*const { error } = await authClient.signOut();
+    const [error, _data, _isDefined] = await safe(client.auth.signOut.call());
 
     if (error) {
       notify({
         message: t("error.unknown"),
         intent: "error",
       });
+
       return;
     }
 
-    queryClient.invalidateQueries(sessionQueryOptions());
-    navigate({ to: "/sign-in" });*/
+    queryClient.clear();
+    await navigate({ to: "/sign-in" });
   };
 
   const leaveLobby = async () => {
-    const [_data, error] = await tryCatch(trpc.lobby.leave.mutate());
+    const [_data, error] = await tryCatch(client.lobby.leaveLobby.call());
 
     if (error) {
       notify({
@@ -46,13 +49,13 @@ export default function Header() {
       return;
     }
 
-    //await queryClient.invalidateQueries(sessionQueryOptions());
-    navigate({ to: "/join" });
-    return;
+    await queryClient.invalidateQueries(sessionQueryOptions());
+    await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
+    await navigate({ to: "/join" });
   };
 
   return (
-    {/*
+    <>
       <div class="h-16" />
       <header class="fixed top-0 right-0 left-0 border-white/10 border-b">
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
@@ -60,24 +63,24 @@ export default function Header() {
             <span class="font-bold text-lg">{t("header.app_name")}</span>
           </div>
           <div class="flex flex-grow justify-center">
-            <Show when={false}>
+            <Show when={sessionQuery.data}>
               <NavItems class="hidden md:flex" />
             </Show>
           </div>
           <div class="flex justify-end gap-2">
-            <Show when={false}>
+            <Show when={sessionQuery.data}>
               {(session) => (
                 <DropdownMenu
                   trigger={
                     <DropdownMenu.Trigger class="cursor-pointer rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-white">
-                      <Avatar class="rounded-full" user={session().user} />
+                      <Avatar class="rounded-full" user={session()} />
                     </DropdownMenu.Trigger>
                   }
                 >
                   <DropdownMenu.Item onClick={() => navigate({ to: "/edit-profile" })}>
                     <IconUser /> {t("header.edit_profile")}
                   </DropdownMenu.Item>
-                  <Show when={session().user.lobbyId}>
+                  <Show when={session().lobbyId !== null}>
                     <DropdownMenu.Item onClick={leaveLobby}>
                       <IconBan /> {t("header.leave_lobby")}
                     </DropdownMenu.Item>
@@ -106,6 +109,6 @@ export default function Header() {
           </div>
         </div>
       </header>
-    */}
+    </>
   );
 }

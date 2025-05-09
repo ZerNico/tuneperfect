@@ -6,7 +6,7 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
-import { lobbyQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 import type { LocalUser } from "~/lib/types";
 import { useRoundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -34,7 +34,7 @@ function PlayerSelectionComponent() {
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/sing" });
   const roundStore = useRoundStore();
-  const lobbyQuery = createQuery(() => lobbyQueryOptions());
+  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
   const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
   const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
     Array(settingsStore.microphones().length).fill(localUsers[0]?.id || -1)

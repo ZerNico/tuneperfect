@@ -1,6 +1,6 @@
 import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
-import { trpc } from "~/lib/trpc";
+import { client } from "~/lib/orpc";
 
 type LobbyStore = {
   token: string;
@@ -20,7 +20,7 @@ function createLobbyStore() {
     }
 
     try {
-      //await trpc.lobby.current.delete();
+      await client.lobby.deleteLobby.call();
     } catch (_) {
     } finally {
       setLobby(undefined);

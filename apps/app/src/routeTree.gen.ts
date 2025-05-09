@@ -20,10 +20,12 @@ import { Route as NoAuthResetPasswordImport } from './routes/_no-auth/reset-pass
 import { Route as NoAuthForgotPasswordImport } from './routes/_no-auth/forgot-password'
 import { Route as AuthEditProfileImport } from './routes/_auth/edit-profile'
 import { Route as AuthCompleteProfileImport } from './routes/_auth/complete-profile'
+import { Route as AuthChangePasswordImport } from './routes/_auth/change-password'
 import { Route as AuthNoLobbyImport } from './routes/_auth/_no-lobby'
 import { Route as AuthLobbyImport } from './routes/_auth/_lobby'
 import { Route as AuthLobbyIndexImport } from './routes/_auth/_lobby/index'
-import { Route as AuthNoLobbyJoinImport } from './routes/_auth/_no-lobby/join'
+import { Route as AuthNoLobbyJoinIndexImport } from './routes/_auth/_no-lobby/join/index'
+import { Route as AuthNoLobbyJoinIdImport } from './routes/_auth/_no-lobby/join/$id'
 
 // Create/Update Routes
 
@@ -79,6 +81,12 @@ const AuthCompleteProfileRoute = AuthCompleteProfileImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 
+const AuthChangePasswordRoute = AuthChangePasswordImport.update({
+  id: '/change-password',
+  path: '/change-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+
 const AuthNoLobbyRoute = AuthNoLobbyImport.update({
   id: '/_no-lobby',
   getParentRoute: () => AuthRoute,
@@ -95,9 +103,15 @@ const AuthLobbyIndexRoute = AuthLobbyIndexImport.update({
   getParentRoute: () => AuthLobbyRoute,
 } as any)
 
-const AuthNoLobbyJoinRoute = AuthNoLobbyJoinImport.update({
-  id: '/join',
-  path: '/join',
+const AuthNoLobbyJoinIndexRoute = AuthNoLobbyJoinIndexImport.update({
+  id: '/join/',
+  path: '/join/',
+  getParentRoute: () => AuthNoLobbyRoute,
+} as any)
+
+const AuthNoLobbyJoinIdRoute = AuthNoLobbyJoinIdImport.update({
+  id: '/join/$id',
+  path: '/join/$id',
   getParentRoute: () => AuthNoLobbyRoute,
 } as any)
 
@@ -131,6 +145,13 @@ declare module '@tanstack/solid-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof AuthNoLobbyImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/change-password': {
+      id: '/_auth/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AuthChangePasswordImport
       parentRoute: typeof AuthImport
     }
     '/_auth/complete-profile': {
@@ -182,19 +203,26 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof NoAuthVerifyEmailImport
       parentRoute: typeof NoAuthImport
     }
-    '/_auth/_no-lobby/join': {
-      id: '/_auth/_no-lobby/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof AuthNoLobbyJoinImport
-      parentRoute: typeof AuthNoLobbyImport
-    }
     '/_auth/_lobby/': {
       id: '/_auth/_lobby/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthLobbyIndexImport
       parentRoute: typeof AuthLobbyImport
+    }
+    '/_auth/_no-lobby/join/$id': {
+      id: '/_auth/_no-lobby/join/$id'
+      path: '/join/$id'
+      fullPath: '/join/$id'
+      preLoaderRoute: typeof AuthNoLobbyJoinIdImport
+      parentRoute: typeof AuthNoLobbyImport
+    }
+    '/_auth/_no-lobby/join/': {
+      id: '/_auth/_no-lobby/join/'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof AuthNoLobbyJoinIndexImport
+      parentRoute: typeof AuthNoLobbyImport
     }
   }
 }
@@ -214,11 +242,13 @@ const AuthLobbyRouteWithChildren = AuthLobbyRoute._addFileChildren(
 )
 
 interface AuthNoLobbyRouteChildren {
-  AuthNoLobbyJoinRoute: typeof AuthNoLobbyJoinRoute
+  AuthNoLobbyJoinIdRoute: typeof AuthNoLobbyJoinIdRoute
+  AuthNoLobbyJoinIndexRoute: typeof AuthNoLobbyJoinIndexRoute
 }
 
 const AuthNoLobbyRouteChildren: AuthNoLobbyRouteChildren = {
-  AuthNoLobbyJoinRoute: AuthNoLobbyJoinRoute,
+  AuthNoLobbyJoinIdRoute: AuthNoLobbyJoinIdRoute,
+  AuthNoLobbyJoinIndexRoute: AuthNoLobbyJoinIndexRoute,
 }
 
 const AuthNoLobbyRouteWithChildren = AuthNoLobbyRoute._addFileChildren(
@@ -228,6 +258,7 @@ const AuthNoLobbyRouteWithChildren = AuthNoLobbyRoute._addFileChildren(
 interface AuthRouteChildren {
   AuthLobbyRoute: typeof AuthLobbyRouteWithChildren
   AuthNoLobbyRoute: typeof AuthNoLobbyRouteWithChildren
+  AuthChangePasswordRoute: typeof AuthChangePasswordRoute
   AuthCompleteProfileRoute: typeof AuthCompleteProfileRoute
   AuthEditProfileRoute: typeof AuthEditProfileRoute
 }
@@ -235,6 +266,7 @@ interface AuthRouteChildren {
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLobbyRoute: AuthLobbyRouteWithChildren,
   AuthNoLobbyRoute: AuthNoLobbyRouteWithChildren,
+  AuthChangePasswordRoute: AuthChangePasswordRoute,
   AuthCompleteProfileRoute: AuthCompleteProfileRoute,
   AuthEditProfileRoute: AuthEditProfileRoute,
 }
@@ -262,6 +294,7 @@ const NoAuthRouteWithChildren =
 
 export interface FileRoutesByFullPath {
   '': typeof AuthNoLobbyRouteWithChildren
+  '/change-password': typeof AuthChangePasswordRoute
   '/complete-profile': typeof AuthCompleteProfileRoute
   '/edit-profile': typeof AuthEditProfileRoute
   '/forgot-password': typeof NoAuthForgotPasswordRoute
@@ -269,12 +302,14 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/join': typeof AuthNoLobbyJoinRoute
   '/': typeof AuthLobbyIndexRoute
+  '/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/join': typeof AuthNoLobbyJoinIndexRoute
 }
 
 export interface FileRoutesByTo {
   '': typeof AuthNoLobbyRouteWithChildren
+  '/change-password': typeof AuthChangePasswordRoute
   '/complete-profile': typeof AuthCompleteProfileRoute
   '/edit-profile': typeof AuthEditProfileRoute
   '/forgot-password': typeof NoAuthForgotPasswordRoute
@@ -282,8 +317,9 @@ export interface FileRoutesByTo {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/join': typeof AuthNoLobbyJoinRoute
   '/': typeof AuthLobbyIndexRoute
+  '/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/join': typeof AuthNoLobbyJoinIndexRoute
 }
 
 export interface FileRoutesById {
@@ -292,6 +328,7 @@ export interface FileRoutesById {
   '/_no-auth': typeof NoAuthRouteWithChildren
   '/_auth/_lobby': typeof AuthLobbyRouteWithChildren
   '/_auth/_no-lobby': typeof AuthNoLobbyRouteWithChildren
+  '/_auth/change-password': typeof AuthChangePasswordRoute
   '/_auth/complete-profile': typeof AuthCompleteProfileRoute
   '/_auth/edit-profile': typeof AuthEditProfileRoute
   '/_no-auth/forgot-password': typeof NoAuthForgotPasswordRoute
@@ -299,14 +336,16 @@ export interface FileRoutesById {
   '/_no-auth/sign-in': typeof NoAuthSignInRoute
   '/_no-auth/sign-up': typeof NoAuthSignUpRoute
   '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
-  '/_auth/_no-lobby/join': typeof AuthNoLobbyJoinRoute
   '/_auth/_lobby/': typeof AuthLobbyIndexRoute
+  '/_auth/_no-lobby/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/_auth/_no-lobby/join/': typeof AuthNoLobbyJoinIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | ''
+    | '/change-password'
     | '/complete-profile'
     | '/edit-profile'
     | '/forgot-password'
@@ -314,11 +353,13 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
-    | '/join'
     | '/'
+    | '/join/$id'
+    | '/join'
   fileRoutesByTo: FileRoutesByTo
   to:
     | ''
+    | '/change-password'
     | '/complete-profile'
     | '/edit-profile'
     | '/forgot-password'
@@ -326,14 +367,16 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
-    | '/join'
     | '/'
+    | '/join/$id'
+    | '/join'
   id:
     | '__root__'
     | '/_auth'
     | '/_no-auth'
     | '/_auth/_lobby'
     | '/_auth/_no-lobby'
+    | '/_auth/change-password'
     | '/_auth/complete-profile'
     | '/_auth/edit-profile'
     | '/_no-auth/forgot-password'
@@ -341,8 +384,9 @@ export interface FileRouteTypes {
     | '/_no-auth/sign-in'
     | '/_no-auth/sign-up'
     | '/_no-auth/verify-email'
-    | '/_auth/_no-lobby/join'
     | '/_auth/_lobby/'
+    | '/_auth/_no-lobby/join/$id'
+    | '/_auth/_no-lobby/join/'
   fileRoutesById: FileRoutesById
 }
 
@@ -375,6 +419,7 @@ export const routeTree = rootRoute
       "children": [
         "/_auth/_lobby",
         "/_auth/_no-lobby",
+        "/_auth/change-password",
         "/_auth/complete-profile",
         "/_auth/edit-profile"
       ]
@@ -400,8 +445,13 @@ export const routeTree = rootRoute
       "filePath": "_auth/_no-lobby.tsx",
       "parent": "/_auth",
       "children": [
-        "/_auth/_no-lobby/join"
+        "/_auth/_no-lobby/join/$id",
+        "/_auth/_no-lobby/join/"
       ]
+    },
+    "/_auth/change-password": {
+      "filePath": "_auth/change-password.tsx",
+      "parent": "/_auth"
     },
     "/_auth/complete-profile": {
       "filePath": "_auth/complete-profile.tsx",
@@ -431,13 +481,17 @@ export const routeTree = rootRoute
       "filePath": "_no-auth/verify-email.tsx",
       "parent": "/_no-auth"
     },
-    "/_auth/_no-lobby/join": {
-      "filePath": "_auth/_no-lobby/join.tsx",
-      "parent": "/_auth/_no-lobby"
-    },
     "/_auth/_lobby/": {
       "filePath": "_auth/_lobby/index.tsx",
       "parent": "/_auth/_lobby"
+    },
+    "/_auth/_no-lobby/join/$id": {
+      "filePath": "_auth/_no-lobby/join/$id.tsx",
+      "parent": "/_auth/_no-lobby"
+    },
+    "/_auth/_no-lobby/join/": {
+      "filePath": "_auth/_no-lobby/join/index.tsx",
+      "parent": "/_auth/_no-lobby"
     }
   }
 }

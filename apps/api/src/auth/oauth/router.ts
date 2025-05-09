@@ -3,7 +3,7 @@ import * as v from "valibot";
 import { base } from "../../base";
 import { env } from "../../config/env";
 import { logger } from "../../lib/logger";
-import { createCookie, defaultCookieOptions, deleteCookie, setTokenCookie } from "../../utils/cookie";
+import { defaultCookieOptions } from "../../utils/cookie";
 import { isValidRedirectUrl } from "../../utils/security";
 import { tryCatch } from "../../utils/try-catch";
 import { authService } from "../service";
@@ -23,7 +23,7 @@ export const oauthRouter = os.prefix("/providers").router({
       }),
     )
     .handler(async ({ context, errors, input }) => {
-      const [result, error] = await tryCatch(oauthService.createAuthorizationURL(input.provider));
+      const [error, result] = await tryCatch(oauthService.createAuthorizationURL(input.provider));
 
       if (error) {
         throw errors.INTERNAL_SERVER_ERROR();
@@ -90,7 +90,7 @@ export const oauthRouter = os.prefix("/providers").router({
         throw errors.BAD_REQUEST();
       }
 
-      const [token, tokenError] = await tryCatch(
+      const [tokenError, token] = await tryCatch(
         oauthService.exchangeCodeForAccessToken(input.provider, input.code, storedCodeVerifier),
       );
 
@@ -99,7 +99,7 @@ export const oauthRouter = os.prefix("/providers").router({
         throw errors.BAD_REQUEST();
       }
 
-      const [user, userError] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
+      const [userError, user] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
 
       if (userError || !user) {
         logger.error(userError, "Failed to get or create user");
@@ -112,8 +112,14 @@ export const oauthRouter = os.prefix("/providers").router({
         context.headers?.get("user-agent") || "unknown",
       );
 
-      setTokenCookie("access", accessToken.token, accessToken.expires, context.resHeaders ?? new Headers());
-      setTokenCookie("refresh", refreshToken.token, refreshToken.expires, context.resHeaders ?? new Headers());
+      context.setCookie?.("access_token", accessToken.token, {
+        ...defaultCookieOptions,
+        maxAge: accessToken.expires.getTime() - Date.now(),
+      });
+      context.setCookie?.("refresh_token", refreshToken.token, {
+        ...defaultCookieOptions,
+        maxAge: refreshToken.expires.getTime() - Date.now(),
+      });
       context.resHeaders?.append("location", storedRedirect ?? "/");
     }),
 });

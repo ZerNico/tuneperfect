@@ -5,15 +5,15 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
-import { lobbyQueryOptions } from "~/lib/queries";
-import { trpc } from "~/lib/trpc";
+import { client } from "~/lib/orpc";
 
 export const Route = createFileRoute("/lobby/$id")({
   component: RouteComponent,
   beforeLoad: async ({ context, params }) => {
     const userId = params.id;
-    
-    const lobby = await context.queryClient.ensureQueryData(lobbyQueryOptions());
+
+    const lobby = await context.queryClient.ensureQueryData(client.lobby.currentLobby.queryOptions());
+
     if (!lobby) {
       throw redirect({ to: "/lobby" });
     }
@@ -33,31 +33,31 @@ function RouteComponent() {
   const onBack = () => navigate({ to: "/lobby" });
   const queryClient = useQueryClient();
 
-  const lobbyQuery = createQuery(() => lobbyQueryOptions());
+  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
   const user = () => lobbyQuery.data?.users.find((user) => user.id === params().id);
 
-  const kickUserMutation = createMutation(() => ({
-    mutationFn: async () => {
-      const u = user();
-
-      if (!u) {
-        return;
-      }
-      await trpc.lobby.kick.mutate({
-        userId: u.id.toString(),
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries(lobbyQueryOptions());
-      navigate({ to: "/lobby" });
-    },
-  }));
+  const kickUserMutation = createMutation(() =>
+    client.lobby.kickUser.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
+        navigate({ to: "/lobby" });
+      },
+    })
+  );
 
   const menuItems: MenuItem[] = [
     {
       type: "button",
       label: "Kick",
-      action: () => kickUserMutation.mutate(),
+      action: () => {
+        const u = user();
+
+        if (!u) {
+          return;
+        }
+
+        kickUserMutation.mutate({ userId: u.id });
+      },
     },
   ];
 

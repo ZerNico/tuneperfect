@@ -5,11 +5,9 @@ import { Outlet, createRootRouteWithContext, redirect } from "@tanstack/solid-ro
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal } from "solid-js";
-import type { trpc } from "~/main";
 
 interface RouterContext {
   queryClient: QueryClient;
-  trpc: typeof trpc;
 }
 
 const [initialized, setInitialized] = createSignal(false);

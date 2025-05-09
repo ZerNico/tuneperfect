@@ -2,7 +2,7 @@ import { Key } from "@solid-primitives/keyed";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import Avatar from "~/components/ui/avatar";
-import { lobbyQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 
 export const Route = createFileRoute("/_auth/_lobby/")({
   component: LobbyComponent,
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_auth/_lobby/")({
 });
 
 function LobbyComponent() {
-  const lobbyQuery = createQuery(() => lobbyQueryOptions());
+  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
 
   return (
     <div class="flex flex-grow flex-col items-center justify-center gap-2">

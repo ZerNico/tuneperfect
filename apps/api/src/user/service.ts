@@ -1,8 +1,10 @@
+import { env } from "bun";
 import { eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { authService } from "../auth/service";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
-import type { User } from "../types";
+import type { User, UserWithPassword } from "../types";
 
 export class UserService {
   async getUserByEmail(email: string) {
@@ -10,10 +12,35 @@ export class UserService {
       where: {
         RAW: (table) => sql`lower(${table.email}) = ${email.toLowerCase()}`,
       },
+      columns: {
+        password: false,
+      },
     });
   }
 
-  async getByOAuthAccount(provider: string, providerAccountId: string) {
+  async getUserById(id: string) {
+    return await db.query.users.findFirst({
+      where: {
+        id,
+      },
+      columns: {
+        password: false,
+      },
+    });
+  }
+
+  async getUserByUsername(username: string) {
+    return await db.query.users.findFirst({
+      where: {
+        RAW: (table) => sql`lower(${table.username}) = ${username.toLowerCase()}`,
+      },
+      columns: {
+        password: false,
+      },
+    });
+  }
+
+  async getUserByOAuthAccount(provider: string, providerAccountId: string) {
     return await db.query.users.findFirst({
       where: {
         oauthAccounts: {
@@ -32,10 +59,23 @@ export class UserService {
     return user;
   }
 
-  async updateUser(id: string, data: Partial<User>) {
+  async updateUser(id: string, data: Partial<UserWithPassword>) {
     const [user] = await db.update(schema.users).set(data).where(eq(schema.users.id, id)).returning();
 
     return user;
+  }
+
+  async storeUserImage(id: string, image: File) {
+    const resizedImage = await sharp(await image.arrayBuffer())
+      .resize({ width: 256, height: 256, fit: "cover", position: "center" })
+      .webp({
+        quality: 80,
+        lossless: false,
+        effort: 4,
+      })
+      .toBuffer();
+
+    await Bun.write(`${env.UPLOADS_PATH}/users/${id}.webp`, resizedImage);
   }
 }
 

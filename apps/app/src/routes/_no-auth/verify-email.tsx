@@ -28,7 +28,7 @@ function VerifyEmailComponent() {
       const absoluteRedirect = search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
 
       const [error, _data] = await safe(
-        client.auth.resendVerificationEmail({
+        client.auth.resendVerificationEmail.call({
           email: value.email,
           redirect: absoluteRedirect,
         })

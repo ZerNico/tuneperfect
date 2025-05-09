@@ -6,7 +6,7 @@ import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
-import { lobbyQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 
 export const Route = createFileRoute("/lobby/")({
   component: LobbyComponent,
@@ -16,7 +16,7 @@ function LobbyComponent() {
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/home" });
 
-  const lobbyQuery = createQuery(() => lobbyQueryOptions());
+  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
 
   const menuItems: Accessor<MenuItem[]> = () => {
     return (

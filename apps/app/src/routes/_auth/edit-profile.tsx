@@ -1,3 +1,4 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
 import { createQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
@@ -7,9 +8,10 @@ import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
+import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import { isTRPCClientError, trpc } from "~/lib/trpc";
 import IconPencilLine from "~icons/lucide/pencil-line";
 
 export const Route = createFileRoute("/_auth/edit-profile")({
@@ -20,47 +22,41 @@ function EditProfileComponent() {
   const queryClient = useQueryClient();
   const [fileInputElement, setFileInputElement] = createSignal<HTMLInputElement | null>(null);
   const [file, setFile] = createSignal<File | null>(null);
-  //const sessionQuery = createQuery(() => sessionQueryOptions());
+  const sessionQuery = createQuery(() => sessionQueryOptions());
 
   const form = createForm(() => ({
     defaultValues: {
-      username: "",
+      username: sessionQuery.data?.username ?? "",
     },
     onSubmit: async ({ value }) => {
-      try {
-        const f = file();
-        if (f) {
-          const formData = new FormData();
-          formData.append("image", f);
-
-          await trpc.user.updateImage.mutate(formData);
-        }
-        await trpc.user.update.mutate({
+      const [error, _data, isDefined] = await safe(
+        client.user.updateMe.call({
           username: value.username,
-        });
+          imageFile: file() ?? undefined,
+        })
+      );
 
-        //await queryClient.invalidateQueries(sessionQueryOptions());
-        notify({
-          message: t("edit_profile.success"),
-          intent: "success",
-        });
-        setFile(null);
-      } catch (error) {
-        if (isTRPCClientError(error)) {
-          if (error.data?.code === "BAD_REQUEST" && error.data?.valibotError) {
-            const errorMessage = error.data.valibotError.root?.[0] ?? t("error.unknown");
-            notify({
-              message: errorMessage,
-              intent: "error",
-            });
-            return;
-          }
+      if (error) {
+        if (isDefined && error.code === "USERNAME_ALREADY_TAKEN") {
+          notify({
+            message: t("edit_profile.username_already_taken"),
+            intent: "error",
+          });
+          return;
         }
+
         notify({
           message: t("error.unknown"),
           intent: "error",
         });
       }
+
+      await queryClient.invalidateQueries(sessionQueryOptions());
+      notify({
+        message: t("edit_profile.success"),
+        intent: "success",
+      });
+      setFile(null);
     },
     validators: {
       onChange: v.object({
@@ -92,7 +88,11 @@ function EditProfileComponent() {
       <Card class="flex w-100 max-w-full flex-col gap-4">
         <h1 class="font-semibold text-xl">{t("edit_profile.title")}</h1>
         <div class="flex justify-center">
-          <button class="relative transition-opacity hover:opacity-75" type="button" onClick={() => fileInputElement()?.click()}>
+          <button
+            class="relative cursor-pointer transition-opacity hover:opacity-75"
+            type="button"
+            onClick={() => fileInputElement()?.click()}
+          >
             <input
               ref={setFileInputElement}
               type="file"
@@ -100,7 +100,10 @@ function EditProfileComponent() {
               onChange={handleFileChange}
               class="hidden"
             />
-            <Show when={file()} fallback={<Avatar class="h-30 w-30" user={form.state.values} />}>
+            <Show
+              when={file()}
+              fallback={<Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>}
+            >
               <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full" />
             </Show>
             <div class="absolute right-1 bottom-1 rounded-full bg-slate-800 p-1.5 text-white text-xs">
@@ -142,7 +145,7 @@ function EditProfileComponent() {
                 </Button>
               )}
             </form.Subscribe>
-            <Button to="/edit-profile/password" type="button">
+            <Button to="/change-password" type="button">
               {t("edit_profile.change_password")}
             </Button>
           </div>

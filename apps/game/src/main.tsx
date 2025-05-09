@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { RouterProvider, createRouter } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
-import { trpc } from "./lib/trpc";
 import { routeTree } from "./routeTree.gen";
 
 import "./styles.css";
@@ -20,7 +19,6 @@ export const queryClient = new QueryClient({
 const router = createRouter({
   routeTree,
   context: {
-    trpc,
     queryClient,
   },
   scrollRestoration: true,

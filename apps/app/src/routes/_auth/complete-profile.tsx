@@ -1,3 +1,4 @@
+import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
@@ -5,7 +6,9 @@ import * as v from "valibot";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
+import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_auth/complete-profile")({
@@ -25,20 +28,21 @@ function RouteComponent() {
       username: "",
     },
     onSubmit: async ({ value }) => {
-    /*  const { error } = await authClient.updateUser({
-        username: value.username,
-      });
-
-      queryClient.invalidateQueries(sessionQueryOptions());
+      const [error, _data, isDefined] = await safe(
+        client.user.updateMe.call({
+          username: value.username,
+        })
+      );
 
       if (error) {
-        if (error.code === "USERNAME_IS_ALREADY_TAKEN") {
+        if (isDefined && error.code === "USERNAME_ALREADY_TAKEN") {
           notify({
             message: t("complete_profile.username_already_taken"),
             intent: "error",
           });
           return;
         }
+
         notify({
           message: t("error.unknown"),
           intent: "error",
@@ -46,8 +50,8 @@ function RouteComponent() {
         return;
       }
 
+      await queryClient.invalidateQueries(sessionQueryOptions());
       navigate({ to: search().redirect ?? "/" });
-      */
     },
     validators: {
       onChange: v.object({

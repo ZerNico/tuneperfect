@@ -34,7 +34,7 @@ export default function Progress() {
 
   return (
     <div class="flex h-full w-full items-center justify-center p-20">
-      <div class="h-1.5 w-full bg-white/20">
+      <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
         <div
           class="h-full rounded-full transition-colors duration-500"
           style={{ width: `${progress() * 100}%`, "background-color": progressColor() }}

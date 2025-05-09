@@ -3,9 +3,8 @@ import * as v from "valibot";
 import { base } from "../base";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
-import type { RateLimitMetadata } from "../lib/orpc/rate-limit";
 import { userService } from "../user/service";
-import { defaultCookieOptions, setTokenCookie } from "../utils/cookie";
+import { defaultCookieOptions } from "../utils/cookie";
 import { executeWithConstantTime } from "../utils/security";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
@@ -72,15 +71,9 @@ export const authRouter = os.prefix("/auth").router({
     .input(v.object({ email: v.string(), password: v.string() }))
     .handler(async ({ input, errors, context }) => {
       await executeWithConstantTime(async () => {
-        const user = await userService.getUserByEmail(input.email);
+        const user = await authService.comparePasswords(input.password, input.email);
 
-        if (!user || !user.password) {
-          throw errors.INVALID_CREDENTIALS();
-        }
-
-        const isPasswordValid = await authService.comparePasswords(input.password, user.password);
-
-        if (!isPasswordValid) {
+        if (!user) {
           throw errors.INVALID_CREDENTIALS();
         }
 
@@ -94,11 +87,11 @@ export const authRouter = os.prefix("/auth").router({
           context.headers?.get("user-agent") || "unknown",
         );
 
-        context.setCookie?.("access", accessToken.token, {
+        context.setCookie?.("access_token", accessToken.token, {
           ...defaultCookieOptions,
           maxAge: accessToken.expires.getTime() - Date.now(),
         });
-        context.setCookie?.("refresh", refreshToken.token, {
+        context.setCookie?.("refresh_token", refreshToken.token, {
           ...defaultCookieOptions,
           maxAge: refreshToken.expires.getTime() - Date.now(),
         });
@@ -229,4 +222,55 @@ export const authRouter = os.prefix("/auth").router({
     }),
 
   providers: oauthRouter,
+
+  refreshToken: base
+    .errors({
+      UNAUTHORIZED: {
+        status: 401,
+      },
+    })
+    .handler(async ({ context, errors }) => {
+      const refreshToken = context.cookies?.get("refresh_token");
+
+      if (!refreshToken) {
+        context.deleteCookie?.("access_token", { ...defaultCookieOptions });
+        context.deleteCookie?.("refresh_token", { ...defaultCookieOptions });
+        throw errors.UNAUTHORIZED();
+      }
+
+      const newRefreshToken = await authService.verifyAndRotateRefreshToken(refreshToken);
+
+      if (!newRefreshToken) {
+        context.deleteCookie?.("access_token", { ...defaultCookieOptions });
+        context.deleteCookie?.("refresh_token", { ...defaultCookieOptions });
+        throw errors.UNAUTHORIZED();
+      }
+
+      const accessToken = await authService.generateAccessToken(newRefreshToken.user);
+
+      context.setCookie?.("access_token", accessToken.token, {
+        ...defaultCookieOptions,
+        maxAge: accessToken.expires.getTime() - Date.now(),
+      });
+      context.setCookie?.("refresh_token", newRefreshToken.token, {
+        ...defaultCookieOptions,
+        maxAge: newRefreshToken.expires.getTime() - Date.now(),
+      });
+    }),
+
+  signOut: base
+    .route({
+      path: "/sign-out",
+      method: "POST",
+    })
+    .handler(async ({ context }) => {
+      const refreshToken = context.cookies?.get("refresh_token");
+
+      if (refreshToken) {
+        await authService.deleteRefreshToken(refreshToken);
+      }
+
+      context.deleteCookie?.("access_token", { ...defaultCookieOptions });
+      context.deleteCookie?.("refresh_token", { ...defaultCookieOptions });
+    }),
 });

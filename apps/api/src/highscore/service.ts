@@ -1,10 +1,10 @@
 import { and, eq, getTableColumns, sql } from "drizzle-orm";
-import { db } from "../../config/db";
-import * as schema from "../../config/db/schema";
-import { highscores } from "../../config/db/schema";
+import { db } from "../lib/db";
+import * as schema from "../lib/db/schema";
+import { highscores } from "../lib/db/schema";
 
-class HighscoresService {
-  async createOrUpdateHighscore(hash: string, userId: string, score: number) {
+export class HighscoreService {
+  async setHighscore(hash: string, userId: string, score: number) {
     const [highscore] = await db
       .insert(schema.highscores)
       .values({ hash, userId, score })
@@ -18,7 +18,7 @@ class HighscoresService {
     return highscore;
   }
 
-  async getHighscores(lobbyId: string, hash: string) {
+  async getHighscoresForLobby(lobbyId: string, hash: string) {
     const scores = await db
       .select({
         ...getTableColumns(schema.highscores),
@@ -33,4 +33,4 @@ class HighscoresService {
   }
 }
 
-export const highscoresService = new HighscoresService();
+export const highscoreService = new HighscoreService();

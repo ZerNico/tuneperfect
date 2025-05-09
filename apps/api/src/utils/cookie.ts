@@ -9,19 +9,6 @@ export const defaultCookieOptions = {
   domain: env.COOKIE_DOMAIN,
 } as const;
 
-export function setTokenCookie(type: "access" | "refresh", token: string, expires: Date, resHeaders: Headers) {
-  const cookie = new Bun.Cookie(type, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    expires,
-    domain: env.COOKIE_DOMAIN,
-  });
-
-  resHeaders.append("set-cookie", cookie.toString());
-}
-
 export function createCookie(name: string, value: string, options: Bun.CookieInit) {
   return new Bun.Cookie(name, value, {
     httpOnly: true,

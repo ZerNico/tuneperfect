@@ -32,7 +32,7 @@ async function loadScript(): Promise<string | null> {
     return scriptHash;
   }
 
-  const [sha, error] = await tryCatch(redis.script("LOAD", REDIS_SCRIPT) as Promise<string>);
+  const [error, sha] = await tryCatch(redis.script("LOAD", REDIS_SCRIPT) as Promise<string>);
 
   if (error) {
     logger.error(error, "Failed to load rate limit Redis script");
@@ -57,7 +57,7 @@ async function executeRateLimit(key: string, limit: number, windowMs: number): P
 
   // Try EVALSHA first if we have the script hash
   if (sha) {
-    const [result, error] = await tryCatch<RateLimitResult, Error>(
+    const [error, result] = await tryCatch<RateLimitResult, Error>(
       redis.evalsha(sha, ...scriptArgs) as Promise<RateLimitResult>,
     );
 
@@ -74,7 +74,7 @@ async function executeRateLimit(key: string, limit: number, windowMs: number): P
   }
 
   // Fallback to EVAL
-  const [result, error] = await tryCatch<RateLimitResult, Error>(
+  const [error, result] = await tryCatch<RateLimitResult, Error>(
     redis.eval(REDIS_SCRIPT, ...scriptArgs) as Promise<RateLimitResult>,
   );
 
@@ -126,12 +126,12 @@ export const rateLimit = init
 
     if (current > limit) {
       context.resHeaders?.set("Retry-After", retryAfter.toString());
-      throw errors.RATE_LIMIT_EXCEEDED({
+      /*throw errors.RATE_LIMIT_EXCEEDED({
         message: "Rate limit exceeded",
         data: {
           retryAfter,
         },
-      });
+      });*/
     }
 
     return next();

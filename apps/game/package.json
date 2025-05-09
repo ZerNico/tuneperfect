@@ -33,8 +33,6 @@
     "@tauri-apps/plugin-opener": "^2.2.6",
     "@tauri-apps/plugin-shell": "^2.2.0",
     "@tauri-apps/plugin-window-state": "^2.2.1",
-    "@trpc/client": "^11.0.1",
-    "@trpc/server": "^11.0.1",
     "@tuneperfect/api": "*",
     "clsx": "^2.1.1",
     "cva": "^1.0.0-beta.3",

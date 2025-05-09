@@ -1,15 +1,13 @@
 import { createMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { Match, Switch, onMount } from "solid-js";
-import { trpc } from "~/lib/trpc";
-import { lobbyStore } from "~/stores/lobby";
-
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
-import { lobbyQueryOptions } from "~/lib/queries";
+import { client } from "~/lib/orpc";
 import { queryClient } from "~/main";
+import { lobbyStore } from "~/stores/lobby";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/")({
@@ -19,30 +17,28 @@ export const Route = createFileRoute("/")({
 function IndexComponent() {
   const navigate = useNavigate();
 
-  const createLobbyMutation = createMutation(() => ({
-    mutationFn: async () => {
-      const lobby = await trpc.lobby.create.mutate();
-      return lobby;
-    },
-    onSuccess: (data) => {
-      lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobby.id } });
-      goToLoading();
-    },
-  }));
+  const createLobbyMutation = createMutation(() =>
+    client.lobby.createLobby.mutationOptions({
+      onSuccess: (data) => {
+        lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId } });
+        goToLoading();
+      },
+    })
+  );
 
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
 
   onMount(async () => {
     if (lobbyStore.lobby()) {
       try {
-        await queryClient.fetchQuery(lobbyQueryOptions());
+        await queryClient.fetchQuery(client.lobby.currentLobby.queryOptions());
         goToLoading();
       } catch (error) {
         lobbyStore.clearLobby();
-        createLobbyMutation.mutate();
+        createLobbyMutation.mutate({});
       }
     } else {
-      createLobbyMutation.mutate();
+      createLobbyMutation.mutate({});
     }
   });
 
@@ -50,7 +46,7 @@ function IndexComponent() {
     {
       type: "button",
       label: "Retry",
-      action: () => createLobbyMutation.mutate(),
+      action: () => createLobbyMutation.mutate({}),
     },
     {
       type: "button",

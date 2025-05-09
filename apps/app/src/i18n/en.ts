@@ -83,13 +83,24 @@ const en = {
     change_password: "Change Password",
     success: "Profile updated successfully",
   },
+  change_password: {
+    title: "Change Password",
+    current_password: "Current Password",
+    current_password_required: "Current password is required",
+    new_password: "New Password",
+    confirm_password: "Confirm Password",
+    password_min_length: "Password must be at least 8 characters",
+    passwords_dont_match: "Passwords do not match",
+    save: "Save Changes",
+    success: "Password changed successfully",
+  },
   join: {
     title: "Join Lobby",
     description: "Enter the code of the lobby you want to join",
     lobby_not_found: "Lobby not found",
     lobby_code: "Code",
-    code_min_length: "Lobby code must be 6 characters",
-    code_max_length: "Lobby code must be 6 characters",
+    code_min_length: "Lobby code must be 8 characters",
+    code_max_length: "Lobby code must be 8 characters",
     lobby_joined: "Successfully joined lobby",
     join: "Join",
   },
@@ -110,6 +121,8 @@ const en = {
   },
   nav: {
     profile: "Profile",
+    lobby: "Lobby",
+    join: "Join",
   },
 };
 

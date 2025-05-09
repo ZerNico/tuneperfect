@@ -24,7 +24,7 @@ function ForgotPasswordComponent() {
     },
     onSubmit: async ({ value }) => {
       const [error, _data] = await safe(
-        client.auth.requestPasswordReset({
+        client.auth.requestPasswordReset.call({
           email: value.email,
         })
       );

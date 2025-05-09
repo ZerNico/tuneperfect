@@ -34,7 +34,7 @@ function SignUpComponent() {
     },
     onSubmit: async ({ value }) => {
       const [error, _data, isDefined] = await safe(
-        client.auth.signUp({
+        client.auth.signUp.call({
           email: value.email,
           password: value.password,
           redirect: absoluteRedirect(),

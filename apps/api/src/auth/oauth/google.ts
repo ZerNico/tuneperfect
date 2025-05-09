@@ -19,7 +19,7 @@ class GoogleOAuthClient {
   public async getAuthorizationURL() {
     const state = arctic.generateState();
     const codeVerifier = arctic.generateCodeVerifier();
-    const [url, error] = await tryCatch(
+    const [error, url] = await tryCatch(() =>
       this.client.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"]),
     );
     if (error) {
@@ -66,7 +66,7 @@ class GoogleOAuthClient {
     if (!mergedUser.image) {
       mergedUser.image = profile.picture;
     }
-    
+
     await db.transaction(async (tx) => {
       if (!user.image) {
         await tx
@@ -87,7 +87,7 @@ class GoogleOAuthClient {
   }
 
   public async createUser(profile: GoogleProfile) {
-    const [user, error] = await tryCatch(
+    const [error, user] = await tryCatch(
       db.transaction(async (tx) => {
         const [user] = await tx
           .insert(schema.users)
@@ -120,7 +120,7 @@ class GoogleOAuthClient {
       return null;
     }
 
-    const user = await userService.getByOAuthAccount("google", profile.sub);
+    const user = await userService.getUserByOAuthAccount("google", profile.sub);
     if (!user) {
       return await this.createOrMergeUser(profile);
     }

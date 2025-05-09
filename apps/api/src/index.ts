@@ -6,24 +6,30 @@ import { CORSPlugin, ResponseHeadersPlugin, StrictGetMethodPlugin } from "@orpc/
 import { experimental_ValibotToJsonSchemaConverter } from "@orpc/valibot";
 import { authRouter } from "./auth/router";
 import { env } from "./config/env";
+import { highscoreRouter } from "./highscore/router";
 import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
+import { lobbyRouter } from "./lobby/router";
+import { userRouter } from "./user/router";
 
 const router = {
   auth: authRouter,
+  user: userRouter,
+  lobby: lobbyRouter,
+  highscore: highscoreRouter,
 };
 
 const plugins = [
   new CORSPlugin({
-    origin: [env.APP_URL],
+    origin: ["http://localhost:1420", env.APP_URL],
     credentials: true,
     allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["Content-Type", "Authorization"],
   }),
   new ResponseHeadersPlugin(),
   new CsrfProtectionPlugin({
-    allowedOrigin: env.APP_URL,
+    allowedOrigin: [env.APP_URL, "http://localhost:1420"],
   }),
   new StrictGetMethodPlugin(),
   new CookiesPlugin(),

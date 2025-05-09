@@ -18,6 +18,7 @@ const ConfigSchema = v.object({
     v.string(),
     v.transform((value) => Number.parseInt(value)),
   ),
+  UPLOADS_PATH: v.string(),
 });
 
 export const env = v.parse(ConfigSchema, process.env);

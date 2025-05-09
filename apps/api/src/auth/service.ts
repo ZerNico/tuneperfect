@@ -1,9 +1,10 @@
 import crypto from "node:crypto";
 import { renderResetPassword, renderVerifyEmail } from "@tuneperfect/email";
-import { addDays, addHours, addMinutes, differenceInSeconds, isBefore } from "date-fns";
-import { eq } from "drizzle-orm";
+import { addDays, addHours, addMinutes, addYears, differenceInSeconds, isAfter, isBefore } from "date-fns";
+import { eq, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { joinURL, withQuery } from "ufo";
+import * as v from "valibot";
 import { env } from "../config/env";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
@@ -11,6 +12,8 @@ import { sendEmail } from "../lib/email";
 import { logger } from "../lib/logger";
 import type { User } from "../types";
 import { isValidRedirectUrl } from "../utils/security";
+import { tryCatch } from "../utils/try-catch";
+import { AccessTokenSchema } from "./models";
 
 class AuthService {
   async createAndStoreVerificationToken(userId: string, type: "email_verification" | "password_reset") {
@@ -84,8 +87,26 @@ class AuthService {
     return token;
   }
 
-  async comparePasswords(password: string, hashedPassword: string) {
-    return await Bun.password.verify(password, hashedPassword);
+  async comparePasswords(password: string, email: string) {
+    const user = await db.query.users.findFirst({
+      where: {
+        RAW: (table) => sql`lower(${table.email}) = ${email.toLowerCase()}`,
+      },
+    });
+
+    if (!user || !user.password) {
+      return null;
+    }
+
+    const isPasswordValid = await Bun.password.verify(password, user.password);
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
   }
 
   async hashPassword(password: string) {
@@ -95,12 +116,18 @@ class AuthService {
   async generateAccessToken(user: User) {
     const expires = addMinutes(new Date(), 5);
 
-    const token = jwt.sign({}, env.JWT_SECRET, {
-      expiresIn: differenceInSeconds(expires, new Date()),
-      subject: user.id,
-      issuer: env.API_URL,
-      audience: env.API_URL,
-    });
+    const token = jwt.sign(
+      {
+        type: "access",
+      },
+      env.JWT_SECRET,
+      {
+        expiresIn: differenceInSeconds(expires, new Date()),
+        subject: user.id,
+        issuer: env.API_URL,
+        audience: env.API_URL,
+      },
+    );
 
     return { token, expires };
   }
@@ -117,6 +144,63 @@ class AuthService {
     });
 
     return { token, expires };
+  }
+
+  async verifyAndRotateRefreshToken(refreshToken: string) {
+    const token = await db.query.refreshTokens.findFirst({
+      where: {
+        token: refreshToken,
+      },
+      with: {
+        user: true,
+      },
+    });
+
+    if (!token || !token.user) {
+      return null;
+    }
+
+    if (isBefore(token.expires, new Date())) {
+      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, refreshToken));
+
+      return null;
+    }
+
+    if (isAfter(new Date(), addYears(token.createdAt, 1))) {
+      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, refreshToken));
+
+      return null;
+    }
+
+    const newExpires = addDays(token.expires, 7);
+    const newToken = crypto.randomBytes(32).toString("hex");
+
+    await db
+      .update(schema.refreshTokens)
+      .set({ expires: newExpires, token: newToken })
+      .where(eq(schema.refreshTokens.token, refreshToken));
+
+    return { token: newToken, expires: newExpires, user: token.user };
+  }
+
+  async deleteRefreshToken(refreshToken: string) {
+    await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, refreshToken));
+  }
+
+  async verifyAccessToken(accessToken: string) {
+    const [error, decoded] = await tryCatch(() => jwt.verify(accessToken, env.JWT_SECRET));
+
+    if (error) {
+      return null;
+    }
+
+    const result = v.safeParse(AccessTokenSchema, decoded);
+
+    if (!result.success) {
+      return null;
+    }
+
+    return result.output;
   }
 }
 
