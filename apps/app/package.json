@@ -14,6 +14,8 @@
     "@kobalte/core": "^0.13.9",
     "@orpc/client": "^1.2.0",
     "@orpc/solid-query": "^1.2.0",
+    "@solid-primitives/event-dispatcher": "^0.1.1",
+    "@solid-primitives/event-listener": "^2.4.1",
     "@solid-primitives/i18n": "^2.2.1",
     "@solid-primitives/storage": "^4.3.2",
     "@tailwindcss/vite": "^4.1.5",

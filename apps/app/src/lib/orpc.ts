@@ -1,10 +1,10 @@
 import { ORPCError, createORPCClient } from "@orpc/client";
+import { safe } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { ClientRetryPlugin } from "@orpc/client/plugins";
 import { createORPCSolidQueryUtils } from "@orpc/solid-query";
 import type { Client } from "@tuneperfect/api";
 import { joinURL } from "ufo";
-import { tryCatch } from "../../../api/src/utils/try-catch";
 
 const ORPC_URL = joinURL(import.meta.env.VITE_API_URL ?? "", "/rpc");
 
@@ -30,7 +30,13 @@ const link = new RPCLink({
 
           if (error instanceof ORPCError) {
             if (error.status === 401) {
-              await tryCatch(client.auth.refreshToken.call());
+              const [refreshError, result, isDefined] = await safe(client.auth.refreshToken.call());
+
+              if (refreshError) {
+                window.dispatchEvent(new CustomEvent("session:expired"));
+
+                return false;
+              }
 
               return true;
             }

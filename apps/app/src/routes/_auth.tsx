@@ -1,4 +1,7 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/solid-router";
+import { createEventListener } from "@solid-primitives/event-listener";
+import { createQuery } from "@tanstack/solid-query";
+import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/solid-router";
+import { createEffect } from "solid-js";
 import * as v from "valibot";
 import { sessionQueryOptions } from "~/lib/auth";
 import { tryCatch } from "~/lib/utils/try-catch";
@@ -26,5 +29,11 @@ export const Route = createFileRoute("/_auth")({
 });
 
 function AuthLayout() {
+  const navigate = useNavigate();
+
+  createEventListener(window, "session:expired", () => {
+    navigate({ to: "/sign-in", search: { redirect: location.pathname } });
+  });
+
   return <Outlet />;
 }
