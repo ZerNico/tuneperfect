@@ -7,6 +7,7 @@ import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { useNavigation } from "~/hooks/navigation";
+import { keyMode } from "~/hooks/navigation";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
@@ -17,6 +18,10 @@ import IconF3Key from "~icons/sing/f3-key";
 import IconF4Key from "~icons/sing/f4-key";
 import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
+import IconGamepadLB from "~icons/sing/gamepad-lb";
+import IconGamepadRB from "~icons/sing/gamepad-rb";
+import IconGamepadStart from "~icons/sing/gamepad-start";
+import IconGamepadY from "~icons/sing/gamepad-y";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
 
@@ -99,13 +104,17 @@ function SingComponent() {
           <KeyHints hints={["back", "navigate", "confirm"]} />
           <div class="flex items-center gap-12">
             <div class="flex items-center gap-2">
-              <IconF4Key class="text-sm" />
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadY class="text-sm" />}>
+                <IconF4Key class="text-sm" />
+              </Show>
               <button type="button" class="text-2xl transition-all hover:opacity-75 active:scale-95" onClick={selectRandomSong}>
                 <IconDices />
               </button>
             </div>
             <div class="flex items-center gap-2">
-              <IconF5Key class="text-sm" />
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
+                <IconF5Key class="text-sm" />
+              </Show>
               <button
                 type="button"
                 class="flex items-center gap-2 transition-all hover:opacity-75 active:scale-95"
@@ -133,7 +142,9 @@ function SingComponent() {
               <button type="button" class="transition-all hover:opacity-75 active:scale-95" onClick={() => moveSorting("right")}>
                 <IconTriangleRight />
               </button>
-              <IconF6Key class="text-sm" />
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
+                <IconF6Key class="text-sm" />
+              </Show>
             </div>
           </div>
         </div>
@@ -601,7 +612,12 @@ function SearchBar(props: SearchBarProps) {
         placeholder="Search"
         class="bg-transparent text-white focus:outline-none"
       />
-      <IconF3Key class="transition-opacity" classList={{ "opacity-0": focused() }} />
+      <Show
+        when={keyMode() === "keyboard"}
+        fallback={<IconGamepadStart class="transition-opacity" classList={{ "opacity-0": focused() }} />}
+      >
+        <IconF3Key class="transition-opacity" classList={{ "opacity-0": focused() }} />
+      </Show>
     </div>
   );
 }

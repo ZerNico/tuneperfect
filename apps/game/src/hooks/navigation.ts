@@ -2,8 +2,10 @@ import { createEventListener } from "@solid-primitives/event-listener";
 import { ReactiveMap } from "@solid-primitives/map";
 import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import mitt from "mitt";
-import { createEffect, createMemo, on, onCleanup } from "solid-js";
+import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
 import { type GamepadButton, createGamepad } from "./gamepad";
+
+export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");
 
 interface UseNavigationOptions {
   layer?: number;
@@ -76,6 +78,7 @@ createEventListener(window, "keydown", (event) => {
 
   const action = KEY_MAPPINGS.get(event.key);
   if (action) {
+    setKeyMode("keyboard");
     event.preventDefault();
     emitter.emit("keydown", {
       origin: "keyboard",
@@ -131,6 +134,7 @@ createEventListener(window, "keyup", (event) => {
 
 createGamepad({
   onButtonDown: (event) => {
+    setKeyMode("gamepad");
     const action = GAMEPAD_MAPPINGS.get(event.button);
     if (action) {
       emitter.emit("keydown", {

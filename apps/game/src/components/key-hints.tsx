@@ -1,8 +1,12 @@
-import { For, type JSX, Match, Switch } from "solid-js";
+import { For, type JSX } from "solid-js";
+import { keyMode } from "~/hooks/navigation";
 
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconEnterKey from "~icons/sing/enter-key";
 import IconEscKey from "~icons/sing/esc-key";
+import IconGamepadA from "~icons/sing/gamepad-a";
+import IconGamepadB from "~icons/sing/gamepad-b";
+import IconGamepadDPad from "~icons/sing/gamepad-dpad";
 import IconLeftArrowKey from "~icons/sing/left-arrow-key";
 import IconRightArrowKey from "~icons/sing/right-arrow-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
@@ -14,34 +18,35 @@ interface KeyHintsProps {
 }
 
 export default function KeyHints(props: KeyHintsProps) {
+  const getIcon = (type: HintType) => {
+    const isGamepad = keyMode() === "gamepad";
+    
+    switch (type) {
+      case "back":
+        return isGamepad ? <IconGamepadB /> : <IconEscKey />;
+      case "confirm":
+        return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
+      case "navigate":
+        return isGamepad ? <IconGamepadDPad /> : (
+          <div class="flex flex-col items-center gap-0.5 text-xs">
+            <IconUpArrowKey />
+            <div class="flex gap-0.5">
+              <IconLeftArrowKey />
+              <IconDownArrowKey />
+              <IconRightArrowKey />
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
     <div class="flex items-center gap-8 text-base">
       <For each={props.hints}>
-        {(hint) => (
-          <Switch>
-            <Match when={hint === "back"}>
-              <KeyHint label="Back" icon={<IconEscKey />} />
-            </Match>
-            <Match when={hint === "confirm"}>
-              <KeyHint label="Confirm" icon={<IconEnterKey />} />
-            </Match>
-            <Match when={hint === "navigate"}>
-              <KeyHint
-                label="Navigate"
-                icon={
-                  <div class="flex flex-col items-center gap-0.5 text-xs">
-                    <IconUpArrowKey />
-                    <div class="flex gap-0.5">
-                      <IconLeftArrowKey />
-                      <IconDownArrowKey />
-                      <IconRightArrowKey />
-                    </div>
-                  </div>
-                }
-              />
-            </Match>
-          </Switch>
-        )}
+        {(hint) => {
+          const label = hint.charAt(0).toUpperCase() + hint.slice(1);
+          return <KeyHint label={label} icon={getIcon(hint)} />;
+        }}
       </For>
     </div>
   );
