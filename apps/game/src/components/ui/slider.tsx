@@ -27,8 +27,8 @@ export default function Slider(props: SliderProps) {
 
   const percentage = () => ((props.value - props.min) / (props.max - props.min)) * 100;
 
-  const changeValue = (direction: "right" | "left") => {
-    const newValue = Number((props.value + (direction === "right" ? props.step : -props.step)).toFixed(getDecimalPlaces(props.step)));
+  const changeValue = (direction: "right" | "left", amount: number = props.step) => {
+    const newValue = Number((props.value + (direction === "right" ? amount : -amount)).toFixed(getDecimalPlaces(props.step)));
     props.onInput?.(clamp(newValue, props.min, props.max));
   };
 
@@ -49,9 +49,9 @@ export default function Slider(props: SliderProps) {
     },
     onRepeat: (event) => {
       if (event.action === "left") {
-        changeValue("left");
+        changeValue("left", props.step * 5);
       } else if (event.action === "right") {
-        changeValue("right");
+        changeValue("right", props.step * 5);
       }
     },
   }));

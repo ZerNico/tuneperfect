@@ -1,7 +1,7 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { For, type Ref, Show, batch, createMemo, createSignal } from "solid-js";
+import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Transition } from "solid-transition-group";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -9,6 +9,7 @@ import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { useNavigation } from "~/hooks/navigation";
 import { keyMode } from "~/hooks/navigation";
+import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
@@ -49,6 +50,7 @@ function SingComponent() {
   let searchRef!: HTMLInputElement;
 
   const startGame = (song: LocalSong) => {
+    playSound("confirm");
     navigate({ to: "/sing/$hash", params: { hash: song.hash } });
   };
 
@@ -79,12 +81,16 @@ function SingComponent() {
         onBack();
       } else if (event.action === "search") {
         searchRef.focus();
+        playSound("select");
       } else if (event.action === "random") {
         selectRandomSong();
+        playSound("select");
       } else if (event.action === "sort-left") {
         moveSorting("left");
+        playSound("select");
       } else if (event.action === "sort-right") {
         moveSorting("right");
+        playSound("select");
       }
     },
     onKeyup(event) {
@@ -92,6 +98,7 @@ function SingComponent() {
         const song = currentSong();
         if (song) {
           startGame(song);
+          playSound("confirm");
         }
       }
     },
@@ -259,7 +266,7 @@ function SongScroller(props: SongScrollerProps) {
 
   const fuseInstance = createMemo(() => {
     return new Fuse(props.songs, {
-      keys: ['title', 'artist'],
+      keys: ["title", "artist"],
       threshold: 0.2,
       includeScore: true,
       ignoreLocation: true,
@@ -271,9 +278,9 @@ function SongScroller(props: SongScrollerProps) {
 
     if (props.searchQuery.trim()) {
       const query = props.searchQuery.toLowerCase().trim();
-      
+
       const searchResults = fuseInstance().search(query);
-      songs = searchResults.map(result => result.item);
+      songs = searchResults.map((result) => result.item);
     }
 
     if (songs.length === 0) {
@@ -347,8 +354,10 @@ function SongScroller(props: SongScrollerProps) {
     onKeydown(event) {
       if (event.action === "left") {
         animateTo("left");
+        playSound("select");
       } else if (event.action === "right") {
         animateTo("right");
+        playSound("select");
       } else if (event.action === "confirm") {
         setIsPressed(true);
       }
@@ -366,9 +375,11 @@ function SongScroller(props: SongScrollerProps) {
       if (event.action === "left") {
         setIsHeld(true);
         animateTo("left");
+        playSound("select");
       } else if (event.action === "right") {
         setIsHeld(true);
         animateTo("right");
+        playSound("select");
       }
     },
   }));
@@ -413,7 +424,7 @@ function SongScroller(props: SongScrollerProps) {
       if (isHeld()) {
         props.onIsFastScrolling?.(true);
         setIsFastScrolling(true);
-
+        playSound("select");
         setTimeout(() => animateTo(direction), 0);
       } else {
         props.onIsFastScrolling?.(false);

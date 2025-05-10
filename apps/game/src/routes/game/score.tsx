@@ -8,6 +8,7 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import { client } from "~/lib/orpc";
+import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { getMaxScore } from "~/lib/ultrastar/voice";
 import { getColorVar } from "~/lib/utils/color";
@@ -110,6 +111,7 @@ function ScoreComponent() {
   const handleContinue = () => {
     if (updateHighscoresMutation.isPending) return;
 
+    playSound("confirm");
     navigate({ to: "/sing" });
   };
 

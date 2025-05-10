@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, For, createMemo, createSignal } from "solid-js";
+import { type Component, For, createEffect, createMemo, createSignal, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
 import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
+import { playSound } from "~/lib/sound";
 import { settingsStore } from "~/stores/settings";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPlus from "~icons/lucide/plus";
@@ -63,6 +64,7 @@ function MicrophonesComponent() {
         increment();
       } else if (event.action === "confirm") {
         setPressed(true);
+        playSound("confirm");
       }
     },
     onKeyup(event) {
@@ -74,6 +76,8 @@ function MicrophonesComponent() {
     },
   }));
 
+  createEffect(on(position, () => playSound("select"), { defer: true }));
+
   return (
     <Layout
       intent="secondary"
@@ -84,7 +88,10 @@ function MicrophonesComponent() {
         <For each={buttons()}>
           {(button, index) => (
             <IconButton
-              onClick={() => button.action?.()}
+              onClick={() => {
+                button.action?.();
+                playSound("confirm");
+              }}
               onMouseEnter={() => set(index())}
               selected={position() === index()}
               active={pressed() && position() === index()}

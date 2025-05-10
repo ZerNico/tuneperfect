@@ -1,6 +1,6 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, For, Show, createSignal } from "solid-js";
+import { type Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -9,6 +9,7 @@ import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { createQRCode } from "~/hooks/qrcode";
 import { client } from "~/lib/orpc";
+import { playSound } from "~/lib/sound";
 import { lobbyStore } from "~/stores/lobby";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPartyPopper from "~icons/lucide/party-popper";
@@ -60,10 +61,13 @@ function HomeComponent() {
     onKeydown(event) {
       if (event.action === "left") {
         decrement();
+        playSound("select");
       } else if (event.action === "right") {
         increment();
+        playSound("select");
       } else if (event.action === "confirm") {
         setPressed(true);
+        playSound("confirm");
       }
     },
     onKeyup(event) {
@@ -80,11 +84,9 @@ function HomeComponent() {
     width: 1024,
   });
 
-  const lobbyQuery = createQuery(() =>
-    client.lobby.currentLobby.queryOptions({
-      refetchInterval: 1000 * 5,
-    })
-  );
+  const lobbyQuery = useQuery(() => client.lobby.currentLobby.queryOptions());
+
+  createEffect(on(position, () => playSound("select"), { defer: true }));
 
   return (
     <Layout

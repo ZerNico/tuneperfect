@@ -1,7 +1,8 @@
-import { For, type JSX, Match, Switch } from "solid-js";
+import { For, type JSX, Match, Switch, createEffect, on } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
+import { playSound } from "~/lib/sound";
 import Button from "./ui/button";
 import Select from "./ui/select";
 import Slider from "./ui/slider";
@@ -62,6 +63,7 @@ export default function Menu(props: MenuProps) {
     onKeydown(event) {
       if (event.action === "back") {
         props.onBack?.();
+        playSound("confirm");
       } else if (event.action === "up") {
         decrement();
       } else if (event.action === "down") {
@@ -69,6 +71,8 @@ export default function Menu(props: MenuProps) {
       }
     },
   }));
+
+  createEffect(on(position, () => playSound("select"), { defer: true }));
 
   return (
     <div class={twMerge("flex h-full w-full flex-grow flex-col justify-center", props.class)}>
@@ -81,7 +85,10 @@ export default function Menu(props: MenuProps) {
                   layer={props.layer}
                   gradient={props.gradient || "gradient-settings"}
                   selected={position() === index()}
-                  onClick={item().action}
+                  onClick={() => {
+                    item().action?.();
+                    playSound("confirm");
+                  }}
                   onMouseEnter={() => set(index())}
                 >
                   {item().label}
@@ -95,7 +102,10 @@ export default function Menu(props: MenuProps) {
                   gradient={props.gradient || "gradient-settings"}
                   label={item().label}
                   value={item().value()}
-                  onChange={item().onChange}
+                  onChange={(value) => {
+                    item().onChange(value);
+                    playSound("select");
+                  }}
                   options={item().options}
                   selected={position() === index()}
                   onMouseEnter={() => set(index())}
@@ -110,7 +120,10 @@ export default function Menu(props: MenuProps) {
                   gradient={props.gradient || "gradient-settings"}
                   label={item().label}
                   value={item().value()}
-                  onChange={item().onChange}
+                  onChange={(value) => {
+                    item().onChange(value);
+                    playSound("select");
+                  }}
                   options={item().options}
                   selected={position() === index()}
                   onMouseEnter={() => set(index())}
@@ -125,7 +138,10 @@ export default function Menu(props: MenuProps) {
                   gradient={props.gradient || "gradient-settings"}
                   label={item().label}
                   value={item().value()}
-                  onChange={item().onChange}
+                  onChange={(value) => {
+                    item().onChange(value);
+                    playSound("select");
+                  }}
                   options={item().options}
                   selected={position() === index()}
                   onMouseEnter={() => set(index())}
@@ -143,7 +159,9 @@ export default function Menu(props: MenuProps) {
                   min={item().min}
                   max={item().max}
                   step={item().step}
-                  onInput={item().onInput}
+                  onInput={(value) => {
+                    item().onInput(value);
+                  }}
                   selected={position() === index()}
                   onMouseEnter={() => set(index())}
                 />
