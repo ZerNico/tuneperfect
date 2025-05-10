@@ -18,7 +18,7 @@ export const oauthRouter = os.prefix("/providers").router({
     })
     .input(
       v.object({
-        provider: v.picklist(["google"]),
+        provider: v.picklist(["google", "discord"]),
         redirect: v.optional(v.string()),
       }),
     )
@@ -62,7 +62,7 @@ export const oauthRouter = os.prefix("/providers").router({
     })
     .input(
       v.object({
-        provider: v.picklist(["google"]),
+        provider: v.picklist(["google", "discord"]),
         code: v.string(),
         state: v.string(),
       }),

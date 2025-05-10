@@ -1,8 +1,10 @@
+import { discordOAuthClient } from "./discord";
 import { googleOAuthClient } from "./google";
 
 class OAuthService {
   private oauthClients = {
     google: googleOAuthClient,
+    discord: discordOAuthClient,
   };
 
   async createAuthorizationURL(provider: keyof typeof this.oauthClients) {
