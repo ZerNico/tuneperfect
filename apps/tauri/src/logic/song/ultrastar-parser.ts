@@ -137,6 +137,9 @@ const parseSongTxt = (txt: string) => {
         case 'mp3':
           fileNames.mp3 = value
           break
+        case 'audio':
+          fileNames.mp3 = value
+          break
         case 'cover':
           fileNames.cover = value
           break
