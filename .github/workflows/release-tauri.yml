@@ -2,7 +2,7 @@ name: 'publish'
 on:
   push:
     branches:
-      - main
+      - old
     paths:
       - 'apps/tauri/**'
       - '.github/workflows/release-tauri.yml'
