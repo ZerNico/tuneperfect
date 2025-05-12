@@ -22,7 +22,15 @@ const router = {
 
 const plugins = [
   new CORSPlugin({
-    origin: ["http://localhost:1420", env.APP_URL],
+    origin: (origin) => {
+      const allowedOrigins = [env.APP_URL, "http://localhost:1420"];
+
+      if (allowedOrigins.includes(origin)) {
+        return origin;
+      }
+
+      return allowedOrigins[0];
+    },
     credentials: true,
     allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["Content-Type", "Authorization"],
