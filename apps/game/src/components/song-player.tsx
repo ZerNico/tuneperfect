@@ -1,4 +1,5 @@
 import { Match, type Ref, Show, Switch, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
+import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { createRefContent } from "~/lib/utils/ref";
 
@@ -15,6 +16,7 @@ interface SongPlayerProps {
   class?: string;
   onCanPlayThrough?: () => void;
   onEnded?: () => void;
+  isPreview?: boolean;
 }
 
 export default function SongPlayer(props: SongPlayerProps) {
@@ -129,26 +131,43 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     const videoGap = props.song.videoGap ?? 0;
 
-    const videoCurrentTime = video.currentTime;
-    const audioCurrentTime = audio.currentTime;
+    if (props.isPreview) {
+      const firstNote = props.song.voices[0]?.phrases[0]?.notes[0];
+      const previewStart = props.song.previewStart ?? (firstNote ? beatToMs(props.song, firstNote.startBeat) / 1000 - 2 + videoGap : 0);
 
-    const gap = videoCurrentTime - audioCurrentTime - videoGap;
+      if (video.currentTime === 0) {
+        video.currentTime = previewStart;
+      }
+      if (audio.currentTime === 0) {
+        audio.currentTime = previewStart;
+      }
+    }
 
-    clearTimeout(syncTimeout);
+    const gap = video.currentTime - audio.currentTime - videoGap;
 
     if (gap > 0) {
-      audio.play();
-      syncTimeout = setTimeout(() => {
+      if (audio.currentTime + gap <= audio.duration) {
+        audio.currentTime += gap;
+        audio.play();
         video.play();
-      }, gap * 1000);
+      } else {
+        audio.play();
+        syncTimeout = setTimeout(() => {
+          video.play();
+        }, gap * 1000);
+      }
     } else if (gap < 0) {
-      video.play();
-      syncTimeout = setTimeout(
-        () => {
+      const absoluteGap = Math.abs(gap);
+      if (video.currentTime + absoluteGap <= video.duration) {
+        video.currentTime += absoluteGap;
+        audio.play();
+        video.play();
+      } else {
+        video.play();
+        syncTimeout = setTimeout(() => {
           audio.play();
-        },
-        gap * 1000 * -1
-      );
+        }, absoluteGap * 1000);
+      }
     } else {
       audio.play();
       video.play();

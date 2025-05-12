@@ -205,7 +205,7 @@ function SingComponent() {
             <Show when={!isFastScrolling() && currentSong()} keyed>
               {(currentSong) => (
                 <div class="h-full w-full">
-                  <SongPlayer volume={settingsStore.getVolume("preview")} class="h-full w-full opacity-60" playing song={currentSong} />
+                  <SongPlayer isPreview volume={settingsStore.getVolume("preview")} class="h-full w-full opacity-60" playing song={currentSong} />
                 </div>
               )}
             </Show>

@@ -103,6 +103,11 @@ export function parseUltrastarTxt(content: string) {
             partialSong.p2 = value;
             break;
           }
+          case "preview":
+          case "previewstart": {
+            partialSong.previewStart = parseUSFloat(value);
+            break;
+          }
         }
       } else if ([":", "*", "F", "R", "G"].includes(line.charAt(0))) {
         const [tag, startBeat, length, txtPitch, ...text] = line.slice(0, Math.max(0, line.length)).split(" ");
