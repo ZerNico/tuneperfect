@@ -93,12 +93,15 @@ export function parseUltrastarTxt(content: string) {
             partialSong.author = value;
             break;
           }
-          case "duetsingerp1": {
-            partialSong.duetSingerP1 = value;
+          case "duetsingerp1":
+          case "p1": {
+            partialSong.p1 = value;
             break;
           }
-          case "duetsingerp2": {
-            partialSong.duetSingerP2 = value;
+          case "duetsingerp2":
+          case "p2": {
+            partialSong.p2 = value;
+            break;
           }
         }
       } else if ([":", "*", "F", "R", "G"].includes(line.charAt(0))) {

@@ -18,8 +18,9 @@ interface Data {
   cover?: string;
   video?: string;
   background?: string;
-  duetSingerP1?: string;
-  duetSingerP2?: string;
+  p1?: string;
+  p2?: string;
+  previewStart?: number;
 }
 
 export interface Song extends Data {
