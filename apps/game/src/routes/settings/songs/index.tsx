@@ -7,6 +7,7 @@ import TitleBar from "~/components/title-bar";
 import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 import { songsStore } from "~/stores/songs";
 import IconFolder from "~icons/lucide/folder";
 import IconPlus from "~icons/lucide/plus";
@@ -69,7 +70,7 @@ function SongsComponent() {
           }),
       });
     }
-    buttons.push({ label: "Add", icon: IconPlus, action: pickFolder, loading: loading() });
+    buttons.push({ label: t("settings.add"), icon: IconPlus, action: pickFolder, loading: loading() });
 
     return buttons;
   });
@@ -101,7 +102,7 @@ function SongsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Settings" description="Songs" onBack={onBack} />}
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.songs.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <div class="flex w-full flex-grow items-center justify-center gap-4">

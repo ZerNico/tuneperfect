@@ -17,6 +17,10 @@ export interface VolumeSettings {
   menu: number;
 }
 
+export interface GeneralSettings {
+  language: string;
+}
+
 function createSettingsStore() {
   const [initialized, setInitialized] = createSignal(false);
   const [microphones, setMicrophones] = makePersisted(createSignal<Microphone[]>([]), {
@@ -31,6 +35,14 @@ function createSettingsStore() {
     }),
     {
       name: "settingsStore.volume",
+    }
+  );
+  const [general, setGeneral] = makePersisted(
+    createSignal<GeneralSettings>({
+      language: "en",
+    }),
+    {
+      name: "settingsStore.general",
     }
   );
 
@@ -58,6 +70,10 @@ function createSettingsStore() {
     return volume()[key] * volume().master;
   };
 
+  const saveGeneral = (settings: GeneralSettings) => {
+    setGeneral(settings);
+  };
+
   return {
     initialized,
     setInitialized,
@@ -67,6 +83,8 @@ function createSettingsStore() {
     volume,
     saveVolume,
     getVolume,
+    general,
+    saveGeneral,
   };
 }
 

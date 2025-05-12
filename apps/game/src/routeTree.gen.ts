@@ -25,6 +25,7 @@ import { Route as GameScoreImport } from './routes/game/score'
 import { Route as SettingsVolumeIndexImport } from './routes/settings/volume/index'
 import { Route as SettingsSongsIndexImport } from './routes/settings/songs/index'
 import { Route as SettingsMicrophonesIndexImport } from './routes/settings/microphones/index'
+import { Route as SettingsGeneralIndexImport } from './routes/settings/general/index'
 import { Route as SettingsSongsPathImport } from './routes/settings/songs/$path'
 import { Route as SettingsMicrophonesIdImport } from './routes/settings/microphones/$id'
 
@@ -111,6 +112,12 @@ const SettingsSongsIndexRoute = SettingsSongsIndexImport.update({
 const SettingsMicrophonesIndexRoute = SettingsMicrophonesIndexImport.update({
   id: '/settings/microphones/',
   path: '/settings/microphones/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsGeneralIndexRoute = SettingsGeneralIndexImport.update({
+  id: '/settings/general/',
+  path: '/settings/general/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -221,6 +228,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SettingsSongsPathImport
       parentRoute: typeof rootRoute
     }
+    '/settings/general/': {
+      id: '/settings/general/'
+      path: '/settings/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof SettingsGeneralIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/settings/microphones/': {
       id: '/settings/microphones/'
       path: '/settings/microphones'
@@ -261,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/sing': typeof SingIndexRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/settings/general': typeof SettingsGeneralIndexRoute
   '/settings/microphones': typeof SettingsMicrophonesIndexRoute
   '/settings/songs': typeof SettingsSongsIndexRoute
   '/settings/volume': typeof SettingsVolumeIndexRoute
@@ -280,6 +295,7 @@ export interface FileRoutesByTo {
   '/sing': typeof SingIndexRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/settings/general': typeof SettingsGeneralIndexRoute
   '/settings/microphones': typeof SettingsMicrophonesIndexRoute
   '/settings/songs': typeof SettingsSongsIndexRoute
   '/settings/volume': typeof SettingsVolumeIndexRoute
@@ -300,6 +316,7 @@ export interface FileRoutesById {
   '/sing/': typeof SingIndexRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/settings/general/': typeof SettingsGeneralIndexRoute
   '/settings/microphones/': typeof SettingsMicrophonesIndexRoute
   '/settings/songs/': typeof SettingsSongsIndexRoute
   '/settings/volume/': typeof SettingsVolumeIndexRoute
@@ -321,6 +338,7 @@ export interface FileRouteTypes {
     | '/sing'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/settings/general'
     | '/settings/microphones'
     | '/settings/songs'
     | '/settings/volume'
@@ -339,6 +357,7 @@ export interface FileRouteTypes {
     | '/sing'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/settings/general'
     | '/settings/microphones'
     | '/settings/songs'
     | '/settings/volume'
@@ -357,6 +376,7 @@ export interface FileRouteTypes {
     | '/sing/'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/settings/general/'
     | '/settings/microphones/'
     | '/settings/songs/'
     | '/settings/volume/'
@@ -377,6 +397,7 @@ export interface RootRouteChildren {
   SingIndexRoute: typeof SingIndexRoute
   SettingsMicrophonesIdRoute: typeof SettingsMicrophonesIdRoute
   SettingsSongsPathRoute: typeof SettingsSongsPathRoute
+  SettingsGeneralIndexRoute: typeof SettingsGeneralIndexRoute
   SettingsMicrophonesIndexRoute: typeof SettingsMicrophonesIndexRoute
   SettingsSongsIndexRoute: typeof SettingsSongsIndexRoute
   SettingsVolumeIndexRoute: typeof SettingsVolumeIndexRoute
@@ -396,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   SingIndexRoute: SingIndexRoute,
   SettingsMicrophonesIdRoute: SettingsMicrophonesIdRoute,
   SettingsSongsPathRoute: SettingsSongsPathRoute,
+  SettingsGeneralIndexRoute: SettingsGeneralIndexRoute,
   SettingsMicrophonesIndexRoute: SettingsMicrophonesIndexRoute,
   SettingsSongsIndexRoute: SettingsSongsIndexRoute,
   SettingsVolumeIndexRoute: SettingsVolumeIndexRoute,
@@ -424,6 +446,7 @@ export const routeTree = rootRoute
         "/sing/",
         "/settings/microphones/$id",
         "/settings/songs/$path",
+        "/settings/general/",
         "/settings/microphones/",
         "/settings/songs/",
         "/settings/volume/"
@@ -467,6 +490,9 @@ export const routeTree = rootRoute
     },
     "/settings/songs/$path": {
       "filePath": "settings/songs/$path.tsx"
+    },
+    "/settings/general/": {
+      "filePath": "settings/general/index.tsx"
     },
     "/settings/microphones/": {
       "filePath": "settings/microphones/index.tsx"

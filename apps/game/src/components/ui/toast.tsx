@@ -1,7 +1,6 @@
 import { Toast as KToast } from "@kobalte/core/toast";
 import { createMemo } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
-import { t } from "~/lib/i18n";
 import CircleAlert from "~icons/lucide/circle-alert";
 import CircleCheck from "~icons/lucide/circle-check";
 import CircleX from "~icons/lucide/circle-x";
@@ -31,7 +30,7 @@ interface ToastProps {
 export default function Toast(props: ToastProps) {
   const IconComponent = createMemo(() => TOAST_ICONS.get(props.intent));
   const bgColor = () => TOAST_COLORS.get(props.intent);
-  const title = () => t(`toast.${props.intent}`);
+  const title = () => props.intent;
 
   return (
     <KToast

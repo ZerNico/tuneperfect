@@ -4,6 +4,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/settings/volume/")({
@@ -26,7 +27,7 @@ function VolumeComponent() {
   const menuItems: MenuItem[] = [
     {
       type: "slider",
-      label: "Master Volume",
+      label: t("settings.sections.volume.master"),
       value: () => Math.round(volume().master * 100),
       min: 0,
       max: 100,
@@ -37,7 +38,7 @@ function VolumeComponent() {
     },
     {
       type: "slider",
-      label: "Game Volume",
+      label: t("settings.sections.volume.game"),
       value: () => Math.round(volume().game * 100),
       min: 0,
       max: 100,
@@ -48,7 +49,7 @@ function VolumeComponent() {
     },
     {
       type: "slider",
-      label: "Preview Volume",
+      label: t("settings.sections.volume.preview"),
       value: () => Math.round(volume().preview * 100),
       min: 0,
       max: 100,
@@ -59,7 +60,7 @@ function VolumeComponent() {
     },
     {
       type: "slider",
-      label: "Menu Volume",
+      label: t("settings.sections.volume.menu"),
       value: () => Math.round(volume().menu * 100),
       min: 0,
       max: 100,
@@ -70,7 +71,7 @@ function VolumeComponent() {
     },
     {
       type: "button",
-      label: "Save",
+      label: t("settings.save"),
       action: saveVolume,
     },
   ];
@@ -78,7 +79,7 @@ function VolumeComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Settings" description="Volume" onBack={onBack} />}
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.volume.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

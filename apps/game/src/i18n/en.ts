@@ -1,58 +1,70 @@
 const en = {
-  sign_in: {
-    title: "Sign in",
-    email: "Email",
-    password: "Password",
-    sign_in: "Sign in",
-    forgot_password: "Forgot password?",
-    email_invalid: "Invalid email",
-    password_min_length: "Password must be at least 6 characters",
-    invalid_email_or_password: "Invalid email or password",
-    or: "Or",
-    no_account: "Don't have an account?",
-    sign_up: "Sign up",
+  common: {
+    notifications: {
+      success: "Success",
+      error: "Error",
+      info: "Info",
+      warning: "Warning"
+    },
+    keyHints: {
+      navigate: "Navigate",
+      confirm: "Confirm",
+      back: "Back"
+    }
   },
-  sign_up: {
-    title: "Sign up",
-    email: "Email",
-    password: "Password",
-    confirm_password: "Confirm password",
-    sign_up: "Sign up",
-    email_invalid: "Invalid email",
-    password_min_length: "Password must be at least 6 characters",
-    passwords_dont_match: "Passwords do not match",
-    email_already_exists: "Email already exists",
-    success: "Account created successfully",
-    or: "Or",
-    have_account: "Already have an account?",
-    sign_in: "Sign in",
+  home: {
+    title: "Welcome",
+    startGame: "Start Game",
+    joinLobby: "Join Lobby",
+    party: "Party",
+    singDescription: "Sing your favorite songs, alone or with your friends!",
+    partyDescription: "Battle it out with your friends in one of the different party game modes!",
+    lobbyDescription: "Manage the party you are in and invite your friends.",
+    settingsDescription: "Change your settings or add your songs and microphones."
   },
-  verify_email: {
-    title: "Verify your email",
-    description: "Please check your email for a verification link. If you haven't received it, you can request a new one below.",
-    email: "Email",
-    email_invalid: "Invalid email",
-    resend: "Resend verification email",
-    success: "Verification email sent successfully",
-    error: "Failed to send verification email",
+  lobby: {
+    title: "Lobby",
   },
-  error: {
-    unknown: "An unknown error occurred",
+  sing: {
+    title: "Sing",
   },
-  toast: {
-    success: "Success",
-    error: "Error",
-    info: "Info",
-    warning: "Warning",
-  },
-  header: {
-    app_name: "Tune Perfect",
-    edit_profile: "Edit profile",
-    leave_lobby: "Leave lobby",
-    sign_out: "Sign out",
-  },
-  nav: {
-    profile: "Profile",
+  settings: {
+    title: "Settings",
+    add: "Add",
+    save: "Save",
+    remove: "Remove",
+    delete: "Delete",
+    sections: {
+      general: {
+        title: "General",
+        language: "Language"
+      },
+      songs: {
+        title: "Songs"
+      },
+      microphones: {
+        title: "Microphones",
+        name: "Name",
+        device: "Device",
+        microphone: "Microphone",
+        channel: "Channel",
+        player: "Player",
+        color: "Color",
+        delay: "Delay",
+        gain: "Gain",
+        threshold: "Threshold"
+      },
+      volume: {
+        title: "Volume",
+        master: "Master Volume",
+        game: "Game Volume",
+        preview: "Preview Volume",
+        menu: "Menu Volume"
+      },
+      credits: {
+        title: "Credits",
+      },
+    }
   },
 };
 

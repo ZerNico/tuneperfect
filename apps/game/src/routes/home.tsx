@@ -8,6 +8,7 @@ import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { createQRCode } from "~/hooks/qrcode";
+import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
 import { lobbyStore } from "~/stores/lobby";
@@ -26,30 +27,30 @@ function HomeComponent() {
 
   const cards = [
     {
-      label: "Sing",
+      label: t("sing.title"),
       gradient: "gradient-sing",
       icon: IconMicVocal,
-      description: "Sing your favorite songs, alone or with your friends!",
+      description: t("home.singDescription"),
       action: () => navigate({ to: "/sing" }),
     },
     {
-      label: "Party",
+      label: t("home.party"),
       gradient: "gradient-party",
       icon: IconPartyPopper,
-      description: "Battle it out with your friends in one of the different party game modes!",
+      description: t("home.partyDescription"),
     },
     {
-      label: "Lobby",
+      label: t("lobby.title"),
       gradient: "gradient-lobby",
       icon: IconUsers,
-      description: "Manage the party you are in and invite your friends.",
+      description: t("home.lobbyDescription"),
       action: () => navigate({ to: "/lobby" }),
     },
     {
-      label: "Settings",
+      label: t("settings.title"),
       gradient: "gradient-settings",
       icon: IconSettings,
-      description: "Change your settings or add your songs and microphones.",
+      description: t("home.settingsDescription"),
       action: () => navigate({ to: "/settings" }),
     },
   ];
@@ -124,10 +125,10 @@ function HomeComponent() {
                 selected={position() === index()}
                 active={pressed() && position() === index()}
                 class="flex-1"
-                label={card.label}
+                label={card.label as string}
                 gradient={card.gradient}
                 icon={card.icon}
-                description={card.description}
+                description={card.description as string}
                 onMouseEnter={() => set(index())}
                 onClick={card.action}
               />

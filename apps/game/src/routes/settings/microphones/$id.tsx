@@ -5,6 +5,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { type Microphone, settingsStore } from "~/stores/settings";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
@@ -35,7 +36,7 @@ function MicrophoneComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Settings" description={"Microphones"} onBack={onBack} />}
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Suspense
@@ -75,7 +76,7 @@ function MicrophoneComponent() {
             const menuItems: MenuItem[] = [
               {
                 type: "select-string",
-                label: "Microphone",
+                label: t("settings.sections.microphones.microphone"),
                 value: () => microphone().name,
                 onChange: (name: string) => {
                   setMicrophone((prev) => ({ ...prev, name }));
@@ -84,7 +85,7 @@ function MicrophoneComponent() {
               },
               {
                 type: "select-number",
-                label: "Channel",
+                label: t("settings.sections.microphones.channel"),
                 value: () => microphone().channel,
                 onChange: (channel: number) => {
                   setMicrophone((prev) => ({ ...prev, channel }));
@@ -93,7 +94,7 @@ function MicrophoneComponent() {
               },
               {
                 type: "select-string",
-                label: "Color",
+                label: t("settings.sections.microphones.color"),
                 value: () => microphone().color,
                 onChange: (color: string) => {
                   setMicrophone((prev) => ({ ...prev, color }));
@@ -108,7 +109,7 @@ function MicrophoneComponent() {
               },
               {
                 type: "slider",
-                label: "Delay",
+                label: t("settings.sections.microphones.delay"),
                 value: () => microphone().delay,
                 min: 0,
                 max: 500,
@@ -119,7 +120,7 @@ function MicrophoneComponent() {
               },
               {
                 type: "slider",
-                label: "Gain",
+                label: t("settings.sections.microphones.gain"),
                 value: () => microphone().gain,
                 min: 0,
                 max: 3,
@@ -130,7 +131,7 @@ function MicrophoneComponent() {
               },
               {
                 type: "slider",
-                label: "Threshold",
+                label: t("settings.sections.microphones.threshold"),
                 value: () => microphone().threshold,
                 min: 0,
                 max: 5,
@@ -141,12 +142,12 @@ function MicrophoneComponent() {
               },
               {
                 type: "button",
-                label: "Delete",
+                label: t("settings.delete"),
                 action: deleteMicrophone,
               },
               {
                 type: "button",
-                label: "Save",
+                label: t("settings.save"),
                 action: saveMicrophone,
               },
             ];

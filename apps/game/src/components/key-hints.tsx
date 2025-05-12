@@ -1,5 +1,6 @@
 import { For, type JSX } from "solid-js";
 import { keyMode } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconEnterKey from "~icons/sing/enter-key";
@@ -44,7 +45,7 @@ export default function KeyHints(props: KeyHintsProps) {
     <div class="flex items-center gap-8 text-base">
       <For each={props.hints}>
         {(hint) => {
-          const label = hint.charAt(0).toUpperCase() + hint.slice(1);
+          const label = t(`common.keyHints.${hint}`);
           return <KeyHint label={label} icon={getIcon(hint)} />;
         }}
       </For>

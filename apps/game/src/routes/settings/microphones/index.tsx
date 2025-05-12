@@ -6,6 +6,7 @@ import TitleBar from "~/components/title-bar";
 import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { settingsStore } from "~/stores/settings";
 import IconMicVocal from "~icons/lucide/mic-vocal";
@@ -41,7 +42,7 @@ function MicrophonesComponent() {
     }
 
     buttons.push({
-      label: "Add",
+      label: t("settings.add"),
       icon: IconPlus,
       action: () => {
         navigate({ to: "/settings/microphones/$id", params: { id: settingsStore.microphones().length.toString() } });
@@ -81,7 +82,7 @@ function MicrophonesComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Settings" description="Microphones" onBack={onBack} />}
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <div class="flex w-full flex-grow items-center justify-center gap-4">

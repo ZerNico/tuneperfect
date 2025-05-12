@@ -1,7 +1,7 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on } from "solid-js";
+import { For, type Ref, Show, batch, createMemo, createSignal } from "solid-js";
 import { Transition } from "solid-transition-group";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -542,7 +542,6 @@ function SongCard(props: SongCardProps) {
         }}
         src={props.song.coverUrl}
         alt={props.song.title}
-        loading="lazy"
       />
       <div class="absolute inset-0 bg-black" />
     </div>

@@ -3,6 +3,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { songsStore } from "~/stores/songs";
 
 export const Route = createFileRoute("/settings/songs/$path")({
@@ -25,7 +26,7 @@ function SongsComponent() {
   const menuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Remove",
+      label: t("settings.remove"),
       action: removePath,
     },
   ];
@@ -33,7 +34,7 @@ function SongsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Settings" description={`Songs / ${path()}`} onBack={onBack} />}
+      header={<TitleBar title={t("settings.title")} description={`${t("settings.sections.songs.title")} / ${path()}`} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />
