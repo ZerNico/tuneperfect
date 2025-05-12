@@ -24,6 +24,8 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
   const [audioGainNode, setAudioGainNode] = createSignal<GainNode>();
   const [videoGainNode, setVideoGainNode] = createSignal<GainNode>();
+  const [videoError, setVideoError] = createSignal(false);
+
   let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   const audioContext = new AudioContext();
 
@@ -119,6 +121,8 @@ export default function SongPlayer(props: SongPlayerProps) {
       return;
     }
 
+    console.log(video);
+
     if (!audio) {
       video?.play();
       return;
@@ -199,6 +203,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       () => {
         clearTimeout(syncTimeout);
         stopPlayback();
+        setVideoError(false);
 
         if (canPlayThrough()) {
           startPlayback();
@@ -258,7 +263,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       }}
     >
       <Switch>
-        <Match when={props.song.videoUrl}>
+        <Match when={!videoError() && props.song.videoUrl}>
           {(videoUrl) => (
             <video
               muted={!!props.song.audioUrl}
@@ -268,6 +273,11 @@ export default function SongPlayer(props: SongPlayerProps) {
               onCanPlayThrough={onCanPlayThrough}
               onEnded={!props.song.audioUrl ? handleEnded : undefined}
               src={videoUrl()}
+              onError={() => {
+                setVideoError(true);
+                setVideoElement(undefined);
+                startPlayback();
+              }}
             />
           )}
         </Match>
