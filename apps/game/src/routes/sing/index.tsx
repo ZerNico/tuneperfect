@@ -1,7 +1,7 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { For, type Ref, Show, batch, createMemo, createSignal } from "solid-js";
+import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Transition } from "solid-transition-group";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -258,6 +258,8 @@ interface SongScrollerProps {
 const DISPLAYED_SONGS = 11;
 const MIDDLE_SONG_INDEX = Math.floor(DISPLAYED_SONGS / 2);
 
+const positiveModulo = (n: number, m: number) => ((n % m) + m) % m;
+
 function SongScroller(props: SongScrollerProps) {
   const [isPressed, setIsPressed] = createSignal(false);
   const [isHeld, setIsHeld] = createSignal(false);
@@ -273,12 +275,11 @@ function SongScroller(props: SongScrollerProps) {
     });
   });
 
-  const sortedSongs = createMemo(() => {
+  const filteredAndSortedSongs = createMemo(() => {
     let songs = props.songs;
 
     if (props.searchQuery.trim()) {
       const query = props.searchQuery.toLowerCase().trim();
-
       const searchResults = fuseInstance().search(query);
       songs = searchResults.map((result) => result.item);
     }
@@ -287,71 +288,76 @@ function SongScroller(props: SongScrollerProps) {
       return [];
     }
 
-    if (props.sort === "title") {
-      return songs.toSorted((a, b) => a.title.localeCompare(b.title));
-    }
-    if (props.sort === "year") {
-      return songs.toSorted((a, b) => {
-        if (a.year === undefined) {
-          return -1;
-        }
-        if (b.year === undefined) {
-          return 1;
-        }
-
+    return songs.toSorted((a: LocalSong, b: LocalSong) => {
+      if (props.sort === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      if (props.sort === "year") {
+        if (a.year === undefined && b.year === undefined) return 0;
+        if (a.year === undefined) return 1;
+        if (b.year === undefined) return -1;
         return a.year - b.year;
-      });
-    }
-
-    return songs.toSorted((a, b) => a.artist.localeCompare(b.artist));
+      }
+      return a.artist.localeCompare(b.artist);
+    });
   });
 
-  const currentIndex = createMemo(() => {
-    const songs = sortedSongs();
-    if (songs.length === 0) {
-      props.onSongChange?.(null);
-      return 0;
-    }
-
-    const currentSong = props.currentSong;
-    if (!currentSong) {
-      const firstSong = songs[0];
-      if (firstSong) {
-        props.onSongChange?.(firstSong);
-      }
-      return 0;
-    }
-
+  const calculateIndex = (songs: LocalSong[], currentSong: LocalSong | null): number => {
+    if (songs.length === 0) return 0;
+    if (!currentSong) return 0;
     const index = songs.findIndex((song) => song === currentSong);
+    return index === -1 ? 0 : index;
+  };
 
-    if (index === -1) {
-      const firstSong = songs[0];
-      if (firstSong) {
-        props.onSongChange?.(firstSong);
-      }
-      return 0;
-    }
+  const initialSongs = filteredAndSortedSongs();
+  const [currentIndex, setCurrentIndex] = createSignal(calculateIndex(initialSongs, props.currentSong));
 
-    return index;
-  });
+  createEffect(
+    on(
+      [() => props.currentSong, filteredAndSortedSongs],
+      ([currentSongProp, songs]) => {
+        const newIndex = calculateIndex(songs, currentSongProp);
+        const newCurrentSong = songs.length > 0 ? songs[newIndex] : null;
+
+        setCurrentIndex(newIndex);
+
+        if (newCurrentSong !== currentSongProp) {
+          props.onSongChange?.(newCurrentSong);
+        }
+      },
+      { defer: true }
+    )
+  );
 
   const displayedSongs = createMemo(() => {
-    const songs = [];
+    const songs = filteredAndSortedSongs();
+    const numSongs = songs.length;
+    if (numSongs === 0) return [];
+
+    const result: LocalSong[] = [];
     const index = currentIndex();
-    const offset = Math.floor(DISPLAYED_SONGS / 2);
-    for (let i = index - offset; i < index + offset + 1; i++) {
-      const index = i % sortedSongs().length;
-      const song = sortedSongs().at(index);
+    const offset = MIDDLE_SONG_INDEX;
+
+    for (let i = 0; i < DISPLAYED_SONGS; i++) {
+      const relativeIndex = i - offset;
+      const songIndex = positiveModulo(index + relativeIndex, numSongs);
+      const song = songs[songIndex];
       if (song) {
-        songs.push(song);
+        result.push(song);
+      } else if (numSongs > 0) {
+        const firstSong = songs[0];
+        if (firstSong) {
+          result.push(firstSong);
+        }
       }
     }
-
-    return songs;
+    return result;
   });
 
   useNavigation(() => ({
     onKeydown(event) {
+      if (animating()) return;
+
       if (event.action === "left") {
         animateTo("left");
         playSound("select");
@@ -366,12 +372,25 @@ function SongScroller(props: SongScrollerProps) {
     onKeyup(event) {
       if (event.action === "confirm") {
         setIsPressed(false);
+
+        if (!animating() && props.currentSong) {
+          const displayed = displayedSongs();
+          const middleDisplayedSong = displayed[MIDDLE_SONG_INDEX];
+          if (middleDisplayedSong === props.currentSong) {
+            props.onSelect?.(props.currentSong);
+          }
+        }
       } else if (event.action === "left" || event.action === "right") {
         setIsHeld(false);
+        if (!isFastScrolling()) {
+          props.onIsFastScrolling?.(false);
+        }
       }
     },
 
     onHold(event) {
+      if (animating()) return;
+
       if (event.action === "left") {
         setIsHeld(true);
         animateTo("left");
@@ -386,8 +405,11 @@ function SongScroller(props: SongScrollerProps) {
 
   const animateTo = (direction: "left" | "right") => {
     if (animating()) {
-      return;
+      if (!isHeld()) return;
     }
+
+    const songs = filteredAndSortedSongs();
+    if (songs.length <= 1) return;
 
     if (isHeld()) {
       props.onIsFastScrolling?.(true);
@@ -403,109 +425,139 @@ function SongScroller(props: SongScrollerProps) {
       return;
     }
 
-    const index = currentIndex();
+    const songs = filteredAndSortedSongs();
+    if (songs.length === 0) {
+      batch(() => {
+        setCurrentIndex(0);
+        if (props.currentSong !== null) props.onSongChange?.(null);
+        setAnimating(null);
+        setIsHeld(false);
+        setIsFastScrolling(false);
+        props.onIsFastScrolling?.(false);
+      });
+      return;
+    }
+
+    const numSongs = songs.length;
     let nextIndex: number;
 
     if (direction === "left") {
-      nextIndex = (index - 1 + sortedSongs().length) % sortedSongs().length;
+      nextIndex = positiveModulo(currentIndex() - 1, numSongs);
     } else {
-      nextIndex = (index + 1) % sortedSongs().length;
+      nextIndex = positiveModulo(currentIndex() + 1, numSongs);
     }
 
-    const nextSong = sortedSongs()[nextIndex];
+    const nextSong = songs[nextIndex];
 
     batch(() => {
-      if (nextSong) {
+      setCurrentIndex(nextIndex);
+
+      if (nextSong && nextSong !== props.currentSong) {
         props.onSongChange?.(nextSong);
       }
-
       setAnimating(null);
 
       if (isHeld()) {
         props.onIsFastScrolling?.(true);
         setIsFastScrolling(true);
         playSound("select");
-        setTimeout(() => animateTo(direction), 0);
+        setTimeout(() => {
+          if (isHeld()) {
+            animateTo(direction);
+          } else {
+            setIsFastScrolling(false);
+            props.onIsFastScrolling?.(false);
+          }
+        }, 0);
       } else {
-        props.onIsFastScrolling?.(false);
         setIsFastScrolling(false);
+        props.onIsFastScrolling?.(false);
       }
     });
   };
 
-  const isActive = (index: number, animating: "left" | "right" | null) => {
-    return (
-      (animating === "right" && index === MIDDLE_SONG_INDEX + 1) ||
-      (!animating && index === MIDDLE_SONG_INDEX) ||
-      (animating === "left" && index === MIDDLE_SONG_INDEX - 1)
-    );
+  const isActive = (index: number, currentAnimating: "left" | "right" | null) => {
+    if (currentAnimating === "right") {
+      return index === MIDDLE_SONG_INDEX + 1;
+    }
+    if (currentAnimating === "left") {
+      return index === MIDDLE_SONG_INDEX - 1;
+    }
+    return index === MIDDLE_SONG_INDEX;
   };
 
-  const isNext = (index: number, animating: "left" | "right" | null) => {
-    return (animating === "right" && index === MIDDLE_SONG_INDEX + 1) || (animating === "left" && index === MIDDLE_SONG_INDEX - 1);
-  };
+  const getSongTransform = (index: number, currentAnimating: "left" | "right" | null): string => {
+    const active = isActive(index, currentAnimating);
 
-  const getSongTransform = (index: number, animating: "left" | "right" | null) => {
-    // Translate the middle song to the left or right depending on the direction of the animation
-    if (index === MIDDLE_SONG_INDEX) {
-      return animating === "right" ? "-translate-x-8" : animating === "left" ? "translate-x-8" : "";
+    if (active) {
+      return "";
     }
 
-    // Translate the previous song to the left if it's not the next song and the animation
-    if (index < MIDDLE_SONG_INDEX && !isNext(index, animating)) {
+    if (index === MIDDLE_SONG_INDEX) {
+      if (currentAnimating === "right") return "-translate-x-8";
+      if (currentAnimating === "left") return "translate-x-8";
+      return "";
+    }
+
+    if (index < MIDDLE_SONG_INDEX) {
       return "-translate-x-8";
     }
 
-    // Translate the next song to the right if it's not the previous song and the animation
-    if (index > MIDDLE_SONG_INDEX && !isNext(index, animating)) {
-      return "translate-x-8";
-    }
-
-    return "";
+    return "translate-x-8";
   };
+
+  const scrollerClasses = createMemo(() => ({
+    "translate-x-0": animating() === null,
+    "translate-x-1/11 transition-transform duration-250": animating() === "left",
+    "-translate-x-1/11 transition-transform duration-250": animating() === "right",
+    "duration-150! ease-linear!": isFastScrolling() && !!animating(),
+    "duration-0! ease-linear!": props.animationsDisabled,
+  }));
+
+  const songCardClasses = (index: number, currentAnimating: "left" | "right" | null) => ({
+    [getSongTransform(index, currentAnimating)]: true,
+    "hover:opacity-50 active:scale-90": isActive(index, currentAnimating),
+    "scale-90": isActive(index, currentAnimating) && isPressed(),
+    "duration-150! ease-linear!": isFastScrolling() && !!currentAnimating,
+    "duration-0! ease-linear!": props.animationsDisabled,
+  });
 
   return (
     <div class="flex w-full flex-col items-center justify-center">
       <div
         class="flex w-11/7 transform-gpu ease-in-out will-change-transform"
-        classList={{
-          "translate-x-0": animating() === null,
-          "translate-x-1/11 transition-transform duration-250": animating() === "left",
-          "-translate-x-1/11 transition-transform duration-250": animating() === "right",
-          "duration-150! ease-linear!": isFastScrolling() && !!animating(),
-          "duration-0! ease-linear!": props.animationsDisabled,
-        }}
+        classList={scrollerClasses()}
         onTransitionEnd={onTransitionEnd}
       >
         <For each={displayedSongs()}>
-          {(song, index) => (
-            <button
-              type="button"
-              class="w-1/7 transform-gpu p-2 transition-all duration-250 will-change-transform"
-              classList={{
-                [getSongTransform(index(), animating())]: true,
-                "hover:opacity-50 active:scale-90": isActive(index(), animating()),
-                "scale-90": isActive(index(), animating()) && isPressed(),
-                "duration-150! ease-linear!": isFastScrolling() && !!animating(),
-                "duration-0! ease-linear!": props.animationsDisabled,
-              }}
-              onTransitionEnd={(e) => e.stopPropagation()}
-              onClick={() => {
-                if (index() !== MIDDLE_SONG_INDEX) {
-                  animateTo(index() > MIDDLE_SONG_INDEX ? "right" : "left");
-                } else {
-                  props.onSelect?.(song);
-                }
-              }}
-            >
-              <SongCard
-                fastScrolling={isFastScrolling() && !!animating()}
-                song={song}
-                active={isActive(index(), animating())}
-                animationsDisabled={props.animationsDisabled}
-              />
-            </button>
-          )}
+          {(song, index) => {
+            const active = createMemo(() => isActive(index(), animating()));
+
+            return (
+              <button
+                type="button"
+                class="w-1/7 transform-gpu p-2 transition-all duration-250 will-change-transform"
+                classList={songCardClasses(index(), animating())}
+                onTransitionEnd={(e) => e.stopPropagation()}
+                onClick={() => {
+                  if (animating()) return;
+
+                  if (index() === MIDDLE_SONG_INDEX) {
+                    props.onSelect?.(song);
+                  } else {
+                    animateTo(index() > MIDDLE_SONG_INDEX ? "right" : "left");
+                  }
+                }}
+              >
+                <SongCard
+                  song={song}
+                  active={active()}
+                  fastScrolling={isFastScrolling() && !!animating()}
+                  animationsDisabled={props.animationsDisabled}
+                />
+              </button>
+            );
+          }}
         </For>
       </div>
     </div>
