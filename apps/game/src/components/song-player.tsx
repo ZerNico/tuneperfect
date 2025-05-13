@@ -121,8 +121,6 @@ export default function SongPlayer(props: SongPlayerProps) {
       return;
     }
 
-    console.log(video);
-
     if (!audio) {
       video?.play();
       return;
@@ -134,11 +132,10 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
 
     const videoGap = props.song.videoGap ?? 0;
-
+    
     if (props.isPreview) {
-      const firstNote = props.song.voices[0]?.phrases[0]?.notes[0];
-      const previewStart = props.song.previewStart ?? (firstNote ? beatToMs(props.song, firstNote.startBeat) / 1000 - 2 + videoGap : 0);
-
+      const previewStart = getPreviewStartTime(props.song, videoGap);
+      
       if (video.currentTime === 0) {
         video.currentTime = previewStart;
       }
@@ -302,3 +299,17 @@ export default function SongPlayer(props: SongPlayerProps) {
     </div>
   );
 }
+
+const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
+  if (song.previewStart !== undefined) {
+    return Math.max(0, song.previewStart);
+  }
+  
+  const firstNote = song.voices[0]?.phrases[0]?.notes[0];
+  if (!firstNote) {
+    return 0;
+  }
+  
+  const previewGap = videoGap < 0 ? videoGap : 0;
+  return Math.max(0, beatToMs(song, firstNote.startBeat) / 1000 - 2 + previewGap);
+};
