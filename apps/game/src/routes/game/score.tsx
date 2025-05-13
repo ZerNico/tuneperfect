@@ -24,7 +24,7 @@ type AnimatedState = Record<ScoreCategory, boolean>;
 
 const MAX_POSSIBLE_SCORE = 100000;
 const ANIMATION_DURATION = 2000;
-const ANIMATION_DELAY = 1000;
+const ANIMATION_DELAY = 2000;
 const ANIMATION_STEPS = 38;
 
 interface PlayerScoreData {
@@ -174,29 +174,30 @@ function ScoreComponent() {
 
   return (
     <Layout intent="secondary" header={<TitleBar title="Score" />} footer={<KeyHints hints={["confirm"]} />}>
-      <div class="flex flex-grow flex-col">
-        <div class="flex-1" />
-        <div class="grid grid-cols-[2fr_3fr]">
-          <div class="relative">
-            <div
-              class="absolute inset-0 flex max-w-full justify-center transition-opacity duration-500"
-              classList={{ "opacity-0": !showHighscores() }}
-            >
-              <HighscoreList scores={highscores()} class="w-100" />
+      <div class="flex flex-grow flex-col gap-6">
+        <div class="flex w-full flex-grow items-center">
+          <div class="grid w-full grid-cols-[2fr_3fr]">
+            <div class="relative">
+              <div
+                class="absolute inset-0 flex max-w-full justify-center transition-opacity duration-500"
+                classList={{ "opacity-0": !showHighscores() }}
+              >
+                <HighscoreList scores={highscores()} class="w-100" />
+              </div>
             </div>
-          </div>
-          <div class="flex flex-grow flex-col items-center justify-center gap-10">
-            <For each={scoreData()}>
-              {(data) => (
-                <ScoreCard
-                  animatedStages={animatedStages()}
-                  score={data.score}
-                  player={data.player}
-                  micColor={data.micColor}
-                  position={data.position}
-                />
-              )}
-            </For>
+            <div class="flex flex-grow flex-col items-center justify-center gap-4">
+              <For each={scoreData()}>
+                {(data) => (
+                  <ScoreCard
+                    animatedStages={animatedStages()}
+                    score={data.score}
+                    player={data.player}
+                    micColor={data.micColor}
+                    position={data.position}
+                  />
+                )}
+              </For>
+            </div>
           </div>
         </div>
 
@@ -232,7 +233,11 @@ function ScoreCard(props: ScoreCardProps) {
     golden: 0,
     bonus: 0,
   });
-  const [animatedTotalScore, setAnimatedTotalScore] = createSignal(0);
+
+  const animatedTotalScore = () => {
+    const scores = animatedScores();
+    return Math.floor(scores.normal + scores.golden + scores.bonus);
+  };
 
   const animateCounter = (
     startValue: number,
@@ -258,29 +263,25 @@ function ScoreCard(props: ScoreCardProps) {
   };
 
   onMount(() => {
-    let totalInterval: ReturnType<typeof setInterval> | undefined;
+    // If there are no animated stages, show the full score immediately
+    if (props.animatedStages.length === 0) {
+      setAnimatedScores({
+        normal: props.score.normal,
+        golden: props.score.golden,
+        bonus: props.score.bonus,
+      });
+      return;
+    }
 
+    // Animate each score category, with sufficient delay to ensure previous animations finish
     for (const [index, category] of props.animatedStages.entries()) {
       setTimeout(() => {
         setAnimated((prev) => ({ ...prev, [category]: true }));
 
         const scoreValue = props.score[category];
         animateCounter(0, scoreValue, (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })), ANIMATION_DURATION);
-
-        if (totalInterval) clearInterval(totalInterval);
-
-        totalInterval = animateCounter(
-          animatedTotalScore(),
-          Math.floor(animatedTotalScore() + scoreValue),
-          setAnimatedTotalScore,
-          ANIMATION_DURATION
-        );
-      }, index * ANIMATION_DELAY);
+      }, index * ANIMATION_DELAY); // Using the increased delay between animations
     }
-
-    onCleanup(() => {
-      if (totalInterval) clearInterval(totalInterval);
-    });
   });
 
   return (
