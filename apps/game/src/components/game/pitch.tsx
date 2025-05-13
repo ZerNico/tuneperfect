@@ -260,13 +260,13 @@ function ProcessedBeat(props: ProcessedBeatProps) {
 
     if (delayedBeat - firstBeat() <= 1) {
       return {
-        "clip-percentage": 100 - fillPercentage,
+        "clip-percentage": fillPercentage,
         "width-percentage": 100 / props.length,
       };
     }
 
     return {
-      "clip-percentage": 0,
+      "clip-percentage": 100,
       "width-percentage": fillPercentage,
     };
   });
@@ -282,7 +282,7 @@ function ProcessedBeat(props: ProcessedBeatProps) {
       <div class="-translate-y-1/4 absolute h-2/1 w-full transform p-[0.35cqw]">
         <div
           style={{
-            "clip-path": `inset(0 ${fill()["clip-percentage"]}% 0 0)`,
+            "clip-path": `polygon(0% 0%, ${fill()["clip-percentage"]}% 0%, ${fill()["clip-percentage"]}% 100%, 0% 100%)`,
             width: `${fill()["width-percentage"]}%`,
             "background-color": props.micColor,
           }}
