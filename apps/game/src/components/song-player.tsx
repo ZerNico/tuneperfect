@@ -284,6 +284,14 @@ export default function SongPlayer(props: SongPlayerProps) {
         <Match when={props.song.backgroundUrl}>
           {(backgroundUrl) => <img alt="" class="h-full w-full object-contain" src={backgroundUrl()} />}
         </Match>
+        <Match when={props.song.coverUrl}>
+          {(coverUrl) => (
+            <div class="relative h-full w-full">
+              <img src={coverUrl()} alt="" class="absolute inset-0 h-full w-full object-cover blur-2xl" />
+              <img src={coverUrl()} alt="" class="relative h-full w-full object-contain" />
+            </div>
+          )}
+        </Match>
       </Switch>
 
       <Show when={props.song.audioUrl}>
