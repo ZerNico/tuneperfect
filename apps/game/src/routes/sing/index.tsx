@@ -322,7 +322,7 @@ function SongScroller(props: SongScrollerProps) {
         setCurrentIndex(newIndex);
 
         if (newCurrentSong !== currentSongProp) {
-          props.onSongChange?.(newCurrentSong);
+          props.onSongChange?.(newCurrentSong || null);
         }
       },
       { defer: true }
