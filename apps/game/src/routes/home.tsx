@@ -31,27 +31,40 @@ function HomeComponent() {
       gradient: "gradient-sing",
       icon: IconMicVocal,
       description: t("home.singDescription"),
-      action: () => navigate({ to: "/sing" }),
+      action: () => {
+        navigate({ to: "/sing" });
+        playSound("confirm");
+      },
     },
     {
       label: t("home.party"),
       gradient: "gradient-party",
       icon: IconPartyPopper,
       description: t("home.partyDescription"),
+      action: () => {
+        navigate({ to: "/party" });
+        playSound("confirm");
+      },
     },
     {
       label: t("lobby.title"),
       gradient: "gradient-lobby",
       icon: IconUsers,
       description: t("home.lobbyDescription"),
-      action: () => navigate({ to: "/lobby" }),
+      action: () => {
+        navigate({ to: "/lobby" });
+        playSound("confirm");
+      },
     },
     {
       label: t("settings.title"),
       gradient: "gradient-settings",
       icon: IconSettings,
       description: t("home.settingsDescription"),
-      action: () => navigate({ to: "/settings" }),
+      action: () => {
+        navigate({ to: "/settings" });
+        playSound("confirm");
+      },
     },
   ];
 
@@ -62,13 +75,10 @@ function HomeComponent() {
     onKeydown(event) {
       if (event.action === "left") {
         decrement();
-        playSound("select");
       } else if (event.action === "right") {
         increment();
-        playSound("select");
       } else if (event.action === "confirm") {
         setPressed(true);
-        playSound("confirm");
       }
     },
     onKeyup(event) {

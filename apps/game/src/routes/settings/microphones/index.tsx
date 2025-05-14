@@ -21,6 +21,7 @@ function MicrophonesComponent() {
 
   const navigate = useNavigate();
   const onBack = () => {
+    playSound("confirm");
     navigate({ to: "/settings" });
   };
 

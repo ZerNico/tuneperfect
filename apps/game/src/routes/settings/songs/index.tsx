@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { type Component, For, createMemo, createSignal } from "solid-js";
+import { type Component, For, createEffect, createMemo, createSignal, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -8,6 +8,7 @@ import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
+import { playSound } from "~/lib/sound";
 import { songsStore } from "~/stores/songs";
 import IconFolder from "~icons/lucide/folder";
 import IconPlus from "~icons/lucide/plus";
@@ -21,6 +22,7 @@ function SongsComponent() {
   const [loading, setLoading] = createSignal(false);
   const navigate = useNavigate();
   const onBack = () => {
+    playSound("confirm");
     if (songsStore.needsUpdate()) {
       navigate({ to: "/loading", search: { redirect: "/settings" } });
       return;
@@ -98,6 +100,8 @@ function SongsComponent() {
       }
     },
   }));
+
+  createEffect(on(position, () => playSound("select"), { defer: true }));
 
   return (
     <Layout

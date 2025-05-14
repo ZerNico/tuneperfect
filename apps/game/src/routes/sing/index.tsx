@@ -41,7 +41,10 @@ function SingComponent() {
   }
 
   const navigate = useNavigate();
-  const onBack = () => navigate({ to: "/home" });
+  const onBack = () => {
+    playSound("confirm");
+    navigate({ to: "/home" });
+  };
   const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
   const [animationsDisabled, setAnimationsDisabled] = createSignal(false);
   const [searchQuery, setSearchQuery] = createSignal("");
@@ -205,7 +208,13 @@ function SingComponent() {
             <Show when={!isFastScrolling() && currentSong()} keyed>
               {(currentSong) => (
                 <div class="h-full w-full">
-                  <SongPlayer isPreview volume={settingsStore.getVolume("preview")} class="h-full w-full opacity-60" playing song={currentSong} />
+                  <SongPlayer
+                    isPreview
+                    volume={settingsStore.getVolume("preview")}
+                    class="h-full w-full opacity-60"
+                    playing
+                    song={currentSong}
+                  />
                 </div>
               )}
             </Show>
