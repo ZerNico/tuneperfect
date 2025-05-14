@@ -7,6 +7,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
+import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { useNavigation } from "~/hooks/navigation";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
@@ -27,7 +28,6 @@ import IconGamepadStart from "~icons/sing/gamepad-start";
 import IconGamepadY from "~icons/sing/gamepad-y";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
-
 export const Route = createFileRoute("/sing/")({
   component: SingComponent,
 });
@@ -223,7 +223,13 @@ function SingComponent() {
         </div>
       }
     >
-      <div class="flex flex-grow flex-col">
+      <div class="relative flex flex-grow flex-col">
+        <Show when={searchFocused() && keyMode() === "gamepad"}>
+          <div class="absolute z-10">
+            <VirtualKeyboard inputRef={searchRef} />
+          </div>
+        </Show>
+
         <div class="flex flex-grow flex-col justify-center">
           <div class="relative flex flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
@@ -631,7 +637,7 @@ function SearchBar(props: SearchBarProps) {
     props.onBlur?.();
   };
 
-  const onChange = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
+  const onInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
     props.onSearch?.(e.currentTarget.value);
   };
 
@@ -640,7 +646,7 @@ function SearchBar(props: SearchBarProps) {
     searchRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
   };
 
-  const addChar = (char: string) => {
+  const writeCharacter = (char: string) => {
     const start = searchRef.selectionStart ?? 0;
     const end = searchRef.selectionEnd ?? 0;
     const value = searchRef.value;
@@ -665,7 +671,7 @@ function SearchBar(props: SearchBarProps) {
       }
 
       if (event.origin === "keyboard" && event.originalKey === " ") {
-        addChar(" ");
+        writeCharacter(" ");
       }
     },
 
@@ -688,7 +694,7 @@ function SearchBar(props: SearchBarProps) {
       <input
         onFocus={onFocus}
         onBlur={onBlur}
-        onInput={onChange}
+        onInput={onInput}
         ref={mergeRefs(props.ref, (el) => {
           searchRef = el;
         })}
