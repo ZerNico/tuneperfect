@@ -10,6 +10,9 @@ const en = {
       navigate: "Navigate",
       confirm: "Confirm",
       back: "Back"
+    },
+    players: {
+      guest: "Guest"
     }
   },
   home: {
@@ -20,13 +23,39 @@ const en = {
     singDescription: "Sing your favorite songs, alone or with your friends!",
     partyDescription: "Battle it out with your friends in one of the different party game modes!",
     lobbyDescription: "Manage the party you are in and invite your friends.",
-    settingsDescription: "Change your settings or add your songs and microphones."
+    settingsDescription: "Change your settings or add your songs and microphones.",
+    microphoneRequired: "You have no microphones configured. Go to settings to add one."
   },
   lobby: {
     title: "Lobby",
   },
   sing: {
     title: "Sing",
+    songs: "Songs",
+    search: "Search",
+    players: "Players",
+    player: "Player",
+    voice: "Voice",
+    start: "Start",
+    random: "Random",
+    sort: {
+      artist: "Artist",
+      title: "Title",
+      year: "Year"
+    }
+  },
+  score: {
+    title: "Score",
+    continue: "Continue",
+    normal: "Normal",
+    golden: "Golden",
+    bonus: "Bonus"
+  },
+  game: {
+    pause: {
+      resume: "Resume",
+      exit: "Exit"
+    }
   },
   settings: {
     title: "Settings",

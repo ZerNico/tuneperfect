@@ -7,6 +7,7 @@ import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
+import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
@@ -173,7 +174,7 @@ function ScoreComponent() {
   };
 
   return (
-    <Layout intent="secondary" header={<TitleBar title="Score" />} footer={<KeyHints hints={["confirm"]} />}>
+    <Layout intent="secondary" header={<TitleBar title={t("score.title")} />} footer={<KeyHints hints={["confirm"]} />}>
       <div class="flex flex-grow flex-col gap-6">
         <div class="flex w-full flex-grow items-center">
           <div class="grid w-full grid-cols-[2fr_3fr]">
@@ -203,7 +204,7 @@ function ScoreComponent() {
 
         <div class="flex flex-1 items-center">
           <Button loading={updateHighscoresMutation.isPending} selected gradient="gradient-sing" class="w-full" onClick={handleContinue}>
-            Continue
+            {t("score.continue")}
           </Button>
         </div>
       </div>
@@ -306,9 +307,9 @@ function ScoreCard(props: ScoreCardProps) {
       </div>
 
       <div class="grid grid-cols-3 gap-3">
-        <ScoreDetail label="Normal" value={animatedScores().normal} color={getColorVar(props.micColor, 400)} />
-        <ScoreDetail label="Golden" value={animatedScores().golden} color={getColorVar(props.micColor, 300)} />
-        <ScoreDetail label="Bonus" value={animatedScores().bonus} color={getColorVar(props.micColor, 50)} />
+        <ScoreDetail label={t("score.normal")} value={animatedScores().normal} color={getColorVar(props.micColor, 400)} />
+        <ScoreDetail label={t("score.golden")} value={animatedScores().golden} color={getColorVar(props.micColor, 300)} />
+        <ScoreDetail label={t("score.bonus")} value={animatedScores().bonus} color={getColorVar(props.micColor, 50)} />
       </div>
     </div>
   );

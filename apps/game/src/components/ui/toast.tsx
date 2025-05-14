@@ -1,6 +1,7 @@
 import { Toast as KToast } from "@kobalte/core/toast";
 import { createMemo } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
+import { t } from "~/lib/i18n";
 import CircleAlert from "~icons/lucide/circle-alert";
 import CircleCheck from "~icons/lucide/circle-check";
 import CircleX from "~icons/lucide/circle-x";
@@ -30,12 +31,12 @@ interface ToastProps {
 export default function Toast(props: ToastProps) {
   const IconComponent = createMemo(() => TOAST_ICONS.get(props.intent));
   const bgColor = () => TOAST_COLORS.get(props.intent);
-  const title = () => props.intent;
+  const title = () => t(`common.notifications.${props.intent}`);
 
   return (
     <KToast
       toastId={props.toastId}
-      class="flex w-full transform items-start justify-between rounded-lg p-3 data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)] data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out"
+      class="pointer-events-auto flex w-80 transform items-start justify-between rounded-lg p-3 data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)] data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out"
       classList={{
         [bgColor() || ""]: true,
       }}
@@ -60,7 +61,7 @@ export function ToastRegion() {
   return (
     <Portal>
       <KToast.Region swipeDirection="right" limit={5}>
-        <KToast.List class="fixed top-0 right-0 flex w-90 max-w-screen flex-col gap-2 p-8" />
+        <KToast.List class="pointer-events-none absolute inset-0 z-10 flex flex-col items-end justify-start gap-2 p-4" />
       </KToast.Region>
     </Portal>
   );

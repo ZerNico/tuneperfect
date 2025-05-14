@@ -11,7 +11,9 @@ import { createQRCode } from "~/hooks/qrcode";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
+import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
+import { settingsStore } from "~/stores/settings";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPartyPopper from "~icons/lucide/party-popper";
 import IconSettings from "~icons/lucide/settings";
@@ -32,6 +34,15 @@ function HomeComponent() {
       icon: IconMicVocal,
       description: t("home.singDescription"),
       action: () => {
+        const microphones = settingsStore.microphones();
+        if (microphones.length === 0) {
+          notify({
+            message: t("home.microphoneRequired"),
+            intent: "error",
+          });
+          return;
+        }
+
         navigate({ to: "/sing" });
         playSound("confirm");
       },
@@ -42,7 +53,10 @@ function HomeComponent() {
       icon: IconPartyPopper,
       description: t("home.partyDescription"),
       action: () => {
-        navigate({ to: "/party" });
+        //navigate({ to: "/party" });
+        notify({
+          message: t("home.partyDescription"),
+        });
         playSound("confirm");
       },
     },

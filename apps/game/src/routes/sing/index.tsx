@@ -9,6 +9,7 @@ import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { useNavigation } from "~/hooks/navigation";
 import { keyMode } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { settingsStore } from "~/stores/settings";
@@ -144,7 +145,7 @@ function SingComponent() {
                       }}
                       onClick={() => setSort(sortKey)}
                     >
-                      {sortKey}
+                      {t(`sing.sort.${sortKey}`)}
                     </button>
                   )}
                 </For>
@@ -162,7 +163,7 @@ function SingComponent() {
       }
       header={
         <div class="flex gap-20">
-          <TitleBar title="Songs" onBack={onBack} />
+          <TitleBar title={t("sing.songs")} onBack={onBack} />
           <SearchBar
             ref={searchRef}
             onSearch={setSearchQuery}
@@ -692,7 +693,7 @@ function SearchBar(props: SearchBarProps) {
           searchRef = el;
         })}
         type="text"
-        placeholder="Search"
+        placeholder={t("sing.search")}
         class="bg-transparent text-white focus:outline-none"
       />
       <Show

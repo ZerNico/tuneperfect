@@ -1,4 +1,5 @@
 import { type JSX, Suspense } from "solid-js";
+import { ToastRegion } from "./ui/toast";
 
 interface LayoutProps {
   children?: JSX.Element;
@@ -28,6 +29,7 @@ export default function Layout(props: LayoutProps) {
                 <div class="flex flex-col">{props.children}</div>
                 <div>{props.footer}</div>
               </div>
+              <ToastRegion />
             </Suspense>
           </div>
         </div>

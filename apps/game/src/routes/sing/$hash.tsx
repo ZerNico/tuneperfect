@@ -6,6 +6,7 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
+import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import type { LocalUser } from "~/lib/types";
 import { useRoundStore } from "~/stores/round";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/sing/$hash")({
 const localUsers: LocalUser[] = [
   {
     id: "guest",
-    username: "Guest",
+    username: t("common.players.guest"),
     image: null,
     type: "local",
   },
@@ -76,7 +77,7 @@ function PlayerSelectionComponent() {
     const inputs: MenuItem[] = [
       {
         type: "select-number",
-        label: "Players",
+        label: t("sing.players"),
         value: playerCount,
         onChange: setPlayerCount,
         options: Array.from({ length: settingsStore.microphones().length }, (_, i) => i + 1),
@@ -86,7 +87,7 @@ function PlayerSelectionComponent() {
     for (const playerIndex of Array.from({ length: playerCount() }, (_, i) => i)) {
       inputs.push({
         type: "select-string-number",
-        label: `Player ${playerIndex + 1}`,
+        label: `${t("sing.player")} ${playerIndex + 1}`,
         value: () => selectedPlayers()[playerIndex] || null,
         onChange: (value) => setPlayer(playerIndex, value),
         options: users().map((user) => user.id),
@@ -104,7 +105,7 @@ function PlayerSelectionComponent() {
       if (voiceCount() > 1) {
         inputs.push({
           type: "select-number",
-          label: `Voice ${playerIndex + 1}`,
+          label: `${t("sing.voice")} ${playerIndex + 1}`,
           value: () => selectedVoices()[playerIndex] || 0,
           options: Array.from({ length: voiceCount() }, (_, i) => i),
           onChange: (value) => setVoice(playerIndex, value),
@@ -127,7 +128,7 @@ function PlayerSelectionComponent() {
 
     inputs.push({
       type: "button",
-      label: "Start",
+      label: t("sing.start"),
       action: startGame,
     });
 
@@ -137,7 +138,7 @@ function PlayerSelectionComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Players" onBack={onBack} />}
+      header={<TitleBar title={t("sing.players")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems()} onBack={onBack} gradient="gradient-sing" />

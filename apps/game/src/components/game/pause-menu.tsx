@@ -1,3 +1,4 @@
+import { t } from "~/lib/i18n";
 import Menu, { type MenuItem } from "../menu";
 
 interface PauseMenuProps {
@@ -10,12 +11,12 @@ export default function PauseMenu(props: PauseMenuProps) {
   const menuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Resume",
+      label: t("game.pause.resume"),
       action: () => props.onClose?.(),
     },
     {
       type: "button",
-      label: "Exit",
+      label: t("game.pause.exit"),
       action: () => props.onExit?.(),
     },
   ];
