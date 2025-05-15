@@ -59,13 +59,13 @@ export class UserService {
     return user;
   }
 
-  async updateUser(id: string, data: Partial<UserWithPassword>) {
-    const [user] = await db.update(schema.users).set(data).where(eq(schema.users.id, id)).returning();
+  async updateUser(userId: string, data: Partial<UserWithPassword>) {
+    const [user] = await db.update(schema.users).set(data).where(eq(schema.users.id, userId)).returning();
 
     return user;
   }
 
-  async storeUserImage(id: string, image: File) {
+  async storeUserImage(userId: string, image: File) {
     const resizedImage = await sharp(await image.arrayBuffer())
       .resize({ width: 256, height: 256, fit: "cover", position: "center" })
       .webp({
@@ -75,7 +75,7 @@ export class UserService {
       })
       .toBuffer();
 
-    await Bun.write(`${env.UPLOADS_PATH}/users/${id}.webp`, resizedImage);
+    await Bun.write(`${env.UPLOADS_PATH}/users/${userId}.webp`, resizedImage);
   }
 }
 

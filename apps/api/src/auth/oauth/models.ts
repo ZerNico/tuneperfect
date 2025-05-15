@@ -3,7 +3,7 @@ import * as v from "valibot";
 export const googleProfileSchema = v.object({
   email: v.string(),
   sub: v.string(),
-  picture: v.string(),
+  picture: v.optional(v.string()),
   email_verified: v.boolean(),
 });
 

@@ -63,8 +63,10 @@ class GoogleOAuthClient {
 
   public async mergeUser(user: User, profile: GoogleProfile) {
     const mergedUser = { ...user };
+    const highResImage = getHighResGoogleProfileImage(profile.picture);
+
     if (!mergedUser.image) {
-      mergedUser.image = profile.picture;
+      mergedUser.image = highResImage;
     }
 
     await db.transaction(async (tx) => {
@@ -72,7 +74,7 @@ class GoogleOAuthClient {
         await tx
           .update(schema.users)
           .set({
-            image: profile.picture,
+            image: highResImage,
           })
           .where(eq(schema.users.id, user.id));
       }
@@ -87,6 +89,8 @@ class GoogleOAuthClient {
   }
 
   public async createUser(profile: GoogleProfile) {
+    const highResImage = getHighResGoogleProfileImage(profile.picture);
+
     const [error, user] = await tryCatch(
       db.transaction(async (tx) => {
         const [user] = await tx
@@ -94,7 +98,7 @@ class GoogleOAuthClient {
           .values({
             email: profile.email,
             emailVerified: true,
-            image: profile.picture,
+            image: highResImage,
           })
           .returning();
         if (!user) {
@@ -127,6 +131,13 @@ class GoogleOAuthClient {
 
     return user;
   }
+}
+
+function getHighResGoogleProfileImage(pictureUrl: string | undefined, size = 256): string | null {
+  if (!pictureUrl) return null;
+
+  const baseUrl = pictureUrl.replace(/=s\d+-c$/, "");
+  return `${baseUrl}=s${size}-c`;
 }
 
 export const googleOAuthClient = new GoogleOAuthClient();
