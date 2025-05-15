@@ -8,14 +8,14 @@
   },
   "dependencies": {
     "@fontsource-variable/open-sans": "^5.2.5",
-    "@iconify-json/lucide": "^1.2.42",
+    "@iconify-json/lucide": "^1.2.43",
     "@solidjs/router": "^0.15.3",
     "@solidjs/start": "^1.1.4",
-    "@unocss/reset": "^66.1.1",
+    "@unocss/reset": "^66.1.2",
     "class-variance-authority": "^0.7.1",
     "sass-embedded": "^1.88.0",
     "solid-js": "^1.9.6",
-    "unocss": "^66.1.1",
+    "unocss": "^66.1.2",
     "valibot": "1.0.0-beta.9",
     "vinxi": "^0.5.6"
   },
