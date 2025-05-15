@@ -32,7 +32,7 @@ async function loadScript(): Promise<string | null> {
     return scriptHash;
   }
 
-  const [error, sha] = await tryCatch(redis.script("LOAD", REDIS_SCRIPT) as Promise<string>);
+  const [error, sha] = await tryCatch(redis.scriptLoad(REDIS_SCRIPT) as Promise<string>);
 
   if (error) {
     logger.error(error, "Failed to load rate limit Redis script");
@@ -41,24 +41,21 @@ async function loadScript(): Promise<string | null> {
 
   scriptHash = sha;
   logger.info("Rate limit Redis script loaded successfully");
-  return sha;
+  return scriptHash;
 }
 
 type RateLimitResult = [number, number];
 
 async function executeRateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
   const sha = await loadScript();
-  const scriptArgs = [
-    1, // Number of keys
-    key,
-    limit.toString(),
-    windowMs.toString(),
-  ] as const;
 
   // Try EVALSHA first if we have the script hash
   if (sha) {
     const [error, result] = await tryCatch<RateLimitResult, Error>(
-      redis.evalsha(sha, ...scriptArgs) as Promise<RateLimitResult>,
+      redis.evalSha(sha, {
+        keys: [key],
+        arguments: [limit.toString(), windowMs.toString()],
+      }) as Promise<RateLimitResult>,
     );
 
     if (!error) {
@@ -75,7 +72,10 @@ async function executeRateLimit(key: string, limit: number, windowMs: number): P
 
   // Fallback to EVAL
   const [error, result] = await tryCatch<RateLimitResult, Error>(
-    redis.eval(REDIS_SCRIPT, ...scriptArgs) as Promise<RateLimitResult>,
+    redis.eval(REDIS_SCRIPT, {
+      keys: [key],
+      arguments: [limit.toString(), windowMs.toString()],
+    }) as Promise<RateLimitResult>,
   );
 
   if (error) {
@@ -126,12 +126,12 @@ export const rateLimit = init
 
     if (current > limit) {
       context.resHeaders?.set("Retry-After", retryAfter.toString());
-      /*throw errors.RATE_LIMIT_EXCEEDED({
+      throw errors.RATE_LIMIT_EXCEEDED({
         message: "Rate limit exceeded",
         data: {
           retryAfter,
         },
-      });*/
+      });
     }
 
     return next();
