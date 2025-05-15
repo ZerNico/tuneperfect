@@ -68,15 +68,15 @@ export function VerifyEmail(props: VerifyEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Verify your E-Mail</Preview>
+      <Preview>Verify your Email</Preview>
       <Tailwind config={tailwindConfig}>
         <Body className="mx-auto my-auto bg-[#203141] px-2 py-10 font-sans text-slate-800">
           <Container className="mx-auto max-w-[465px] py-5 text-center">
             <Heading className="m-0 font-semibold text-[30px] text-white">Tune Perfect</Heading>
           </Container>
           <Container className="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
-            <Heading className="m-0 font-semibold text-[20px]">Verify your E-Mail</Heading>
-            <Text className="m-0 text-slate-500">Click the button below to verify your email address.</Text>
+            <Heading className="m-0 font-semibold text-[20px]">Verify your Email</Heading>
+            <Text className="m-0 text-slate-500">Click the button below to verify your Email address.</Text>
 
             <Text className="m-0 py-12 text-center">
               <a
@@ -92,7 +92,7 @@ export function VerifyEmail(props: VerifyEmailProps) {
               </a>
             </Text>
 
-            <Text className="m-0">If you didn't request this, you can just ignore this email.</Text>
+            <Text className="m-0">If you didn't request this, you can just ignore this Email.</Text>
           </Container>
           <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
             <Text className="m-0">

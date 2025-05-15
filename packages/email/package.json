@@ -10,12 +10,13 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@react-email/components": "^0.0.32",
-    "@react-email/render": "^1.0.4",
-    "react": "^19.0.0"
+    "@react-email/components": "^0.0.41",
+    "@react-email/render": "^1.1.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.6",
-    "react-email": "^3.0.6"
+    "@types/react": "^19.1.4",
+    "react-email": "^4.0.13"
   }
 }
