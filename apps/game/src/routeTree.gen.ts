@@ -16,6 +16,7 @@ import { Route as HomeImport } from './routes/home'
 import { Route as IndexImport } from './routes/index'
 import { Route as SingIndexImport } from './routes/sing/index'
 import { Route as SettingsIndexImport } from './routes/settings/index'
+import { Route as PartyIndexImport } from './routes/party/index'
 import { Route as LobbyIndexImport } from './routes/lobby/index'
 import { Route as GameIndexImport } from './routes/game/index'
 import { Route as SingHashImport } from './routes/sing/$hash'
@@ -26,8 +27,10 @@ import { Route as SettingsVolumeIndexImport } from './routes/settings/volume/ind
 import { Route as SettingsSongsIndexImport } from './routes/settings/songs/index'
 import { Route as SettingsMicrophonesIndexImport } from './routes/settings/microphones/index'
 import { Route as SettingsGeneralIndexImport } from './routes/settings/general/index'
+import { Route as PartyVersusIndexImport } from './routes/party/versus/index'
 import { Route as SettingsSongsPathImport } from './routes/settings/songs/$path'
 import { Route as SettingsMicrophonesIdImport } from './routes/settings/microphones/$id'
+import { Route as PartyVersusSettingsImport } from './routes/party/versus/settings'
 
 // Create/Update Routes
 
@@ -58,6 +61,12 @@ const SingIndexRoute = SingIndexImport.update({
 const SettingsIndexRoute = SettingsIndexImport.update({
   id: '/settings/',
   path: '/settings/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PartyIndexRoute = PartyIndexImport.update({
+  id: '/party/',
+  path: '/party/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -121,6 +130,12 @@ const SettingsGeneralIndexRoute = SettingsGeneralIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const PartyVersusIndexRoute = PartyVersusIndexImport.update({
+  id: '/party/versus/',
+  path: '/party/versus/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const SettingsSongsPathRoute = SettingsSongsPathImport.update({
   id: '/settings/songs/$path',
   path: '/settings/songs/$path',
@@ -130,6 +145,12 @@ const SettingsSongsPathRoute = SettingsSongsPathImport.update({
 const SettingsMicrophonesIdRoute = SettingsMicrophonesIdImport.update({
   id: '/settings/microphones/$id',
   path: '/settings/microphones/$id',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PartyVersusSettingsRoute = PartyVersusSettingsImport.update({
+  id: '/party/versus/settings',
+  path: '/party/versus/settings',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -200,6 +221,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof LobbyIndexImport
       parentRoute: typeof rootRoute
     }
+    '/party/': {
+      id: '/party/'
+      path: '/party'
+      fullPath: '/party'
+      preLoaderRoute: typeof PartyIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/settings/': {
       id: '/settings/'
       path: '/settings'
@@ -214,6 +242,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof SingIndexImport
       parentRoute: typeof rootRoute
     }
+    '/party/versus/settings': {
+      id: '/party/versus/settings'
+      path: '/party/versus/settings'
+      fullPath: '/party/versus/settings'
+      preLoaderRoute: typeof PartyVersusSettingsImport
+      parentRoute: typeof rootRoute
+    }
     '/settings/microphones/$id': {
       id: '/settings/microphones/$id'
       path: '/settings/microphones/$id'
@@ -226,6 +261,13 @@ declare module '@tanstack/solid-router' {
       path: '/settings/songs/$path'
       fullPath: '/settings/songs/$path'
       preLoaderRoute: typeof SettingsSongsPathImport
+      parentRoute: typeof rootRoute
+    }
+    '/party/versus/': {
+      id: '/party/versus/'
+      path: '/party/versus'
+      fullPath: '/party/versus'
+      preLoaderRoute: typeof PartyVersusIndexImport
       parentRoute: typeof rootRoute
     }
     '/settings/general/': {
@@ -271,10 +313,13 @@ export interface FileRoutesByFullPath {
   '/sing/$hash': typeof SingHashRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
+  '/party': typeof PartyIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/sing': typeof SingIndexRoute
+  '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/versus': typeof PartyVersusIndexRoute
   '/settings/general': typeof SettingsGeneralIndexRoute
   '/settings/microphones': typeof SettingsMicrophonesIndexRoute
   '/settings/songs': typeof SettingsSongsIndexRoute
@@ -291,10 +336,13 @@ export interface FileRoutesByTo {
   '/sing/$hash': typeof SingHashRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
+  '/party': typeof PartyIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/sing': typeof SingIndexRoute
+  '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/versus': typeof PartyVersusIndexRoute
   '/settings/general': typeof SettingsGeneralIndexRoute
   '/settings/microphones': typeof SettingsMicrophonesIndexRoute
   '/settings/songs': typeof SettingsSongsIndexRoute
@@ -312,10 +360,13 @@ export interface FileRoutesById {
   '/sing/$hash': typeof SingHashRoute
   '/game/': typeof GameIndexRoute
   '/lobby/': typeof LobbyIndexRoute
+  '/party/': typeof PartyIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/sing/': typeof SingIndexRoute
+  '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/versus/': typeof PartyVersusIndexRoute
   '/settings/general/': typeof SettingsGeneralIndexRoute
   '/settings/microphones/': typeof SettingsMicrophonesIndexRoute
   '/settings/songs/': typeof SettingsSongsIndexRoute
@@ -334,10 +385,13 @@ export interface FileRouteTypes {
     | '/sing/$hash'
     | '/game'
     | '/lobby'
+    | '/party'
     | '/settings'
     | '/sing'
+    | '/party/versus/settings'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/versus'
     | '/settings/general'
     | '/settings/microphones'
     | '/settings/songs'
@@ -353,10 +407,13 @@ export interface FileRouteTypes {
     | '/sing/$hash'
     | '/game'
     | '/lobby'
+    | '/party'
     | '/settings'
     | '/sing'
+    | '/party/versus/settings'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/versus'
     | '/settings/general'
     | '/settings/microphones'
     | '/settings/songs'
@@ -372,10 +429,13 @@ export interface FileRouteTypes {
     | '/sing/$hash'
     | '/game/'
     | '/lobby/'
+    | '/party/'
     | '/settings/'
     | '/sing/'
+    | '/party/versus/settings'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/versus/'
     | '/settings/general/'
     | '/settings/microphones/'
     | '/settings/songs/'
@@ -393,10 +453,13 @@ export interface RootRouteChildren {
   SingHashRoute: typeof SingHashRoute
   GameIndexRoute: typeof GameIndexRoute
   LobbyIndexRoute: typeof LobbyIndexRoute
+  PartyIndexRoute: typeof PartyIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   SingIndexRoute: typeof SingIndexRoute
+  PartyVersusSettingsRoute: typeof PartyVersusSettingsRoute
   SettingsMicrophonesIdRoute: typeof SettingsMicrophonesIdRoute
   SettingsSongsPathRoute: typeof SettingsSongsPathRoute
+  PartyVersusIndexRoute: typeof PartyVersusIndexRoute
   SettingsGeneralIndexRoute: typeof SettingsGeneralIndexRoute
   SettingsMicrophonesIndexRoute: typeof SettingsMicrophonesIndexRoute
   SettingsSongsIndexRoute: typeof SettingsSongsIndexRoute
@@ -413,10 +476,13 @@ const rootRouteChildren: RootRouteChildren = {
   SingHashRoute: SingHashRoute,
   GameIndexRoute: GameIndexRoute,
   LobbyIndexRoute: LobbyIndexRoute,
+  PartyIndexRoute: PartyIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   SingIndexRoute: SingIndexRoute,
+  PartyVersusSettingsRoute: PartyVersusSettingsRoute,
   SettingsMicrophonesIdRoute: SettingsMicrophonesIdRoute,
   SettingsSongsPathRoute: SettingsSongsPathRoute,
+  PartyVersusIndexRoute: PartyVersusIndexRoute,
   SettingsGeneralIndexRoute: SettingsGeneralIndexRoute,
   SettingsMicrophonesIndexRoute: SettingsMicrophonesIndexRoute,
   SettingsSongsIndexRoute: SettingsSongsIndexRoute,
@@ -442,10 +508,13 @@ export const routeTree = rootRoute
         "/sing/$hash",
         "/game/",
         "/lobby/",
+        "/party/",
         "/settings/",
         "/sing/",
+        "/party/versus/settings",
         "/settings/microphones/$id",
         "/settings/songs/$path",
+        "/party/versus/",
         "/settings/general/",
         "/settings/microphones/",
         "/settings/songs/",
@@ -479,17 +548,26 @@ export const routeTree = rootRoute
     "/lobby/": {
       "filePath": "lobby/index.tsx"
     },
+    "/party/": {
+      "filePath": "party/index.tsx"
+    },
     "/settings/": {
       "filePath": "settings/index.tsx"
     },
     "/sing/": {
       "filePath": "sing/index.tsx"
     },
+    "/party/versus/settings": {
+      "filePath": "party/versus/settings.tsx"
+    },
     "/settings/microphones/$id": {
       "filePath": "settings/microphones/$id.tsx"
     },
     "/settings/songs/$path": {
       "filePath": "settings/songs/$path.tsx"
+    },
+    "/party/versus/": {
+      "filePath": "party/versus/index.tsx"
     },
     "/settings/general/": {
       "filePath": "settings/general/index.tsx"

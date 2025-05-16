@@ -53,10 +53,7 @@ function HomeComponent() {
       icon: IconPartyPopper,
       description: t("home.partyDescription"),
       action: () => {
-        //navigate({ to: "/party" });
-        notify({
-          message: t("home.partyDescription"),
-        });
+        navigate({ to: "/party" });
         playSound("confirm");
       },
     },

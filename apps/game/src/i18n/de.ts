@@ -95,6 +95,15 @@ const de = {
       },
     }
   },
+  party: {
+    title: "Party",
+    versus: {
+      title: "Versus",
+      start: "Start",
+      jokers: "Joker",
+      notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Versus-Spiels.",
+    }
+  }
 };
 
 export type Dict = typeof de;

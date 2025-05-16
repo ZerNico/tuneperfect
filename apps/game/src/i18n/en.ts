@@ -95,6 +95,15 @@ const en = {
       },
     }
   },
+  party: {
+    title: "Party",
+    versus: {
+      title: "Versus",
+      start: "Start",
+      jokers: "Jokers",
+      notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
+    }
+  }
 };
 
 export type Dict = typeof en;
