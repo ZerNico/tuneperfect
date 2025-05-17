@@ -188,7 +188,13 @@ function ScoreComponent() {
         </div>
 
         <div class="flex flex-1 items-center">
-          <Button loading={updateHighscoresMutation.isPending} selected gradient="gradient-sing" class="w-full" onClick={handleContinue}>
+          <Button
+            loading={updateHighscoresMutation.isPending}
+            selected
+            gradient={!roundStore.settings()?.returnTo ? "gradient-sing" : "gradient-party"}
+            class="w-full"
+            onClick={handleContinue}
+          >
             {t("score.continue")}
           </Button>
         </div>

@@ -35,6 +35,14 @@ const SONGS_BETWEEN = 40;
 const PADDING = SONGS_BETWEEN + SONGS_BEFORE_AFTER - 2;
 const TOTAL_SONG_ITEMS = PADDING + 2 * SONGS_BEFORE_AFTER + SONGS_BETWEEN + 2;
 
+interface PlayerScore {
+  user: User;
+  wins: number;
+  totalScore: number;
+  roundsPlayed: number;
+  rank: number;
+}
+
 export const Route = createFileRoute("/party/versus/")({
   component: VersusComponent,
   beforeLoad: async () => {
@@ -220,6 +228,63 @@ function VersusComponent() {
 
   const [jokers, setJokers] = createSignal<[number, number]>([versusStore.settings()?.jokers ?? 0, versusStore.settings()?.jokers ?? 0]);
 
+  const winners = createMemo(() => {
+    const players = versusStore.state().players;
+    const roundsData = versusStore.state().rounds;
+
+    const calculatedScores: { user: User; wins: number; totalScore: number; roundsPlayed: number }[] = players
+      .map((player) => {
+        const playerRounds = roundsData[player.id] || [];
+        let wins = 0;
+        let totalScore = 0;
+        const roundsPlayed = playerRounds.length;
+
+        for (const round of playerRounds) {
+          if (round.result === "win" || round.result === "draw") {
+            wins++;
+          }
+          totalScore += round.score;
+        }
+        return { user: player, wins, totalScore, roundsPlayed };
+      })
+      .sort((a, b) => {
+        if (b.wins !== a.wins) {
+          return b.wins - a.wins;
+        }
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
+        }
+        return 0;
+      });
+
+    if (calculatedScores.length === 0) {
+      return [];
+    }
+
+    const rankedScores: PlayerScore[] = [];
+    let rank = 1;
+    const firstPlayerScore = calculatedScores[0];
+    if (firstPlayerScore) {
+      rankedScores.push({ ...firstPlayerScore, rank });
+    }
+
+    for (let i = 1; i < calculatedScores.length; i++) {
+      const prevScoreItem = calculatedScores[i - 1];
+      const currentScoreItem = calculatedScores[i];
+
+      if (prevScoreItem && currentScoreItem) {
+        if (
+          currentScoreItem.wins < prevScoreItem.wins ||
+          (currentScoreItem.wins === prevScoreItem.wins && currentScoreItem.totalScore < prevScoreItem.totalScore)
+        ) {
+          rank = i + 1;
+        }
+        rankedScores.push({ ...currentScoreItem, rank });
+      }
+    }
+    return rankedScores.filter((score) => score.rank === 1).map((score) => score.user);
+  });
+
   const reroll = (player: 0 | 1) => {
     if (state() !== "selected") return;
 
@@ -265,7 +330,9 @@ function VersusComponent() {
     {
       type: "button",
       label: t("party.versus.continue"),
-      action: () => {},
+      action: () => {
+        versusStore.continueRound();
+      },
     },
     {
       type: "button",
@@ -332,8 +399,27 @@ function VersusComponent() {
           when={currentMatchup()}
           fallback={
             <div class="flex h-full w-full flex-col items-center justify-center">
-              <div class="flex flex-1 flex-col items-center justify-center">Winner</div>
-              <Menu class="!h-auto" items={menuItems} onBack={onBack} layer={1} />
+              <div class="flex flex-1 flex-col items-center justify-center">
+                <IconTrophy class="text-6xl" />
+                <Show when={winners().length > 0}>
+                  <Show
+                    when={winners().length === 1}
+                    fallback={
+                      <p>
+                        {t("party.versus.draw")}:{" "}
+                        {winners()
+                          .map((w) => w.username)
+                          .join(", ")}
+                      </p>
+                    }
+                  >
+                    <p class="gradient-party bg-gradient-to-b bg-clip-text text-center font-bold text-6xl text-transparent">
+                      {winners()[0]?.username} {t("party.versus.wins")}!
+                    </p>
+                  </Show>
+                </Show>
+              </div>
+              <Menu gradient="gradient-party" class="!h-auto" items={menuItems} onBack={onBack} layer={1} />
             </div>
           }
         >
@@ -467,14 +553,6 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
 
 interface VersusHighscoreListProps {
   class?: string;
-}
-
-interface PlayerScore {
-  user: User;
-  wins: number;
-  totalScore: number;
-  roundsPlayed: number;
-  rank: number;
 }
 
 function VersusHighscoreList(props: VersusHighscoreListProps) {

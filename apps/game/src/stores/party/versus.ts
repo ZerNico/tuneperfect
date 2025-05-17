@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 import { type Matchup, generateMatchups } from "~/lib/party/versus/matchup";
 import type { User } from "~/lib/types";
 import type { Song } from "~/lib/ultrastar/song";
+import { toShuffled } from "~/lib/utils/array";
 
 export interface Settings {
   jokers: number;
@@ -33,11 +34,16 @@ function createVersusStore() {
     setState({
       players,
       rounds: {},
-      matchups: generateMatchups(players),
+      matchups: generateMatchups(toShuffled(players)),
       playedSongs: [],
     });
+  };
 
-    console.log(state().matchups);
+  const continueRound = () => {
+    setState((state) => ({
+      ...state,
+      matchups: generateMatchups(toShuffled(state.players)),
+    }));
   };
 
   return {
@@ -46,6 +52,7 @@ function createVersusStore() {
     setSettings,
     setState,
     startRound,
+    continueRound,
   };
 }
 

@@ -103,7 +103,9 @@ const de = {
       jokers: "Joker",
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Versus-Spiels.",
       exit: "Beenden",
-      continue: "Weiter"
+      continue: "Weiter",
+      draw: "Unentschieden",
+      wins: "hat gewonnen"
     }
   }
 };

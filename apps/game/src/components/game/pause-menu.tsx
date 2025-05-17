@@ -5,6 +5,7 @@ interface PauseMenuProps {
   onClose?: () => void;
   onExit?: () => void;
   class?: string;
+  gradient?: "gradient-sing" | "gradient-party";
 }
 
 export default function PauseMenu(props: PauseMenuProps) {
@@ -28,7 +29,7 @@ export default function PauseMenu(props: PauseMenuProps) {
         [props.class || ""]: true,
       }}
     >
-      <Menu items={menuItems} layer={1} gradient="gradient-sing" />
+      <Menu items={menuItems} layer={1} gradient={props.gradient} />
     </div>
   );
 }
