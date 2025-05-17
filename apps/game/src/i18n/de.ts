@@ -102,6 +102,7 @@ const de = {
       start: "Start",
       jokers: "Joker",
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Versus-Spiels.",
+      microphoneRequired: "Du brauchst 2 Mikrofone zum Starten eines Versus-Spiels.",
       exit: "Beenden",
       continue: "Weiter",
       restart: "Neustart",

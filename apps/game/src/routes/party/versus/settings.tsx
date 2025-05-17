@@ -9,6 +9,7 @@ import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 import { type Settings, versusStore } from "~/stores/party/versus";
+import { settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/party/versus/settings")({
   component: VersusSettingsComponent,
@@ -26,6 +27,29 @@ function VersusSettingsComponent() {
   const [settings, setSettings] = createSignal<Settings>({
     jokers: 5,
   });
+
+  const startRound = () => {
+    const users = lobbyQuery.data?.users ?? [];
+    if (users.length < 2) {
+      notify({
+        message: t("party.versus.notEnoughPlayers"),
+        intent: "error",
+      });
+      return;
+    }
+
+    const microphones = settingsStore.microphones();
+    if (microphones.length < 2) {
+      notify({
+        message: t("party.versus.microphoneRequired"),
+        intent: "error",
+      });
+      return;
+    }
+
+    versusStore.startRound(settings(), users);
+    navigate({ to: "/party/versus" });
+  };
 
   const baseMenuItems: MenuItem[] = [
     {
@@ -47,8 +71,7 @@ function VersusSettingsComponent() {
           type: "button",
           label: t("party.versus.restart"),
           action: () => {
-            versusStore.startRound(settings(), versusStore.state().players);
-            navigate({ to: "/party/versus" });
+            startRound();
           },
         },
         {
@@ -67,18 +90,7 @@ function VersusSettingsComponent() {
         type: "button",
         label: t("party.versus.start"),
         action: () => {
-          const users = lobbyQuery.data?.users ?? [];
-
-          if (users.length < 2) {
-            notify({
-              message: t("party.versus.notEnoughPlayers"),
-              intent: "error",
-            });
-            return;
-          }
-
-          versusStore.startRound(settings(), users);
-          navigate({ to: "/party/versus" });
+          startRound();
         },
       },
     ];
