@@ -26,7 +26,7 @@ function PartyComponent() {
       header={<TitleBar title={t("party.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <Menu items={menuItems} onBack={onBack} />
+      <Menu items={menuItems} onBack={onBack} gradient="gradient-party" />
     </Layout>
   );
 }

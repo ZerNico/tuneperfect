@@ -104,6 +104,7 @@ const de = {
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Versus-Spiels.",
       exit: "Beenden",
       continue: "Weiter",
+      restart: "Neustart",
       draw: "Unentschieden",
       wins: "hat gewonnen"
     }

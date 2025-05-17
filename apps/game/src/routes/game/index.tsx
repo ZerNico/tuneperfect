@@ -116,7 +116,7 @@ function GameComponent() {
             <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">
               <p class="text-3xl">{roundStore.settings()?.song.artist}</p>
               <div class="max-w-200">
-                <span class={`${gradient()} bg-gradient-to-b bg-clip-text font-bold text-7xl text-transparent `}>
+                <span class={`${gradient()} bg-gradient-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}>
                   {roundStore.settings()?.song.title}
                 </span>
               </div>

@@ -104,6 +104,7 @@ const en = {
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
       exit: "Exit",
       continue: "Continue",
+      restart: "Restart",
       draw: "It's a draw",
       wins: "wins"
     }

@@ -18,6 +18,7 @@ export interface State {
   rounds: Record<User["id"], Round[]>;
   matchups: Matchup[];
   playedSongs: Song[];
+  playing: boolean;
 }
 
 function createVersusStore() {
@@ -27,6 +28,7 @@ function createVersusStore() {
     rounds: {},
     matchups: [],
     playedSongs: [],
+    playing: false,
   });
 
   const startRound = (settings: Settings, players: User[]) => {
@@ -36,6 +38,7 @@ function createVersusStore() {
       rounds: {},
       matchups: generateMatchups(toShuffled(players)),
       playedSongs: [],
+      playing: true,
     });
   };
 

@@ -27,7 +27,7 @@ function VersusSettingsComponent() {
     jokers: 5,
   });
 
-  const menuItems: MenuItem[] = [
+  const baseMenuItems: MenuItem[] = [
     {
       type: "slider",
       label: t("party.versus.jokers"),
@@ -37,29 +37,56 @@ function VersusSettingsComponent() {
       max: 15,
       step: 1,
     },
-    {
-      type: "button",
-      label: t("party.versus.start"),
-      action: () => {
-        const users = lobbyQuery.data?.users ?? [];
-
-        if (users.length < 2) {
-          notify({
-            message: t("party.versus.notEnoughPlayers"),
-            intent: "error",
-          });
-          return;
-        }
-
-        versusStore.startRound(settings(), users);
-        navigate({ to: "/party/versus" });
-      },
-    },
   ];
+
+  const menuItems = (): MenuItem[] => {
+    if (versusStore.state().playing) {
+      return [
+        ...baseMenuItems,
+        {
+          type: "button",
+          label: t("party.versus.restart"),
+          action: () => {
+            versusStore.startRound(settings(), versusStore.state().players);
+            navigate({ to: "/party/versus" });
+          },
+        },
+        {
+          type: "button",
+          label: t("party.versus.continue"),
+          action: () => {
+            navigate({ to: "/party/versus" });
+          },
+        },
+      ];
+    }
+
+    return [
+      ...baseMenuItems,
+      {
+        type: "button",
+        label: t("party.versus.start"),
+        action: () => {
+          const users = lobbyQuery.data?.users ?? [];
+
+          if (users.length < 2) {
+            notify({
+              message: t("party.versus.notEnoughPlayers"),
+              intent: "error",
+            });
+            return;
+          }
+
+          versusStore.startRound(settings(), users);
+          navigate({ to: "/party/versus" });
+        },
+      },
+    ];
+  };
 
   return (
     <Layout intent="secondary" header={<TitleBar title={t("party.versus.title")} onBack={onBack} />}>
-      <Menu items={menuItems} onBack={onBack} />
+      <Menu items={menuItems()} onBack={onBack} gradient="gradient-party" />
     </Layout>
   );
 }
