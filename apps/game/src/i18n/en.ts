@@ -102,6 +102,8 @@ const en = {
       start: "Start",
       jokers: "Jokers",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
+      exit: "Exit",
+      continue: "Continue"
     }
   }
 };

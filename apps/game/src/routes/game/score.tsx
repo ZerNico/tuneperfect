@@ -1,6 +1,6 @@
 import { createMutation, createQuery } from "@tanstack/solid-query";
-import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { For, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { createFileRoute } from "@tanstack/solid-router";
+import { For, createMemo, createSignal, onMount } from "solid-js";
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -11,9 +11,9 @@ import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
-import { getMaxScore } from "~/lib/ultrastar/voice";
 import { getColorVar } from "~/lib/utils/color";
-import { type Score, useRoundStore } from "~/stores/round";
+import { MAX_POSSIBLE_SCORE, getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { type Score, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/game/score")({
@@ -23,7 +23,6 @@ export const Route = createFileRoute("/game/score")({
 type ScoreCategory = "normal" | "golden" | "bonus";
 type AnimatedState = Record<ScoreCategory, boolean>;
 
-const MAX_POSSIBLE_SCORE = 100000;
 const ANIMATION_DURATION = 2000;
 const ANIMATION_DELAY = 2000;
 const ANIMATION_STEPS = 38;
@@ -36,26 +35,12 @@ interface PlayerScoreData {
   position: number;
 }
 
-const getRelativeScore = (score: Score, maxScore: Score) => {
-  const maxScoreTotal = maxScore.normal + maxScore.golden + maxScore.bonus;
-  const absoluteScore = score ?? { normal: 0, golden: 0, bonus: 0 };
-
-  const relativeScore = {
-    normal: (absoluteScore.normal / maxScoreTotal) * MAX_POSSIBLE_SCORE,
-    golden: (absoluteScore.golden / maxScoreTotal) * MAX_POSSIBLE_SCORE,
-    bonus: (absoluteScore.bonus / maxScoreTotal) * MAX_POSSIBLE_SCORE,
-  };
-
-  return relativeScore;
-};
-
 function ScoreComponent() {
-  const roundStore = useRoundStore();
-  const navigate = useNavigate();
   const highscoresQuery = createQuery(() =>
     client.highscore.getHighscores.queryOptions({ input: { hash: roundStore.settings()?.song?.hash ?? "" } })
   );
   const [showHighscores, setShowHighscores] = createSignal(false);
+  const roundActions = useRoundActions();
 
   const scoreData = createMemo<PlayerScoreData[]>(() => {
     const players = roundStore.settings()?.players || [];
@@ -113,7 +98,7 @@ function ScoreComponent() {
     if (updateHighscoresMutation.isPending) return;
 
     playSound("confirm");
-    navigate({ to: "/sing" });
+    roundActions.returnRound();
   };
 
   const animatedStages = createMemo(() => {

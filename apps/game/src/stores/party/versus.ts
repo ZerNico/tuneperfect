@@ -2,7 +2,6 @@ import { createSignal } from "solid-js";
 import { type Matchup, generateMatchups } from "~/lib/party/versus/matchup";
 import type { User } from "~/lib/types";
 import type { Song } from "~/lib/ultrastar/song";
-import type { Score } from "../round";
 
 export interface Settings {
   jokers: number;
@@ -10,12 +9,12 @@ export interface Settings {
 
 export interface Round {
   result: "win" | "lose" | "draw";
-  score: Score;
+  score: number;
 }
 
 export interface State {
   players: User[];
-  scores: Record<User["id"], Round>;
+  rounds: Record<User["id"], Round[]>;
   matchups: Matchup[];
   playedSongs: Song[];
 }
@@ -24,7 +23,7 @@ function createVersusStore() {
   const [settings, setSettings] = createSignal<Settings>();
   const [state, setState] = createSignal<State>({
     players: [],
-    scores: {},
+    rounds: {},
     matchups: [],
     playedSongs: [],
   });
@@ -33,10 +32,12 @@ function createVersusStore() {
     setSettings(settings);
     setState({
       players,
-      scores: {},
+      rounds: {},
       matchups: generateMatchups(players),
       playedSongs: [],
     });
+
+    console.log(state().matchups);
   };
 
   return {

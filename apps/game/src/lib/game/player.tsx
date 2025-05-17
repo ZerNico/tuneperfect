@@ -1,11 +1,11 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { type Accessor, type JSX, createEffect, createMemo, createSignal } from "solid-js";
 import { commands } from "~/bindings";
-import { useRoundStore } from "~/stores/round";
+import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
-import { type Note, getNoteScore } from "../ultrastar/note";
-import { getMaxScore } from "../ultrastar/voice";
+import type { Note } from "../ultrastar/note";
+import { getMaxScore, getNoteScore } from "../utils/score";
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
 import { type PlayerContextValue, PlayerProvider } from "./player-context";
@@ -19,7 +19,6 @@ export { usePlayer } from "./player-context";
 export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const pitchProcessor = new PitchProcessor();
   const game = useGame();
-  const roundStore = useRoundStore();
 
   const voice = createMemo(() => {
     const voiceIndex = roundStore.settings()?.voices[options().index];

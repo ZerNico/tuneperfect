@@ -24,7 +24,7 @@ const router = createRouter({
     queryClient,
   },
   scrollRestoration: true,
-  defaultPreload: "intent",
+  defaultPreload: false,
   defaultPreloadStaleTime: 0,
   defaultViewTransition: true,
 });

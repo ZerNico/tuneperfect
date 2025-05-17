@@ -8,7 +8,7 @@ import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
-import { useRoundStore } from "~/stores/round";
+import { roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/game/")({
@@ -16,10 +16,10 @@ export const Route = createFileRoute("/game/")({
 });
 
 function GameComponent() {
-  const roundStore = useRoundStore();
   const [songPlayerRef, setSongPlayerRef] = createSignal<SongPlayerRef>();
   const [ready, setReady] = createSignal(false);
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
+  const roundActions = useRoundActions();
 
   const { GameProvider, start, pause, resume, playing, started, scores } = createGame(() => ({
     songPlayerRef: songPlayerRef(),
@@ -54,7 +54,7 @@ function GameComponent() {
   });
 
   const handleEnded = () => {
-    roundStore.endRound(scores());
+    roundActions.endRound(scores());
   };
 
   return (

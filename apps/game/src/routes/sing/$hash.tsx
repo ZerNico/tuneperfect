@@ -9,7 +9,7 @@ import Avatar from "~/components/ui/avatar";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import type { LocalUser } from "~/lib/types";
-import { useRoundStore } from "~/stores/round";
+import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
@@ -28,13 +28,13 @@ const localUsers: LocalUser[] = [
 
 function PlayerSelectionComponent() {
   const params = Route.useParams();
+  const roundActions = useRoundActions();
 
   const song = () => songsStore.songs().find((song) => song.hash === params().hash);
   const voiceCount = () => song()?.voices.length || 0;
 
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/sing" });
-  const roundStore = useRoundStore();
   const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
   const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
   const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
@@ -62,7 +62,7 @@ function PlayerSelectionComponent() {
       return;
     }
 
-    roundStore.startRound({ song: s, players, voices });
+    roundActions.startRound({ song: s, players, voices });
   };
 
   const setPlayer = (playerNumber: number, value: number | string) => {
