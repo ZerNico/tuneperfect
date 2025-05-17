@@ -9,7 +9,7 @@ import Menu, { type MenuItem } from "~/components/menu";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
-import { useNavigation } from "~/hooks/navigation";
+import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
@@ -23,6 +23,10 @@ import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
 import IconHash from "~icons/lucide/hash";
 import IconTrophy from "~icons/lucide/trophy";
+import IconF1Key from "~icons/sing/f1-key";
+import IconF2Key from "~icons/sing/f2-key";
+import IconGamepadLB from "~icons/sing/gamepad-lb";
+import IconGamepadRB from "~icons/sing/gamepad-rb";
 
 interface SongItem {
   song: LocalSong | null;
@@ -403,6 +407,7 @@ function VersusComponent() {
                 colorName={settingsStore.microphones()[0]?.color ?? "blue"}
                 jokers={jokers()[0]}
                 onReroll={() => reroll(0)}
+                playerIndex={0}
               />
 
               <div
@@ -467,6 +472,7 @@ function VersusComponent() {
                 colorName={settingsStore.microphones()[1]?.color ?? "red"}
                 jokers={jokers()[1]}
                 onReroll={() => reroll(1)}
+                playerIndex={1}
               />
             </div>
           )}
@@ -525,6 +531,7 @@ interface MatchupPlayerDisplayProps {
   class?: string;
   jokers: number;
   onReroll: () => void;
+  playerIndex: 0 | 1;
 }
 
 function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
@@ -540,8 +547,18 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
         <div class="truncate font-bold text-xl">{props.player.username}</div>
       </div>
       <div class="flex flex-row items-center gap-2">
+        <Show when={props.playerIndex === 0}>
+          <Show when={keyMode() === "gamepad"} fallback={<IconF1Key class="text-sm" />}>
+            <IconGamepadLB class="text-base" />
+          </Show>
+        </Show>
+        <Show when={props.playerIndex === 1}>
+          <Show when={keyMode() === "gamepad"} fallback={<IconF2Key class="text-sm" />}>
+            <IconGamepadRB class="text-base" />
+          </Show>
+        </Show>
         <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95 " onClick={props.onReroll}>
-          <IconDices class="text-lg" />
+          <IconDices class="text-xl" />
         </button>
         <p class="">{props.jokers}</p>
       </div>

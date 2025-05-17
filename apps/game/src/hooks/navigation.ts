@@ -47,6 +47,8 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"]>([
   ["F4", "random"],
   ["F5", "sort-left"],
   ["F6", "sort-right"],
+  ["F1", "joker-1"],
+  ["F2", "joker-2"],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
