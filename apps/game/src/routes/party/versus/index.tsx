@@ -1,14 +1,17 @@
 import { Key } from "@solid-primitives/keyed";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { For, Show, createMemo, createSignal } from "solid-js";
+import { For, Show, batch, createMemo, createSignal } from "solid-js";
+import { Transition } from "solid-transition-group";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { times } from "~/lib/utils/loop";
 import { versusStore } from "~/stores/party/versus";
+import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
 interface SongItem {
@@ -18,7 +21,7 @@ interface SongItem {
 
 const SONGS_ON_SCREEN = 5;
 const SONGS_BEFORE_AFTER = 3;
-const SONGS_BETWEEN = 30;
+const SONGS_BETWEEN = 40;
 const PADDING = SONGS_BETWEEN + SONGS_BEFORE_AFTER - 2;
 const TOTAL_SONG_ITEMS = PADDING + 2 * SONGS_BEFORE_AFTER + SONGS_BETWEEN + 2;
 
@@ -138,16 +141,70 @@ function VersusComponent() {
 
   const onTransitionEnd = () => {
     setTimeout(() => {
-      setState("selected");
-      setDisplayedSongs(generateNextDisplayedSongs(displayedSongs()));
+      batch(() => {
+        setState("selected");
+        setDisplayedSongs(generateNextDisplayedSongs(displayedSongs()));
+      });
     }, 0);
   };
+
+  const currentSong = createMemo(() => {
+    if (state() !== "selected") {
+      return null;
+    }
+
+    return displayedSongs()?.at(SONGS_BEFORE_AFTER)?.song ?? null;
+  });
 
   return (
     <Layout
       intent="secondary"
       header={<TitleBar title={t("party.versus.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "confirm"]} />}
+      background={
+        <div class="relative h-full w-full">
+          <Transition
+            onExit={(el, done) => {
+              const element = el as HTMLElement;
+              element.style.position = "absolute";
+              element.style.zIndex = "1";
+              element.style.top = "0";
+              element.style.left = "0";
+
+              const a = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+                duration: 300,
+              });
+              a.finished.then(done);
+            }}
+            onEnter={(el, done) => {
+              const element = el as HTMLElement;
+              element.style.position = "absolute";
+              element.style.zIndex = "1";
+              element.style.top = "0";
+              element.style.left = "0";
+
+              const a = el.animate([{ opacity: 0 }, { opacity: 1 }], {
+                duration: 300,
+              });
+              a.finished.then(done);
+            }}
+          >
+            <Show when={currentSong()} keyed>
+              {(currentSong) => (
+                <div class="h-full w-full">
+                  <SongPlayer
+                    isPreview
+                    volume={settingsStore.getVolume("preview")}
+                    class="h-full w-full opacity-60"
+                    playing
+                    song={currentSong}
+                  />
+                </div>
+              )}
+            </Show>
+          </Transition>
+        </div>
+      }
     >
       <div class="grid flex-grow grid-cols-[2fr_5fr] items-center">
         <div>
@@ -156,12 +213,12 @@ function VersusComponent() {
             test
           </button>
         </div>
-        <div class="mask-x-from-95% mask-x-to-100% flex w-full flex-col items-center justify-center py-10">
+        <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center py-15">
           <div
             class="pointer-events-none flex transform-gpu justify-center will-change-transform"
             style={{
               transform: state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
-              transition: state() === "animating" ? "transform 3s ease-in-out" : "",
+              transition: state() === "animating" ? "transform 3s cubic-bezier(0.42, 0, 0.4, 1)" : "",
               width: `${(TOTAL_SONG_ITEMS / SONGS_ON_SCREEN) * 100}%`,
             }}
             onTransitionEnd={onTransitionEnd}
@@ -174,7 +231,7 @@ function VersusComponent() {
                     {(songItem, index) => (
                       <div
                         onTransitionEnd={(event) => event.stopPropagation()}
-                        class="aspect-square flex-shrink-0 transform p-2 transition-transform duration-250"
+                        class="relative aspect-square flex-shrink-0 transform p-2 transition-transform duration-250"
                         style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }}
                         classList={{
                           "scale-130": state() === "selected" && index() === SONGS_BEFORE_AFTER,
@@ -183,6 +240,27 @@ function VersusComponent() {
                         }}
                       >
                         <Show when={songItem().song}>{(song) => <SongCard song={song()} />}</Show>
+
+                        <div
+                          class="absolute inset-0 p-2 opacity-0 transition-opacity duration-250"
+                          classList={{
+                            "opacity-80": state() === "selected" && index() === SONGS_BEFORE_AFTER,
+                          }}
+                        >
+                          <div class="gradient-party h-full w-full rounded-lg bg-gradient-to-r p-4 text-center" />
+                        </div>
+                        <div
+                          class="absolute inset-0 p-2 opacity-0 transition-opacity duration-250"
+                          classList={{
+                            "opacity-100": state() === "selected" && index() === SONGS_BEFORE_AFTER,
+                          }}
+                        >
+                          <div class="flex h-full w-full flex-col items-center justify-center p-4 text-center">
+                            <p class="font-bold text-white">{songItem().song?.title}</p>
+                            <p>-</p>
+                            <p class="text-sm text-white">{songItem().song?.artist}</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </Key>
@@ -209,7 +287,7 @@ function SongCard(props: SongCardProps) {
         [props.class ?? ""]: true,
       }}
     >
-      <img src={props.song.coverUrl} alt={props.song.title} class="h-full w-full object-cover" />
+      <img loading="lazy" src={props.song.coverUrl} alt={props.song.title} class="h-full w-full object-cover" />
     </div>
   );
 }

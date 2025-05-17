@@ -28,6 +28,7 @@ import IconGamepadStart from "~icons/sing/gamepad-start";
 import IconGamepadY from "~icons/sing/gamepad-y";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
 export const Route = createFileRoute("/sing/")({
   component: SingComponent,
 });
