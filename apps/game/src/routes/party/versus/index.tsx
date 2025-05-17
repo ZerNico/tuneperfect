@@ -43,6 +43,60 @@ interface PlayerScore {
   rank: number;
 }
 
+function calculatePlayerScores(players: User[], roundsData: Record<string, Round[]>): PlayerScore[] {
+  const calculatedScores: { user: User; wins: number; totalScore: number; roundsPlayed: number }[] = players
+    .map((player) => {
+      const playerRounds = roundsData[player.id] || [];
+      let wins = 0;
+      let totalScore = 0;
+      const roundsPlayed = playerRounds.length;
+
+      for (const round of playerRounds) {
+        if (round.result === "win" || round.result === "draw") {
+          wins++;
+        }
+        totalScore += round.score;
+      }
+      return { user: player, wins, totalScore, roundsPlayed };
+    })
+    .sort((a, b) => {
+      if (b.wins !== a.wins) {
+        return b.wins - a.wins;
+      }
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
+      }
+      return 0;
+    });
+
+  if (calculatedScores.length === 0) {
+    return [];
+  }
+
+  const rankedScores: PlayerScore[] = [];
+  let rank = 1;
+  const firstPlayerScore = calculatedScores[0];
+  if (firstPlayerScore) {
+    rankedScores.push({ ...firstPlayerScore, rank });
+  }
+
+  for (let i = 1; i < calculatedScores.length; i++) {
+    const prevScoreItem = calculatedScores[i - 1];
+    const currentScoreItem = calculatedScores[i];
+
+    if (prevScoreItem && currentScoreItem) {
+      if (
+        currentScoreItem.wins < prevScoreItem.wins ||
+        (currentScoreItem.wins === prevScoreItem.wins && currentScoreItem.totalScore < prevScoreItem.totalScore)
+      ) {
+        rank = i + 1;
+      }
+      rankedScores.push({ ...currentScoreItem, rank });
+    }
+  }
+  return rankedScores;
+}
+
 export const Route = createFileRoute("/party/versus/")({
   component: VersusComponent,
   beforeLoad: async () => {
@@ -52,11 +106,11 @@ export const Route = createFileRoute("/party/versus/")({
     const voice = settings?.song?.voices[0];
     const players = settings?.players ?? [];
     const scores = roundStore.scores();
-    console.log(settings, voice, players, scores);
 
-    if (scores.length !== 2) return;
-    if (!voice) return;
-    if (players.length !== 2) return;
+    if (scores.length !== 2 || !voice || players.length !== 2) {
+      console.log("Conditions not met for processing round results:", { settings, voice, players, scores });
+      return;
+    }
 
     const totalScores = scores.map((score) => {
       const maxScore = getMaxScore(voice);
@@ -64,39 +118,37 @@ export const Route = createFileRoute("/party/versus/")({
       return Math.floor(relativeScore.normal + relativeScore.golden + relativeScore.bonus);
     });
 
-    console.log(totalScores);
-
-    if (totalScores.every((score) => score === 0)) return;
+    if (totalScores.every((score) => score === 0)) {
+      console.log("All scores are zero, skipping round result processing.");
+      return;
+    }
 
     batch(() => {
+      const newRounds = { ...versusStore.state().rounds };
+
       for (const [index, player] of players.entries()) {
         if (!player) continue;
 
-        const otherIndex = index === 0 ? 1 : 0;
-        const otherScore = totalScores[otherIndex];
+        const otherIndex = 1 - index; // Simplified way to get other index (0 or 1)
         const currentScore = totalScores[index];
-        if (!otherScore || !currentScore) continue;
+        const otherScore = totalScores[otherIndex];
+
+        if (typeof currentScore === "undefined" || typeof otherScore === "undefined") continue;
 
         const result: Round["result"] = currentScore > otherScore ? "win" : currentScore < otherScore ? "lose" : "draw";
 
-        const round = {
+        const round: Round = {
           result,
           score: currentScore,
         };
 
-        const playerRounds = versusStore.state().rounds[player.id] ?? [];
-        playerRounds.push(round);
-        versusStore.setState((state) => ({
-          ...state,
-          rounds: {
-            ...state.rounds,
-            [player.id]: playerRounds,
-          },
-        }));
+        const playerRounds = newRounds[player.id] ?? [];
+        newRounds[player.id] = [...playerRounds, round];
       }
 
       versusStore.setState((state) => ({
         ...state,
+        rounds: newRounds,
         matchups: state.matchups.slice(1),
       }));
 
@@ -174,8 +226,8 @@ function VersusComponent() {
     const songsToKeep = currentDisplayedSongs.slice(-keepFromPrevious);
     displayedSongs.push(...songsToKeep);
 
-    const selected = displayedSongs[SONGS_BEFORE_AFTER]?.song;
-    if (!selected) {
+    const selectedSong = displayedSongs[SONGS_BEFORE_AFTER]?.song;
+    if (!selectedSong) {
       return null;
     }
 
@@ -187,7 +239,7 @@ function VersusComponent() {
 
     const nextPlayedSongs = versusStore.state().playedSongs;
 
-    const next = getRandomSongWithoutDuplicates([...nextPlayedSongs, selected]);
+    const next = getRandomSongWithoutDuplicates([...nextPlayedSongs, selectedSong]);
     if (!next) return null;
     displayedSongs.push({ song: next, id: generateUUID() });
 
@@ -218,9 +270,7 @@ function VersusComponent() {
   };
 
   const currentSong = createMemo(() => {
-    if (state() !== "selected") return null;
-    if (versusStore.state().matchups.length === 0) return null;
-
+    if (state() !== "selected" || versusStore.state().matchups.length === 0) return null;
     return displayedSongs()?.at(SONGS_BEFORE_AFTER)?.song ?? null;
   });
 
@@ -231,57 +281,7 @@ function VersusComponent() {
   const winners = createMemo(() => {
     const players = versusStore.state().players;
     const roundsData = versusStore.state().rounds;
-
-    const calculatedScores: { user: User; wins: number; totalScore: number; roundsPlayed: number }[] = players
-      .map((player) => {
-        const playerRounds = roundsData[player.id] || [];
-        let wins = 0;
-        let totalScore = 0;
-        const roundsPlayed = playerRounds.length;
-
-        for (const round of playerRounds) {
-          if (round.result === "win" || round.result === "draw") {
-            wins++;
-          }
-          totalScore += round.score;
-        }
-        return { user: player, wins, totalScore, roundsPlayed };
-      })
-      .sort((a, b) => {
-        if (b.wins !== a.wins) {
-          return b.wins - a.wins;
-        }
-        if (b.totalScore !== a.totalScore) {
-          return b.totalScore - a.totalScore;
-        }
-        return 0;
-      });
-
-    if (calculatedScores.length === 0) {
-      return [];
-    }
-
-    const rankedScores: PlayerScore[] = [];
-    let rank = 1;
-    const firstPlayerScore = calculatedScores[0];
-    if (firstPlayerScore) {
-      rankedScores.push({ ...firstPlayerScore, rank });
-    }
-
-    for (let i = 1; i < calculatedScores.length; i++) {
-      const prevScoreItem = calculatedScores[i - 1];
-      const currentScoreItem = calculatedScores[i];
-
-      if (prevScoreItem && currentScoreItem) {
-        if (
-          currentScoreItem.wins < prevScoreItem.wins ||
-          (currentScoreItem.wins === prevScoreItem.wins && currentScoreItem.totalScore < prevScoreItem.totalScore)
-        ) {
-          rank = i + 1;
-        }
-        rankedScores.push({ ...currentScoreItem, rank });
-      }
-    }
+    const rankedScores = calculatePlayerScores(players, roundsData);
     return rankedScores.filter((score) => score.rank === 1).map((score) => score.user);
   });
 
@@ -395,34 +395,7 @@ function VersusComponent() {
         <div>
           <VersusHighscoreList />
         </div>
-        <Show
-          when={currentMatchup()}
-          fallback={
-            <div class="flex h-full w-full flex-col items-center justify-center">
-              <div class="flex flex-1 flex-col items-center justify-center">
-                <IconTrophy class="text-6xl" />
-                <Show when={winners().length > 0}>
-                  <Show
-                    when={winners().length === 1}
-                    fallback={
-                      <p>
-                        {t("party.versus.draw")}:{" "}
-                        {winners()
-                          .map((w) => w.username)
-                          .join(", ")}
-                      </p>
-                    }
-                  >
-                    <p class="gradient-party bg-gradient-to-b bg-clip-text text-center font-bold text-6xl text-transparent">
-                      {winners()[0]?.username} {t("party.versus.wins")}!
-                    </p>
-                  </Show>
-                </Show>
-              </div>
-              <Menu gradient="gradient-party" class="!h-auto" items={menuItems} onBack={onBack} layer={1} />
-            </div>
-          }
-        >
+        <Show when={currentMatchup()} fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}>
           {(matchup) => (
             <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center gap-14 py-4">
               <MatchupPlayerDisplay
@@ -503,6 +476,31 @@ function VersusComponent() {
   );
 }
 
+interface VersusEndScreenProps {
+  winners: User[];
+  menuItems: MenuItem[];
+  onBack: () => void;
+  t: typeof t;
+}
+
+function VersusEndScreen(props: VersusEndScreenProps) {
+  return (
+    <div class="flex h-full w-full flex-col items-center justify-center">
+      <div class="flex flex-1 flex-col items-center justify-center">
+        <IconTrophy class="text-6xl" />
+        <Show when={props.winners.length > 0}>
+          <p class="gradient-party bg-gradient-to-b bg-clip-text text-center font-bold text-6xl text-transparent">
+            <Show when={props.winners.length === 1} fallback={props.t("party.versus.draw")}>
+              {props.winners[0]?.username} {props.t("party.versus.wins")}!
+            </Show>
+          </p>
+        </Show>
+      </div>
+      <Menu gradient="gradient-party" class="!h-auto" items={props.menuItems} onBack={props.onBack} layer={1} />
+    </div>
+  );
+}
+
 interface SongCardProps {
   song: LocalSong;
   class?: string;
@@ -559,57 +557,7 @@ function VersusHighscoreList(props: VersusHighscoreListProps) {
   const playerScores = createMemo<PlayerScore[]>(() => {
     const players = versusStore.state().players;
     const rounds = versusStore.state().rounds;
-
-    const calculatedScores: { user: User; wins: number; totalScore: number; roundsPlayed: number }[] = players
-      .map((player) => {
-        const playerRounds = rounds[player.id] || [];
-        let wins = 0;
-        let totalScore = 0;
-        const roundsPlayed = playerRounds.length;
-
-        for (const round of playerRounds) {
-          if (round.result === "win" || round.result === "draw") {
-            wins++;
-          }
-
-          totalScore += round.score;
-        }
-        return { user: player, wins, totalScore, roundsPlayed };
-      })
-      .sort((a, b) => {
-        if (b.wins !== a.wins) {
-          return b.wins - a.wins;
-        }
-        if (b.totalScore !== a.totalScore) {
-          return b.totalScore - a.totalScore;
-        }
-        return 0;
-      });
-
-    const rankedScores: PlayerScore[] = [];
-    if (calculatedScores.length > 0) {
-      let rank = 1;
-      const firstPlayerScore = calculatedScores[0];
-      if (firstPlayerScore) {
-        rankedScores.push({ ...firstPlayerScore, rank });
-      }
-
-      for (let i = 1; i < calculatedScores.length; i++) {
-        const prevScoreItem = calculatedScores[i - 1];
-        const currentScoreItem = calculatedScores[i];
-
-        if (prevScoreItem && currentScoreItem) {
-          if (
-            currentScoreItem.wins < prevScoreItem.wins ||
-            (currentScoreItem.wins === prevScoreItem.wins && currentScoreItem.totalScore < prevScoreItem.totalScore)
-          ) {
-            rank = i + 1;
-          }
-          rankedScores.push({ ...currentScoreItem, rank });
-        }
-      }
-    }
-    return rankedScores;
+    return calculatePlayerScores(players, rounds);
   });
 
   return (
