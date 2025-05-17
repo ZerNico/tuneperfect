@@ -6,13 +6,17 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
+import Avatar from "~/components/ui/avatar";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
+import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import { getColorVar } from "~/lib/utils/color";
 import { times } from "~/lib/utils/loop";
 import { versusStore } from "~/stores/party/versus";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
+import IconDices from "~icons/lucide/dices";
 
 interface SongItem {
   song: LocalSong | null;
@@ -32,14 +36,6 @@ export const Route = createFileRoute("/party/versus/")({
 function VersusComponent() {
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/party/versus/settings" });
-
-  useNavigation({
-    onKeydown: (event) => {
-      if (event.action === "back") {
-        onBack();
-      }
-    },
-  });
 
   const availableSongs = createMemo(() => {
     return songsStore.songs().filter((song) => song.voices.length === 1);
@@ -149,11 +145,41 @@ function VersusComponent() {
   };
 
   const currentSong = createMemo(() => {
-    if (state() !== "selected") {
-      return null;
-    }
+    if (state() !== "selected") return null;
 
     return displayedSongs()?.at(SONGS_BEFORE_AFTER)?.song ?? null;
+  });
+
+  const currentMatchup = createMemo(() => versusStore.state().matchups[0] ?? null);
+
+  const [jokers, setJokers] = createSignal<[number, number]>([versusStore.settings()?.jokers ?? 0, versusStore.settings()?.jokers ?? 0]);
+
+  const reroll = (player: 0 | 1) => {
+    if (state() !== "selected") return;
+
+    const currentJokers = jokers()[player];
+    if (currentJokers <= 0) return;
+
+    setJokers((jokers) => {
+      const newJokers: [number, number] = [...jokers];
+      newJokers[player] = currentJokers - 1;
+      return newJokers;
+    });
+
+    selectNextSong();
+  };
+
+
+  useNavigation({
+    onKeydown: (event) => {
+      if (event.action === "back") {
+        onBack();
+      } else if (event.action === "joker-1") {
+        reroll(0);
+      } else if (event.action === "joker-2") {
+        reroll(1);
+      }
+    },
   });
 
   return (
@@ -213,7 +239,17 @@ function VersusComponent() {
             test
           </button>
         </div>
-        <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center py-15">
+        <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center gap-14 py-4">
+          <Show when={currentMatchup()}>
+            {(matchup) => (
+              <MatchupPlayerDisplay
+                player={matchup()[0]}
+                colorName={settingsStore.microphones()[0]?.color ?? "blue"}
+                jokers={jokers()[0]}
+                onReroll={() => reroll(0)}
+              />
+            )}
+          </Show>
           <div
             class="pointer-events-none flex transform-gpu justify-center will-change-transform"
             style={{
@@ -268,6 +304,16 @@ function VersusComponent() {
               )}
             </Show>
           </div>
+          <Show when={currentMatchup()}>
+            {(matchup) => (
+              <MatchupPlayerDisplay
+                player={matchup()[1]}
+                colorName={settingsStore.microphones()[1]?.color ?? "red"}
+                jokers={jokers()[1]}
+                onReroll={() => reroll(1)}
+              />
+            )}
+          </Show>
         </div>
       </div>
     </Layout>
@@ -288,6 +334,36 @@ function SongCard(props: SongCardProps) {
       }}
     >
       <img loading="lazy" src={props.song.coverUrl} alt={props.song.title} class="h-full w-full object-cover" />
+    </div>
+  );
+}
+
+interface MatchupPlayerDisplayProps {
+  player: User;
+  colorName: string;
+  class?: string;
+  jokers: number;
+  onReroll: () => void;
+}
+
+function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
+  return (
+    <div
+      class={`flex w-96 flex-row items-center gap-4 rounded-lg p-4 text-white shadow-lg ${props.class ?? ""}`}
+      style={{
+        background: `linear-gradient(90deg, ${getColorVar(props.colorName, 600)}, ${getColorVar(props.colorName, 500)})`,
+      }}
+    >
+      <div class="flex flex-grow flex-row items-center gap-4">
+        <Avatar user={props.player} />
+        <div class="truncate font-bold text-xl">{props.player.username}</div>
+      </div>
+      <div class="flex flex-row items-center gap-2">
+        <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95 " onClick={props.onReroll}>
+          <IconDices class="text-lg" />
+        </button>
+        <p class="">{props.jokers}</p>
+      </div>
     </div>
   );
 }

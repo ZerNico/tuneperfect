@@ -30,6 +30,8 @@ type NavigationEvent = {
     | "random"
     | "sort-left"
     | "sort-right"
+    | "joker-1"
+    | "joker-2"
     | "unknown";
 };
 
@@ -47,19 +49,19 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"]>([
   ["F6", "sort-right"],
 ]);
 
-const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"]>([
-  ["DPAD_LEFT", "left"],
-  ["DPAD_RIGHT", "right"],
-  ["DPAD_UP", "up"],
-  ["DPAD_DOWN", "down"],
-  ["B", "back"],
-  ["A", "confirm"],
-  ["START", "search"],
-  ["Y", "random"],
-  ["LB", "sort-left"],
-  ["RB", "sort-right"],
-  ["X", "unknown"],
-  ["Y", "unknown"],
+const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
+  ["DPAD_LEFT", ["left"]],
+  ["DPAD_RIGHT", ["right"]],
+  ["DPAD_UP", ["up"]],
+  ["DPAD_DOWN", ["down"]],
+  ["B", ["back"]],
+  ["A", ["confirm"]],
+  ["START", ["search"]],
+  ["Y", ["random"]],
+  ["LB", ["sort-left", "joker-1"]],
+  ["RB", ["sort-right", "joker-2"]],
+  ["X", ["unknown"]],
+  ["Y", ["unknown"]],
 ]);
 
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
@@ -148,33 +150,50 @@ createEventListener(window, "keyup", (event) => {
 createGamepad({
   onButtonDown: (event) => {
     setKeyMode("gamepad");
-    const action = GAMEPAD_MAPPINGS.get(event.button);
-    if (action) {
-      emitter.emit("keydown", {
-        origin: "gamepad",
-        originalKey: event.button,
-        action,
-      });
+    const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
+
+    if (actionsArray && actionsArray.length > 0 && actionsArray[0] !== "unknown") {
+      const existingTimers = pressedGamepadButtons.get(event.button);
+      if (existingTimers) {
+        clearTimeout(existingTimers.holdTimeout);
+        if (existingTimers.repeatInterval) {
+          clearInterval(existingTimers.repeatInterval);
+        }
+      }
 
       const holdTimeout = window.setTimeout(() => {
-        emitter.emit("hold", {
-          origin: "gamepad",
-          originalKey: event.button,
-          action,
-        });
-
-        const repeatInterval = window.setInterval(() => {
-          emitter.emit("repeat", {
+        for (const action of actionsArray) {
+          if (action === "unknown") continue;
+          emitter.emit("hold", {
             origin: "gamepad",
             originalKey: event.button,
             action,
           });
-        }, REPEAT_DELAY);
+        }
 
+        const repeatInterval = window.setInterval(() => {
+          for (const action of actionsArray) {
+            if (action === "unknown") continue;
+            emitter.emit("repeat", {
+              origin: "gamepad",
+              originalKey: event.button,
+              action,
+            });
+          }
+        }, REPEAT_DELAY);
         pressedGamepadButtons.set(event.button, { holdTimeout, repeatInterval });
       }, HOLD_DELAY);
 
       pressedGamepadButtons.set(event.button, { holdTimeout });
+
+      for (const action of actionsArray) {
+        if (action === "unknown") continue;
+        emitter.emit("keydown", {
+          origin: "gamepad",
+          originalKey: event.button,
+          action,
+        });
+      }
       return;
     }
 
@@ -219,13 +238,16 @@ createGamepad({
       pressedGamepadButtons.delete(event.button);
     }
 
-    const action = GAMEPAD_MAPPINGS.get(event.button);
-    if (action) {
-      emitter.emit("keyup", {
-        origin: "gamepad",
-        originalKey: event.button,
-        action,
-      });
+    const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
+    if (actionsArray) {
+      for (const action of actionsArray) {
+        if (action === "unknown") continue;
+        emitter.emit("keyup", {
+          origin: "gamepad",
+          originalKey: event.button,
+          action,
+        });
+      }
       return;
     }
 
