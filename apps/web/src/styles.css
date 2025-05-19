@@ -199,3 +199,14 @@ html {
 .gradient-bg-secondary {
   background: radial-gradient(at top, #2d3438 0%, #203141 100%);
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -7,6 +7,12 @@ export default defineConfig({
   tsr: {
     appDirectory: "src",
   },
+  server: {
+    prerender: {
+      routes: ["/"],
+      crawlLinks: true,
+    },
+  },
   vite: {
     plugins: [
       tsConfigPaths({
