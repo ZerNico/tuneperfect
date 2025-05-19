@@ -1,18 +1,24 @@
-import { defineConfig } from "@solidjs/start/config";
-import UnoCSS from "unocss/vite";
-
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "@tanstack/solid-start/config";
+import { FileSystemIconLoader } from "unplugin-icons/loaders";
+import icons from "unplugin-icons/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
-  vite: {
-    plugins: [UnoCSS({})],
-    server: {
-      hmr: {
-        host: "localhost",
-        protocol: "ws",
-      },
-    },
+  tsr: {
+    appDirectory: "src",
   },
-  ssr: true,
-  server: {
-    preset: "bun",
+  vite: {
+    plugins: [
+      tsConfigPaths({
+        projects: ["./tsconfig.json"],
+      }),
+      tailwindcss(),
+      icons({
+        customCollections: {
+          sing: FileSystemIconLoader("./src/assets/icons"),
+        },
+        compiler: "solid",
+      }),
+    ],
   },
 });
