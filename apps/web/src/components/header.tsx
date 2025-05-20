@@ -1,6 +1,10 @@
 import Button from "./ui/button";
 
-export default function Header() {
+interface HeaderProps {
+  appUrl: string;
+}
+
+export default function Header(props: HeaderProps) {
   return (
     <>
       <div class="h-16" />
@@ -10,7 +14,7 @@ export default function Header() {
             <span class="font-bold text-lg">Tune Perfect</span>
           </div>
           <div class="flex justify-end gap-2">
-            <Button href={import.meta.env.VITE_APP_URL} intent="gradient-sing">
+            <Button href={props.appUrl} intent="gradient-sing">
               Join Lobby
             </Button>
           </div>

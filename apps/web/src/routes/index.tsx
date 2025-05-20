@@ -18,6 +18,8 @@ export const Route = createFileRoute("/")({
 });
 
 function RouteComponent() {
+
+
   return (
     <>
       <div class="relative flex flex-col gap-y-20 bg-slate-900 px-4 pb-20 text-white">

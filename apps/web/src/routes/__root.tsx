@@ -1,10 +1,11 @@
 import { Outlet, createRootRoute } from "@tanstack/solid-router";
+import Header from "~/components/header";
+import { config } from "~/lib/config";
 
 import styles from "../styles.css?url";
 import "@fontsource/lato/300.css";
 import "@fontsource/lato/400.css";
 import "@fontsource/lato/700.css";
-import Header from "~/components/header";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -29,12 +30,19 @@ export const Route = createRootRoute({
   }),
   component: RootComponent,
   notFoundComponent: () => <div>Not found</div>,
+  beforeLoad: async () => {
+    return {
+      config: await config(),
+    };
+  },
 });
 
 function RootComponent() {
+  const context = Route.useRouteContext();
+
   return (
     <main class="min-h-screen bg-[#101024] font-primary text-white">
-      <Header />
+      <Header appUrl={context().config.VITE_APP_URL} />
       <Outlet />
     </main>
   );
