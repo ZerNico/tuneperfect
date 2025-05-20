@@ -5,6 +5,39 @@
 
   --color-*: initial;
 
+  --animate-hide: hide 0.1s ease-in;
+  --animate-slide-in: slideIn 0.15s ease-out;
+  --animate-swipe-out: swipeOut 0.1s ease-in;
+
+  @keyframes hide {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes swipeOut {
+    from {
+      transform: translateX(var(--kb-toast-swipe-end-x));
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@theme static {
   --color-white: oklch(1 0 0);
   --color-black: oklch(0 0 0);
 
@@ -139,37 +172,6 @@
   --color-slate-800: oklch(0.279 0.041 260.031);
   --color-slate-900: oklch(0.208 0.042 265.755);
   --color-slate-950: oklch(0.129 0.042 264.695);
-
-  --animate-hide: hide 0.1s ease-in;
-  --animate-slide-in: slideIn 0.15s ease-out;
-  --animate-swipe-out: swipeOut 0.1s ease-in;
-
-  @keyframes hide {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes swipeOut {
-    from {
-      transform: translateX(var(--kb-toast-swipe-end-x));
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
 }
 
 html {

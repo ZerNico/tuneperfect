@@ -1,6 +1,6 @@
 import { Outlet, createRootRoute } from "@tanstack/solid-router";
 
-import "../styles.css";
+import styles from "../styles.css?url";
 import "@fontsource/lato/300.css";
 import "@fontsource/lato/400.css";
 import "@fontsource/lato/700.css";
@@ -20,8 +20,15 @@ export const Route = createRootRoute({
         title: "Tune Perfect",
       },
     ],
+    links: [
+      {
+        rel: "stylesheet",
+        href: styles,
+      },
+    ],
   }),
   component: RootComponent,
+  notFoundComponent: () => <div>Not found</div>,
 });
 
 function RootComponent() {
