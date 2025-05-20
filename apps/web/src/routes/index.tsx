@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/solid-router";
+import { createSignal } from "solid-js";
+import { onMount } from "solid-js";
 import Button from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
+import { getColorVar } from "~/lib/utils/color";
 import IconApple from "~icons/logos/apple";
 import IconWindows from "~icons/logos/microsoft-windows-icon";
 import IconGithub from "~icons/lucide/github";
@@ -16,21 +20,19 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
   return (
     <>
-
       <div class="relative flex flex-col gap-y-20 bg-slate-900 px-4 pb-20 text-white">
         <section class="relative z-2 mx-auto flex min-h-screen w-full max-w-full flex-col items-center justify-center gap-10 py-20 text-white">
-          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center font-bold text-4xl opacity-0 md:text-6xl">
-            Tune Perfect
-          </h1>
+          <Note class="absolute top-[15%] left-[15%] w-30 md:top-[20%]" color="sky" />
+          <Note class="absolute top-[22%] right-[20%] w-15 md:top-[30%]" color="yellow" />
+          <Note class="absolute bottom-[20%] left-[30%] w-12 md:bottom-[25%]" color="red" />
+          <Note class="absolute right-[35%] bottom-[15%] w-40 max-md:hidden" color="green" />
+          <Note class="absolute top-[18%] right-[40%] max-md:hidden" color="purple" />
+          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center font-bold text-4xl opacity-0 md:text-6xl">Tune Perfect</h1>
           <p class="max-w-xl animate-[fadeInUp_0.6s_ease-out_0.2s_forwards] text-center text-white/90 text-wrap-balance opacity-0">
-            Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete with friends, and have
-            a blast!
+            Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete with friends, and
+            have a blast!
           </p>
-          <Button
-            href="#download"
-            intent="gradient-sing"
-            class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0"
-          >
+          <Button href="#download" intent="gradient-sing" class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0">
             Download
           </Button>
         </section>
@@ -62,7 +64,7 @@ function RouteComponent() {
             </div>
             <div class="group flex flex-col items-center gap-5 rounded-xl border border-slate-700 bg-slate-800 p-7 shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:bg-slate-700 hover:shadow-2xl">
               <IconUsers class="mb-2 text-5xl text-slate-300 transition-colors duration-200 ease-in-out group-hover:text-pink-500" />
-              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Multiplayer Lobby</h3>
+              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Online Accounts</h3>
               <p class="text-balance text-center text-slate-300 text-sm">
                 Join lobbies with your own account to save your progress and customize your profile.
               </p>
@@ -121,5 +123,38 @@ function RouteComponent() {
         </section>
       </div>
     </>
+  );
+}
+
+interface NoteProps {
+  class?: string;
+  color: string;
+}
+
+function Note(props: NoteProps) {
+  const [filled, setFilled] = createSignal(false);
+  const randomDuration = Math.random() * 3000 + 1000;
+
+  onMount(() => {
+    const timeout = Math.random() * 1000 + 500;
+    setTimeout(() => {
+      setFilled(true);
+    }, timeout);
+  });
+
+  const colorFrom = getColorVar(props.color, 400);
+  const colorTo = getColorVar(props.color, 600);
+
+  return (
+    <div class={cn("h-8 w-20 rounded-full border-2 border-white p-1 md:h-10", props.class)}>
+      <div
+        class="h-full w-full rounded-full transition-[clip-path] ease-in-out"
+        style={{
+          "clip-path": filled() ? "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)" : "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
+          "transition-duration": `${randomDuration}ms`,
+          background: `linear-gradient(to right, ${colorFrom}, ${colorTo})`,
+        }}
+      />
+    </div>
   );
 }
