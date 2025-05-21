@@ -13,7 +13,7 @@
       export PROTOCOL=http
       {{- end }}
       export APP_HOST=$(kubectl get ingress {{ include "tuneperfect.fullname" $ }}-{{ $appName }} --template={{ "{{range .spec.rules}}{{.host}}{{end}}" }})
-      export APP_PORT=$(kubectl get ingress {{ include "tuneperfect.fullname" $ }}-{{ $appName }} --template={{ "{{range .spec.rules}}{{range .http.paths}}{{range .backend.service.port}}{{.number}}{{end}}{{end}}{{end}}" }})
+      export APP_PORT=$(kubectl get ingress {{ include "tuneperfect.fullname" $ }}-{{ $appName }} --template={{ "{{(index .spec.rules 0).http.paths 0 .backend.service.port.number}}" }})
       echo "URL: $PROTOCOL://$APP_HOST:$APP_PORT{{ .path }}"
     {{- end }}
   {{- end }}
@@ -37,4 +37,4 @@
 {{- end }}
 {{- end }}
 {{- end }}
-{{ template "tuneperfect.notes" . }} 
+{{ template "tuneperfect.notes" . }}
