@@ -1,5 +1,5 @@
 {{- range $appName, $appConfig := .Values.apps }}
-{{- if $appConfig.enabled -}}
+{{- if $appConfig.enabled }}
 ---
 apiVersion: v1
 kind: Service

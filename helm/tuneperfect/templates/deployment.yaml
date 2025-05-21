@@ -1,5 +1,5 @@
 {{- range $appName, $appConfig := .Values.apps }}
-{{- if $appConfig.enabled -}}
+{{- if $appConfig.enabled }}
 ---
 apiVersion: {{ include "tuneperfect.deployment.apiVersion" $ }}
 kind: Deployment
@@ -46,12 +46,16 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
+          {{- if $appConfig.secrets }}
           envFrom:
             {{- range $secretName := $appConfig.secrets }}
             - secretRef:
                 name: {{ $secretName }}
             {{- end }}
+          {{- end }}
+          {{- if $appConfig.resources }}
           resources:
             {{- toYaml $appConfig.resources | nindent 12 }}
+          {{- end }}
 {{- end }}
 {{- end }} 
