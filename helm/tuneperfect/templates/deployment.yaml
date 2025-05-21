@@ -1,0 +1,57 @@
+{{- range $appName, $appConfig := .Values.apps }}
+{{- if $appConfig.enabled -}}
+---
+apiVersion: {{ include "tuneperfect.deployment.apiVersion" $ }}
+kind: Deployment
+metadata:
+  name: {{ include "tuneperfect.fullname" $ }}-{{ $appName }}
+  labels:
+    {{- include "tuneperfect.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $appName }}
+spec:
+  replicas: {{ $appConfig.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "tuneperfect.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $appName }}
+  template:
+    metadata:
+      labels:
+        {{- include "tuneperfect.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $appName }}
+    spec:
+      {{- with $.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tuneperfect.serviceAccountName" $ }}
+      containers:
+        - name: {{ $appName }}
+          image: "{{ $appConfig.image.repository }}:{{ $appConfig.image.tag | default $.Values.global.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $appConfig.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: {{ $appConfig.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          env:
+            {{- range $key, $value := $appConfig.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          envFrom:
+            {{- range $secretName := $appConfig.secrets }}
+            - secretRef:
+                name: {{ $secretName }}
+            {{- end }}
+          resources:
+            {{- toYaml $appConfig.resources | nindent 12 }}
+{{- end }}
+{{- end }} 

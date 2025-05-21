@@ -1,0 +1,54 @@
+# Default values for tuneperfect chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  image:
+    tag: "latest" # Defaulting to latest for local dev, should be overridden by CI/CD with Git tag e.g., v1.0.0.
+  # imagePullSecrets:
+  #   - name: my-registry-secret
+
+  # ServiceAccount configuration
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    # name: ""
+    # Annotations to add to the service account
+    # annotations: {}
+
+# Define applications to deploy
+apps:
+  web:
+    enabled: true
+    image:
+      repository: ghcr.io/zernico/tuneperfect-web
+      pullPolicy: IfNotPresent
+      tag: ""
+    env:
+      VITE_APP_URL: "https://app.tuneperfect.localhost"
+    # secrets: 
+    #   - my-secret-name
+    replicaCount: 1
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 3000
+    # resources: {}
+    ingress:
+      enabled: false
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - host: "tuneperfect.localhost"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "tuneperfect.localhost"
+          secretName: "web-tls"

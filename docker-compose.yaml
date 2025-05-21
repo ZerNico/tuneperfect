@@ -1,0 +1,9 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      VITE_APP_URL: https://app.tuneperfect.localhost

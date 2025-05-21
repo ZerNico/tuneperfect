@@ -1,0 +1,76 @@
+name: Deploy TunePerfect Helm Chart
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  HELM_CHART_PATH: ./helm/tuneperfect
+  RELEASE_NAME: tuneperfect-suite # Or your desired Helm release name
+  KUBE_NAMESPACE: tuneperfect    # Or your desired Kubernetes namespace
+
+jobs:
+  deploy-to-cluster:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # packages: write # Only if pushing images from this workflow, not needed for Helm deploy only
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+          echo "Kubeconfig set up."
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest' # Or pin to a specific version e.g., v3.10.0
+
+      - name: Add Bitnami Helm repository
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          echo "Bitnami repo added and updated."
+
+      - name: Update Helm dependencies
+        run: |
+          helm dependency update ${{ env.HELM_CHART_PATH }}
+          echo "Helm dependencies updated."
+
+      - name: Deploy Helm Chart
+        env:
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }} # e.g., tuneperfect.org
+          IMAGE_TAG: ${{ github.ref_name }} # This is the git tag like v1.0.0
+        run: |
+          echo "Deploying with image tag: $IMAGE_TAG to domain: $DOMAIN_NAME"
+          helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
+            --namespace ${{ env.KUBE_NAMESPACE }} \
+            --create-namespace \
+            --values ${{ env.HELM_CHART_PATH }}/values.yaml \
+            --set global.image.tag=$IMAGE_TAG \
+            --set apps.api.ingress.enabled=true \
+            --set apps.api.ingress.hosts[0].host=api.$DOMAIN_NAME \
+            --set apps.api.ingress.tls[0].hosts[0]=api.$DOMAIN_NAME \
+            --set apps.api.ingress.tls[0].secretName=api-tls-$DOMAIN_NAME \
+            --set apps.web.ingress.enabled=true \
+            --set apps.web.ingress.hosts[0].host=web.$DOMAIN_NAME \
+            --set apps.web.ingress.tls[0].hosts[0]=web.$DOMAIN_NAME \
+            --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
+            --set apps.app.ingress.enabled=true \
+            --set apps.app.ingress.hosts[0].host=app.$DOMAIN_NAME \
+            --set apps.app.ingress.tls[0].hosts[0]=app.$DOMAIN_NAME \
+            --set apps.app.ingress.tls[0].secretName=app-tls-$DOMAIN_NAME \
+            # Add any other specific overrides needed for your environment
+            # For example, if postgresql or redis passwords should come from secrets:
+            # --set postgresql.auth.password=${{ secrets.POSTGRES_PASSWORD }}
+            # --set redis.auth.password=${{ secrets.REDIS_PASSWORD }}
+            echo "Helm deployment command executed." 

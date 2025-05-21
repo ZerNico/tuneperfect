@@ -1,0 +1,34 @@
+# Patterns to ignore when packaging Helm charts.
+
+# Common VCS files
+.git/
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+
+# Common backup files
+*~
+*.bak
+*.swp
+
+# Editor directories and files
+.idea/
+.project
+.classpath
+.DS_Store
+
+# Chart Releaser files
+cr-build/
+cr-index/
+
+# Test files
+tests/
+test/
+*.test.yaml
+*.test.yml
+
+# Other
+Thumbs.db 

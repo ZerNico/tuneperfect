@@ -1,0 +1,83 @@
+name: Build and Deploy TunePerfect Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+env:
+  HELM_CHART_PATH: ./helm/tuneperfect
+  RELEASE_NAME: tuneperfect-suite
+  KUBE_NAMESPACE: tuneperfect
+
+jobs:
+  build-api:
+    name: Build API Image
+    uses: ./.github/workflows/docker-build-api.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-web:
+    name: Build Web Image
+    uses: ./.github/workflows/docker-build-web.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-app:
+    name: Build App Image
+    uses: ./.github/workflows/docker-build-app.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  deploy-to-cluster:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [build-api, build-web, build-app]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "latest"
+
+      - name: Add Bitnami Helm repository
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+
+      - name: Update Helm dependencies
+        run: |
+          helm dependency update ${{ env.HELM_CHART_PATH }}
+
+      - name: Deploy Helm Chart
+        env:
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          IMAGE_TAG: ${{ github.ref_name }}
+        run: |
+          echo "Deploying with image tag $IMAGE_TAG to domain $DOMAIN_NAME"
+          helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
+            --namespace ${{ env.KUBE_NAMESPACE }} \
+            --create-namespace \
+            --values ${{ env.HELM_CHART_PATH }}/values.yaml \
+            --set global.image.tag=$IMAGE_TAG \
+            --set apps.web.ingress.enabled=true \
+            --set apps.web.ingress.hosts[0].host=$DOMAIN_NAME \
+            --set apps.web.ingress.tls[0].hosts[0]=$DOMAIN_NAME \
+            --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
+            --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME

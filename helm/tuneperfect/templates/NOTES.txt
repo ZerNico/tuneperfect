@@ -1,0 +1,40 @@
+{{- define "tuneperfect.notes" -}}
+{{- range $appName, $appConfig := .Values.apps }}
+{{- if $appConfig.enabled }}
+
+### {{ $appName | upper }} ###
+{{- if $appConfig.ingress.enabled }}
+  {{- range $appConfig.ingress.hosts }}
+    {{- range .paths }}
+      Get URL by running these commands:
+      {{- if $appConfig.ingress.tls }}
+      export PROTOCOL=https
+      {{- else }}
+      export PROTOCOL=http
+      {{- end }}
+      export APP_HOST=$(kubectl get ingress {{ include "tuneperfect.fullname" $ }}-{{ $appName }} --template={{ "{{range .spec.rules}}{{.host}}{{end}}" }})
+      export APP_PORT=$(kubectl get ingress {{ include "tuneperfect.fullname" $ }}-{{ $appName }} --template={{ "{{range .spec.rules}}{{range .http.paths}}{{range .backend.service.port}}{{.number}}{{end}}{{end}}{{end}}" }})
+      echo "URL: $PROTOCOL://$APP_HOST:$APP_PORT{{ .path }}"
+    {{- end }}
+  {{- end }}
+{{- else if eq $appConfig.service.type "LoadBalancer" }}
+  Get the {{ $appName }} URL by running these commands:
+    export SERVICE_PORT=$(kubectl get --namespace {{ $.Release.Namespace }} -o jsonpath="{.spec.ports[0].port}" services {{ include "tuneperfect.fullname" $ }}-{{ $appName }})
+    export SERVICE_IP=$(kubectl get svc --namespace {{ $.Release.Namespace }} {{ include "tuneperfect.fullname" $ }}-{{ $appName }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    echo "http://$SERVICE_IP:$SERVICE_PORT"
+{{- else if eq $appConfig.service.type "NodePort" }}
+  Get the {{ $appName }} URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace {{ $.Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "tuneperfect.fullname" $ }}-{{ $appName }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ $.Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+{{- else }}
+  Get the {{ $appName }} URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace {{ $.Release.Namespace }} -l "app.kubernetes.io/name={{ include "tuneperfect.name" $ }}" -l "app.kubernetes.io/instance={{ $.Release.Name }}" -l "app.kubernetes.io/component={{ $appName }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ $.Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ $.Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{ template "tuneperfect.notes" . }} 

@@ -1,0 +1,22 @@
+{{- range $appName, $appConfig := .Values.apps }}
+{{- if $appConfig.enabled -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tuneperfect.fullname" $ }}-{{ $appName }}
+  labels:
+    {{- include "tuneperfect.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $appName }}
+spec:
+  type: {{ $appConfig.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ $appConfig.service.port }}
+      targetPort: {{ $appConfig.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "tuneperfect.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $appName }}
+{{- end }}
+{{- end }} 
