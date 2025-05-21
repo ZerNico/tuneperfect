@@ -16,7 +16,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@types/react": "^19.1.4",
-    "react-email": "^4.0.14"
+    "@types/react": "^19.1.5",
+    "react-email": "^4.0.15"
   }
 }

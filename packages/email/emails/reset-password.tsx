@@ -1,4 +1,5 @@
 import { Body, Container, Head, Heading, Html, Preview, Tailwind, type TailwindConfig, Text } from "@react-email/components";
+import type { ReactNode } from "react";
 
 const tailwindConfig: TailwindConfig = {
   theme: {
@@ -62,7 +63,7 @@ export interface ResetPasswordProps {
   supportUrl: string;
 }
 
-export function ResetPassword(props: ResetPasswordProps) {
+export function ResetPassword(props: ResetPasswordProps): ReactNode {
   const currentYear = new Date().getFullYear();
 
   return (

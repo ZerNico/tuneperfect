@@ -52,3 +52,35 @@ apps:
         - hosts:
             - "tuneperfect.localhost"
           secretName: "web-tls"
+
+  app:
+    enabled: true
+    image:
+      repository: ghcr.io/zernico/tuneperfect-app
+      pullPolicy: IfNotPresent
+      tag: ""
+    env:
+      VITE_API_URL: "https://api.tuneperfect.localhost"
+    # secrets: 
+    #   - my-secret-name
+    replicaCount: 1
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 3000
+    # resources: {}
+    ingress:
+      enabled: false
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - host: "app.tuneperfect.localhost"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "app.tuneperfect.localhost"
+          secretName: "app-tls"

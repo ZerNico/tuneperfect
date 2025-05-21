@@ -7,3 +7,11 @@ services:
       - 3000:3000
     environment:
       VITE_APP_URL: https://app.tuneperfect.localhost
+  app:
+    build:
+      context: .
+      dockerfile: ./apps/app/Dockerfile
+    ports:
+      - 3001:3000
+    environment:
+      VITE_API_URL: https://api.tuneperfect.localhost

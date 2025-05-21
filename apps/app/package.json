@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc"
+    "build": "vite build"
   },
   "dependencies": {
     "@fontsource/lato": "^5.2.5",
@@ -22,13 +22,14 @@
     "@tanstack/solid-form": "^1.11.2",
     "@tanstack/solid-query": "^5.76.0",
     "@tanstack/solid-router": "^1.120.5",
-    "cva": "^1.0.0-beta.3",
+    "cva": "^1.0.0-beta.4",
     "solid-js": "^1.9.7",
     "tailwindcss": "^4.1.7",
     "ufo": "^1.6.1",
     "valibot": "^1.1.0"
   },
   "devDependencies": {
+    "@import-meta-env/unplugin": "^0.6.2",
     "@tanstack/router-plugin": "^1.120.5",
     "@tanstack/solid-router-devtools": "^1.120.6",
     "typescript": "^5.8.3",

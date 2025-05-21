@@ -25,17 +25,17 @@ jobs:
       tag: ${{ github.ref_name }}
     secrets: inherit
 
-  #build-app:
-  #  name: Build App Image
-  #  uses: ./.github/workflows/docker-build-app.yaml
-  #  with:
-  #    tag: ${{ github.ref_name }}
-  #  secrets: inherit
+  build-app:
+    name: Build App Image
+    uses: ./.github/workflows/docker-build-app.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
 
   deploy-to-cluster:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-    needs: [build-web]
+    needs: [build-web, build-app]
     permissions:
       contents: read
 
@@ -82,4 +82,9 @@ jobs:
             --set apps.web.ingress.hosts[0].host=$DOMAIN_NAME \
             --set apps.web.ingress.tls[0].hosts[0]=$DOMAIN_NAME \
             --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
-            --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME
+            --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME \
+            --set apps.app.ingress.enabled=true \
+            --set apps.app.ingress.hosts[0].host=app.$DOMAIN_NAME \
+            --set apps.app.ingress.tls[0].hosts[0]=app.$DOMAIN_NAME \
+            --set apps.app.ingress.tls[0].secretName=app-tls-$DOMAIN_NAME \
+            --set apps.app.env.VITE_API_URL=https://api.$DOMAIN_NAME
