@@ -24,7 +24,7 @@ apps:
   web:
     enabled: true
     image:
-      repository: ghcr.io/zernico/tuneperfect-web
+      repository: ghcr.io/zernico/tuneperfect-app
       pullPolicy: IfNotPresent
       tag: ""
     env:
