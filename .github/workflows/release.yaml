@@ -7,7 +7,7 @@ on:
 
 env:
   HELM_CHART_PATH: ./helm/tuneperfect
-  RELEASE_NAME: tuneperfect-suite
+  RELEASE_NAME: tuneperfect
   KUBE_NAMESPACE: tuneperfect
 
 jobs:
