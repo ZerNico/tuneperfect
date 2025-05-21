@@ -71,6 +71,7 @@ jobs:
         env:
           DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
           IMAGE_TAG: ${{ github.ref_name }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           echo "Deploying with image tag $IMAGE_TAG to domain $DOMAIN_NAME"
           helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
@@ -78,6 +79,7 @@ jobs:
             --create-namespace \
             --values ${{ env.HELM_CHART_PATH }}/values.yaml \
             --set global.image.tag=$IMAGE_TAG \
+            --set postgresql.auth.password=$POSTGRES_PASSWORD \
             --set apps.web.ingress.enabled=true \
             --set apps.web.ingress.hosts[0].host=$DOMAIN_NAME \
             --set apps.web.ingress.tls[0].hosts[0]=$DOMAIN_NAME \

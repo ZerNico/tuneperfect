@@ -2,5 +2,10 @@ apiVersion: v2
 name: tuneperfect
 description: A Helm chart for TunePerfect
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "1.0.0"
+dependencies:
+  - name: postgresql
+    version: "16.7.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled

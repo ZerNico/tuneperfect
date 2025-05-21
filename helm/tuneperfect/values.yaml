@@ -19,6 +19,19 @@ global:
     # Annotations to add to the service account
     # annotations: {}
 
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: tuneperfect
+    database: tuneperfect
+    existingSecret: postgresql-credentials
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: "{{ .Release.Name }}-postgresql-data"
+      size: 1Gi
+
 # Define applications to deploy
 apps:
   web:
@@ -29,6 +42,9 @@ apps:
       tag: ""
     env:
       VITE_APP_URL: "https://app.tuneperfect.localhost"
+    envFrom:
+      - secretRef:
+          name: postgresql-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
@@ -61,6 +77,9 @@ apps:
       tag: ""
     env:
       VITE_API_URL: "https://api.tuneperfect.localhost"
+    envFrom:
+      - secretRef:
+          name: postgresql-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1

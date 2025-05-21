@@ -46,11 +46,16 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- if $appConfig.secrets }}
+          {{- if or $appConfig.secrets $appConfig.envFrom }}
           envFrom:
+            {{- if $appConfig.envFrom }}
+            {{- toYaml $appConfig.envFrom | nindent 12 }}
+            {{- end }}
+            {{- if $appConfig.secrets }}
             {{- range $secretName := $appConfig.secrets }}
             - secretRef:
                 name: {{ $secretName }}
+            {{- end }}
             {{- end }}
           {{- end }}
           {{- if $appConfig.resources }}
