@@ -20,6 +20,7 @@
     "@orpc/valibot": "^1.2.0",
     "@tuneperfect/email": "*",
     "arctic": "^3.7.0",
+    "croner": "^9.0.0",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^1.0.0-beta.1-c0277c0",
     "jsonwebtoken": "^9.0.2",
@@ -33,7 +34,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
-    "@types/bun": "^1.2.13",
+    "@types/bun": "^1.2.14",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/nodemailer": "^6.4.17",
     "drizzle-kit": "^1.0.0-beta.1-c0277c0",

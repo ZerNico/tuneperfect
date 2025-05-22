@@ -1,4 +1,4 @@
-import { os, onError } from "@orpc/server";
+import { os, ORPCError, onError } from "@orpc/server";
 import { db } from "./lib/db";
 import { logger } from "./lib/logger";
 import { init } from "./lib/orpc";
@@ -17,7 +17,11 @@ export const base = init
   .use(dbProvider)
   .use(
     onError((error) => {
-      logger.error(error);
+      if (error instanceof ORPCError && error.status === 500) {
+        logger.error(error, "Internal server error");
+      } else {
+        logger.error(error, "Internal server error");
+      }
     }),
   )
   .errors({

@@ -7,6 +7,7 @@ import { experimental_ValibotToJsonSchemaConverter } from "@orpc/valibot";
 import { authRouter } from "./auth/router";
 import { env } from "./config/env";
 import { highscoreRouter } from "./highscore/router";
+import { setupJobs } from "./lib/jobs";
 import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
@@ -19,6 +20,8 @@ const router = {
   lobby: lobbyRouter,
   highscore: highscoreRouter,
 };
+
+setupJobs();
 
 const plugins = [
   new CORSPlugin({
