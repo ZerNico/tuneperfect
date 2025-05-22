@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build.ts",
-    "auth:generate": "bunx --bun @better-auth/cli generate --config src/config/auth.ts --output src/config/db/schema.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
   },

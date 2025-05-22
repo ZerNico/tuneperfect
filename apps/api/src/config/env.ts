@@ -21,4 +21,11 @@ const ConfigSchema = v.object({
   UPLOADS_PATH: v.string(),
 });
 
-export const env = v.parse(ConfigSchema, process.env);
+const result = v.safeParse(ConfigSchema, process.env);
+
+if (result.issues) {
+  console.error(v.summarize(result.issues));
+  process.exit(1);
+}
+
+export const env = result.output;
