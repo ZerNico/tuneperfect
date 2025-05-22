@@ -1,6 +1,6 @@
-import { type SQL, defineRelations, sql } from "drizzle-orm";
-import { type AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
+import { uniqueIndex } from "drizzle-orm/pg-core";
 import * as p from "drizzle-orm/pg-core";
+import { lower } from "../../utils/db";
 
 const timestampColumns = {
   createdAt: p
@@ -95,6 +95,3 @@ export const highscores = p.pgTable(
   (table) => [p.primaryKey({ columns: [table.hash, table.userId] })],
 );
 
-export function lower(email: AnyPgColumn): SQL {
-  return sql`lower(${email})`;
-}
