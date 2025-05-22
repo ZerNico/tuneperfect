@@ -4,3 +4,7 @@ dist
 target
 uploads
 Dockerfile
+.turbo
+.git
+.gitignore
+.tmp

@@ -13,12 +13,8 @@ const ConfigSchema = v.object({
   GOOGLE_CLIENT_SECRET: v.string(),
   DISCORD_CLIENT_ID: v.string(),
   DISCORD_CLIENT_SECRET: v.string(),
-  REDIS_HOST: v.string(),
-  REDIS_PORT: v.pipe(
-    v.string(),
-    v.transform((value) => Number.parseInt(value)),
-  ),
-  UPLOADS_PATH: v.string(),
+  REDIS_URL: v.string(),
+  UPLOADS_PATH: v.optional(v.string(), "./uploads"),
 });
 
 const result = v.safeParse(ConfigSchema, process.env);
