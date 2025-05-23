@@ -5,14 +5,28 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
-env:
-  HELM_CHART_PATH: ./helm/tuneperfect
-  RELEASE_NAME: tuneperfect
-  KUBE_NAMESPACE: tuneperfect
-
 jobs:
+  create-draft-release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+
   build-api:
     name: Build API Image
+    needs: create-draft-release
     uses: ./.github/workflows/docker-build-api.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -20,6 +34,7 @@ jobs:
 
   build-web:
     name: Build Web Image
+    needs: create-draft-release
     uses: ./.github/workflows/docker-build-web.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -27,89 +42,50 @@ jobs:
 
   build-app:
     name: Build App Image
+    needs: create-draft-release
     uses: ./.github/workflows/docker-build-app.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-game:
+    name: Build Game
+    needs: create-draft-release
+    uses: ./.github/workflows/tauri-build-game.yaml
     with:
       tag: ${{ github.ref_name }}
     secrets: inherit
 
   deploy-to-cluster:
     name: Deploy to Kubernetes
-    runs-on: ubuntu-latest
     needs: [build-api, build-web, build-app]
-    permissions:
-      contents: read
+    uses: ./.github/workflows/deploy-kubernetes.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
 
+  publish-release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: [build-game, deploy-to-cluster]
+    permissions:
+      contents: write
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Kubeconfig
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
-        run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
+      - name: Download Game Artifacts
+        uses: actions/download-artifact@v4
         with:
-          version: "latest"
+          path: artifacts
+          pattern: tuneperfect-*
 
-      - name: Add Bitnami Helm repository
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo update
-
-      - name: Update Helm dependencies
-        run: |
-          helm dependency update ${{ env.HELM_CHART_PATH }}
-
-      - name: Deploy Helm Chart
-        env:
-          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
-          IMAGE_TAG: ${{ github.ref_name }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          EMAIL_SMTP_URL: ${{ secrets.EMAIL_SMTP_URL }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-        run: |
-          echo "Deploying with image tag $IMAGE_TAG to domain $DOMAIN_NAME"
-          helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
-            --namespace ${{ env.KUBE_NAMESPACE }} \
-            --create-namespace \
-            --values ${{ env.HELM_CHART_PATH }}/values.yaml \
-            --set global.image.tag=$IMAGE_TAG \
-            --set postgresql.auth.password=$POSTGRES_PASSWORD \
-            --set redis.auth.password=$REDIS_PASSWORD \
-            --set secrets.api.jwtSecret=$JWT_SECRET \
-            --set secrets.api.emailSmtpUrl=$EMAIL_SMTP_URL \
-            --set secrets.api.googleClientId=$GOOGLE_CLIENT_ID \
-            --set secrets.api.googleClientSecret=$GOOGLE_CLIENT_SECRET \
-            --set secrets.api.discordClientId=$DISCORD_CLIENT_ID \
-            --set secrets.api.discordClientSecret=$DISCORD_CLIENT_SECRET \
-            --set apps.web.ingress.enabled=true \
-            --set apps.web.ingress.hosts[0].host=$DOMAIN_NAME \
-            --set apps.web.ingress.tls[0].hosts[0]=$DOMAIN_NAME \
-            --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
-            --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME \
-            --set apps.app.ingress.enabled=true \
-            --set apps.app.ingress.hosts[0].host=app.$DOMAIN_NAME \
-            --set apps.app.ingress.tls[0].hosts[0]=app.$DOMAIN_NAME \
-            --set apps.app.ingress.tls[0].secretName=app-tls-$DOMAIN_NAME \
-            --set apps.app.env.VITE_API_URL=https://api.$DOMAIN_NAME \
-            --set apps.api.ingress.enabled=true \
-            --set apps.api.ingress.hosts[0].host=api.$DOMAIN_NAME \
-            --set apps.api.ingress.tls[0].hosts[0]=api.$DOMAIN_NAME \
-            --set apps.api.ingress.tls[0].secretName=api-tls-$DOMAIN_NAME \
-            --set apps.api.env.API_URL=https://api.$DOMAIN_NAME \
-            --set apps.api.env.APP_URL=https://app.$DOMAIN_NAME \
-            --set apps.api.env.SUPPORT_URL=mailto:support@$DOMAIN_NAME \
-            --set apps.api.env.COOKIE_DOMAIN=.$DOMAIN_NAME \
-            --set apps.api.env.EMAIL_FROM=noreply@$DOMAIN_NAME
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          files: artifacts/**/*
+          fail_on_unmatched_files: false

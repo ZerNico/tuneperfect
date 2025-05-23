@@ -75,24 +75,3 @@ jobs:
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.rpm
           if-no-files-found: error
 
-  create-release:
-    needs: build-tauri
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create or update GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: true
-          files: artifacts/**/*
-          fail_on_unmatched_files: true
-
