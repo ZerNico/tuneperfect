@@ -26,7 +26,7 @@ setupJobs();
 const plugins = [
   new CORSPlugin({
     origin: (origin) => {
-      const allowedOrigins = [env.APP_URL, "http://localhost:1420"];
+      const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost"];
 
       if (allowedOrigins.includes(origin)) {
         return origin;
@@ -40,7 +40,7 @@ const plugins = [
   }),
   new ResponseHeadersPlugin(),
   new CsrfProtectionPlugin({
-    allowedOrigin: [env.APP_URL, "http://localhost:1420"],
+    allowedOrigin: [env.APP_URL, "http://localhost:1420", "tauri://localhost"],
   }),
   new StrictGetMethodPlugin(),
   new CookiesPlugin(),
