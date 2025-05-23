@@ -6,27 +6,8 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  create-draft-release:
-    name: Create Draft Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Create Draft Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: true
-          generate_release_notes: true
-
   build-api:
     name: Build API Image
-    needs: create-draft-release
     uses: ./.github/workflows/docker-build-api.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -34,7 +15,6 @@ jobs:
 
   build-web:
     name: Build Web Image
-    needs: create-draft-release
     uses: ./.github/workflows/docker-build-web.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -42,7 +22,6 @@ jobs:
 
   build-app:
     name: Build App Image
-    needs: create-draft-release
     uses: ./.github/workflows/docker-build-app.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -50,7 +29,6 @@ jobs:
 
   build-game:
     name: Build Game
-    needs: create-draft-release
     uses: ./.github/workflows/tauri-build-game.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -82,10 +60,11 @@ jobs:
           pattern: tuneperfect-*
 
       - name: Publish Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: false
           files: artifacts/**/*
           fail_on_unmatched_files: false
+          generate_release_notes: true
