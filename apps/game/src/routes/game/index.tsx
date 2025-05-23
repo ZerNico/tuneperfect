@@ -90,8 +90,12 @@ function GameComponent() {
               </Show>
             </div>
             <div class="relative z-1 grid h-full flex-grow grid-rows-[1fr_1fr]">
-              <Half index={0} />
-              <Half index={1} />
+              <Show when={roundStore.settings()?.players[0]}>
+                <Half index={0} />
+              </Show>
+              <Show when={roundStore.settings()?.players[1]}>
+                <Half index={1} />
+              </Show>
             </div>
             <div class="absolute inset-0">
               <Progress />
