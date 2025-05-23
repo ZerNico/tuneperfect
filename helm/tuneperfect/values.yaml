@@ -32,6 +32,19 @@ postgresql:
       existingClaim: "{{ .Release.Name }}-postgresql-data"
       size: 1Gi
 
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: redis-credentials
+    existingSecretPasswordKey: password
+  master:
+    persistence:
+      enabled: true
+      existingClaim: "{{ .Release.Name }}-redis-data"
+      size: 1Gi
+
 # Define applications to deploy
 apps:
   web:
@@ -45,6 +58,8 @@ apps:
     envFrom:
       - secretRef:
           name: postgresql-credentials
+      - secretRef:
+          name: redis-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
@@ -80,6 +95,8 @@ apps:
     envFrom:
       - secretRef:
           name: postgresql-credentials
+      - secretRef:
+          name: redis-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
