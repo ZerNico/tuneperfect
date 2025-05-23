@@ -3,9 +3,6 @@ import Header from "~/components/header";
 import { config } from "~/lib/config";
 
 import styles from "../styles.css?url";
-import "@fontsource/lato/300.css";
-import "@fontsource/lato/400.css";
-import "@fontsource/lato/700.css";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -42,7 +39,7 @@ function RootComponent() {
 
   return (
     <main class="min-h-screen bg-[#101024] font-primary text-white">
-      <Header appUrl={context().config.VITE_APP_URL} />
+      <Header appUrl={context().config.VITE_APP_URL ?? ""} />
       <Outlet />
     </main>
   );
