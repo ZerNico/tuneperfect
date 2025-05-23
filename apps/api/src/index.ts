@@ -94,6 +94,11 @@ const server = Bun.serve({
       return openAPIResponse.response;
     }
 
+    const path = new URL(request.url).pathname;
+    if (path === "/") {
+      return new Response("Hello World", { status: 200 });
+    }
+
     return new Response("Not found", { status: 404 });
   },
 });
