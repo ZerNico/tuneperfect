@@ -2,7 +2,6 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Tune Perfect",
   "mainBinaryName": "tuneperfect",
-  "version": "0.0.18",
   "identifier": "org.tuneperfect.game",
   "build": {
     "beforeDevCommand": "bun run dev:vite",
