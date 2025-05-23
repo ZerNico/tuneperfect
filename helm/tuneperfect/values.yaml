@@ -19,6 +19,18 @@ global:
     # Annotations to add to the service account
     # annotations: {}
 
+# Secrets configuration
+# These values should be set via helm --set or environment variables in CI/CD
+# DO NOT commit actual secret values to version control
+secrets:
+  api:
+    jwtSecret: ""
+    emailSmtpUrl: ""
+    googleClientId: ""
+    googleClientSecret: ""
+    discordClientId: ""
+    discordClientSecret: ""
+
 # PostgreSQL configuration
 postgresql:
   enabled: true
@@ -55,11 +67,6 @@ apps:
       tag: ""
     env:
       VITE_APP_URL: "https://app.tuneperfect.localhost"
-    envFrom:
-      - secretRef:
-          name: postgresql-credentials
-      - secretRef:
-          name: redis-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
@@ -92,11 +99,6 @@ apps:
       tag: ""
     env:
       VITE_API_URL: "https://api.tuneperfect.localhost"
-    envFrom:
-      - secretRef:
-          name: postgresql-credentials
-      - secretRef:
-          name: redis-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
@@ -120,3 +122,46 @@ apps:
         - hosts:
             - "app.tuneperfect.localhost"
           secretName: "app-tls"
+
+  api:
+    enabled: true
+    image:
+      repository: ghcr.io/zernico/tuneperfect-api
+      pullPolicy: IfNotPresent
+      tag: ""
+    env: 
+      API_URL: "https://api.tuneperfect.localhost"
+      APP_URL: "https://app.tuneperfect.localhost"
+      SUPPORT_URL: "mailto:support@tuneperfect.localhost"
+      COOKIE_DOMAIN: ".tuneperfect.localhost"
+      EMAIL_FROM: "noreply@tuneperfect.localhost"
+    envFrom:
+      - secretRef:
+          name: postgresql-credentials
+      - secretRef:
+          name: redis-credentials
+      - secretRef:
+          name: api-credentials
+    # secrets: 
+    #   - my-secret-name
+    replicaCount: 1
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 8000
+    # resources: {}
+    ingress:
+      enabled: false
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - host: "api.tuneperfect.localhost"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "api.tuneperfect.localhost"
+          secretName: "api-tls"

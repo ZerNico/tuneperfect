@@ -1,6 +1,7 @@
 import * as v from "valibot";
 
 const ConfigSchema = v.object({
+  NODE_ENV: v.optional(v.picklist(["development", "production"]), "production"),
   POSTGRES_URL: v.string(),
   API_URL: v.string(),
   EMAIL_SMTP_URL: v.string(),
