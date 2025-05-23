@@ -17,8 +17,10 @@ export const base = init
   .use(dbProvider)
   .use(
     onError((error) => {
-      if (error instanceof ORPCError && error.status === 500) {
-        logger.error(error, "Internal server error");
+      if (error instanceof ORPCError) {
+        if (error.status === 500) {
+          logger.error(error, "Internal server error");
+        }
       } else {
         logger.error(error, "Internal server error");
       }
