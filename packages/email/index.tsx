@@ -5,9 +5,19 @@ import type { ResetPasswordProps } from "./emails/reset-password";
 import { VerifyEmail, type VerifyEmailProps } from "./emails/verify-email";
 
 export async function renderVerifyEmail(props: VerifyEmailProps) {
-  return { html: await render(<VerifyEmail {...props} />), text: await render(<VerifyEmail {...props} />) };
+  const html = await render(<VerifyEmail {...props} />);
+  const text = await render(<VerifyEmail {...props} />, {
+    plainText: true,
+  });
+
+  return { html, text };
 }
 
 export async function renderResetPassword(props: ResetPasswordProps) {
-  return { html: await render(<ResetPassword {...props} />), text: await render(<ResetPassword {...props} />) };
+  const html = await render(<ResetPassword {...props} />);
+  const text = await render(<ResetPassword {...props} />, {
+    plainText: true,
+  });
+
+  return { html, text };
 }
