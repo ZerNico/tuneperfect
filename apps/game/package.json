@@ -6,7 +6,7 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "dev:vite": "vite",
-    "build:vite": "vite build && tsc",
+    "build:vite": "vite build",
     "tauri": "tauri"
   },
   "dependencies": {
