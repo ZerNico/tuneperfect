@@ -51,6 +51,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Strip v prefix from tag
+        id: version
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag }}"
+          echo "app_version=${TAG#v}" >> $GITHUB_OUTPUT
+
       - name: Build the Tauri app
         id: tauri-build
         uses: tauri-apps/tauri-action@v0
@@ -60,6 +67,7 @@ jobs:
         with:
           projectPath: apps/game
           tauriScript: bun run tauri
+          appVersion: ${{ steps.version.outputs.app_version }}
           args: --target ${{ matrix.platform.target }}
 
       - name: Upload artifacts
