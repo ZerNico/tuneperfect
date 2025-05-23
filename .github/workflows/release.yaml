@@ -58,7 +58,7 @@ jobs:
 
   deploy-to-cluster:
     name: Deploy to Kubernetes
-    needs: [build-api, build-web, build-app]
+    needs: [build-api, build-web, build-app, build-game]
     uses: ./.github/workflows/deploy-kubernetes.yaml
     with:
       tag: ${{ github.ref_name }}
@@ -67,7 +67,7 @@ jobs:
   publish-release:
     name: Publish Release
     runs-on: ubuntu-latest
-    needs: [build-game, deploy-to-cluster]
+    needs: [deploy-to-cluster]
     permissions:
       contents: write
     
