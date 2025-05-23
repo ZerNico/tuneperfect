@@ -67,8 +67,8 @@ jobs:
         with:
           projectPath: apps/game
           tauriScript: bun run tauri
-          appVersion: ${{ steps.version.outputs.app_version }}
-          args: --target ${{ matrix.platform.target }}
+          args: |
+            --target ${{ matrix.platform.target }} --config '{ "version": "${{ steps.version.outputs.app_version }}" }'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
