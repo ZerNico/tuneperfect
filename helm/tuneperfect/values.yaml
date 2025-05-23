@@ -56,6 +56,8 @@ redis:
       enabled: true
       existingClaim: "{{ .Release.Name }}-redis-data"
       size: 1Gi
+  replica:
+    replicaCount: 0
 
 # Define applications to deploy
 apps:
