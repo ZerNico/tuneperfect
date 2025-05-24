@@ -23,10 +23,12 @@ const router = {
 
 setupJobs();
 
+const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost", "http://tauri.localhost"];
+
 const plugins = [
   new CORSPlugin({
     origin: (origin) => {
-      const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost"];
+      console.log("🔄 origin", origin);
 
       if (allowedOrigins.includes(origin)) {
         return origin;
@@ -40,7 +42,7 @@ const plugins = [
   }),
   new ResponseHeadersPlugin(),
   new CsrfProtectionPlugin({
-    allowedOrigin: [env.APP_URL, "http://localhost:1420", "tauri://localhost"],
+    allowedOrigin: allowedOrigins,
   }),
   new StrictGetMethodPlugin(),
   new CookiesPlugin(),
