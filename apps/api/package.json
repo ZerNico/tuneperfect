@@ -13,10 +13,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@orpc/client": "^1.2.0",
-    "@orpc/openapi": "^1.2.0",
-    "@orpc/server": "^1.2.0",
-    "@orpc/valibot": "^1.2.0",
+    "@orpc/client": "^1.3.0",
+    "@orpc/openapi": "^1.3.0",
+    "@orpc/server": "^1.3.0",
+    "@orpc/valibot": "^1.3.0",
     "@tuneperfect/email": "*",
     "arctic": "^3.7.0",
     "croner": "^9.0.0",
