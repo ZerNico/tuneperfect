@@ -19,6 +19,7 @@ jobs:
             { os: 'macos-latest', target: 'x86_64-apple-darwin' },
             { os: 'ubuntu-24.04', target: 'x86_64-unknown-linux-gnu' },
             { os: 'windows-latest', target: 'x86_64-pc-windows-msvc' },
+            { os: 'windows-latest', target: 'aarch64-pc-windows-msvc' },
           ]
 
     runs-on: ${{ matrix.platform.os }}
@@ -31,6 +32,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev alsa-base alsa-utils libasound2-dev pkg-config
+
+      - name: Install ARM64 build tools (Windows ARM64 only)
+        if: matrix.platform.target == 'aarch64-pc-windows-msvc'
+        shell: powershell
+        run: |
+          # Download Visual Studio Build Tools installer
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
+          
+          # Install ARM64 build tools
+          Start-Process -FilePath "vs_buildtools.exe" -ArgumentList "--quiet", "--wait", "--add", "Microsoft.VisualStudio.Workload.VCTools", "--add", "Microsoft.VisualStudio.Component.VC.Tools.ARM64" -Wait
+          
+          # Clean up
+          Remove-Item "vs_buildtools.exe"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
