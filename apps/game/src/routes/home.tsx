@@ -175,7 +175,7 @@ interface ModeCardProps {
 function ModeCard(props: ModeCardProps) {
   return (
     <button
-      class="flex transform flex-col gap-1 p-1 transition-all ease-in-out active:scale-95"
+      class="flex transform flex-col gap-1 p-1 text-start transition-all ease-in-out active:scale-95"
       type="button"
       classList={{
         [props.class || ""]: true,

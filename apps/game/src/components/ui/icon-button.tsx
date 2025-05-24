@@ -16,7 +16,7 @@ interface IconButtonProps {
 export default function IconButton(props: IconButtonProps) {
   return (
     <button
-      class="flex h-44 w-32 flex-col gap-1 transition-all ease-in-out active:scale-95"
+      class="flex h-44 w-32 flex-col gap-1 text-start transition-all ease-in-out active:scale-95"
       classList={{
         "opacity-50": !props.selected,
         "scale-95": props.active,

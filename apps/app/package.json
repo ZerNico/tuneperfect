@@ -21,7 +21,7 @@
     "@tailwindcss/vite": "^4.1.7",
     "@tanstack/solid-form": "^1.11.2",
     "@tanstack/solid-query": "^5.76.0",
-    "@tanstack/solid-router": "^1.120.5",
+    "@tanstack/solid-router": "^1.120.10",
     "cva": "^1.0.0-beta.4",
     "solid-js": "^1.9.7",
     "tailwindcss": "^4.1.7",
