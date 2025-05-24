@@ -7,6 +7,17 @@ import type { Song } from "../song";
 import { ParseError } from "./error";
 import { parseUltrastarTxt } from "./txt";
 
+
+function normalizeFilename(filename: string): string {
+  return filename.normalize("NFC").toLowerCase();
+}
+
+
+function findFileByName(files: DirEntryWithChildren[], targetFilename: string): DirEntryWithChildren | undefined {
+  const normalizedTarget = normalizeFilename(targetFilename);
+  return files.find((f) => normalizeFilename(f.name) === normalizedTarget);
+}
+
 export async function parseLocalFileTree(root: DirEntryWithChildren) {
   const songFiles: { txt: DirEntryWithChildren; files: DirEntryWithChildren[] }[] = [];
 
@@ -43,14 +54,14 @@ export async function parseLocalTxtFile(txt: DirEntryWithChildren, files: DirEnt
     const song = parseUltrastarTxt(content);
 
     const localSong: LocalSong = song;
-    const hasAudio = !!song.audio && files.some((f) => f.name === song.audio);
+    const hasAudio = !!song.audio && !!findFileByName(files, song.audio);
 
     for (const type of ["audio", "video", "cover", "background"] as const) {
       if (!song[type]) {
         continue;
       }
 
-      const file = files.find((f) => f.name === song[type]);
+      const file = findFileByName(files, song[type]);
 
       if (!file) {
         // Handle missing files according to requirements
@@ -71,7 +82,7 @@ export async function parseLocalTxtFile(txt: DirEntryWithChildren, files: DirEnt
     }
 
     if (song.audio) {
-      const file = files.find((f) => f.name === song.audio);
+      const file = findFileByName(files, song.audio);
 
       if (file) {
         const result = await commands.getReplayGain(file.path);
