@@ -80,6 +80,7 @@ jobs:
             --set apps.web.ingress.tls[0].hosts[0]=$DOMAIN_NAME \
             --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
             --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME \
+            --set apps.web.env.VERSION=$IMAGE_TAG \
             --set apps.app.ingress.enabled=true \
             --set apps.app.ingress.hosts[0].host=app.$DOMAIN_NAME \
             --set apps.app.ingress.tls[0].hosts[0]=app.$DOMAIN_NAME \

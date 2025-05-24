@@ -91,25 +91,17 @@ function RouteComponent() {
             <h2 class="text-center font-bold text-2xl md:text-3xl">Download</h2>
             <div class="gradient-settings mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
           </div>
-          <p class="mb-8 text-center text-white/80">Choose your platform and get started.</p>
+          <p class="mb-8 text-center text-white/80">Choose your platform to see available download options.</p>
           <div class="flex flex-wrap items-center justify-center gap-4">
-            <Button intent="gradient-settings">
+            <Button to="/download/macos" intent="gradient-settings">
               <IconApple class="invert" />
-              <span class="font-semibold">
-                macOS <span class="text-xs">(Apple Silicon)</span>
-              </span>
+              <span class="font-semibold">macOS</span>
             </Button>
-            <Button intent="gradient-settings">
-              <IconApple class="invert" />
-              <span class="font-semibold">
-                macOS <span class="text-xs">(Intel)</span>
-              </span>
-            </Button>
-            <Button intent="gradient-settings">
+            <Button to="/download/windows" intent="gradient-settings">
               <IconWindows class="brightness-1000" />
               <span class="font-semibold">Windows</span>
             </Button>
-            <Button intent="gradient-settings">
+            <Button to="/download/linux" intent="gradient-settings">
               <IconLinux class="brightness-1000" />
               <span class="font-semibold">Linux</span>
             </Button>

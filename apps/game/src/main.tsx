@@ -4,9 +4,6 @@ import { render } from "solid-js/web";
 import { routeTree } from "./routeTree.gen";
 
 import "./styles.css";
-import "@fontsource/lato/300.css";
-import "@fontsource/lato/400.css";
-import "@fontsource/lato/700.css";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

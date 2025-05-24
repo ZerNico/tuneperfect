@@ -14,6 +14,7 @@ interface InternalLinkProps extends BaseProps {
 interface LinkProps extends BaseProps {
   href: string;
   target?: "_blank" | "_self" | "_parent" | "_top";
+  download?: string;
 }
 
 interface BaseProps extends VariantProps<typeof button> {
@@ -51,7 +52,7 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
 
   if ("href" in props) {
     return (
-      <a href={props.href} target={props.target} classList={classes()}>
+      <a href={props.href} target={props.target} classList={classes()} download={props.download}>
         <ButtonContent>{props.children}</ButtonContent>
       </a>
     );

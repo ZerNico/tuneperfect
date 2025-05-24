@@ -12,12 +12,33 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
+import { Route as DownloadWindowsImport } from './routes/download/windows'
+import { Route as DownloadMacosImport } from './routes/download/macos'
+import { Route as DownloadLinuxImport } from './routes/download/linux'
 
 // Create/Update Routes
 
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DownloadWindowsRoute = DownloadWindowsImport.update({
+  id: '/download/windows',
+  path: '/download/windows',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DownloadMacosRoute = DownloadMacosImport.update({
+  id: '/download/macos',
+  path: '/download/macos',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DownloadLinuxRoute = DownloadLinuxImport.update({
+  id: '/download/linux',
+  path: '/download/linux',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -32,6 +53,27 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/download/linux': {
+      id: '/download/linux'
+      path: '/download/linux'
+      fullPath: '/download/linux'
+      preLoaderRoute: typeof DownloadLinuxImport
+      parentRoute: typeof rootRoute
+    }
+    '/download/macos': {
+      id: '/download/macos'
+      path: '/download/macos'
+      fullPath: '/download/macos'
+      preLoaderRoute: typeof DownloadMacosImport
+      parentRoute: typeof rootRoute
+    }
+    '/download/windows': {
+      id: '/download/windows'
+      path: '/download/windows'
+      fullPath: '/download/windows'
+      preLoaderRoute: typeof DownloadWindowsImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -39,32 +81,52 @@ declare module '@tanstack/solid-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/macos': typeof DownloadMacosRoute
+  '/download/windows': typeof DownloadWindowsRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/macos': typeof DownloadMacosRoute
+  '/download/windows': typeof DownloadWindowsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/macos': typeof DownloadMacosRoute
+  '/download/windows': typeof DownloadWindowsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/download/linux' | '/download/macos' | '/download/windows'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/download/linux' | '/download/macos' | '/download/windows'
+  id:
+    | '__root__'
+    | '/'
+    | '/download/linux'
+    | '/download/macos'
+    | '/download/windows'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DownloadLinuxRoute: typeof DownloadLinuxRoute
+  DownloadMacosRoute: typeof DownloadMacosRoute
+  DownloadWindowsRoute: typeof DownloadWindowsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DownloadLinuxRoute: DownloadLinuxRoute,
+  DownloadMacosRoute: DownloadMacosRoute,
+  DownloadWindowsRoute: DownloadWindowsRoute,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +139,23 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/download/linux",
+        "/download/macos",
+        "/download/windows"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/download/linux": {
+      "filePath": "download/linux.tsx"
+    },
+    "/download/macos": {
+      "filePath": "download/macos.tsx"
+    },
+    "/download/windows": {
+      "filePath": "download/windows.tsx"
     }
   }
 }
