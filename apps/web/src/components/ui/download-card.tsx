@@ -1,6 +1,7 @@
 import type { JSX } from "solid-js";
 import { For } from "solid-js";
 import Button from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
 
 interface Tag {
   text: string;
@@ -8,6 +9,7 @@ interface Tag {
 }
 
 interface DownloadCardProps {
+  class?: string;
   icon: JSX.Element;
   gradientFrom: string;
   gradientTo: string;
@@ -38,7 +40,7 @@ export default function DownloadCard(props: DownloadCardProps) {
   };
 
   return (
-    <div class="group flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-slate-750 hover:shadow-2xl">
+    <div class={cn("group flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-slate-750 hover:shadow-2xl", props.class)}>
       <div class="flex items-center gap-4">
         <div
           class="rounded-full p-3"

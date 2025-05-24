@@ -24,6 +24,7 @@ function RouteComponent() {
 
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           <DownloadCard
+            class="md:col-span-2 lg:col-span-1"
             icon={<IconPackage class="h-6 w-6 text-white" />}
             gradientFrom="#22c55e"
             gradientTo="#16a34a"

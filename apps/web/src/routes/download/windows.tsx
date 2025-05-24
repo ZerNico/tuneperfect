@@ -9,7 +9,7 @@ export const Route = createFileRoute("/download/windows")({
 
 function RouteComponent() {
   const context = Route.useRouteContext();
-  const version = () => context()?.config?.VERSION?.replace(/^v/, '') || '';
+  const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
 
   return (
     <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
@@ -22,7 +22,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-8">
           <DownloadCard
             icon={<IconMonitor class="h-6 w-6 text-white" />}
             gradientFrom="#3b82f6"
@@ -36,18 +36,6 @@ function RouteComponent() {
             ]}
             extension="exe"
             url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
-          />
-
-          <DownloadCard
-            icon={<IconMonitor class="h-6 w-6 text-white" />}
-            gradientFrom="#8b5cf6"
-            gradientTo="#7c3aed"
-            title="Windows ARM64"
-            subtitle="For Windows on ARM"
-            description="Native support for Windows on ARM devices like Surface Pro X and other ARM-based PCs."
-            tags={[{ text: "ARM64", color: "slate" }]}
-            extension="exe"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_arm64-setup.exe`}
           />
         </div>
 
