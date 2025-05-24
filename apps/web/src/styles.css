@@ -177,10 +177,6 @@
   --color-slate-950: oklch(0.129 0.042 264.695);
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 .gradient-sing {
   @apply from-green-400 to-teal-600;
 }

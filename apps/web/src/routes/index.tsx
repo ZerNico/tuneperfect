@@ -1,18 +1,18 @@
 import { createFileRoute } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import { onMount } from "solid-js";
+import FeatureCard from "~/components/feature-card";
 import Button from "~/components/ui/button";
-import FeatureCard from "~/components/ui/feature-card";
 import { cn } from "~/lib/utils/cn";
 import { getColorVar } from "~/lib/utils/color";
 import IconApple from "~icons/logos/apple";
-import IconWindows from "~icons/logos/microsoft-windows-icon";
 import IconGithub from "~icons/lucide/github";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPartyPopper from "~icons/lucide/party-popper";
 import IconSettings from "~icons/lucide/settings";
 import IconUsers from "~icons/lucide/users";
 import IconLinux from "~icons/sing/linux";
+import IconWindows from "~icons/sing/windows";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -20,6 +20,12 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
 
+  const scrollToDownload = () => {
+    const downloadSection = document.getElementById("download");
+    if (downloadSection) {
+      downloadSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <>
@@ -35,7 +41,7 @@ function RouteComponent() {
             Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete with friends, and
             have a blast!
           </p>
-          <Button href="#download" intent="gradient-sing" class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0">
+          <Button onClick={scrollToDownload} intent="gradient-sing" class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0">
             Download
           </Button>
         </section>
@@ -53,29 +59,25 @@ function RouteComponent() {
           <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
             <FeatureCard
               icon={<IconMicVocal />}
-              gradientFrom="#34d399"
-              gradientTo="#10b981"
+              color="green"
               title="Real-time Pitch Detection"
               description="Sing along and get instant feedback on your pitch accuracy and earn points along the way."
             />
             <FeatureCard
               icon={<IconPartyPopper />}
-              gradientFrom="#fbbf24"
-              gradientTo="#f97316"
+              color="purple"
               title="Party Mode"
               description="Compete with friends in exciting party modes and see who can hit the highest score!"
             />
             <FeatureCard
               icon={<IconUsers />}
-              gradientFrom="#ec4899"
-              gradientTo="#a855f7"
+              color="yellow"
               title="Online Accounts"
               description="Join lobbies with your own account to save your progress and customize your profile."
             />
             <FeatureCard
               icon={<IconSettings />}
-              gradientFrom="#06b6d4"
-              gradientTo="#3b82f6"
+              color="cyan"
               title="Customizable Settings"
               description="Fine-tune your experience with adjustable audio, visuals, and more."
             />

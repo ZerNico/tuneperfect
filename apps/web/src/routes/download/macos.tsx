@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/solid-router";
-import DownloadCard from "~/components/ui/download-card";
+import DownloadCard from "~/components/download-card";
 import IconChip from "~icons/lucide/cpu";
 import IconApple from "~icons/sing/apple";
 
