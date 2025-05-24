@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import { onMount } from "solid-js";
 import Button from "~/components/ui/button";
+import FeatureCard from "~/components/ui/feature-card";
 import { cn } from "~/lib/utils/cn";
 import { getColorVar } from "~/lib/utils/color";
 import IconApple from "~icons/logos/apple";
@@ -50,34 +51,34 @@ function RouteComponent() {
             <div class="gradient-party mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
           </div>
           <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <div class="group flex flex-col items-center gap-5 rounded-xl border border-slate-700 bg-slate-800 p-7 shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:bg-slate-700 hover:shadow-2xl">
-              <IconMicVocal class="mb-2 text-5xl text-slate-300 transition-colors duration-200 ease-in-out group-hover:text-cyan-400" />
-              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Real-time Pitch Detection</h3>
-              <p class="text-balance text-center text-slate-300 text-sm">
-                Sing along and get instant feedback on your pitch accuracy and earn points along the way.
-              </p>
-            </div>
-            <div class="group flex flex-col items-center gap-5 rounded-xl border border-slate-700 bg-slate-800 p-7 shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:bg-slate-700 hover:shadow-2xl">
-              <IconPartyPopper class="mb-2 text-5xl text-slate-300 transition-colors duration-200 ease-in-out group-hover:text-yellow-400" />
-              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Party Mode</h3>
-              <p class="text-balance text-center text-slate-300 text-sm">
-                Compete with friends in exciting party modes and see who can hit the highest score!
-              </p>
-            </div>
-            <div class="group flex flex-col items-center gap-5 rounded-xl border border-slate-700 bg-slate-800 p-7 shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:bg-slate-700 hover:shadow-2xl">
-              <IconUsers class="mb-2 text-5xl text-slate-300 transition-colors duration-200 ease-in-out group-hover:text-pink-500" />
-              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Online Accounts</h3>
-              <p class="text-balance text-center text-slate-300 text-sm">
-                Join lobbies with your own account to save your progress and customize your profile.
-              </p>
-            </div>
-            <div class="group flex flex-col items-center gap-5 rounded-xl border border-slate-700 bg-slate-800 p-7 shadow-lg transition-transform duration-200 hover:scale-[1.03] hover:bg-slate-700 hover:shadow-2xl">
-              <IconSettings class="mb-2 text-5xl text-slate-300 transition-colors duration-200 ease-in-out group-hover:text-purple-500" />
-              <h3 class="font-semibold text-slate-100 text-xl tracking-tight">Customizable Settings</h3>
-              <p class="text-balance text-center text-slate-300 text-sm">
-                Fine-tune your experience with adjustable audio, visuals, and more.
-              </p>
-            </div>
+            <FeatureCard
+              icon={<IconMicVocal />}
+              gradientFrom="#34d399"
+              gradientTo="#10b981"
+              title="Real-time Pitch Detection"
+              description="Sing along and get instant feedback on your pitch accuracy and earn points along the way."
+            />
+            <FeatureCard
+              icon={<IconPartyPopper />}
+              gradientFrom="#fbbf24"
+              gradientTo="#f97316"
+              title="Party Mode"
+              description="Compete with friends in exciting party modes and see who can hit the highest score!"
+            />
+            <FeatureCard
+              icon={<IconUsers />}
+              gradientFrom="#ec4899"
+              gradientTo="#a855f7"
+              title="Online Accounts"
+              description="Join lobbies with your own account to save your progress and customize your profile."
+            />
+            <FeatureCard
+              icon={<IconSettings />}
+              gradientFrom="#06b6d4"
+              gradientTo="#3b82f6"
+              title="Customizable Settings"
+              description="Fine-tune your experience with adjustable audio, visuals, and more."
+            />
           </div>
         </section>
 

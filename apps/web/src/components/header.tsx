@@ -14,7 +14,7 @@ export default function Header(props: HeaderProps) {
             Tune Perfect
           </a>
           <div class="flex justify-end gap-2">
-            <Button href={props.appUrl} intent="gradient-sing">
+            <Button href={props.appUrl} intent="gradient-lobby">
               Join Lobby
             </Button>
           </div>

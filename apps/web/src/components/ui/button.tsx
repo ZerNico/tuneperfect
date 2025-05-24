@@ -29,6 +29,7 @@ const button = cva({
       primary: "bg-slate-800 text-white hover:bg-slate-700",
       "gradient-sing": "gradient-sing bg-gradient-to-r text-white hover:opacity-90",
       "gradient-settings": "gradient-settings bg-gradient-to-r text-white hover:opacity-90",
+      "gradient-lobby": "gradient-lobby bg-gradient-to-r text-white hover:opacity-90",
     },
   },
   defaultVariants: {
