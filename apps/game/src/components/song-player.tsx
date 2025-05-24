@@ -269,6 +269,7 @@ export default function SongPlayer(props: SongPlayerProps) {
               class="h-full w-full object-cover"
               ref={setVideoElement}
               preload="auto"
+              crossorigin="anonymous"
               onCanPlayThrough={handleVideoCanPlayThrough}
               onEnded={!props.song.audioUrl ? handleEnded : undefined}
               src={videoUrl()}
@@ -295,6 +296,7 @@ export default function SongPlayer(props: SongPlayerProps) {
             controls
             ref={setAudioElement}
             preload="auto"
+            crossorigin="anonymous"
             onCanPlayThrough={handleAudioCanPlayThrough}
             onEnded={handleEnded}
             src={audioUrl()}
