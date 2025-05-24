@@ -1,4 +1,4 @@
-import { Match, type Ref, Show, Switch, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
+import { Match, type Ref, Show, Switch, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { createRefContent } from "~/lib/utils/ref";
@@ -22,234 +22,236 @@ interface SongPlayerProps {
 export default function SongPlayer(props: SongPlayerProps) {
   const [audioElement, setAudioElement] = createSignal<HTMLAudioElement | undefined>();
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
-  const [audioGainNode, setAudioGainNode] = createSignal<GainNode>();
-  const [videoGainNode, setVideoGainNode] = createSignal<GainNode>();
+  const [audioReady, setAudioReady] = createSignal(false);
+  const [videoReady, setVideoReady] = createSignal(false);
   const [videoError, setVideoError] = createSignal(false);
+  const [hasInitialized, setHasInitialized] = createSignal(false);
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   const audioContext = new AudioContext();
 
+  // Setup audio context for audio element
   createEffect(
     on(audioElement, (audio) => {
-      let source: MediaElementAudioSourceNode | undefined = undefined;
-      let gainNode: GainNode | undefined = undefined;
+      if (!audio) return;
 
-      if (audio) {
-        source = audioContext.createMediaElementSource(audio);
-        gainNode = audioContext.createGain();
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
-        setAudioGainNode(gainNode);
-      }
+      const source = audioContext.createMediaElementSource(audio);
+      const gainNode = audioContext.createGain();
+      source.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+      gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+
+      // Update volume when it changes
+      createEffect(() => {
+        const volume = props.volume ?? 1;
+        gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+      });
 
       onCleanup(() => {
-        gainNode?.disconnect();
-        source?.disconnect();
+        gainNode.disconnect();
+        source.disconnect();
       });
     })
   );
 
+  // Setup audio context for video element
   createEffect(
     on(videoElement, (video) => {
-      let source: MediaElementAudioSourceNode | undefined = undefined;
-      let gainNode: GainNode | undefined = undefined;
+      if (!video) return;
 
-      if (video) {
-        source = audioContext.createMediaElementSource(video);
-        gainNode = audioContext.createGain();
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
-        setVideoGainNode(gainNode);
-      }
+      const source = audioContext.createMediaElementSource(video);
+      const gainNode = audioContext.createGain();
+      source.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+      gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+
+      // Update volume when it changes
+      createEffect(() => {
+        const volume = props.volume ?? 1;
+        gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+      });
 
       onCleanup(() => {
-        gainNode?.disconnect();
-        source?.disconnect();
+        gainNode.disconnect();
+        source.disconnect();
       });
     })
   );
 
-  createEffect(() => {
-    const volume = props.volume ?? 1;
-    const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-    const adjustedVolume = volume * replayGainAdjustment;
-
-    audioGainNode()?.gain.setValueAtTime(adjustedVolume, audioContext.currentTime);
-    videoGainNode()?.gain.setValueAtTime(adjustedVolume, audioContext.currentTime);
-  });
-
-  const canPlayThrough = () => {
+  // Check if all required media is ready
+  const isReady = () => {
     const audio = audioElement();
     const video = videoElement();
-
-    if (!audio && !video) {
-      return false;
-    }
-
-    if (audio && audio.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
-      return false;
-    }
-
-    if (video && video.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
-      return false;
-    }
-
+    
+    if (!audio && !video) return false;
+    if (audio && !audioReady()) return false;
+    if (video && !videoError() && !videoReady()) return false;
+    
     return true;
   };
 
-  const onCanPlayThrough = () => {
-    if (!canPlayThrough()) {
-      return;
+  // Set initial time for preview mode
+  const setPreviewTime = () => {
+    if (!props.isPreview) return;
+
+    const audio = audioElement();
+    const video = videoElement();
+    const previewStart = getPreviewStartTime(props.song, props.song.videoGap ?? 0);
+
+    if (audio && audio.currentTime === 0) {
+      audio.currentTime = previewStart;
     }
-
-    props.onCanPlayThrough?.();
-
-    if (props.playing) {
-      startPlayback();
+    if (video && video.currentTime === 0) {
+      video.currentTime = previewStart;
     }
   };
 
-  const startPlayback = () => {
+  // Sync and start playback
+  const play = async () => {
     const audio = audioElement();
     const video = videoElement();
 
-    if ((audio && !document.body.contains(audio)) || (video && !document.body.contains(video))) {
-      return;
-    }
+    if (!audio && !video) return;
 
-    if (!audio) {
-      video?.play();
-      return;
-    }
+    // Clear any existing sync timeout
+    clearTimeout(syncTimeout);
 
-    if (!video) {
-      audio.play();
-      return;
-    }
+    try {
+      setPreviewTime();
 
-    const videoGap = props.song.videoGap ?? 0;
-    
-    if (props.isPreview) {
-      const previewStart = getPreviewStartTime(props.song, videoGap);
-      
-      if (video.currentTime === 0) {
-        video.currentTime = previewStart;
+      if (audio && video) {
+        // Sync both audio and video with proper videoGap handling
+        const videoGap = props.song.videoGap ?? 0;
+        const gap = video.currentTime - audio.currentTime - videoGap;
+
+        if (Math.abs(gap) > 0.1) {
+          if (gap > 0) {
+            // Video is ahead, try to advance audio
+            const newAudioTime = audio.currentTime + gap;
+            if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
+              audio.currentTime = newAudioTime;
+              await Promise.all([audio.play(), video.play()]);
+            } else {
+              // Can't sync by adjusting audio time, use timeout
+              await audio.play();
+              syncTimeout = setTimeout(async () => {
+                try {
+                  await video.play();
+                } catch (error) {
+                  console.warn("Failed to start video playback:", error);
+                }
+              }, gap * 1000);
+            }
+          } else {
+            // Audio is ahead, try to advance video
+            const newVideoTime = video.currentTime + Math.abs(gap);
+            if (newVideoTime >= 0 && newVideoTime <= video.duration) {
+              video.currentTime = newVideoTime;
+              await Promise.all([audio.play(), video.play()]);
+            } else {
+              // Can't sync by adjusting video time, use timeout
+              await video.play();
+              syncTimeout = setTimeout(async () => {
+                try {
+                  await audio.play();
+                } catch (error) {
+                  console.warn("Failed to start audio playback:", error);
+                }
+              }, Math.abs(gap) * 1000);
+            }
+          }
+        } else {
+          // Elements are already in sync
+          await Promise.all([audio.play(), video.play()]);
+        }
+      } else if (audio) {
+        await audio.play();
+      } else if (video) {
+        await video.play();
       }
-      if (audio.currentTime === 0) {
-        audio.currentTime = previewStart;
-      }
-    }
-
-    const gap = video.currentTime - audio.currentTime - videoGap;
-
-    if (gap > 0) {
-      if (audio.currentTime + gap <= audio.duration) {
-        audio.currentTime += gap;
-        audio.play();
-        video.play();
-      } else {
-        audio.play();
-        syncTimeout = setTimeout(() => {
-          video.play();
-        }, gap * 1000);
-      }
-    } else if (gap < 0) {
-      const absoluteGap = Math.abs(gap);
-      if (video.currentTime + absoluteGap <= video.duration) {
-        video.currentTime += absoluteGap;
-        audio.play();
-        video.play();
-      } else {
-        video.play();
-        syncTimeout = setTimeout(() => {
-          audio.play();
-        }, absoluteGap * 1000);
-      }
-    } else {
-      audio.play();
-      video.play();
+    } catch (error) {
+      console.warn("Failed to start playback:", error);
     }
   };
 
-  const stopPlayback = () => {
+  // Stop playback
+  const pause = () => {
     audioElement()?.pause();
     videoElement()?.pause();
     clearTimeout(syncTimeout);
   };
 
-  createEffect(
-    on(
-      () => props.playing,
-      (playing) => {
-        if (playing && canPlayThrough()) {
-          startPlayback();
-        } else if (!playing) {
-          stopPlayback();
-        }
-      }
-    )
-  );
+  // Main playback control effect
+  createEffect(() => {
+    if (props.playing && isReady()) {
+      play();
+    } else if (!props.playing) {
+      pause();
+    }
+  });
 
+  // Reset when song changes
   createEffect(
     on(
       () => props.song,
       () => {
-        clearTimeout(syncTimeout);
-        stopPlayback();
+        setAudioReady(false);
+        setVideoReady(false);
         setVideoError(false);
-
-        if (canPlayThrough()) {
-          startPlayback();
-        }
+        setHasInitialized(false);
+        pause();
       }
     )
   );
+
+  // Handle ready state notifications
+  createEffect(() => {
+    if (isReady() && !hasInitialized()) {
+      setHasInitialized(true);
+      props.onCanPlayThrough?.();
+    }
+  });
 
   const handleEnded = () => {
     props.onEnded?.();
   };
 
+  const handleAudioCanPlayThrough = () => {
+    setAudioReady(true);
+  };
+
+  const handleVideoCanPlayThrough = () => {
+    setVideoReady(true);
+  };
+
+  const handleVideoError = () => {
+    setVideoError(true);
+    setVideoElement(undefined);
+  };
+
+  // Ref implementation
   createRefContent(
     () => props.ref,
     () => ({
       getCurrentTime: () => {
         const audio = audioElement();
         const video = videoElement();
-        if (audio) {
-          return audio.currentTime;
-        }
-        if (video) {
-          return video.currentTime;
-        }
-        return 0;
+        return audio?.currentTime ?? video?.currentTime ?? 0;
       },
       getDuration: () => {
         const audio = audioElement();
         const video = videoElement();
-        if (audio) {
-          return audio.duration;
-        }
-        if (video) {
-          return video.duration;
-        }
-        return 0;
+        return audio?.duration ?? video?.duration ?? 0;
       },
     })
   );
 
-  onMount(() => {
-    if (canPlayThrough()) {
-      startPlayback();
-    }
-  });
-
   onCleanup(() => {
-    clearTimeout(syncTimeout);
-    stopPlayback();
+    pause();
   });
 
   return (
@@ -267,14 +269,10 @@ export default function SongPlayer(props: SongPlayerProps) {
               class="h-full w-full object-cover"
               ref={setVideoElement}
               preload="auto"
-              onCanPlayThrough={onCanPlayThrough}
+              onCanPlayThrough={handleVideoCanPlayThrough}
               onEnded={!props.song.audioUrl ? handleEnded : undefined}
               src={videoUrl()}
-              onError={() => {
-                setVideoError(true);
-                setVideoElement(undefined);
-                startPlayback();
-              }}
+              onError={handleVideoError}
             />
           )}
         </Match>
@@ -293,7 +291,14 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       <Show when={props.song.audioUrl}>
         {(audioUrl) => (
-          <audio ref={setAudioElement} preload="auto" onCanPlayThrough={onCanPlayThrough} onEnded={handleEnded} src={audioUrl()} />
+          <audio
+            controls
+            ref={setAudioElement}
+            preload="auto"
+            onCanPlayThrough={handleAudioCanPlayThrough}
+            onEnded={handleEnded}
+            src={audioUrl()}
+          />
         )}
       </Show>
     </div>
@@ -304,12 +309,12 @@ const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
   if (song.previewStart !== undefined) {
     return Math.max(0, song.previewStart);
   }
-  
+
   const firstNote = song.voices[0]?.phrases[0]?.notes[0];
   if (!firstNote) {
     return 0;
   }
-  
+
   const previewGap = videoGap < 0 ? videoGap : 0;
   return Math.max(0, beatToMs(song, firstNote.startBeat) / 1000 - 2 + previewGap);
 };
