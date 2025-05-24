@@ -5,8 +5,8 @@ import * as schema from "../lib/db/schema";
 import { logger } from "../lib/logger";
 
 export function setupTokenCleanupJob() {
-  // Run daily at 02:00 AM
-  const job = new Cron("0 2 * * *", async () => {
+  // Run every hour
+  const job = new Cron("0 * * * *", async () => {
     try {
       const now = new Date();
       

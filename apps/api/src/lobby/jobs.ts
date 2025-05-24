@@ -6,8 +6,8 @@ import * as schema from "../lib/db/schema";
 import { logger } from "../lib/logger";
 
 export function setupLobbyCleanupJob() {
-  // Run daily at 03:00 AM
-  const job = new Cron("0 3 * * *", async () => {
+  // Run every hour
+  const job = new Cron("0 * * * *", async () => {
     try {
       const date = subDays(new Date(), 7);
       
