@@ -1,15 +1,10 @@
 import { Outlet, createRootRoute } from "@tanstack/solid-router";
 import Header from "~/components/header";
 import { config } from "~/lib/config";
-
-import { isServer } from "solid-js/web";
 import styles from "../styles.css?url";
 
 export const Route = createRootRoute({
   head: () => {
-    if (!isServer) {
-      return {};
-    }
     return {
       meta: [
         {

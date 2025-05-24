@@ -24,7 +24,7 @@ function RouteComponent() {
   return (
     <>
       <div class="relative flex flex-col gap-y-20 bg-slate-900 px-4 pb-20 text-white">
-        <section class="relative z-2 mx-auto flex min-h-screen w-full max-w-full flex-col items-center justify-center gap-10 py-20 text-white">
+        <section class="relative z-2 mx-auto flex min-h-[100dvh] w-full max-w-full flex-col items-center justify-center gap-10 py-20 text-white">
           <Note class="absolute top-[15%] left-[15%] w-30 md:top-[20%]" color="sky" />
           <Note class="absolute top-[22%] right-[20%] w-15 md:top-[30%]" color="yellow" />
           <Note class="absolute bottom-[20%] left-[30%] w-12 md:bottom-[25%]" color="red" />
