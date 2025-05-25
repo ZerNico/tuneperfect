@@ -82,7 +82,17 @@ jobs:
           projectPath: apps/game
           tauriScript: bun run tauri
           args: |
-            --target ${{ matrix.platform.target }} --config '{ "version": "${{ steps.version.outputs.app_version }}" }'
+            --target ${{ matrix.platform.target }} --config '{
+              "version": "${{ steps.version.outputs.app_version }}",
+              "plugins": {
+                "updater": {
+                  "pubkey": "${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}",
+                  "endpoints": [
+                    "https://api.${{ secrets.DOMAIN_NAME }}/v1.0/updates/{{target}}/{{arch}}/{{current_version}}"
+                  ]
+                }
+              }
+            }'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -90,8 +100,12 @@ jobs:
           name: tuneperfect-${{ matrix.platform.os }}-${{ matrix.platform.target }}
           path: |
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.exe
+            apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.exe.sig
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.dmg
+            apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.app.tar.gz
+            apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.app.tar.gz.sig
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.AppImage
+            apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.AppImage.sig
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.deb
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.rpm
           if-no-files-found: error
