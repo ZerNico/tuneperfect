@@ -95,6 +95,45 @@ jobs:
               }
             }'
 
+      - name: Rename app.tar.gz to match dmg naming (macOS only)
+        if: matrix.platform.os == 'macos-latest'
+        shell: bash
+        run: |
+          BUNDLE_DIR="apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle"
+          
+          # Find the dmg file
+          DMG_FILE=$(find "$BUNDLE_DIR" -name "*.dmg" | head -1)
+          
+          if [ -n "$DMG_FILE" ]; then
+            # Extract the base name without extension
+            DMG_BASENAME=$(basename "$DMG_FILE" .dmg)
+            
+            # Find the app.tar.gz file
+            APP_TAR_GZ=$(find "$BUNDLE_DIR" -name "*.app.tar.gz" | head -1)
+            
+            if [ -n "$APP_TAR_GZ" ]; then
+              # Get the directory of the app.tar.gz file
+              APP_DIR=$(dirname "$APP_TAR_GZ")
+              
+              # Rename the app.tar.gz file to match the dmg naming
+              NEW_NAME="${APP_DIR}/${DMG_BASENAME}.app.tar.gz"
+              mv "$APP_TAR_GZ" "$NEW_NAME"
+              echo "Renamed $(basename "$APP_TAR_GZ") to $(basename "$NEW_NAME")"
+              
+              # Also rename the signature file if it exists
+              APP_TAR_GZ_SIG="${APP_TAR_GZ}.sig"
+              if [ -f "$APP_TAR_GZ_SIG" ]; then
+                NEW_SIG_NAME="${NEW_NAME}.sig"
+                mv "$APP_TAR_GZ_SIG" "$NEW_SIG_NAME"
+                echo "Renamed $(basename "$APP_TAR_GZ_SIG") to $(basename "$NEW_SIG_NAME")"
+              fi
+            else
+              echo "No .app.tar.gz file found"
+            fi
+          else
+            echo "No .dmg file found"
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
