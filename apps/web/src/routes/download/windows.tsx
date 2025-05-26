@@ -22,7 +22,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-8">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
           <DownloadCard
             icon={<IconMonitor class="h-6 w-6 text-white" />}
             gradientFrom="#3b82f6"
@@ -36,6 +36,21 @@ function RouteComponent() {
             ]}
             extension="exe"
             url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
+          />
+          
+          <DownloadCard
+            icon={<IconMonitor class="h-6 w-6 text-white" />}
+            gradientFrom="#10b981"
+            gradientTo="#059669"
+            title="Windows ARM64"
+            subtitle="For ARM-based Windows devices"
+            description="Optimized installer for Windows on ARM processors like Surface Pro X and other ARM-based Windows computers."
+            tags={[
+              { text: "ARM64", color: "green" },
+              { text: "aarch64", color: "slate" },
+            ]}
+            extension="exe"
+            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_arm64-setup.exe`}
           />
         </div>
 
