@@ -42,13 +42,15 @@ function MicrophonesComponent() {
       });
     }
 
-    buttons.push({
-      label: t("settings.add"),
-      icon: IconPlus,
-      action: () => {
-        navigate({ to: "/settings/microphones/$id", params: { id: settingsStore.microphones().length.toString() } });
-      },
-    });
+    if (settingsStore.microphones().length < 2) {
+      buttons.push({
+        label: t("settings.add"),
+        icon: IconPlus,
+        action: () => {
+          navigate({ to: "/settings/microphones/$id", params: { id: settingsStore.microphones().length.toString() } });
+        },
+      });
+    }
 
     return buttons;
   });

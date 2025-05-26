@@ -72,7 +72,10 @@ function SongsComponent() {
           }),
       });
     }
-    buttons.push({ label: t("settings.add"), icon: IconPlus, action: pickFolder, loading: loading() });
+    
+    if (songsStore.paths().length < 7) {
+      buttons.push({ label: t("settings.add"), icon: IconPlus, action: pickFolder, loading: loading() });
+    }
 
     return buttons;
   });
