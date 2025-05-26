@@ -1,4 +1,4 @@
-import { createMutation, createQuery } from "@tanstack/solid-query";
+import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import { For, createMemo, createSignal, onMount } from "solid-js";
 import HighscoreList from "~/components/highscore-list";
@@ -9,10 +9,12 @@ import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
+import { highscoreQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { getColorVar } from "~/lib/utils/color";
 import { MAX_POSSIBLE_SCORE, getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { lobbyStore } from "~/stores/lobby";
 import { type Score, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -36,9 +38,7 @@ interface PlayerScoreData {
 }
 
 function ScoreComponent() {
-  const highscoresQuery = createQuery(() =>
-    client.highscore.getHighscores.queryOptions({ input: { hash: roundStore.settings()?.song?.hash ?? "" } })
-  );
+  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? ""));
   const [showHighscores, setShowHighscores] = createSignal(false);
   const roundActions = useRoundActions();
 
@@ -74,12 +74,14 @@ function ScoreComponent() {
     return result;
   });
 
-  const updateHighscoresMutation = createMutation(() => ({
+  const updateHighscoresMutation = useMutation(() => ({
     mutationFn: async () => {
       const scores = scoreData();
       const songHash = roundStore.settings()?.song?.hash;
 
       if (!songHash) return;
+
+      if (!lobbyStore.lobby()) return;  
 
       for (const score of scores) {
         if ("type" in score.player) continue;

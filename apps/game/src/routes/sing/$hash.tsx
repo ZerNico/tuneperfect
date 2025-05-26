@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { type Accessor, createSignal } from "solid-js";
 import KeyHints from "~/components/key-hints";
@@ -7,7 +7,7 @@ import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
+import { lobbyQueryOptions } from "~/lib/queries";
 import type { LocalUser } from "~/lib/types";
 import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -35,7 +35,7 @@ function PlayerSelectionComponent() {
 
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/sing" });
-  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
+  const lobbyQuery = useQuery(() => lobbyQueryOptions());
   const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
   const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
     Array(settingsStore.microphones().length).fill(localUsers[0]?.id || -1)

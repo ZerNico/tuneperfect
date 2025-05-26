@@ -9,7 +9,7 @@ import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { createQRCode } from "~/hooks/qrcode";
 import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
+import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
@@ -106,7 +106,7 @@ function HomeComponent() {
     width: 1024,
   });
 
-  const lobbyQuery = useQuery(() => client.lobby.currentLobby.queryOptions());
+  const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
   createEffect(on(position, () => playSound("select"), { defer: true }));
 

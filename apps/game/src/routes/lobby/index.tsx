@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import KeyHints from "~/components/key-hints";
@@ -6,7 +6,7 @@ import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
-import { client } from "~/lib/orpc";
+import { lobbyQueryOptions } from "~/lib/queries";
 
 export const Route = createFileRoute("/lobby/")({
   component: LobbyComponent,
@@ -16,7 +16,7 @@ function LobbyComponent() {
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/home" });
 
-  const lobbyQuery = createQuery(() => client.lobby.currentLobby.queryOptions());
+  const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
   const menuItems: Accessor<MenuItem[]> = () => {
     return (

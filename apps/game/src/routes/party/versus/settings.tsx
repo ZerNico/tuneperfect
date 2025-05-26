@@ -6,7 +6,7 @@ import Menu from "~/components/menu";
 import type { MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
+import { lobbyQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
 import { type Settings, versusStore } from "~/stores/party/versus";
 import { settingsStore } from "~/stores/settings";
@@ -14,7 +14,7 @@ import { settingsStore } from "~/stores/settings";
 export const Route = createFileRoute("/party/versus/settings")({
   component: VersusSettingsComponent,
   beforeLoad: async ({ context }) => {
-    context.queryClient.prefetchQuery(client.lobby.currentLobby.queryOptions());
+    context.queryClient.prefetchQuery(lobbyQueryOptions());
   },
 });
 
@@ -22,7 +22,7 @@ function VersusSettingsComponent() {
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/party" });
 
-  const lobbyQuery = useQuery(() => client.lobby.currentLobby.queryOptions());
+  const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
   const [settings, setSettings] = createSignal<Settings>({
     jokers: 5,

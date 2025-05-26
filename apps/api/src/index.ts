@@ -101,9 +101,6 @@ const server = Bun.serve({
       return new Response("Hello World", { status: 200 });
     }
 
-    console.log(path);
-    
-
     return new Response("Not found", { status: 404 });
   },
 });
