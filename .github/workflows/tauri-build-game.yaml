@@ -60,7 +60,8 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './apps/game/src-tauri -> target'
-          key: ${{ matrix.platform.target }}-${{ matrix.platform.os }}-game
+          shared-key: ${{ matrix.platform.target }}-${{ matrix.platform.os }}-game
+          save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
 
       - name: Install dependencies
         run: bun install
