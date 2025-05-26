@@ -94,6 +94,6 @@ jobs:
             --set apps.api.env.APP_URL=https://app.$DOMAIN_NAME \
             --set apps.api.env.SUPPORT_URL=mailto:support@$DOMAIN_NAME \
             --set apps.api.env.COOKIE_DOMAIN=.$DOMAIN_NAME \
-            --set apps.api.env.EMAIL_FROM=noreply@$DOMAIN_NAME \
+            --set apps.api.env.EMAIL_FROM="Tune Perfect <noreply@$DOMAIN_NAME>" \
             --set apps.api.env.VERSION=$IMAGE_TAG \
             --set apps.api.env.GITHUB_REPO=${{ github.repository }}
