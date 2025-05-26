@@ -1,10 +1,10 @@
-import { env } from "bun";
 import { eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { authService } from "../auth/service";
+import { env } from "../config/env";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
-import type { User, UserWithPassword } from "../types";
+import type { UserWithPassword } from "../types";
 
 export class UserService {
   async getUserByEmail(email: string) {
