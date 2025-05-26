@@ -10,6 +10,7 @@ export const Route = createFileRoute("/download/windows")({
 function RouteComponent() {
   const context = Route.useRouteContext();
   const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
+  const githubRepo = () => context()?.config?.GITHUB_REPO || "";
 
   return (
     <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
@@ -35,7 +36,7 @@ function RouteComponent() {
               { text: "x86_64", color: "slate" },
             ]}
             extension="exe"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
           />
           
           <DownloadCard
@@ -50,7 +51,7 @@ function RouteComponent() {
               { text: "aarch64", color: "slate" },
             ]}
             extension="exe"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_arm64-setup.exe`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_arm64-setup.exe`}
           />
         </div>
 

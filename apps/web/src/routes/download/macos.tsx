@@ -10,6 +10,7 @@ export const Route = createFileRoute("/download/macos")({
 function RouteComponent() {
   const context = Route.useRouteContext();
   const version = () => context()?.config?.VERSION?.replace(/^v/, '') || '';
+  const githubRepo = () => context()?.config?.GITHUB_REPO || '';
 
   return (
     <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
@@ -35,7 +36,7 @@ function RouteComponent() {
               { text: "arm64", color: "slate" },
             ]}
             extension="dmg"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_aarch64.dmg`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_aarch64.dmg`}
           />
 
           <DownloadCard
@@ -47,7 +48,7 @@ function RouteComponent() {
             description="For older Macs with Intel processors. Compatible with all Intel-based Macs."
             tags={[{ text: "x86_64", color: "slate" }]}
             extension="dmg"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_x64.dmg`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.dmg`}
           />
         </div>
 

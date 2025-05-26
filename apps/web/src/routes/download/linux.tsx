@@ -10,6 +10,7 @@ export const Route = createFileRoute("/download/linux")({
 function RouteComponent() {
   const context = Route.useRouteContext();
   const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
+  const githubRepo = () => context()?.config?.GITHUB_REPO || "";
 
   return (
     <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
@@ -36,7 +37,7 @@ function RouteComponent() {
               { text: "Universal", color: "slate" },
             ]}
             extension="AppImage"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.AppImage`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.AppImage`}
           />
 
           <DownloadCard
@@ -51,7 +52,7 @@ function RouteComponent() {
               { text: ".deb", color: "orange" },
             ]}
             extension="deb"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.deb`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.deb`}
           />
 
           <DownloadCard
@@ -66,7 +67,7 @@ function RouteComponent() {
               { text: ".rpm", color: "red" },
             ]}
             extension="rpm"
-            url={`https://github.com/ZerNico/tuneperfect/releases/download/v${version()}/Tune.Perfect-${version()}-1.x86_64.rpm`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect-${version()}-1.x86_64.rpm`}
           />
         </div>
 
