@@ -43,7 +43,7 @@ export const updateRouter = os.prefix("/updates").router({
         };
       }
 
-      const releaseName = await updateService.getReleaseName(input.target, input.arch, env.VERSION);
+      const releaseName = await updateService.getReleaseName(input.target, input.arch, latestVersion.version);
 
       if (!releaseName) {
         return {
@@ -51,7 +51,7 @@ export const updateRouter = os.prefix("/updates").router({
         };
       }
 
-      const url = `https://github.com/${githubRepo}/releases/download/v${env.VERSION}/${releaseName}`;
+      const url = `https://github.com/${githubRepo}/releases/download/v${latestVersion.version}/${releaseName}`;
 
       const signatureFileUrl = `${url}.sig`;
       const signature = await updateService.downloadSignatureFile(signatureFileUrl);
@@ -66,7 +66,7 @@ export const updateRouter = os.prefix("/updates").router({
         status: 200,
         body: {
           version: env.VERSION,
-          url: `https://github.com/${githubRepo}/releases/download/v${env.VERSION}/${releaseName}`,
+          url,
           signature,
         },
       };

@@ -35,11 +35,5 @@
       "signingIdentity": "-"
     },
     "createUpdaterArtifacts": true
-  },
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJCQzM3QkQ1MzEwMUU0REUKUldUZTVBRXgxWHZESzJONXFJSE9LU3ZaY0dYSGNpYnVTcGRKTTB2VHkxWFo4amd0N0RUcXUweTAK",
-      "endpoints": ["http://localhost:3002/v1.0/updates/{{target}}/{{arch}}/{{current_version}}"]
-    }
   }
 }
