@@ -49,6 +49,7 @@ function EditProfileComponent() {
           message: t("error.unknown"),
           intent: "error",
         });
+        return;
       }
 
       await queryClient.invalidateQueries(sessionQueryOptions());

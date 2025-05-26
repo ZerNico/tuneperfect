@@ -34,7 +34,7 @@ export default function Header() {
       return;
     }
 
-    queryClient.clear();
+    await queryClient.resetQueries();
     await navigate({ to: "/sign-in" });
   };
 

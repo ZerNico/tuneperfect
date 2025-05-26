@@ -8,7 +8,6 @@ import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
-import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -64,7 +63,7 @@ function SignInComponent() {
         return;
       }
 
-      await queryClient.invalidateQueries(sessionQueryOptions());
+      await queryClient.resetQueries();
       navigate({ to: search().redirect ?? "/" });
     },
     validators: {
