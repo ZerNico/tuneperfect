@@ -25,7 +25,7 @@ function LoadingComponent() {
   });
 
   return (
-    <Layout intent="secondary">
+    <Layout>
       <div class="flex flex-grow items-center justify-center">
         <IconLoaderCircle class="animate-spin text-6xl" />
       </div>

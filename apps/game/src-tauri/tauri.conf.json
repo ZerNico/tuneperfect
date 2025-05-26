@@ -35,5 +35,11 @@
       "signingIdentity": "-"
     },
     "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": []
+    }
   }
 }

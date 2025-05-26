@@ -2,7 +2,6 @@ import { createEventListener } from "@solid-primitives/event-listener";
 import { debounce } from "@solid-primitives/scheduled";
 import type { QueryClient } from "@tanstack/solid-query";
 import { Outlet, createRootRouteWithContext, redirect } from "@tanstack/solid-router";
-import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal } from "solid-js";
 
@@ -48,6 +47,40 @@ function RootComponent() {
     setMouseHidden(false);
     hideMouse();
   });
+
+  if (import.meta.env.MODE === "production") {
+    createEventListener(
+      document,
+      "contextmenu",
+      (event) => {
+        const target = event.target as HTMLElement;
+
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+          return;
+        }
+
+        event.preventDefault();
+      },
+      { capture: true }
+    );
+  }
+
+  if (import.meta.env.MODE === "production") {
+    createEventListener(
+      document,
+      "selectstart",
+      (event) => {
+        const target = event.target as HTMLElement;
+
+        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+          return;
+        }
+
+        event.preventDefault();
+      },
+      { capture: true }
+    );
+  }
 
   return (
     <>
