@@ -39,3 +39,26 @@ spec:
   resources:
     requests:
       storage: {{ .Values.redis.master.persistence.size | default "1Gi" }}
+---
+{{- if .Values.uploads.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-uploads-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: uploads
+  annotations:
+    "helm.sh/resource-policy": keep
+    longhorn.io/backup: "true"
+    longhorn.io/recurring-backup-job: backup-daily
+    longhorn.io/recurring-backup-retain: "7"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: {{ .Values.uploads.persistence.size | default "5Gi" }}
+{{- end }}

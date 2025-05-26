@@ -59,6 +59,13 @@ redis:
   replica:
     replicaCount: 0
 
+# Uploads storage configuration
+uploads:
+  persistence:
+    enabled: true
+    existingClaim: "{{ .Release.Name }}-uploads-data"
+    size: 1Gi
+
 # Define applications to deploy
 apps:
   web:
@@ -152,6 +159,9 @@ apps:
       port: 80
       targetPort: 3000
     # resources: {}
+    uploads:
+      enabled: true
+      mountPath: /usr/src/app/uploads
     ingress:
       enabled: false
       annotations:

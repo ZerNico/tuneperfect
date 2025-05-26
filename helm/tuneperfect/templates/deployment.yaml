@@ -62,5 +62,16 @@ spec:
           resources:
             {{- toYaml $appConfig.resources | nindent 12 }}
           {{- end }}
+          {{- if and $appConfig.uploads.enabled $.Values.uploads.persistence.enabled }}
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: {{ $appConfig.uploads.mountPath }}
+          {{- end }}
+      {{- if and $appConfig.uploads.enabled $.Values.uploads.persistence.enabled }}
+      volumes:
+        - name: uploads-storage
+          persistentVolumeClaim:
+            claimName: {{ include "tuneperfect.fullname" $ }}-uploads-data
+      {{- end }}
 {{- end }}
 {{- end }} 
