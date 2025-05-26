@@ -26,6 +26,24 @@ const en = {
     settingsDescription: "Change your settings or add your songs and microphones.",
     microphoneRequired: "You have no microphones configured. Go to settings to add one."
   },
+  update: {
+    checking: "Checking for updates...",
+    available: "Update Available",
+    version: "Version",
+    install: "Install Update",
+    skip: "Skip",
+    installing: "Installing update...",
+    checkFailed: "Failed to check for updates",
+    installFailed: "Failed to install update",
+    retry: "Retry",
+    continue: "Continue"
+  },
+  createLobby: {
+    creating: "Creating lobby...",
+    failed: "Failed to create lobby",
+    retry: "Retry",
+    playOffline: "Play Offline"
+  },
   lobby: {
     title: "Lobby",
   },

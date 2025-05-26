@@ -26,6 +26,24 @@ const de = {
     settingsDescription: "Ändere deine Einstellungen oder füge Lieder und Mikrofone hinzu.",
     microphoneRequired: "Du hast keine Mikrofone konfiguriert. Gehe zu den Einstellungen, um eines hinzuzufügen."
   },
+  update: {
+    checking: "Suche nach Updates...",
+    available: "Update verfügbar",
+    version: "Version",
+    install: "Update installieren",
+    skip: "Überspringen",
+    installing: "Update wird installiert...",
+    checkFailed: "Fehler beim Suchen nach Updates",
+    installFailed: "Fehler beim Installieren des Updates",
+    retry: "Wiederholen",
+    continue: "Fortfahren"
+  },
+  createLobby: {
+    creating: "Lobby wird erstellt...",
+    failed: "Fehler beim Erstellen der Lobby",
+    retry: "Wiederholen",
+    playOffline: "Offline spielen"
+  },
   lobby: {
     title: "Lobby",
   },

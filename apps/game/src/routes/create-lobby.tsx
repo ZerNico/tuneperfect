@@ -5,6 +5,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { queryClient } from "~/main";
 import { lobbyStore } from "~/stores/lobby";
@@ -45,12 +46,12 @@ function IndexComponent() {
   const menuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Retry",
+      label: t("createLobby.retry"),
       action: () => createLobbyMutation.mutate({}),
     },
     {
       type: "button",
-      label: "Play Offline",
+      label: t("createLobby.playOffline"),
       action: goToLoading,
     },
   ];
@@ -65,7 +66,7 @@ function IndexComponent() {
         </Match>
         <Match when={createLobbyMutation.isError}>
           <div class="flex w-full flex-grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to create lobby</h1>
+            <h1 class="mb-[10cqh] text-center font-bold text-4xl">{t("createLobby.failed")}</h1>
             <Menu items={menuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>

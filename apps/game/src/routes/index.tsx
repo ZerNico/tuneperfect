@@ -7,6 +7,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import { t } from "~/lib/i18n";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/")({
@@ -59,12 +60,12 @@ function RouteComponent() {
   const updateMenuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Install Update",
+      label: t("update.install"),
       action: installUpdate,
     },
     {
       type: "button",
-      label: "Skip",
+      label: t("update.skip"),
       action: skipUpdate,
     },
   ];
@@ -72,12 +73,12 @@ function RouteComponent() {
   const errorMenuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Retry",
+      label: t("update.retry"),
       action: retryCheck,
     },
     {
       type: "button",
-      label: "Continue",
+      label: t("update.continue"),
       action: skipUpdate,
     },
   ];
@@ -94,20 +95,20 @@ function RouteComponent() {
         <Match when={installUpdateMutation.isPending}>
           <div class="flex flex-grow items-center justify-center">
             <IconLoaderCircle class="animate-spin text-6xl" />
-            <div class="ml-4 text-xl">Installing update...</div>
+            <div class="ml-4 text-xl">{t("update.installing")}</div>
           </div>
         </Match>
 
         <Match when={checkUpdateQuery.isError}>
           <div class="flex w-full flex-grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to check for updates</h1>
+            <h1 class="mb-[10cqh] text-center font-bold text-4xl">{t("update.checkFailed")}</h1>
             <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
 
         <Match when={installUpdateMutation.isError}>
           <div class="flex w-full flex-grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to install update</h1>
+            <h1 class="mb-[10cqh] text-center font-bold text-4xl">{t("update.installFailed")}</h1>
             <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
@@ -115,9 +116,9 @@ function RouteComponent() {
         <Match when={checkUpdateQuery.isSuccess && checkUpdateQuery.data}>
           {(update) => (
             <div class="flex w-full flex-grow flex-col justify-center">
-              <h1 class="mb-4 text-center font-bold text-4xl">Update Available</h1>
+              <h1 class="mb-4 text-center font-bold text-4xl">{t("update.available")}</h1>
               <div class="mb-[10cqh] text-center">
-                <p class="text-xl">Version {update()?.version}</p>
+                <p class="text-xl">{t("update.version")} {update()?.version}</p>
               </div>
               <Menu items={updateMenuItems} gradient="gradient-settings" class="h-min grow-0" />
             </div>
