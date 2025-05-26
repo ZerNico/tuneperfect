@@ -1,9 +1,9 @@
-use tauri::{AppHandle, Manager, State};
 use crate::{
     audio::recorder::{MicrophoneOptions, Recorder},
     error::AppError,
     AppState,
 };
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 #[specta::specta]
@@ -18,7 +18,7 @@ pub fn start_recording(
     if recorder.is_some() {
         let mut processors = state.processors.write().unwrap();
         processors.clear();
-        
+
         recorder.take();
     }
 

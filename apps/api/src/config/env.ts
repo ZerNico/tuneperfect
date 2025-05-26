@@ -24,6 +24,8 @@ const ConfigSchema = v.object({
   DISCORD_CLIENT_SECRET: v.string(),
   REDIS_URL: v.string(),
   UPLOADS_PATH: v.optional(v.string(), "./uploads"),
+  VERSION: v.string(),
+  GITHUB_REPO: v.optional(v.string()),
 });
 
 const result = v.safeParse(ConfigSchema, process.env);

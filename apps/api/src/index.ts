@@ -12,6 +12,7 @@ import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
 import { lobbyRouter } from "./lobby/router";
+import { updateRouter } from "./update/router";
 import { userRouter } from "./user/router";
 
 const router = {
@@ -19,6 +20,7 @@ const router = {
   user: userRouter,
   lobby: lobbyRouter,
   highscore: highscoreRouter,
+  update: updateRouter,
 };
 
 setupJobs();
@@ -28,8 +30,6 @@ const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost
 const plugins = [
   new CORSPlugin({
     origin: (origin) => {
-      console.log("🔄 origin", origin);
-
       if (allowedOrigins.includes(origin)) {
         return origin;
       }
@@ -100,6 +100,9 @@ const server = Bun.serve({
     if (path === "/") {
       return new Response("Hello World", { status: 200 });
     }
+
+    console.log(path);
+    
 
     return new Response("Not found", { status: 404 });
   },

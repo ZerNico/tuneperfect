@@ -5,7 +5,7 @@ import { requireLobby } from "../lobby/middleware";
 import { lobbyService } from "../lobby/service";
 import { highscoreService } from "./service";
 
-export const highscoreRouter = os.prefix("/highscore").router({
+export const highscoreRouter = os.prefix("/highscores").router({
   setHighscore: base
     .use(requireLobby)
     .input(

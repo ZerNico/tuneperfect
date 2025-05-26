@@ -8,7 +8,7 @@ import type { UserWithPassword } from "../types";
 import { UsernameSchema } from "./models";
 import { userService } from "./service";
 
-export const userRouter = os.prefix("/user").router({
+export const userRouter = os.prefix("/users").router({
   getMe: base
     .errors({
       USER_NOT_FOUND: {
@@ -59,7 +59,7 @@ export const userRouter = os.prefix("/user").router({
 
       if (input.imageFile) {
         await userService.storeUserImage(context.payload.sub, input.imageFile);
-        newUser.image = `/v1.0/user/${context.payload.sub}/image.webp?t=${Date.now()}`;
+        newUser.image = `/v1.0/users/${context.payload.sub}/image.webp?t=${Date.now()}`;
       }
 
       if (input.password) {

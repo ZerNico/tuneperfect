@@ -6,7 +6,7 @@ import { userService } from "../user/service";
 import { requireLobby, requireLobbyOrUser } from "./middleware";
 import { lobbyService } from "./service";
 
-export const lobbyRouter = os.prefix("/lobby").router({
+export const lobbyRouter = os.prefix("/lobbies").router({
   createLobby: base.handler(async ({ context, errors }) => {
     const lobby = await lobbyService.createLobby();
 

@@ -11,11 +11,7 @@ pub struct ReplayGainInfo {
 }
 
 fn parse_replay_gain(value: Option<&str>) -> Option<f32> {
-    value.and_then(|s| {
-        s.trim_end_matches(" dB")
-            .parse::<f32>()
-            .ok()
-    })
+    value.and_then(|s| s.trim_end_matches(" dB").parse::<f32>().ok())
 }
 
 #[tauri::command]
@@ -25,12 +21,14 @@ pub fn get_replay_gain(path: &str) -> Result<ReplayGainInfo, AppError> {
 
     let tag = match file.primary_tag().or_else(|| file.first_tag()) {
         Some(tag) => tag,
-        None => return Ok(ReplayGainInfo {
-            track_gain: None,
-            track_peak: None,
-            album_gain: None,
-            album_peak: None,
-        }),
+        None => {
+            return Ok(ReplayGainInfo {
+                track_gain: None,
+                track_peak: None,
+                album_gain: None,
+                album_peak: None,
+            })
+        }
     };
 
     Ok(ReplayGainInfo {

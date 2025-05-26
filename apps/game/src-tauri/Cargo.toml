@@ -34,6 +34,7 @@ cpal = { git = "https://github.com/RustAudio/cpal.git", rev = "df14a26a9a7c60b28
 ringbuf = "0"
 dywapitchtrack = "0.2.0"
 tauri-plugin-shell = "2"
+tauri-plugin-process = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

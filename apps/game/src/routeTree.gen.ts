@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoadingImport } from './routes/loading'
 import { Route as HomeImport } from './routes/home'
+import { Route as CreateLobbyImport } from './routes/create-lobby'
 import { Route as IndexImport } from './routes/index'
 import { Route as SingIndexImport } from './routes/sing/index'
 import { Route as SettingsIndexImport } from './routes/settings/index'
@@ -43,6 +44,12 @@ const LoadingRoute = LoadingImport.update({
 const HomeRoute = HomeImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CreateLobbyRoute = CreateLobbyImport.update({
+  id: '/create-lobby',
+  path: '/create-lobby',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -163,6 +170,13 @@ declare module '@tanstack/solid-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/create-lobby': {
+      id: '/create-lobby'
+      path: '/create-lobby'
+      fullPath: '/create-lobby'
+      preLoaderRoute: typeof CreateLobbyImport
       parentRoute: typeof rootRoute
     }
     '/home': {
@@ -305,6 +319,7 @@ declare module '@tanstack/solid-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/game/score': typeof GameScoreRoute
@@ -328,6 +343,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/game/score': typeof GameScoreRoute
@@ -352,6 +368,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/game/score': typeof GameScoreRoute
@@ -377,6 +394,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/create-lobby'
     | '/home'
     | '/loading'
     | '/game/score'
@@ -399,6 +417,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/create-lobby'
     | '/home'
     | '/loading'
     | '/game/score'
@@ -421,6 +440,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/create-lobby'
     | '/home'
     | '/loading'
     | '/game/score'
@@ -445,6 +465,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreateLobbyRoute: typeof CreateLobbyRoute
   HomeRoute: typeof HomeRoute
   LoadingRoute: typeof LoadingRoute
   GameScoreRoute: typeof GameScoreRoute
@@ -468,6 +489,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreateLobbyRoute: CreateLobbyRoute,
   HomeRoute: HomeRoute,
   LoadingRoute: LoadingRoute,
   GameScoreRoute: GameScoreRoute,
@@ -500,6 +522,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/create-lobby",
         "/home",
         "/loading",
         "/game/score",
@@ -523,6 +546,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/create-lobby": {
+      "filePath": "create-lobby.tsx"
     },
     "/home": {
       "filePath": "home.tsx"

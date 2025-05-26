@@ -1,73 +1,127 @@
-import { createMutation } from "@tanstack/solid-query";
+import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { Match, Switch, onMount } from "solid-js";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
+import { Match, Switch, createEffect } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
-import { client } from "~/lib/orpc";
-import { queryClient } from "~/main";
-import { lobbyStore } from "~/stores/lobby";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/")({
-  component: IndexComponent,
+  component: RouteComponent,
 });
 
-function IndexComponent() {
+function RouteComponent() {
   const navigate = useNavigate();
 
-  const createLobbyMutation = createMutation(() =>
-    client.lobby.createLobby.mutationOptions({
-      onSuccess: (data) => {
-        lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId } });
-        goToLoading();
-      },
-    })
-  );
+  const checkUpdateQuery = useQuery(() => ({
+    queryKey: ["checkUpdate"],
+    queryFn: async () => {
+      const update = await check();
+      return update;
+    },
+    retry: false,
+  }));
 
-  const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
-
-  onMount(async () => {
-    if (lobbyStore.lobby()) {
-      try {
-        await queryClient.fetchQuery(client.lobby.currentLobby.queryOptions());
-        goToLoading();
-      } catch (error) {
-        lobbyStore.clearLobby();
-        createLobbyMutation.mutate({});
-      }
-    } else {
-      createLobbyMutation.mutate({});
+  createEffect(() => {
+    if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data) {
+      navigate({ to: "/create-lobby" });
     }
   });
 
-  const menuItems: MenuItem[] = [
+  const installUpdateMutation = useMutation(() => ({
+    mutationFn: async () => {
+      const update = checkUpdateQuery.data;
+      if (update) {
+        await update.downloadAndInstall();
+        await relaunch();
+      }
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  }));
+
+  const skipUpdate = () => {
+    navigate({ to: "/create-lobby" });
+  };
+
+  const retryCheck = () => {
+    checkUpdateQuery.refetch();
+  };
+
+  const installUpdate = () => {
+    installUpdateMutation.mutate();
+  };
+
+  const updateMenuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Retry",
-      action: () => createLobbyMutation.mutate({}),
+      label: "Install Update",
+      action: installUpdate,
     },
     {
       type: "button",
-      label: "Play Offline",
-      action: goToLoading,
+      label: "Skip",
+      action: skipUpdate,
+    },
+  ];
+
+  const errorMenuItems: MenuItem[] = [
+    {
+      type: "button",
+      label: "Retry",
+      action: retryCheck,
+    },
+    {
+      type: "button",
+      label: "Continue",
+      action: skipUpdate,
     },
   ];
 
   return (
     <Layout intent="primary" footer={<KeyHints hints={["navigate", "confirm"]} />}>
       <Switch>
-        <Match when={createLobbyMutation.isPending}>
+        <Match when={checkUpdateQuery.isPending}>
           <div class="flex flex-grow items-center justify-center">
             <IconLoaderCircle class="animate-spin text-6xl" />
           </div>
         </Match>
-        <Match when={createLobbyMutation.isError}>
-          <div class="flex w-full flex-grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to create lobby</h1>
-            <Menu items={menuItems} gradient="gradient-settings" class="h-min grow-0" />
+
+        <Match when={installUpdateMutation.isPending}>
+          <div class="flex flex-grow items-center justify-center">
+            <IconLoaderCircle class="animate-spin text-6xl" />
+            <div class="ml-4 text-xl">Installing update...</div>
           </div>
+        </Match>
+
+        <Match when={checkUpdateQuery.isError}>
+          <div class="flex w-full flex-grow flex-col justify-center">
+            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to check for updates</h1>
+            <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
+          </div>
+        </Match>
+
+        <Match when={installUpdateMutation.isError}>
+          <div class="flex w-full flex-grow flex-col justify-center">
+            <h1 class="mb-[10cqh] text-center font-bold text-4xl">Failed to install update</h1>
+            <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
+          </div>
+        </Match>
+
+        <Match when={checkUpdateQuery.isSuccess && checkUpdateQuery.data}>
+          {(update) => (
+            <div class="flex w-full flex-grow flex-col justify-center">
+              <h1 class="mb-4 text-center font-bold text-4xl">Update Available</h1>
+              <div class="mb-[10cqh] text-center">
+                <p class="text-xl">Version {update()?.version}</p>
+              </div>
+              <Menu items={updateMenuItems} gradient="gradient-settings" class="h-min grow-0" />
+            </div>
+          )}
         </Match>
       </Switch>
     </Layout>
