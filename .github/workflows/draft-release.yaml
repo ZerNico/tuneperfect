@@ -1,0 +1,62 @@
+name: Build and create draft release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build-api:
+    name: Build API Image
+    uses: ./.github/workflows/docker-build-api.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-web:
+    name: Build Web Image
+    uses: ./.github/workflows/docker-build-web.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-app:
+    name: Build App Image
+    uses: ./.github/workflows/docker-build-app.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  build-game:
+    name: Build Game
+    uses: ./.github/workflows/tauri-build-game.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  create-draft-release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    needs: [build-api, build-web, build-app, build-game]
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Game Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: tuneperfect-*
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: true
+          files: artifacts/**/*
+          fail_on_unmatched_files: false
+          generate_release_notes: true

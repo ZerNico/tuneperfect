@@ -1,4 +1,4 @@
-name: Build and Publish App Docker Image (Callable)
+name: Build and publish App Docker Image
 
 on:
   workflow_call:

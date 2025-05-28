@@ -1,4 +1,4 @@
-name: Build Game
+name: Build game
 
 on:
   workflow_call:

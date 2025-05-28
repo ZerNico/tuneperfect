@@ -1,4 +1,4 @@
-name: Deploy to Kubernetes (Callable)
+name: Deploy to Kubernetes
 
 on:
   workflow_call:

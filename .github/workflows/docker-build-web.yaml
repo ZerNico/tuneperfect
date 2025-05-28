@@ -1,4 +1,4 @@
-name: Build and Publish Web Docker Image (Callable)
+name: Build and publish Web Docker Image
 
 on:
   workflow_call:

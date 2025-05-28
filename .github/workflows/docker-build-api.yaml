@@ -1,4 +1,4 @@
-name: Build and Publish API Docker Image (Callable)
+name: Build and publish API Docker Image
 
 on:
   workflow_call:
