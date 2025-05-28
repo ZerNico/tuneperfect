@@ -11,7 +11,7 @@ function DropdownMenuRoot(props: DropdownMenuProps) {
     <KDropdownMenu gutter={4} placement="bottom-end">
       {props.trigger}
       <KDropdownMenu.Portal>
-        <KDropdownMenu.Content class="min-w-36 rounded-md border border-gray-200 bg-white p-1 shadow-lg focus:outline-slate-800">
+        <KDropdownMenu.Content class="z-20 min-w-36 rounded-md border border-gray-200 bg-white p-1 shadow-lg focus:outline-slate-800">
           {props.children}
         </KDropdownMenu.Content>
       </KDropdownMenu.Portal>
