@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { Link, type LinkProps } from "@tanstack/solid-router";
 import type { Component, JSX } from "solid-js";
 import { Dynamic, Show } from "solid-js/web";
@@ -13,7 +13,7 @@ interface NavItemsProps {
 }
 
 export default function NavItems(props: NavItemsProps) {
-  const sessionQuery = createQuery(() => sessionQueryOptions());
+  const sessionQuery = useQuery(() => sessionQueryOptions());
 
   return (
     <nav
