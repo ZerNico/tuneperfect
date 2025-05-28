@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import { joinURL, withQuery } from "ufo";
+import { config } from "~/lib/config";
 import GoogleIcon from "~icons/logos/google-icon";
 import Button from "./ui/button";
 
@@ -12,7 +13,7 @@ export default function GoogleLogin(props: GoogleLoginProps) {
 
   const login = async () => {
     setLoading(true);
-    window.location.href = withQuery(joinURL(import.meta.env.VITE_API_URL ?? "", "/v1.0/auth/providers/google/authorize"), {
+    window.location.href = withQuery(joinURL(config.API_URL, "/v1.0/auth/providers/google/authorize"), {
       redirect: props.redirect,
     });
   };

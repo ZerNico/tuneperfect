@@ -1,5 +1,6 @@
 import { Show, createEffect, createSignal, on } from "solid-js";
 import { joinURL } from "ufo";
+import { config } from "~/lib/config";
 
 interface AvatarProps {
   user: {
@@ -25,7 +26,7 @@ export default function Avatar(props: AvatarProps) {
 
   const pictureUrl = () => {
     if (props.user?.image?.startsWith("/")) {
-      return joinURL(import.meta.env.VITE_API_URL || "", props.user.image);
+      return joinURL(config.API_URL, props.user.image);
     }
 
     return props.user?.image || undefined;

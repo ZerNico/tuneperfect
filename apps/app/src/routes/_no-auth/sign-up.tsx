@@ -8,6 +8,7 @@ import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
+import { config } from "~/lib/config";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -158,7 +159,7 @@ function SignUpComponent() {
           <a
             target="_blank"
             rel="noreferrer"
-            href={`${import.meta.env.VITE_WEB_URL}/privacy-policy`}
+            href={`${config.WEB_URL}/privacy-policy`}
             class="text-slate-700 underline hover:text-slate-900"
           >
             {t("signUp.privacyPolicyLink")}
@@ -167,7 +168,7 @@ function SignUpComponent() {
           <a
             target="_blank"
             rel="noreferrer"
-            href={`${import.meta.env.VITE_WEB_URL}/terms-of-service`}
+            href={`${config.WEB_URL}/terms-of-service`}
             class="text-slate-700 underline hover:text-slate-900"
           >
             {t("signUp.termsOfServiceLink")}

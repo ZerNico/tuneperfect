@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import { joinURL, withQuery } from "ufo";
+import { config } from "~/lib/config";
 import DiscordIcon from "~icons/logos/discord-icon";
 import Button from "./ui/button";
 
@@ -12,7 +13,7 @@ export default function DiscordLogin(props: DiscordLoginProps) {
 
   const login = async () => {
     setLoading(true);
-    window.location.href = withQuery(joinURL(import.meta.env.VITE_API_URL ?? "", "/v1.0/auth/providers/discord/authorize"), {
+    window.location.href = withQuery(joinURL(config.API_URL, "/v1.0/auth/providers/discord/authorize"), {
       redirect: props.redirect,
     });
   };
