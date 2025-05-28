@@ -42,13 +42,13 @@ function VerifyEmailComponent() {
       }
 
       notify({
-        message: t("verify_email.success"),
+        message: t("verifyEmail.success"),
         intent: "success",
       });
     },
     validators: {
       onChange: v.object({
-        email: v.pipe(v.string(), v.email(t("verify_email.email_invalid"))),
+        email: v.pipe(v.string(), v.email(t("verifyEmail.emailInvalid"))),
       }),
     },
   }));
@@ -56,8 +56,8 @@ function VerifyEmailComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("verify_email.title")}</h1>
-        <p class="text-slate-500 text-sm">{t("verify_email.description")}</p>
+        <h1 class="font-semibold text-xl">{t("verifyEmail.title")}</h1>
+        <p class="text-slate-500 text-sm">{t("verifyEmail.description")}</p>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -69,7 +69,7 @@ function VerifyEmailComponent() {
           <form.Field name="email">
             {(field) => (
               <Input
-                label={t("verify_email.email")}
+                label={t("verifyEmail.email")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -88,7 +88,7 @@ function VerifyEmailComponent() {
             >
               {(state) => (
                 <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
-                  {t("verify_email.resend")}
+                  {t("verifyEmail.resend")}
                 </Button>
               )}
             </form.Subscribe>

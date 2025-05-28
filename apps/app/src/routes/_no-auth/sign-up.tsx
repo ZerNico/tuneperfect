@@ -44,7 +44,7 @@ function SignUpComponent() {
       if (error) {
         if (isDefined && error.code === "EMAIL_ALREADY_EXISTS") {
           notify({
-            message: t("sign_up.email_already_exists"),
+            message: t("signUp.emailAlreadyExists"),
             intent: "error",
           });
           return;
@@ -61,15 +61,15 @@ function SignUpComponent() {
     validators: {
       onChange: v.pipe(
         v.object({
-          email: v.pipe(v.string(), v.email(t("sign_up.email_invalid"))),
-          password: v.pipe(v.string(), v.minLength(8, t("sign_up.password_min_length"))),
+          email: v.pipe(v.string(), v.email(t("signUp.emailInvalid"))),
+          password: v.pipe(v.string(), v.minLength(8, t("signUp.passwordMinLength"))),
           confirmPassword: v.pipe(v.string()),
         }),
         v.forward(
           v.partialCheck(
             [["password"], ["confirmPassword"]],
             (input) => input.password === input.confirmPassword,
-            t("sign_up.passwords_dont_match")
+            t("signUp.passwordsDontMatch")
           ),
           ["confirmPassword"]
         )
@@ -80,7 +80,7 @@ function SignUpComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("sign_up.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("signUp.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -92,7 +92,7 @@ function SignUpComponent() {
           <form.Field name="email">
             {(field) => (
               <Input
-                label={t("sign_up.email")}
+                label={t("signUp.email")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -104,7 +104,7 @@ function SignUpComponent() {
           <form.Field name="password">
             {(field) => (
               <Input
-                label={t("sign_up.password")}
+                label={t("signUp.password")}
                 name={field().name}
                 type="password"
                 value={field().state.value}
@@ -117,7 +117,7 @@ function SignUpComponent() {
           <form.Field name="confirmPassword">
             {(field) => (
               <Input
-                label={t("sign_up.confirm_password")}
+                label={t("signUp.confirmPassword")}
                 name={field().name}
                 type="password"
                 value={field().state.value}
@@ -137,7 +137,7 @@ function SignUpComponent() {
             >
               {(state) => (
                 <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
-                  {t("sign_up.sign_up")}
+                  {t("signUp.signUp")}
                 </Button>
               )}
             </form.Subscribe>
@@ -145,7 +145,7 @@ function SignUpComponent() {
         </form>
         <div class="flex items-center gap-2 text-slate-400">
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
-          {t("sign_up.or")}
+          {t("signUp.or")}
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
         </div>
         <div class="flex flex-wrap gap-4">
@@ -154,7 +154,7 @@ function SignUpComponent() {
         </div>
 
         <p class="text-slate-500 text-sm">
-          {t("sign_up.have_account")}{" "}
+          {t("signUp.haveAccount")}{" "}
           <Link
             to="/sign-in"
             search={{
@@ -162,7 +162,7 @@ function SignUpComponent() {
             }}
             class="text-slate-800"
           >
-            {t("sign_up.sign_in")}
+            {t("signUp.signIn")}
           </Link>
         </p>
       </Card>

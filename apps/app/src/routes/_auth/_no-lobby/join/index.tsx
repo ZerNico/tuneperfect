@@ -29,7 +29,7 @@ function JoinComponent() {
       if (error) {
         if (isDefined && error.code === "NOT_FOUND") {
           notify({
-            message: t("join.lobby_not_found"),
+            message: t("join.lobbyNotFound"),
             intent: "error",
           });
           return;
@@ -48,7 +48,7 @@ function JoinComponent() {
     },
     validators: {
       onChange: v.object({
-        lobbyCode: v.pipe(v.string(), v.minLength(6, t("join.code_min_length")), v.maxLength(8, t("join.code_max_length"))),
+        lobbyCode: v.pipe(v.string(), v.minLength(6, t("join.codeMinLength")), v.maxLength(8, t("join.codeMaxLength"))),
       }),
     },
   }));
@@ -69,7 +69,7 @@ function JoinComponent() {
           <form.Field name="lobbyCode">
             {(field) => (
               <Input
-                label={t("join.lobby_code")}
+                label={t("join.lobbyCode")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}

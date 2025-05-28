@@ -21,7 +21,7 @@ function RouteComponent() {
     if (error) {
       if (isDefined && error.code === "NOT_FOUND") {
         notify({
-          message: t("join.lobby_not_found"),
+          message: t("join.lobbyNotFound"),
           intent: "error",
         });
 

@@ -37,7 +37,7 @@ function ChangePasswordComponent() {
       }
 
       notify({
-        message: t("change_password.success"),
+        message: t("changePassword.success"),
         intent: "success",
       });
       navigate({ to: "/edit-profile" });
@@ -45,14 +45,14 @@ function ChangePasswordComponent() {
     validators: {
       onChange: v.pipe(
         v.object({
-          newPassword: v.pipe(v.string(), v.minLength(8, t("change_password.password_min_length"))),
+          newPassword: v.pipe(v.string(), v.minLength(8, t("changePassword.passwordMinLength"))),
           confirmPassword: v.pipe(v.string()),
         }),
         v.forward(
           v.partialCheck(
             [["newPassword"], ["confirmPassword"]],
             (input) => input.newPassword === input.confirmPassword,
-            t("change_password.passwords_dont_match")
+            t("changePassword.passwordsDontMatch")
           ),
           ["confirmPassword"]
         )
@@ -63,7 +63,7 @@ function ChangePasswordComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("change_password.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("changePassword.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -75,7 +75,7 @@ function ChangePasswordComponent() {
           <form.Field name="newPassword">
             {(field) => (
               <Input
-                label={t("change_password.new_password")}
+                label={t("changePassword.newPassword")}
                 name={field().name}
                 type="password"
                 value={field().state.value}
@@ -88,7 +88,7 @@ function ChangePasswordComponent() {
           <form.Field name="confirmPassword">
             {(field) => (
               <Input
-                label={t("change_password.confirm_password")}
+                label={t("changePassword.confirmPassword")}
                 name={field().name}
                 type="password"
                 value={field().state.value}
@@ -108,7 +108,7 @@ function ChangePasswordComponent() {
             >
               {(state) => (
                 <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                  {t("change_password.save")}
+                  {t("changePassword.save")}
                 </Button>
               )}
             </form.Subscribe>

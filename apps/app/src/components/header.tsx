@@ -60,7 +60,7 @@ export default function Header() {
       <header class="fixed top-0 right-0 left-0 border-white/10 border-b">
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
-            <span class="font-bold text-lg">{t("header.app_name")}</span>
+            <span class="font-bold text-lg">{t("header.appName")}</span>
           </div>
           <div class="flex flex-grow justify-center">
             <Show when={sessionQuery.data}>
@@ -78,15 +78,15 @@ export default function Header() {
                   }
                 >
                   <DropdownMenu.Item onClick={() => navigate({ to: "/edit-profile" })}>
-                    <IconUser /> {t("header.edit_profile")}
+                    <IconUser /> {t("header.editProfile")}
                   </DropdownMenu.Item>
                   <Show when={session().lobbyId !== null}>
                     <DropdownMenu.Item onClick={leaveLobby}>
-                      <IconBan /> {t("header.leave_lobby")}
+                      <IconBan /> {t("header.leaveLobby")}
                     </DropdownMenu.Item>
                   </Show>
                   <DropdownMenu.Item onClick={logout}>
-                    <IconLogOut /> {t("header.sign_out")}
+                    <IconLogOut /> {t("header.signOut")}
                   </DropdownMenu.Item>
                 </DropdownMenu>
               )}
@@ -102,7 +102,7 @@ export default function Header() {
               <DropdownMenu.Item onClick={() => setLocale("en")}>
                 <IconEnUs /> English
               </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => setLocale("en")}>
+              <DropdownMenu.Item onClick={() => setLocale("de")}>
                 <IconDe /> Deutsch
               </DropdownMenu.Item>
             </DropdownMenu>

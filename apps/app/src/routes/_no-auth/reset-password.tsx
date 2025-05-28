@@ -32,7 +32,7 @@ function ResetPasswordComponent() {
     onSubmit: async ({ value }) => {
       if (value.password !== value.confirmPassword) {
         notify({
-          message: t("reset_password.passwords_dont_match"),
+          message: t("resetPassword.passwordsDontMatch"),
           intent: "error",
         });
         return;
@@ -49,7 +49,7 @@ function ResetPasswordComponent() {
         if (isDefined) {
           if (error.code === "RESET_TOKEN_NOT_FOUND") {
             notify({
-              message: t("reset_password.invalid_or_expired_token"),
+              message: t("resetPassword.invalidOrExpiredToken"),
               intent: "error",
             });
             return;
@@ -57,7 +57,7 @@ function ResetPasswordComponent() {
 
           if (error.code === "PASSWORD_TOO_SHORT") {
             notify({
-              message: t("reset_password.password_too_short"),
+              message: t("resetPassword.passwordTooShort"),
               intent: "error",
             });
             return;
@@ -80,7 +80,7 @@ function ResetPasswordComponent() {
     validators: {
       onChange: v.object({
         token: v.string(),
-        password: v.pipe(v.string(), v.minLength(8, t("reset_password.password_min_length"))),
+        password: v.pipe(v.string(), v.minLength(8, t("resetPassword.passwordMinLength"))),
         confirmPassword: v.string(),
       }),
     },
@@ -89,18 +89,18 @@ function ResetPasswordComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("reset_password.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("resetPassword.title")}</h1>
         
         {success() ? (
           <div class="flex flex-col gap-4">
-            <p>{t("reset_password.success")}</p>
+            <p>{t("resetPassword.success")}</p>
             <Button intent="gradient" onClick={() => navigate({ to: "/sign-in" })}>
-              {t("common.back_to_sign_in")}
+              {t("common.backToSignIn")}
             </Button>
           </div>
         ) : (
           <>
-            <p class="text-slate-500">{t("reset_password.description")}</p>
+            <p class="text-slate-500">{t("resetPassword.description")}</p>
             <form
               class="flex flex-col gap-4"
               onSubmit={(e) => {
@@ -113,7 +113,7 @@ function ResetPasswordComponent() {
                 <form.Field name="token">
                   {(field) => (
                     <Input
-                      label={t("reset_password.token")}
+                      label={t("resetPassword.token")}
                       name={field().name}
                       value={field().state.value}
                       onBlur={field().handleBlur}
@@ -127,7 +127,7 @@ function ResetPasswordComponent() {
               <form.Field name="password">
                 {(field) => (
                   <Input
-                    label={t("reset_password.new_password")}
+                    label={t("resetPassword.newPassword")}
                     name={field().name}
                     value={field().state.value}
                     onBlur={field().handleBlur}
@@ -141,7 +141,7 @@ function ResetPasswordComponent() {
               <form.Field name="confirmPassword">
                 {(field) => (
                   <Input
-                    label={t("reset_password.confirm_password")}
+                    label={t("resetPassword.confirmPassword")}
                     name={field().name}
                     value={field().state.value}
                     onBlur={field().handleBlur}
@@ -161,7 +161,7 @@ function ResetPasswordComponent() {
                 >
                   {(state) => (
                     <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                      {t("reset_password.reset_password")}
+                      {t("resetPassword.resetPassword")}
                     </Button>
                   )}
                 </form.Subscribe>
@@ -171,9 +171,9 @@ function ResetPasswordComponent() {
         )}
 
         <p class="text-slate-500 text-sm">
-          {t("reset_password.remembered_password")}{" "}
+          {t("resetPassword.rememberedPassword")}{" "}
           <Link to="/sign-in" class="text-slate-800">
-            {t("common.back_to_sign_in")}
+            {t("common.backToSignIn")}
           </Link>
         </p>
       </Card>

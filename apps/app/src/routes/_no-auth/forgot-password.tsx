@@ -38,7 +38,7 @@ function ForgotPasswordComponent() {
     },
     validators: {
       onChange: v.object({
-        email: v.pipe(v.string(), v.email(t("sign_in.email_invalid"))),
+        email: v.pipe(v.string(), v.email(t("signIn.emailInvalid"))),
       }),
     },
   }));
@@ -46,18 +46,18 @@ function ForgotPasswordComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("forgot_password.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("forgotPassword.title")}</h1>
 
         {sent() ? (
           <div class="flex flex-col gap-4">
-            <p>{t("forgot_password.email_sent")}</p>
+            <p>{t("forgotPassword.emailSent")}</p>
             <Button intent="gradient" onClick={() => navigate({ to: "/sign-in" })}>
-              {t("common.back_to_sign_in")}
+              {t("common.backToSignIn")}
             </Button>
           </div>
         ) : (
           <>
-            <p class="text-slate-500">{t("forgot_password.description")}</p>
+            <p class="text-slate-500">{t("forgotPassword.description")}</p>
             <form
               class="flex flex-col gap-4"
               onSubmit={(e) => {
@@ -69,7 +69,7 @@ function ForgotPasswordComponent() {
               <form.Field name="email">
                 {(field) => (
                   <Input
-                    label={t("sign_in.email")}
+                    label={t("signIn.email")}
                     name={field().name}
                     value={field().state.value}
                     onBlur={field().handleBlur}
@@ -88,7 +88,7 @@ function ForgotPasswordComponent() {
                 >
                   {(state) => (
                     <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                      {t("forgot_password.send_reset_link")}
+                      {t("forgotPassword.sendResetLink")}
                     </Button>
                   )}
                 </form.Subscribe>
@@ -98,9 +98,9 @@ function ForgotPasswordComponent() {
         )}
 
         <p class="text-slate-500 text-sm">
-          {t("forgot_password.remembered_password")}{" "}
+          {t("forgotPassword.rememberedPassword")}{" "}
           <Link to="/sign-in" class="text-slate-800">
-            {t("common.back_to_sign_in")}
+            {t("common.backToSignIn")}
           </Link>
         </p>
       </Card>

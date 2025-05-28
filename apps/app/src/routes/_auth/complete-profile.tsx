@@ -37,7 +37,7 @@ function RouteComponent() {
       if (error) {
         if (isDefined && error.code === "USERNAME_ALREADY_TAKEN") {
           notify({
-            message: t("complete_profile.username_already_taken"),
+            message: t("completeProfile.usernameAlreadyTaken"),
             intent: "error",
           });
           return;
@@ -57,9 +57,9 @@ function RouteComponent() {
       onChange: v.object({
         username: v.pipe(
           v.string(),
-          v.minLength(3, t("complete_profile.username_min_length")),
-          v.maxLength(20, t("complete_profile.username_max_length")),
-          v.regex(/^[a-zA-Z0-9_]+$/, t("complete_profile.username_invalid"))
+          v.minLength(3, t("completeProfile.usernameMinLength")),
+          v.maxLength(20, t("completeProfile.usernameMaxLength")),
+          v.regex(/^[a-zA-Z0-9_]+$/, t("completeProfile.usernameInvalid"))
         ),
       }),
     },
@@ -68,7 +68,7 @@ function RouteComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("complete_profile.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("completeProfile.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -80,7 +80,7 @@ function RouteComponent() {
           <form.Field name="username">
             {(field) => (
               <Input
-                label={t("complete_profile.username")}
+                label={t("completeProfile.username")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -100,7 +100,7 @@ function RouteComponent() {
             >
               {(state) => (
                 <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
-                  {t("complete_profile.submit")}
+                  {t("completeProfile.submit")}
                 </Button>
               )}
             </form.Subscribe>

@@ -39,7 +39,7 @@ function EditProfileComponent() {
       if (error) {
         if (isDefined && error.code === "USERNAME_ALREADY_TAKEN") {
           notify({
-            message: t("edit_profile.username_already_taken"),
+            message: t("editProfile.usernameAlreadyTaken"),
             intent: "error",
           });
           return;
@@ -54,7 +54,7 @@ function EditProfileComponent() {
 
       await queryClient.invalidateQueries(sessionQueryOptions());
       notify({
-        message: t("edit_profile.success"),
+        message: t("editProfile.success"),
         intent: "success",
       });
       setFile(null);
@@ -63,9 +63,9 @@ function EditProfileComponent() {
       onChange: v.object({
         username: v.pipe(
           v.string(),
-          v.minLength(3, t("edit_profile.username_min_length")),
-          v.maxLength(20, t("edit_profile.username_max_length")),
-          v.regex(/^[a-zA-Z0-9_]+$/, t("edit_profile.username_invalid"))
+          v.minLength(3, t("editProfile.usernameMinLength")),
+          v.maxLength(20, t("editProfile.usernameMaxLength")),
+          v.regex(/^[a-zA-Z0-9_]+$/, t("editProfile.usernameInvalid"))
         ),
       }),
     },
@@ -87,7 +87,7 @@ function EditProfileComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("edit_profile.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("editProfile.title")}</h1>
         <div class="flex justify-center">
           <button
             class="relative cursor-pointer transition-opacity hover:opacity-75"
@@ -123,7 +123,7 @@ function EditProfileComponent() {
           <form.Field name="username">
             {(field) => (
               <Input
-                label={t("edit_profile.username")}
+                label={t("editProfile.username")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -142,12 +142,12 @@ function EditProfileComponent() {
             >
               {(state) => (
                 <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                  {t("edit_profile.save")}
+                  {t("editProfile.save")}
                 </Button>
               )}
             </form.Subscribe>
             <Button to="/change-password" type="button">
-              {t("edit_profile.change_password")}
+              {t("editProfile.changePassword")}
             </Button>
           </div>
         </form>

@@ -43,7 +43,7 @@ function SignInComponent() {
         if (isDefined) {
           if (error.code === "INVALID_CREDENTIALS") {
             notify({
-              message: t("sign_in.invalid_email_or_password"),
+              message: t("signIn.invalidEmailOrPassword"),
               intent: "error",
             });
             return;
@@ -68,8 +68,8 @@ function SignInComponent() {
     },
     validators: {
       onChange: v.object({
-        email: v.pipe(v.string(), v.email(t("sign_in.email_invalid"))),
-        password: v.pipe(v.string(), v.minLength(6, t("sign_in.password_min_length"))),
+        email: v.pipe(v.string(), v.email(t("signIn.emailInvalid"))),
+        password: v.pipe(v.string(), v.minLength(6, t("signIn.passwordMinLength"))),
       }),
     },
   }));
@@ -77,7 +77,7 @@ function SignInComponent() {
   return (
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("sign_in.title")}</h1>
+        <h1 class="font-semibold text-xl">{t("signIn.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -89,7 +89,7 @@ function SignInComponent() {
           <form.Field name="email">
             {(field) => (
               <Input
-                label={t("sign_in.email")}
+                label={t("signIn.email")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -101,7 +101,7 @@ function SignInComponent() {
           <form.Field name="password">
             {(field) => (
               <Input
-                label={t("sign_in.password")}
+                label={t("signIn.password")}
                 name={field().name}
                 value={field().state.value}
                 onBlur={field().handleBlur}
@@ -114,7 +114,7 @@ function SignInComponent() {
 
           <div class="flex items-center justify-between">
             <Link to="/forgot-password" class="text-slate-600 text-sm hover:text-slate-800">
-              {t("sign_in.forgot_password")}
+              {t("signIn.forgotPassword")}
             </Link>
           </div>
 
@@ -127,7 +127,7 @@ function SignInComponent() {
             >
               {(state) => (
                 <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
-                  {t("sign_in.sign_in")}
+                  {t("signIn.signIn")}
                 </Button>
               )}
             </form.Subscribe>
@@ -135,7 +135,7 @@ function SignInComponent() {
         </form>
         <div class="flex items-center gap-2 text-slate-400">
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
-          {t("sign_in.or")}
+          {t("signIn.or")}
           <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
         </div>
         <div class="flex flex-wrap gap-4">
@@ -144,7 +144,7 @@ function SignInComponent() {
         </div>
 
         <p class="text-slate-500 text-sm">
-          {t("sign_in.no_account")}{" "}
+          {t("signIn.noAccount")}{" "}
           <Link
             to="/sign-up"
             search={{
@@ -152,7 +152,7 @@ function SignInComponent() {
             }}
             class="text-slate-800"
           >
-            {t("sign_in.sign_up")}
+            {t("signIn.signUp")}
           </Link>
         </p>
       </Card>

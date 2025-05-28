@@ -21,7 +21,7 @@ function isRateLimitError(error: unknown): error is RateLimitError {
 export function handleError(error: Error | ORPCError<string, unknown> | RateLimitError) {
   if (isRateLimitError(error)) {
     notify({
-      message: t("error.rate_limit", { retryAfter: error.data.retryAfter }),
+      message: t("error.rateLimit", { retryAfter: error.data.retryAfter }),
       intent: "error",
     });
     return;
