@@ -1,4 +1,5 @@
 import { Outlet, createRootRoute } from "@tanstack/solid-router";
+import Footer from "~/components/footer";
 import Header from "~/components/header";
 import { config } from "~/lib/config";
 import styles from "../styles.css?url";
@@ -42,6 +43,7 @@ function RootComponent() {
     <main class="min-h-screen bg-[#101024] font-primary text-white">
       <Header appUrl={context().config.VITE_APP_URL ?? ""} />
       <Outlet />
+      <Footer />
     </main>
   );
 }

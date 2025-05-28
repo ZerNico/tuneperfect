@@ -141,7 +141,7 @@ apps:
     env: 
       API_URL: "https://api.tuneperfect.localhost"
       APP_URL: "https://app.tuneperfect.localhost"
-      SUPPORT_URL: "mailto:support@tuneperfect.localhost"
+      SUPPORT_EMAIL: "support@tuneperfect.localhost"
       COOKIE_DOMAIN: ".tuneperfect.localhost"
       EMAIL_FROM: "noreply@tuneperfect.localhost"
     envFrom:

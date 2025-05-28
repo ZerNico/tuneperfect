@@ -153,6 +153,28 @@ function SignUpComponent() {
           <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
+        <p class="text-slate-500 text-xs">
+          {t("signUp.privacyPolicyPrefix")}{" "}
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href={`${import.meta.env.VITE_WEB_URL}/privacy-policy`}
+            class="text-slate-700 underline hover:text-slate-900"
+          >
+            {t("signUp.privacyPolicyLink")}
+          </a>{" "}
+          {t("signUp.privacyPolicyMiddle")}{" "}
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href={`${import.meta.env.VITE_WEB_URL}/terms-of-service`}
+            class="text-slate-700 underline hover:text-slate-900"
+          >
+            {t("signUp.termsOfServiceLink")}
+          </a>{" "}
+          {t("signUp.privacyPolicySuffix")}
+        </p>
+
         <p class="text-slate-500 text-sm">
           {t("signUp.haveAccount")}{" "}
           <Link

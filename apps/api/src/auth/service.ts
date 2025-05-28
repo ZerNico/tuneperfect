@@ -60,7 +60,7 @@ class AuthService {
     const token = await this.createAndStoreVerificationToken(user.id, "email_verification");
 
     const url = withQuery(joinURL(env.API_URL, "/v1.0/auth/verify-email"), { token, redirect });
-    const { html, text } = await renderVerifyEmail({ verifyUrl: url, supportUrl: env.SUPPORT_URL });
+    const { html, text } = await renderVerifyEmail({ verifyUrl: url, supportEmail: env.SUPPORT_EMAIL });
 
     try {
       await sendEmail(user.email, "Verify your E-Mail", html, text);
@@ -75,7 +75,7 @@ class AuthService {
     const resetUrl = withQuery(joinURL(env.APP_URL, "/reset-password"), { token });
     const { html, text } = await renderResetPassword({
       resetUrl,
-      supportUrl: env.SUPPORT_URL,
+      supportEmail: env.SUPPORT_EMAIL,
     });
 
     try {

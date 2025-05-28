@@ -60,7 +60,7 @@ const tailwindConfig: TailwindConfig = {
 
 export interface ResetPasswordProps {
   resetUrl: string;
-  supportUrl: string;
+  supportEmail: string;
 }
 
 export function ResetPassword(props: ResetPasswordProps): ReactNode {
@@ -98,7 +98,7 @@ export function ResetPassword(props: ResetPasswordProps): ReactNode {
           <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
             <Text className="m-0">
               Need help?{" "}
-              <a href={props.supportUrl} target="_blank" className="text-white no-underline" rel="noreferrer">
+              <a href={`mailto:${props.supportEmail}`} target="_blank" className="text-white no-underline" rel="noreferrer">
                 Contact Support
               </a>
             </Text>
@@ -112,7 +112,7 @@ export function ResetPassword(props: ResetPasswordProps): ReactNode {
 
 ResetPassword.PreviewProps = {
   resetUrl: "https://tuneperfect.localhost/reset-password?token=example-token",
-  supportUrl: "mailto:support@tuneperfect.localhost",
+  supportEmail: "support@tuneperfect.localhost",
 } satisfies ResetPasswordProps;
 
 export default ResetPassword;

@@ -26,6 +26,12 @@ const de = {
     or: "Oder",
     haveAccount: "Bereits ein Konto?",
     signIn: "Anmelden",
+    privacyPolicy: "Mit der Registrierung stimmst du unserer {{ privacyLink }} und den {{ termsLink }} zu.",
+    privacyPolicyPrefix: "Mit der Registrierung stimmst du unserer",
+    privacyPolicyMiddle: "und den",
+    privacyPolicySuffix: "zu.",
+    privacyPolicyLink: "Datenschutzerklärung",
+    termsOfServiceLink: "Nutzungsbedingungen",
   },
   forgotPassword: {
     title: "Passwort vergessen",

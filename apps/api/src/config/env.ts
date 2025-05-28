@@ -14,7 +14,7 @@ const ConfigSchema = v.object({
   API_URL: v.string(),
   EMAIL_SMTP_URL: v.string(),
   EMAIL_FROM: v.string(),
-  SUPPORT_URL: v.string(),
+  SUPPORT_EMAIL: v.string(),
   APP_URL: v.string(),
   JWT_SECRET: v.string(),
   COOKIE_DOMAIN: v.string(),

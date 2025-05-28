@@ -26,6 +26,12 @@ const en = {
     or: "Or",
     haveAccount: "Already have an account?",
     signIn: "Sign in",
+    privacyPolicy: "By signing up, you agree to our {{ privacyLink }} and {{ termsLink }}.",
+    privacyPolicyPrefix: "By signing up, you agree to our",
+    privacyPolicyMiddle: "and",
+    privacyPolicySuffix: ".",
+    privacyPolicyLink: "Privacy Policy",
+    termsOfServiceLink: "Terms of Service",
   },
   forgotPassword: {
     title: "Forgot Password",
