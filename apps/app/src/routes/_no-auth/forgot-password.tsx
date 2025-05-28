@@ -8,7 +8,7 @@ import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
-import { notify } from "~/lib/toast";
+import { handleError } from "~/lib/utils/error";
 
 export const Route = createFileRoute("/_no-auth/forgot-password")({
   component: ForgotPasswordComponent,
@@ -30,10 +30,7 @@ function ForgotPasswordComponent() {
       );
 
       if (error) {
-        notify({
-          message: t("error.unknown"),
-          intent: "error",
-        });
+        handleError(error);
         return;
       }
 
@@ -50,7 +47,7 @@ function ForgotPasswordComponent() {
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
         <h1 class="font-semibold text-xl">{t("forgot_password.title")}</h1>
-        
+
         {sent() ? (
           <div class="flex flex-col gap-4">
             <p>{t("forgot_password.email_sent")}</p>
@@ -109,4 +106,4 @@ function ForgotPasswordComponent() {
       </Card>
     </div>
   );
-} 
+}

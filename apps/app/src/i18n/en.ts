@@ -106,6 +106,7 @@ const en = {
   },
   error: {
     unknown: "An unknown error occurred",
+    rate_limit: "Rate limit exceeded, retry in {{ retryAfter }} seconds",
   },
   toast: {
     success: "Success",

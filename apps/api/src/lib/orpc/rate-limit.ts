@@ -99,15 +99,6 @@ function applyRateLimitHeaders(
 }
 
 export const rateLimit = init
-  .errors({
-    RATE_LIMIT_EXCEEDED: {
-      status: 429,
-      message: "Rate limit exceeded",
-      data: v.object({
-        retryAfter: v.number(),
-      }),
-    },
-  })
   .middleware(async ({ procedure, next, path, errors, context }) => {
     const rateLimitMeta = procedure["~orpc"].meta.rateLimit;
     const windowMs = rateLimitMeta?.windowMs;
@@ -126,7 +117,7 @@ export const rateLimit = init
 
     if (current > limit) {
       context.resHeaders?.set("Retry-After", retryAfter.toString());
-      throw errors.RATE_LIMIT_EXCEEDED({
+      throw errors.RATE_LIMIT({
         message: "Rate limit exceeded",
         data: {
           retryAfter,
