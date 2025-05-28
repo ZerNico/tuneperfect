@@ -13,7 +13,7 @@ class GoogleOAuthClient {
   private client = new arctic.Google(
     env.GOOGLE_CLIENT_ID,
     env.GOOGLE_CLIENT_SECRET,
-    `${env.NODE_ENV === "development" ? "https://redirectmeto.com/" : ""}${env.API_URL}/v1.0/auth/providers/google/callback`,
+    `${env.NODE_ENV === "development" ? "https://fwd.host/https://redirectmeto.com/" : ""}${env.API_URL}/v1.0/auth/providers/google/callback`,
   );
 
   public async getAuthorizationURL() {
