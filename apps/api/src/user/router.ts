@@ -84,7 +84,7 @@ export const userRouter = os.prefix("/users").router({
     .input(v.object({ id: v.string(), t: v.optional(v.string()) }))
     .handler(async ({ errors, input, context }) => {
       const file = Bun.file(`${env.UPLOADS_PATH}/users/${input.id}.webp`);
-      if (!file.exists()) {
+      if (!(await file.exists())) {
         throw errors.USER_NOT_FOUND();
       }
 
