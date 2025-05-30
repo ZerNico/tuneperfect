@@ -90,7 +90,7 @@ const pressedGamepadButtons = new Map<string, { holdTimeout: number; repeatInter
 const HOLD_DELAY = 500;
 const REPEAT_DELAY = 100;
 
-createEventListener(window, "keydown", (event) => {
+createEventListener(document, "keydown", (event) => {
   if (event.repeat) return;
 
   const action = KEY_MAPPINGS.get(event.key);
@@ -126,7 +126,7 @@ createEventListener(window, "keydown", (event) => {
   }
 });
 
-createEventListener(window, "keyup", (event) => {
+createEventListener(document, "keyup", (event) => {
   if (event.repeat) return;
 
   const action = KEY_MAPPINGS.get(event.key);

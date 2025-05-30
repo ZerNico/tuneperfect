@@ -29,13 +29,41 @@ function RootComponent() {
     await window.setFullscreen(!isFullscreen);
   };
 
-  createEventListener(document, "keydown", (event) => {
-    if (event.key === "F11") {
-      toggleFullscreen();
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  });
+  createEventListener(
+    document,
+    "keydown",
+    (event) => {
+      if (event.key === "Enter" && (event.metaKey || event.altKey)) {
+        toggleFullscreen();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (event.key === "F11") {
+        toggleFullscreen();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    { capture: true }
+  );
+
+  createEventListener(
+    document,
+    "keyup",
+    (event) => {
+      if (event.key === "Enter" && (event.metaKey || event.altKey)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (event.key === "F11") {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    { capture: true }
+  );
 
   const [mouseHidden, setMouseHidden] = createSignal(false);
 
