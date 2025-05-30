@@ -211,7 +211,7 @@ function SingComponent() {
               {(currentSong) => (
                 <div class="h-full w-full">
                   <SongPlayer
-                    isPreview
+                    
                     volume={settingsStore.getVolume("preview")}
                     class="h-full w-full opacity-60"
                     playing

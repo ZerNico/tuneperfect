@@ -6,6 +6,8 @@ interface Data {
   bpm: number;
   gap: number;
   videoGap: number;
+  start?: number;
+  end?: number;
   hash: string;
   album?: string;
   language?: string;

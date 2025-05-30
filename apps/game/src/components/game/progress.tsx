@@ -5,7 +5,24 @@ import { settingsStore } from "~/stores/settings";
 export default function Progress() {
   const game = useGame();
 
-  const progress = () => game.currentTime() / game.duration();
+  const progress = () => {
+    const song = game.song();
+    const rawCurrentTime = game.currentTime();
+    const rawDuration = game.duration();
+    
+    if (!song || rawDuration === 0) return 0;
+    
+    // Calculate effective current time and duration based on song's start/end
+    const startOffset = song.start ?? 0;
+    const endOffset = song.end ? song.end / 1000 : rawDuration; // Convert milliseconds to seconds
+    
+    const effectiveCurrentTime = Math.max(0, rawCurrentTime - startOffset);
+    const effectiveDuration = Math.max(0, endOffset - startOffset);
+    
+    if (effectiveDuration === 0) return 0;
+    
+    return Math.min(1, effectiveCurrentTime / effectiveDuration);
+  };
 
   const leadingPlayer = createMemo(() => {
     const scores = game.scores();

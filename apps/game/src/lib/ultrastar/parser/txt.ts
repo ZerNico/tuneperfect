@@ -61,6 +61,14 @@ export function parseUltrastarTxt(content: string) {
             partialSong.gap = parseUSInt(value);
             break;
           }
+          case "start": {
+            partialSong.start = parseUSFloat(value);
+            break;
+          }
+          case "end": {
+            partialSong.end = parseUSInt(value);
+            break;
+          }
           case "mp3": {
             partialSong.audio = value;
             break;

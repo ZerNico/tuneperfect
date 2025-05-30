@@ -28,6 +28,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [hasInitialized, setHasInitialized] = createSignal(false);
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  let endCheckInterval: ReturnType<typeof setInterval> | undefined = undefined;
   const audioContext = new AudioContext();
 
   // Setup audio context for audio element
@@ -96,8 +97,6 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   // Set initial time for preview mode
   const setPreviewTime = () => {
-    if (!props.isPreview) return;
-
     const audio = audioElement();
     const video = videoElement();
     const previewStart = getPreviewStartTime(props.song, props.song.videoGap ?? 0);
@@ -121,7 +120,16 @@ export default function SongPlayer(props: SongPlayerProps) {
     clearTimeout(syncTimeout);
 
     try {
-      setPreviewTime();
+      if (props.isPreview) {
+        setPreviewTime();
+      } else if (props.song.start) {
+        if (audio && audio.currentTime === 0) {
+          audio.currentTime = props.song.start;
+        }
+        if (video && video.currentTime === 0) {
+          video.currentTime = props.song.start;
+        }
+      }
 
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
@@ -183,14 +191,42 @@ export default function SongPlayer(props: SongPlayerProps) {
     audioElement()?.pause();
     videoElement()?.pause();
     clearTimeout(syncTimeout);
+    clearInterval(endCheckInterval);
+  };
+
+  const checkForSongEnd = () => {
+    if (!props.song.end) return;
+    
+    const audio = audioElement();
+    const video = videoElement();
+    const rawCurrentTime = audio?.currentTime ?? video?.currentTime ?? 0;
+    const endTimeInSeconds = props.song.end / 1000; // Convert milliseconds to seconds
+    
+    if (rawCurrentTime >= endTimeInSeconds) {
+      pause();
+      handleEnded();
+    }
+  };
+
+  const startEndTimeMonitoring = () => {
+    clearInterval(endCheckInterval);
+    if (props.song.end) {
+      endCheckInterval = setInterval(checkForSongEnd, 100);
+    }
+  };
+
+  const stopEndTimeMonitoring = () => {
+    clearInterval(endCheckInterval);
   };
 
   // Main playback control effect
   createEffect(() => {
     if (props.playing && isReady()) {
       play();
+      startEndTimeMonitoring();
     } else if (!props.playing) {
       pause();
+      stopEndTimeMonitoring();
     }
   });
 
@@ -252,6 +288,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   onCleanup(() => {
     pause();
+    stopEndTimeMonitoring();
   });
 
   return (
