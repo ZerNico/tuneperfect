@@ -114,7 +114,7 @@ function HomeComponent() {
     <Layout
       header={
         <div class="flex justify-between">
-          <div />
+          <h1 class="font-bold text-3xl">Tune Perfect</h1>
           <div class="flex gap-2">
             <For each={lobbyQuery.data?.users}>{(user) => <Avatar user={user} />}</For>
           </div>
