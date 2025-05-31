@@ -220,22 +220,60 @@ interface PitchNoteProps {
   column: number;
 }
 
+function SparkleParticles(props: { length: number }) {
+  // Scale particles based on note length: base 4 particles + 2 per beat, capped at 16
+  const particleCount = Math.min(4 + Math.floor(props.length * 2), 16);
+  
+  // Generate random particles with different delays and positions
+  const particles = Array.from({ length: particleCount }, (_, i) => ({
+    id: i,
+    delay: Math.random() * 2,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 0.3 + 0.2, // 0.2 to 0.5
+    duration: Math.random() * 1.5 + 1.5, // 1.5 to 3 seconds
+  }));
+
+  return (
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <For each={particles}>
+        {(particle) => (
+          <div
+            class="absolute animate-sparkle rounded-full bg-yellow-300 opacity-0"
+            style={{
+              left: `${particle.x}%`,
+              top: `${particle.y}%`,
+              width: `${particle.size}cqw`,
+              height: `${particle.size}cqw`,
+              "animation-delay": `${particle.delay}s`,
+              "animation-duration": `${particle.duration}s`,
+              "box-shadow": "0 0 0.2cqw rgba(251, 191, 36, 0.8)",
+            }}
+          />
+        )}
+      </For>
+    </div>
+  );
+}
+
 function PitchNote(props: PitchNoteProps) {
   return (
     <div
-      class=""
+      class="relative"
       style={{
         "grid-row": props.row,
         "grid-column": `${props.column} / span ${props.note.length}`,
       }}
     >
       <div
-        class="-translate-y-1/4 h-2/1 w-full transform rounded-full border-[0.15cqw] shadow-md"
+        class="-translate-y-1/4 relative h-2/1 w-full transform overflow-hidden rounded-full border-[0.15cqw] shadow-md"
         classList={{
           "border-yellow-400 bg-yellow-400/20": props.note.type === "Golden",
           "border-white bg-black/20": props.note.type !== "Golden",
         }}
-      />
+      >
+        {props.note.type === "Golden" && <SparkleParticles length={props.note.length} />}
+      </div>
     </div>
   );
 }

@@ -37,6 +37,7 @@
   --animate-slide-in: slideIn 0.15s ease-out;
   --animate-swipe-out: swipeOut 0.1s ease-in;
   --animate-scroll: scroll 10s linear infinite;
+  --animate-sparkle: sparkle 2s ease-in-out infinite;
 
   @keyframes hide {
     from {
@@ -71,6 +72,17 @@
     }
     to {
       transform: translateY(-50%);
+    }
+  }
+
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1) rotate(180deg);
     }
   }
 }
