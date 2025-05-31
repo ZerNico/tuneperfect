@@ -120,7 +120,7 @@ function SingComponent() {
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadY class="text-sm" />}>
                 <IconF4Key class="text-sm" />
               </Show>
-              <button type="button" class="text-2xl transition-all hover:opacity-75 active:scale-95" onClick={selectRandomSong}>
+              <button type="button" class="cursor-pointer text-2xl transition-all hover:opacity-75 active:scale-95" onClick={selectRandomSong}>
                 <IconDices />
               </button>
             </div>
@@ -130,7 +130,7 @@ function SingComponent() {
               </Show>
               <button
                 type="button"
-                class="flex items-center gap-2 transition-all hover:opacity-75 active:scale-95"
+                class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
                 onClick={() => moveSorting("left")}
               >
                 <IconTriangleLeft />
@@ -152,7 +152,7 @@ function SingComponent() {
                 </For>
               </div>
 
-              <button type="button" class="transition-all hover:opacity-75 active:scale-95" onClick={() => moveSorting("right")}>
+              <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95" onClick={() => moveSorting("right")}>
                 <IconTriangleRight />
               </button>
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
@@ -553,7 +553,7 @@ function SongScroller(props: SongScrollerProps) {
             return (
               <button
                 type="button"
-                class="w-1/7 transform-gpu p-2 transition-all duration-250 will-change-transform"
+                class="w-1/7 transform-gpu cursor-pointer p-2 transition-all duration-250 will-change-transform"
                 classList={songCardClasses(index(), animating())}
                 onTransitionEnd={(e) => e.stopPropagation()}
                 onClick={() => {

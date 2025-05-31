@@ -87,11 +87,11 @@ export default function SongPlayer(props: SongPlayerProps) {
   const isReady = () => {
     const audio = audioElement();
     const video = videoElement();
-    
+
     if (!audio && !video) return false;
     if (audio && !audioReady()) return false;
     if (video && !videoError() && !videoReady()) return false;
-    
+
     return true;
   };
 
@@ -163,13 +163,16 @@ export default function SongPlayer(props: SongPlayerProps) {
             } else {
               // Can't sync by adjusting video time, use timeout
               await video.play();
-              syncTimeout = setTimeout(async () => {
-                try {
-                  await audio.play();
-                } catch (error) {
-                  console.warn("Failed to start audio playback:", error);
-                }
-              }, Math.abs(gap) * 1000);
+              syncTimeout = setTimeout(
+                async () => {
+                  try {
+                    await audio.play();
+                  } catch (error) {
+                    console.warn("Failed to start audio playback:", error);
+                  }
+                },
+                Math.abs(gap) * 1000
+              );
             }
           }
         } else {
@@ -196,12 +199,12 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   const checkForSongEnd = () => {
     if (!props.song.end) return;
-    
+
     const audio = audioElement();
     const video = videoElement();
     const rawCurrentTime = audio?.currentTime ?? video?.currentTime ?? 0;
     const endTimeInSeconds = props.song.end / 1000; // Convert milliseconds to seconds
-    
+
     if (rawCurrentTime >= endTimeInSeconds) {
       pause();
       handleEnded();
@@ -330,7 +333,6 @@ export default function SongPlayer(props: SongPlayerProps) {
       <Show when={props.song.audioUrl}>
         {(audioUrl) => (
           <audio
-            controls
             ref={setAudioElement}
             preload="auto"
             crossorigin="anonymous"

@@ -68,7 +68,7 @@ export default function Slider(props: SliderProps) {
       <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
         <div class="text-center font-bold text-xl">{props.label}</div>
         <div class="flex items-center gap-8">
-          <button type="button" onClick={() => changeValue("left")}>
+          <button class="cursor-pointer" type="button" onClick={() => changeValue("left")}>
             <IconTriangleLeft />
           </button>
           <div class="grid h-5 flex-grow items-center">
@@ -97,7 +97,7 @@ export default function Slider(props: SliderProps) {
               onKeyDown={(e) => e.preventDefault()}
             />
           </div>
-          <button type="button" onClick={() => changeValue("right")}>
+          <button class="cursor-pointer" type="button" onClick={() => changeValue("right")}>
             <IconTriangleRight />
           </button>
         </div>
