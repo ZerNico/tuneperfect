@@ -24,6 +24,7 @@ import { Route as SingHashImport } from './routes/sing/$hash'
 import { Route as SettingsCreditsImport } from './routes/settings/credits'
 import { Route as LobbyIdImport } from './routes/lobby/$id'
 import { Route as GameScoreImport } from './routes/game/score'
+import { Route as GameRestartImport } from './routes/game/restart'
 import { Route as SettingsVolumeIndexImport } from './routes/settings/volume/index'
 import { Route as SettingsSongsIndexImport } from './routes/settings/songs/index'
 import { Route as SettingsMicrophonesIndexImport } from './routes/settings/microphones/index'
@@ -113,6 +114,12 @@ const GameScoreRoute = GameScoreImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const GameRestartRoute = GameRestartImport.update({
+  id: '/game/restart',
+  path: '/game/restart',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const SettingsVolumeIndexRoute = SettingsVolumeIndexImport.update({
   id: '/settings/volume/',
   path: '/settings/volume/',
@@ -191,6 +198,13 @@ declare module '@tanstack/solid-router' {
       path: '/loading'
       fullPath: '/loading'
       preLoaderRoute: typeof LoadingImport
+      parentRoute: typeof rootRoute
+    }
+    '/game/restart': {
+      id: '/game/restart'
+      path: '/game/restart'
+      fullPath: '/game/restart'
+      preLoaderRoute: typeof GameRestartImport
       parentRoute: typeof rootRoute
     }
     '/game/score': {
@@ -322,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/settings/credits': typeof SettingsCreditsRoute
@@ -346,6 +361,7 @@ export interface FileRoutesByTo {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/settings/credits': typeof SettingsCreditsRoute
@@ -371,6 +387,7 @@ export interface FileRoutesById {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/settings/credits': typeof SettingsCreditsRoute
@@ -397,6 +414,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
     | '/settings/credits'
@@ -420,6 +438,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
     | '/settings/credits'
@@ -443,6 +462,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
     | '/settings/credits'
@@ -468,6 +488,7 @@ export interface RootRouteChildren {
   CreateLobbyRoute: typeof CreateLobbyRoute
   HomeRoute: typeof HomeRoute
   LoadingRoute: typeof LoadingRoute
+  GameRestartRoute: typeof GameRestartRoute
   GameScoreRoute: typeof GameScoreRoute
   LobbyIdRoute: typeof LobbyIdRoute
   SettingsCreditsRoute: typeof SettingsCreditsRoute
@@ -492,6 +513,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreateLobbyRoute: CreateLobbyRoute,
   HomeRoute: HomeRoute,
   LoadingRoute: LoadingRoute,
+  GameRestartRoute: GameRestartRoute,
   GameScoreRoute: GameScoreRoute,
   LobbyIdRoute: LobbyIdRoute,
   SettingsCreditsRoute: SettingsCreditsRoute,
@@ -525,6 +547,7 @@ export const routeTree = rootRoute
         "/create-lobby",
         "/home",
         "/loading",
+        "/game/restart",
         "/game/score",
         "/lobby/$id",
         "/settings/credits",
@@ -555,6 +578,9 @@ export const routeTree = rootRoute
     },
     "/loading": {
       "filePath": "loading.tsx"
+    },
+    "/game/restart": {
+      "filePath": "game/restart.tsx"
     },
     "/game/score": {
       "filePath": "game/score.tsx"

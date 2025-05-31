@@ -72,6 +72,7 @@ const en = {
   game: {
     pause: {
       resume: "Resume",
+      restart: "Restart",
       exit: "Exit"
     }
   },

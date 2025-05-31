@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/solid-router";
+import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import GameLayout from "~/components/game/game-layout";
 import Half from "~/components/game/half";
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/game/")({
 });
 
 function GameComponent() {
+  const navigate = useNavigate();
   const [songPlayerRef, setSongPlayerRef] = createSignal<SongPlayerRef>();
   const [ready, setReady] = createSignal(false);
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
@@ -64,6 +65,12 @@ function GameComponent() {
     return "gradient-sing";
   };
 
+  const handleRestart = () => {
+    console.log("restart");
+    roundStore.setScores([]);
+    navigate({ to: "/game/restart", replace: true });
+  };
+
   return (
     <GameLayout>
       <GameProvider>
@@ -103,7 +110,7 @@ function GameComponent() {
           </div>
 
           <Show when={paused()}>
-            <PauseMenu class="absolute inset-0" onClose={resume} onExit={handleEnded} gradient={gradient()} />
+            <PauseMenu class="absolute inset-0" onClose={resume} onExit={handleEnded} onRestart={handleRestart} gradient={gradient()} />
           </Show>
 
           <div

@@ -3,6 +3,7 @@ import Menu, { type MenuItem } from "../menu";
 
 interface PauseMenuProps {
   onClose?: () => void;
+  onRestart?: () => void;
   onExit?: () => void;
   class?: string;
   gradient?: "gradient-sing" | "gradient-party";
@@ -14,6 +15,11 @@ export default function PauseMenu(props: PauseMenuProps) {
       type: "button",
       label: t("game.pause.resume"),
       action: () => props.onClose?.(),
+    },
+    {
+      type: "button",
+      label: t("game.pause.restart"),
+      action: () => props.onRestart?.(),
     },
     {
       type: "button",
