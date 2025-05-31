@@ -24,6 +24,16 @@ export const Route = createRootRoute({
           rel: "stylesheet",
           href: styles,
         },
+        {
+          rel: "icon",
+          href: "/favicon.svg",
+          type: "image/svg+xml",
+        },
+        {
+          rel: "icon",
+          href: "/favicon.ico",
+          type: "image/x-icon",
+        },
       ],
     };
   },
