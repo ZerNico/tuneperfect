@@ -44,6 +44,11 @@ function RootComponent() {
         event.preventDefault();
         event.stopPropagation();
       }
+
+      if (event.key === "Tab") {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     },
     { capture: true }
   );
