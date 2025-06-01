@@ -36,7 +36,14 @@
     },
     "linux": {
       "appimage": {
-        "bundleMediaFramework": true
+        "bundleMediaFramework": true,
+        "files": {
+          "/usr/lib/x86_64-linux-gnu/gstreamer-1.0": "/usr/lib/x86_64-linux-gnu/gstreamer-1.0",
+          "/usr/lib/x86_64-linux-gnu/libjack.so.0": "/usr/lib/x86_64-linux-gnu/libjack.so.0",
+          "/usr/lib/x86_64-linux-gnu/libfdk-aac.so.2": "/usr/lib/x86_64-linux-gnu/libfdk-aac.so.2",
+          "/usr/lib/x86_64-linux-gnu/alsa-lib": "/usr/lib/x86_64-linux-gnu/alsa-lib",
+          "/usr/share/alsa": "/usr/share/alsa"
+        }
       }
     },
     "createUpdaterArtifacts": true

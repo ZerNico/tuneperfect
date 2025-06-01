@@ -32,6 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            build-essential \
             libgtk-3-dev \
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
@@ -41,6 +42,7 @@ jobs:
             alsa-base \
             alsa-utils \
             libasound2-dev \
+            libasound2-plugins \
             pkg-config \
             libunwind-dev \
             libfdk-aac-dev \
@@ -53,7 +55,11 @@ jobs:
             libgstreamer1.0-dev \
             libgstreamer-plugins-base1.0-dev \
             libgstreamer-plugins-bad1.0-dev \
-            libgstreamer-plugins-good1.0-dev
+            libgstreamer-plugins-good1.0-dev \
+            libjack-jackd2-dev \
+            jackd2 \
+            libfdk-aac2 \
+            libgvfs-dev
 
       - name: Install ARM64 build tools (Windows ARM64 only)
         if: matrix.platform.target == 'aarch64-pc-windows-msvc'
