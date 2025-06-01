@@ -58,8 +58,7 @@ jobs:
             libgstreamer-plugins-good1.0-dev \
             libjack-jackd2-dev \
             jackd2 \
-            libfdk-aac2 \
-            libgvfs-dev
+            libfdk-aac2
 
       - name: Install ARM64 build tools (Windows ARM64 only)
         if: matrix.platform.target == 'aarch64-pc-windows-msvc'
