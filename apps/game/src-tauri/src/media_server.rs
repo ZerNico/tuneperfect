@@ -254,7 +254,7 @@ pub fn create_media_server_plugin<R: Runtime>() -> TauriPlugin<R> {
                 return Ok(());
             }
 
-            let port = find_available_port(8080).ok_or("No available port found")?;
+            let port = find_available_port(24000).ok_or("No available port found")?;
             let host = "127.0.0.1".to_string();
 
             let config = MediaServerConfig {
