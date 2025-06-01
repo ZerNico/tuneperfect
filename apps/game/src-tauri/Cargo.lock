@@ -4885,7 +4885,10 @@ version = "0.0.33"
 dependencies = [
  "cpal",
  "dywapitchtrack",
+ "http",
+ "http-range",
  "lofty",
+ "percent-encoding",
  "ringbuf",
  "serde",
  "serde_json",
@@ -4902,6 +4905,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "tauri-specta",
+ "tauri-utils",
  "thiserror 2.0.12",
 ]
 

@@ -18,6 +18,22 @@ function findFileByName(files: DirEntryWithChildren[], targetFilename: string): 
   return files.find((f) => normalizeFilename(f.name) === normalizedTarget);
 }
 
+async function getMediaUrl(filePath: string): Promise<string> {
+  try {
+    const result = await commands.getMediaServerBaseUrl();
+    if (result.status === "ok" && result.data) {
+      // Use media server URL
+      const encodedPath = encodeURIComponent(filePath);
+      return `${result.data}/${encodedPath}`;
+    }
+  } catch (error) {
+    console.warn("Failed to get media server base URL:", error);
+  }
+  
+  // Fallback to asset protocol
+  return convertFileSrc(filePath);
+}
+
 export async function parseLocalFileTree(root: DirEntryWithChildren) {
   const songFiles: { txt: DirEntryWithChildren; files: DirEntryWithChildren[] }[] = [];
 
@@ -78,7 +94,7 @@ export async function parseLocalTxtFile(txt: DirEntryWithChildren, files: DirEnt
       }
 
       const keyUrl: `${typeof type}Url` = `${type}Url`;
-      localSong[keyUrl] = convertFileSrc(file.path);
+      localSong[keyUrl] = await getMediaUrl(file.path);
     }
 
     if (song.audio) {

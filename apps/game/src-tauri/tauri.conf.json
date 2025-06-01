@@ -22,7 +22,7 @@
         "enable": true,
         "scope": ["**"]
       },
-      "csp": "default-src 'self' ipc: http://ipc.localhost; font-src 'self' data:; img-src 'self' data: asset: http://asset.localhost data:; media-src 'self' data: asset: http://asset.localhost data:; connect-src 'self' ipc: http://ipc.localhost *"
+      "csp": "default-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*; font-src 'self' data:; img-src 'self' data: asset: http://asset.localhost http://localhost:* http://127.0.0.1:* data:; media-src 'self' data: asset: http://asset.localhost http://localhost:* http://127.0.0.1:* data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* *"
     }
   },
 

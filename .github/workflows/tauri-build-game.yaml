@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: 'The Git tag to build and publish (e.g., v1.0.0)'
+        description: "The Git tag to build and publish (e.g., v1.0.0)"
         required: true
         type: string
 
@@ -15,11 +15,11 @@ jobs:
       matrix:
         platform:
           [
-            { os: 'macos-latest', target: 'aarch64-apple-darwin' },
-            { os: 'macos-latest', target: 'x86_64-apple-darwin' },
-            { os: 'ubuntu-22.04', target: 'x86_64-unknown-linux-gnu' },
-            { os: 'windows-latest', target: 'x86_64-pc-windows-msvc' },
-            { os: 'windows-latest', target: 'aarch64-pc-windows-msvc' },
+            { os: "macos-latest", target: "aarch64-apple-darwin" },
+            { os: "macos-latest", target: "x86_64-apple-darwin" },
+            { os: "ubuntu-22.04", target: "x86_64-unknown-linux-gnu" },
+            { os: "windows-latest", target: "x86_64-pc-windows-msvc" },
+            { os: "windows-latest", target: "aarch64-pc-windows-msvc" },
           ]
 
     runs-on: ${{ matrix.platform.os }}
@@ -31,7 +31,26 @@ jobs:
         if: matrix.platform.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libglib2.0-dev alsa-base alsa-utils libasound2-dev pkg-config
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libglib2.0-dev \
+            alsa-base \
+            alsa-utils \
+            libasound2-dev \
+            pkg-config \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev \
+            libgstreamer-plugins-good1.0-dev
 
       - name: Install ARM64 build tools (Windows ARM64 only)
         if: matrix.platform.target == 'aarch64-pc-windows-msvc'
@@ -39,10 +58,10 @@ jobs:
         run: |
           # Download Visual Studio Build Tools installer
           Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
-          
+
           # Install ARM64 build tools
           Start-Process -FilePath "vs_buildtools.exe" -ArgumentList "--quiet", "--wait", "--add", "Microsoft.VisualStudio.Workload.VCTools", "--add", "Microsoft.VisualStudio.Component.VC.Tools.ARM64" -Wait
-          
+
           # Clean up
           Remove-Item "vs_buildtools.exe"
 
@@ -59,7 +78,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './apps/game/src-tauri -> target'
+          workspaces: "./apps/game/src-tauri -> target"
           shared-key: ${{ matrix.platform.target }}-${{ matrix.platform.os }}-game
           save-if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
 
@@ -101,10 +120,10 @@ jobs:
         shell: bash
         run: |
           BUNDLE_DIR="apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle"
-          
+
           # Find the dmg file
           DMG_FILE=$(find "$BUNDLE_DIR" -name "*.dmg" | head -1)
-          
+
           if [ -n "$DMG_FILE" ]; then
             # Extract the base name without extension
             DMG_BASENAME=$(basename "$DMG_FILE" .dmg)
@@ -150,4 +169,3 @@ jobs:
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.deb
             apps/game/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*.rpm
           if-no-files-found: error
-
