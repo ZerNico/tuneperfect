@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{
     plugin::{Builder as PluginBuilder, TauriPlugin},
-    Runtime, State, Manager,
+    Manager, Runtime, State,
 };
 use tauri_plugin_fs::FsExt;
 use tauri_utils::mime_type::MimeType;
@@ -141,8 +141,8 @@ fn handle_range_request(
     range_header: &str,
     is_head: bool,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
-    let ranges = HttpRange::parse(range_header, len)
-        .map_err(|e| format!("Range parse error: {:?}", e))?;
+    let ranges =
+        HttpRange::parse(range_header, len).map_err(|e| format!("Range parse error: {:?}", e))?;
 
     if ranges.len() == 1 {
         let range = &ranges[0];
@@ -160,7 +160,8 @@ fn handle_range_request(
              Access-Control-Expose-Headers: content-range\r\n\
              \r\n",
             mime_type, start, end, len, content_length
-        ).into_bytes();
+        )
+        .into_bytes();
 
         if !is_head {
             file.seek(SeekFrom::Start(start))?;
@@ -186,7 +187,8 @@ fn create_full_response(content: Vec<u8>, mime_type: &str) -> Vec<u8> {
          \r\n",
         mime_type,
         content.len()
-    ).into_bytes();
+    )
+    .into_bytes();
     response.extend_from_slice(&content);
     response
 }
@@ -200,7 +202,8 @@ fn create_head_response(len: u64, mime_type: &str) -> Vec<u8> {
          Access-Control-Allow-Origin: *\r\n\
          \r\n",
         mime_type, len
-    ).into_bytes()
+    )
+    .into_bytes()
 }
 
 fn create_error_response(status: u16, message: &str) -> Vec<u8> {
@@ -215,7 +218,8 @@ fn create_error_response(status: u16, message: &str) -> Vec<u8> {
         message,
         body.len(),
         body
-    ).into_bytes()
+    )
+    .into_bytes()
 }
 
 fn handle_client(
@@ -297,8 +301,6 @@ pub fn create_media_server_plugin<R: Runtime>() -> TauriPlugin<R> {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            get_media_server_base_url
-        ])
+        .invoke_handler(tauri::generate_handler![get_media_server_base_url])
         .build()
 }
