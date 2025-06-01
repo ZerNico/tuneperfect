@@ -42,6 +42,9 @@ jobs:
             alsa-utils \
             libasound2-dev \
             pkg-config \
+            libunwind-dev \
+            libfdk-aac-dev \
+            libfaac-dev \
             gstreamer1.0-plugins-base \
             gstreamer1.0-plugins-good \
             gstreamer1.0-plugins-bad \
