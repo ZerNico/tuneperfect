@@ -9,6 +9,7 @@ import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { queryClient } from "~/main";
 import { lobbyStore } from "~/stores/lobby";
+import { settingsStore } from "~/stores/settings";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/create-lobby")({
@@ -30,6 +31,12 @@ function IndexComponent() {
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
 
   onMount(async () => {
+    if (settingsStore.general().forceOfflineMode) {
+      lobbyStore.clearLobby();
+      goToLoading();
+      return;
+    }
+
     if (lobbyStore.lobby()) {
       try {
         await queryClient.fetchQuery(client.lobby.currentLobby.queryOptions());

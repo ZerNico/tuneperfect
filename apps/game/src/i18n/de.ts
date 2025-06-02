@@ -13,7 +13,9 @@ const de = {
     },
     players: {
       guest: "Gast",
-    }
+    },
+    yes: "Ja",
+    no: "Nein"
   },
   home: {
     title: "Willkommen",
@@ -85,7 +87,8 @@ const de = {
     sections: {
       general: {
         title: "Allgemein",
-        language: "Sprache"
+        language: "Sprache",
+        forceOfflineMode: "Offline-Modus erzwingen"
       },
       songs: {
         title: "Lieder"

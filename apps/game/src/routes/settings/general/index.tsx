@@ -34,6 +34,13 @@ function GeneralSettingsComponent() {
       onChange: (value) => setGeneral({ ...general(), language: value }),
     },
     {
+      type: "select-string",
+      label: t("settings.sections.general.forceOfflineMode"),
+      value: () => general().forceOfflineMode ? t("common.yes") : t("common.no"),
+      options: [t("common.no"), t("common.yes")],
+      onChange: (value) => setGeneral({ ...general(), forceOfflineMode: value === t("common.yes") }),
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveGeneral,

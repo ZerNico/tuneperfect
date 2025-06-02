@@ -19,6 +19,7 @@ export interface VolumeSettings {
 
 export interface GeneralSettings {
   language: string;
+  forceOfflineMode: boolean;
 }
 
 function createSettingsStore() {
@@ -40,6 +41,7 @@ function createSettingsStore() {
   const [general, setGeneral] = makePersisted(
     createSignal<GeneralSettings>({
       language: "en",
+      forceOfflineMode: false,
     }),
     {
       name: "settingsStore.general",
