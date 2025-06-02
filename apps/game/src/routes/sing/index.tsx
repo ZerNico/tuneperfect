@@ -602,7 +602,7 @@ interface SongCardProps {
 function SongCard(props: SongCardProps) {
   return (
     <div
-      class="relative aspect-square transform-gpu overflow-hidden rounded-lg shadow-xl transition-transform duration-250 will-change-transform"
+      class="relative aspect-square transform-gpu overflow-hidden rounded-lg shadow-md transition-transform duration-250 will-change-transform"
       classList={{
         [props.class || ""]: true,
         "scale-130": props.active,

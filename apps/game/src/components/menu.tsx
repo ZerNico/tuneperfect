@@ -106,10 +106,11 @@ export default function Menu(props: MenuProps) {
   );
 
   return (
-    <div class={twMerge("flex h-full w-full flex-grow flex-col justify-center", props.class)}>
+    <div class={twMerge("flex h-full max-h-full w-full flex-grow flex-col justify-center", props.class)}>
       <div 
         ref={scrollContainer}
-        class="styled-scrollbars flex flex-col overflow-y-auto"
+        class="styled-scrollbars flex max-h-full flex-col overflow-y-auto"
+        style="max-height: calc(100vh - 12rem);"
       >
         <For each={props.items}>
           {(item, index) => (
