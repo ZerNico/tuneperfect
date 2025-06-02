@@ -1,8 +1,10 @@
-import type { Component } from "solid-js";
+import type { Component, Ref } from "solid-js";
 import { Dynamic, Show } from "solid-js/web";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 interface IconButtonProps {
+  ref?: Ref<HTMLButtonElement>;
+  class?: string;
   selected?: boolean;
   active?: boolean;
   label: string;
@@ -16,7 +18,8 @@ interface IconButtonProps {
 export default function IconButton(props: IconButtonProps) {
   return (
     <button
-      class="flex h-44 w-32 cursor-pointer flex-col gap-1 text-start transition-all ease-in-out active:scale-95"
+      ref={props.ref}
+      class={`flex h-44 w-32 cursor-pointer flex-col gap-1 text-start transition-all ease-in-out active:scale-95 ${props.class || ""}`}
       classList={{
         "opacity-50": !props.selected,
         "scale-95": props.active,

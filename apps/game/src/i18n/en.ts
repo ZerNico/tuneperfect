@@ -102,6 +102,13 @@ const en = {
         gain: "Gain",
         threshold: "Threshold"
       },
+      localPlayers: {
+        title: "Local Players",
+        name: "Player Name",
+        enterName: "Enter player name",
+        addNew: "Add New Player",
+        edit: "Edit Player"
+      },
       volume: {
         title: "Volume",
         master: "Master Volume",

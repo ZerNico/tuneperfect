@@ -102,6 +102,13 @@ const de = {
         gain: "Verstärkung",
         threshold: "Schwellenwert"
       },
+      localPlayers: {
+        title: "Lokale Spieler",
+        name: "Spielername",
+        enterName: "Spielername eingeben",
+        addNew: "Neuen Spieler hinzufügen",
+        edit: "Spieler bearbeiten"
+      },
       volume: {
         title: "Lautstärke",
         master: "Gesamtlautstärke",

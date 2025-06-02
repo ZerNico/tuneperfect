@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX, Ref } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import { clamp } from "~/lib/utils/math";
 import IconTriangleLeft from "~icons/sing/triangle-left";
@@ -16,6 +16,7 @@ interface SliderProps {
   onInput?: (value: number) => void;
   onMouseEnter?: () => void;
   layer?: number;
+  ref?: Ref<HTMLDivElement>;
 }
 
 export default function Slider(props: SliderProps) {
@@ -57,7 +58,7 @@ export default function Slider(props: SliderProps) {
   }));
 
   return (
-    <div class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
+    <div ref={props.ref} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
         classList={{

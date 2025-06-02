@@ -31,6 +31,11 @@ function SettingsComponent() {
     },
     {
       type: "button",
+      label: t("settings.sections.localPlayers.title"),
+      action: () => navigate({ to: "/settings/local-players" }),
+    },
+    {
+      type: "button",
       label: t("settings.sections.volume.title"),
       action: () => navigate({ to: "/settings/volume" }),
     },

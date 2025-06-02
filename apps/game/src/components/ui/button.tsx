@@ -1,4 +1,4 @@
-import { type JSX, createSignal } from "solid-js";
+import { type JSX, type Ref, createSignal } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
@@ -11,6 +11,7 @@ interface ButtonProps {
   onMouseEnter?: () => void;
   loading?: boolean;
   layer?: number;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export default function Button(props: ButtonProps) {
@@ -38,6 +39,7 @@ export default function Button(props: ButtonProps) {
 
   return (
     <button
+      ref={props.ref}
       class="grid h-16 cursor-pointer items-center overflow-hidden rounded-lg transition-all ease-in-out active:scale-95"
       classList={{
         [props.class || ""]: true,

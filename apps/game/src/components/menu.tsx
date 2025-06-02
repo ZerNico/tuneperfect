@@ -4,6 +4,7 @@ import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { playSound } from "~/lib/sound";
 import Button from "./ui/button";
+import Input from "./ui/input";
 import Select from "./ui/select";
 import Slider from "./ui/slider";
 
@@ -19,7 +20,7 @@ export type MenuItem =
     }
   | {
       type: "button";
-      label: string;
+      label: string | JSX.Element;
       action?: () => void;
     }
   | {
@@ -45,6 +46,13 @@ export type MenuItem =
       onChange: (value: string | number) => void;
       options: (string | number)[];
       renderValue?: (value: string | number | null) => JSX.Element;
+    }
+  | {
+      type: "input";
+      label: string;
+      value: () => string;
+      onInput: (value: string) => void;
+      placeholder?: string;
     };
 
 export interface MenuProps {
@@ -57,6 +65,12 @@ export interface MenuProps {
 
 export default function Menu(props: MenuProps) {
   const { position, increment, decrement, set } = createLoop(() => props.items.length);
+  let scrollContainer: HTMLDivElement | undefined;
+  const itemRefs: (HTMLElement | undefined)[] = [];
+
+  const setItemRef = (index: number) => (el: HTMLElement) => {
+    itemRefs[index] = el;
+  };
 
   useNavigation(() => ({
     layer: props.layer,
@@ -74,102 +88,150 @@ export default function Menu(props: MenuProps) {
 
   createEffect(on(position, () => playSound("select"), { defer: true }));
 
+  createEffect(
+    on(
+      position,
+      () => {
+        const selectedItem = itemRefs[position()];
+        if (selectedItem && scrollContainer) {
+          selectedItem.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "nearest",
+          });
+        }
+      },
+      { defer: true }
+    )
+  );
+
   return (
     <div class={twMerge("flex h-full w-full flex-grow flex-col justify-center", props.class)}>
-      <For each={props.items}>
-        {(item, index) => (
-          <Switch>
-            <Match when={item.type === "button" && item}>
-              {(item) => (
-                <Button
-                  layer={props.layer}
-                  gradient={props.gradient || "gradient-settings"}
-                  selected={position() === index()}
-                  onClick={() => {
-                    item().action?.();
-                    playSound("confirm");
-                  }}
-                  onMouseEnter={() => set(index())}
-                >
-                  {item().label}
-                </Button>
-              )}
-            </Match>
-            <Match when={item.type === "select-string" && item}>
-              {(item) => (
-                <Select
-                  layer={props.layer}
-                  gradient={props.gradient || "gradient-settings"}
-                  label={item().label}
-                  value={item().value()}
-                  onChange={(value) => {
-                    item().onChange(value);
-                    playSound("select");
-                  }}
-                  options={item().options}
-                  selected={position() === index()}
-                  onMouseEnter={() => set(index())}
-                  renderValue={item().renderValue}
-                />
-              )}
-            </Match>
-            <Match when={item.type === "select-number" && item}>
-              {(item) => (
-                <Select
-                  layer={props.layer}
-                  gradient={props.gradient || "gradient-settings"}
-                  label={item().label}
-                  value={item().value()}
-                  onChange={(value) => {
-                    item().onChange(value);
-                    playSound("select");
-                  }}
-                  options={item().options}
-                  selected={position() === index()}
-                  onMouseEnter={() => set(index())}
-                  renderValue={item().renderValue}
-                />
-              )}
-            </Match>
-            <Match when={item.type === "select-string-number" && item}>
-              {(item) => (
-                <Select
-                  layer={props.layer}
-                  gradient={props.gradient || "gradient-settings"}
-                  label={item().label}
-                  value={item().value()}
-                  onChange={(value) => {
-                    item().onChange(value);
-                    playSound("select");
-                  }}
-                  options={item().options}
-                  selected={position() === index()}
-                  onMouseEnter={() => set(index())}
-                  renderValue={item().renderValue}
-                />
-              )}
-            </Match>
-            <Match when={item.type === "slider" && item}>
-              {(item) => (
-                <Slider
-                  layer={props.layer}
-                  gradient={props.gradient || "gradient-settings"}
-                  label={item().label}
-                  value={item().value()}
-                  min={item().min}
-                  max={item().max}
-                  step={item().step}
-                  onInput={(value) => {
-                    item().onInput(value);
-                  }}
-                  selected={position() === index()}
-                  onMouseEnter={() => set(index())}
-                />
-              )}
-            </Match>
-          </Switch>
-        )}
-      </For>
+      <div 
+        ref={scrollContainer}
+        class="styled-scrollbars flex flex-col overflow-y-auto"
+      >
+        <For each={props.items}>
+          {(item, index) => (
+            <Switch>
+              <Match when={item.type === "button" && item}>
+                {(item) => (
+                  <Button
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    selected={position() === index()}
+                    onClick={() => {
+                      item().action?.();
+                      playSound("confirm");
+                    }}
+                    onMouseEnter={() => set(index())}
+                  >
+                    {item().label}
+                  </Button>
+                )}
+              </Match>
+              <Match when={item.type === "input" && item}>
+                {(item) => (
+                  <Input
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    label={item().label}
+                    value={item().value()}
+                    placeholder={item().placeholder}
+                    onInput={(e) => item().onInput(e.currentTarget.value)}
+                    selected={position() === index()}
+                    onMouseEnter={() => set(index())}
+                  />
+                )}
+              </Match>
+              <Match when={item.type === "select-string" && item}>
+                {(item) => (
+                  <Select
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    label={item().label}
+                    value={item().value()}
+                    onChange={(value) => {
+                      item().onChange(value);
+                      playSound("select");
+                    }}
+                    options={item().options}
+                    selected={position() === index()}
+                    onMouseEnter={() => set(index())}
+                    renderValue={item().renderValue}
+                  />
+                )}
+              </Match>
+              <Match when={item.type === "select-number" && item}>
+                {(item) => (
+                  <Select
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    label={item().label}
+                    value={item().value()}
+                    onChange={(value) => {
+                      item().onChange(value);
+                      playSound("select");
+                    }}
+                    options={item().options}
+                    selected={position() === index()}
+                    onMouseEnter={() => set(index())}
+                    renderValue={item().renderValue}
+                  />
+                )}
+              </Match>
+              <Match when={item.type === "select-string-number" && item}>
+                {(item) => (
+                  <Select
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    label={item().label}
+                    value={item().value()}
+                    onChange={(value) => {
+                      item().onChange(value);
+                      playSound("select");
+                    }}
+                    options={item().options}
+                    selected={position() === index()}
+                    onMouseEnter={() => set(index())}
+                    renderValue={item().renderValue}
+                  />
+                )}
+              </Match>
+              <Match when={item.type === "slider" && item}>
+                {(item) => (
+                  <Slider
+                    ref={setItemRef(index())}
+                    class="flex-shrink-0"
+                    layer={props.layer}
+                    gradient={props.gradient || "gradient-settings"}
+                    label={item().label}
+                    value={item().value()}
+                    min={item().min}
+                    max={item().max}
+                    step={item().step}
+                    onInput={(value) => {
+                      item().onInput(value);
+                    }}
+                    selected={position() === index()}
+                    onMouseEnter={() => set(index())}
+                  />
+                )}
+              </Match>
+            </Switch>
+          )}
+        </For>
+      </div>
     </div>
   );
 }

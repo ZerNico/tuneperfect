@@ -228,7 +228,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   });
 
   return (
-    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-lg bg-slate-900 p-2">
+    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-lg bg-slate-900 p-2 text-white">
       <For each={activeKeys()}>
         {(row, rowIndex) => (
           <For each={row}>

@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX, Ref } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
@@ -14,6 +14,7 @@ interface SelectProps<T extends string | number> {
   onMouseEnter?: () => void;
   renderValue?: (value: T | null) => JSX.Element;
   layer?: number;
+  ref?: Ref<HTMLDivElement>;
 }
 
 export default function Select<T extends string | number>(props: SelectProps<T>) {
@@ -53,7 +54,7 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
   }));
 
   return (
-    <div class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
+    <div ref={props.ref} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
         classList={{

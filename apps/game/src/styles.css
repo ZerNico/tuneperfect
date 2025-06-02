@@ -300,11 +300,12 @@ body {
   scrollbar-color: #fff transparent;
 }
 .styled-scrollbars::-webkit-scrollbar {
-  width: 0.5rem;
+  width: 0.5cqw;
+  height: 0.5cqw;
 }
 .styled-scrollbars::-webkit-scrollbar-thumb {
   background: #fff;
-  border-radius: 0.125rem;
+  border-radius: 0.125cqw;
 }
 .styled-scrollbars::-webkit-scrollbar-track {
   background: transparent;
