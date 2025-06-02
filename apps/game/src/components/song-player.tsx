@@ -16,6 +16,7 @@ interface SongPlayerProps {
   class?: string;
   onCanPlayThrough?: () => void;
   onEnded?: () => void;
+  onError?: () => void;
   isPreview?: boolean;
 }
 
@@ -345,6 +346,13 @@ export default function SongPlayer(props: SongPlayerProps) {
   const handleVideoError = () => {
     setVideoError(true);
     setVideoElement(undefined);
+    if (!props.song.audioUrl) {
+      props.onError?.();
+    }
+  };
+
+  const handleAudioError = () => {
+    props.onError?.();
   };
 
   // Ref implementation
@@ -413,6 +421,7 @@ export default function SongPlayer(props: SongPlayerProps) {
             crossorigin="anonymous"
             onCanPlayThrough={handleAudioCanPlayThrough}
             onEnded={handleEnded}
+            onError={handleAudioError}
             src={audioUrl()}
           />
         )}

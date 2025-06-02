@@ -71,6 +71,10 @@ function GameComponent() {
     navigate({ to: "/game/restart", replace: true });
   };
 
+  const handleError = () => {
+    roundActions.returnRound();
+  };
+
   return (
     <GameLayout>
       <GameProvider>
@@ -92,6 +96,7 @@ function GameComponent() {
                     class="h-full w-full"
                     song={settings().song}
                     onEnded={handleEnded}
+                    onError={handleError}
                   />
                 )}
               </Show>
