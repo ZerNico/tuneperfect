@@ -4,18 +4,18 @@ const en = {
       success: "Success",
       error: "Error",
       info: "Info",
-      warning: "Warning"
+      warning: "Warning",
     },
     keyHints: {
       navigate: "Navigate",
       confirm: "Confirm",
-      back: "Back"
+      back: "Back",
     },
     players: {
-      guest: "Guest"
+      guest: "Guest",
     },
     yes: "Yes",
-    no: "No"
+    no: "No",
   },
   home: {
     title: "Welcome",
@@ -26,7 +26,7 @@ const en = {
     partyDescription: "Battle it out with your friends in one of the different party game modes!",
     lobbyDescription: "Manage the party you are in and invite your friends.",
     settingsDescription: "Change your settings or add your songs and microphones.",
-    microphoneRequired: "You have no microphones configured. Go to settings to add one."
+    microphoneRequired: "You have no microphones configured. Go to settings to add one.",
   },
   update: {
     checking: "Checking for updates...",
@@ -38,16 +38,20 @@ const en = {
     checkFailed: "Failed to check for updates",
     installFailed: "Failed to install update",
     retry: "Retry",
-    continue: "Continue"
+    continue: "Continue",
   },
   createLobby: {
     creating: "Creating lobby...",
     failed: "Failed to create lobby",
     retry: "Retry",
-    playOffline: "Play Offline"
+    playOffline: "Play Offline",
   },
   lobby: {
     title: "Lobby",
+    addLocalPlayer: "Add Local Player",
+    kick: "Kick",
+    removeFromLobby: "Remove from Lobby",
+    unknownPlayer: "Unknown Player",
   },
   sing: {
     title: "Sing",
@@ -61,22 +65,22 @@ const en = {
     sort: {
       artist: "Artist",
       title: "Title",
-      year: "Year"
-    }
+      year: "Year",
+    },
   },
   score: {
     title: "Score",
     continue: "Continue",
     normal: "Normal",
     golden: "Golden",
-    bonus: "Bonus"
+    bonus: "Bonus",
   },
   game: {
     pause: {
       resume: "Resume",
       restart: "Restart",
-      exit: "Exit"
-    }
+      exit: "Exit",
+    },
   },
   settings: {
     title: "Settings",
@@ -88,10 +92,10 @@ const en = {
       general: {
         title: "General",
         language: "Language",
-        forceOfflineMode: "Force Offline Mode"
+        forceOfflineMode: "Force Offline Mode",
       },
       songs: {
-        title: "Songs"
+        title: "Songs",
       },
       microphones: {
         title: "Microphones",
@@ -103,26 +107,26 @@ const en = {
         color: "Color",
         delay: "Delay",
         gain: "Gain",
-        threshold: "Threshold"
+        threshold: "Threshold",
       },
       localPlayers: {
         title: "Local Players",
         name: "Player Name",
         enterName: "Enter player name",
         addNew: "Add New Player",
-        edit: "Edit Player"
+        edit: "Edit Player",
       },
       volume: {
         title: "Volume",
         master: "Master Volume",
         game: "Game Volume",
         preview: "Preview Volume",
-        menu: "Menu Volume"
+        menu: "Menu Volume",
       },
       credits: {
         title: "Credits",
       },
-    }
+    },
   },
   party: {
     title: "Party",
@@ -136,9 +140,9 @@ const en = {
       continue: "Continue",
       restart: "Restart",
       draw: "It's a draw",
-      wins: "wins"
-    }
-  }
+      wins: "wins",
+    },
+  },
 };
 
 export type Dict = typeof en;

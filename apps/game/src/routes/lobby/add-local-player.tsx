@@ -6,6 +6,7 @@ import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { lobbyStore } from "~/stores/lobby";
 import { localStore } from "~/stores/local";
@@ -41,7 +42,7 @@ function AddLocalPlayerComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Add Local Player" description="Select a local player to add to the lobby" onBack={onBack} />}
+      header={<TitleBar title={t("lobby.addLocalPlayer")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems()} onBack={onBack} gradient="gradient-lobby" />

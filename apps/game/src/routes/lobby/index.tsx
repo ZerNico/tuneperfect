@@ -8,6 +8,7 @@ import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
+import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
 import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
@@ -59,7 +60,7 @@ function LobbyComponent() {
 
     items.push({
       type: "button",
-      label: "Add Local Player",
+      label: t("lobby.addLocalPlayer"),
       action: () => navigate({ to: "/lobby/add-local-player" }),
     });
 
@@ -69,7 +70,7 @@ function LobbyComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Lobby" onBack={onBack} />}
+      header={<TitleBar title={t("lobby.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems()} onBack={onBack} gradient="gradient-lobby" />

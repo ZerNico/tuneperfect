@@ -4,18 +4,18 @@ const de = {
       success: "Erfolg",
       error: "Fehler",
       info: "Info",
-      warning: "Warnung"
+      warning: "Warnung",
     },
     keyHints: {
       navigate: "Navigieren",
       confirm: "Bestätigen",
-      back: "Zurück"
+      back: "Zurück",
     },
     players: {
       guest: "Gast",
     },
     yes: "Ja",
-    no: "Nein"
+    no: "Nein",
   },
   home: {
     title: "Willkommen",
@@ -26,7 +26,7 @@ const de = {
     partyDescription: "Tritt gegen deine Freunde in verschiedenen Party-Spielmodi an!",
     lobbyDescription: "Verwalte deine Party und lade deine Freunde ein.",
     settingsDescription: "Ändere deine Einstellungen oder füge Lieder und Mikrofone hinzu.",
-    microphoneRequired: "Du hast keine Mikrofone konfiguriert. Gehe zu den Einstellungen, um eines hinzuzufügen."
+    microphoneRequired: "Du hast keine Mikrofone konfiguriert. Gehe zu den Einstellungen, um eines hinzuzufügen.",
   },
   update: {
     checking: "Suche nach Updates...",
@@ -38,16 +38,20 @@ const de = {
     checkFailed: "Fehler beim Suchen nach Updates",
     installFailed: "Fehler beim Installieren des Updates",
     retry: "Wiederholen",
-    continue: "Fortfahren"
+    continue: "Fortfahren",
   },
   createLobby: {
     creating: "Lobby wird erstellt...",
     failed: "Fehler beim Erstellen der Lobby",
     retry: "Wiederholen",
-    playOffline: "Offline spielen"
+    playOffline: "Offline spielen",
   },
   lobby: {
     title: "Lobby",
+    addLocalPlayer: "Lokalen Spieler hinzufügen",
+    kick: "Kicken",
+    removeFromLobby: "Aus Lobby entfernen",
+    unknownPlayer: "Unbekannter Spieler",
   },
   sing: {
     title: "Singen",
@@ -61,22 +65,22 @@ const de = {
     sort: {
       artist: "Künstler",
       title: "Titel",
-      year: "Jahr"
-    }
+      year: "Jahr",
+    },
   },
   score: {
     title: "Punktzahl",
     continue: "Weiter",
     normal: "Normal",
     golden: "Gold",
-    bonus: "Bonus"
+    bonus: "Bonus",
   },
   game: {
     pause: {
       resume: "Fortsetzen",
       restart: "Neustart",
-      exit: "Beenden"
-    }
+      exit: "Beenden",
+    },
   },
   settings: {
     title: "Einstellungen",
@@ -88,10 +92,10 @@ const de = {
       general: {
         title: "Allgemein",
         language: "Sprache",
-        forceOfflineMode: "Offline-Modus erzwingen"
+        forceOfflineMode: "Offline-Modus erzwingen",
       },
       songs: {
-        title: "Lieder"
+        title: "Lieder",
       },
       microphones: {
         title: "Mikrofone",
@@ -103,26 +107,26 @@ const de = {
         color: "Farbe",
         delay: "Verzögerung",
         gain: "Verstärkung",
-        threshold: "Schwellenwert"
+        threshold: "Schwellenwert",
       },
       localPlayers: {
         title: "Lokale Spieler",
         name: "Spielername",
         enterName: "Spielername eingeben",
         addNew: "Neuen Spieler hinzufügen",
-        edit: "Spieler bearbeiten"
+        edit: "Spieler bearbeiten",
       },
       volume: {
         title: "Lautstärke",
         master: "Gesamtlautstärke",
         game: "Spiellautstärke",
         preview: "Vorschaulautstärke",
-        menu: "Menülautstärke"
+        menu: "Menülautstärke",
       },
       credits: {
         title: "Credits",
       },
-    }
+    },
   },
   party: {
     title: "Party",
@@ -136,9 +140,9 @@ const de = {
       continue: "Weiter",
       restart: "Neustart",
       draw: "Unentschieden",
-      wins: "hat gewonnen"
-    }
-  }
+      wins: "hat gewonnen",
+    },
+  },
 };
 
 export type Dict = typeof de;

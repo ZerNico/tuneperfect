@@ -5,6 +5,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { lobbyQueryOptions } from "~/lib/queries";
 
@@ -49,7 +50,7 @@ function RouteComponent() {
   const menuItems: MenuItem[] = [
     {
       type: "button",
-      label: "Kick",
+      label: t("lobby.kick"),
       action: () => {
         const u = user();
 
@@ -65,7 +66,7 @@ function RouteComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title="Lobby" description={user()?.username || "?"} onBack={onBack} />}
+      header={<TitleBar title={t("lobby.title")} description={user()?.username || "?"} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Switch>

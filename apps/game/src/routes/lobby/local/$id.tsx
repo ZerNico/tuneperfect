@@ -6,6 +6,7 @@ import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { lobbyStore } from "~/stores/lobby";
 import { localStore } from "~/stores/local";
@@ -19,7 +20,7 @@ function LobbyLocalPlayerComponent() {
   const params = Route.useParams();
 
   const player = createMemo(() => {
-    return localStore.players().find(p => p.id === params().id);
+    return localStore.players().find((p) => p.id === params().id);
   });
 
   const onBack = () => {
@@ -40,7 +41,7 @@ function LobbyLocalPlayerComponent() {
     return [
       {
         type: "button" as const,
-        label: "Remove from Lobby",
+        label: t("lobby.removeFromLobby"),
         action: onRemove,
       },
     ];
@@ -51,16 +52,10 @@ function LobbyLocalPlayerComponent() {
   return (
     <Layout
       intent="secondary"
-      header={
-        <TitleBar 
-          title={currentPlayer?.username || "Unknown Player"} 
-          description="Local player in lobby" 
-          onBack={onBack} 
-        />
-      }
+      header={<TitleBar title={currentPlayer?.username || t("lobby.unknownPlayer")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems()} onBack={onBack} gradient="gradient-lobby" />
     </Layout>
   );
-} 
+}
