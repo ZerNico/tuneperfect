@@ -27,7 +27,6 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [videoReady, setVideoReady] = createSignal(false);
   const [videoError, setVideoError] = createSignal(false);
   const [hasInitialized, setHasInitialized] = createSignal(false);
-  const [wasPaused, setWasPaused] = createSignal(false);
   const [isCurrentlyPlaying, setIsCurrentlyPlaying] = createSignal(false);
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -174,72 +173,64 @@ export default function SongPlayer(props: SongPlayerProps) {
     clearTimeout(syncTimeout);
 
     try {
-      // Only set initial times if we're not resuming from a pause
-      if (!wasPaused()) {
-        if (props.isPreview) {
-          setPreviewTime();
-        } else if (props.song.start) {
-          if (audio && audio.currentTime === 0) {
-            audio.currentTime = props.song.start;
-          }
-          if (video && video.currentTime === 0) {
-            video.currentTime = props.song.start;
-          }
+      // Set initial times
+      if (props.isPreview) {
+        setPreviewTime();
+      } else if (props.song.start) {
+        if (audio && audio.currentTime === 0) {
+          audio.currentTime = props.song.start;
+        }
+        if (video && video.currentTime === 0) {
+          video.currentTime = props.song.start;
         }
       }
 
       if (audio && video) {
-        // Only perform sync logic if we're not resuming from a pause
-        if (!wasPaused()) {
-          // Sync both audio and video with proper videoGap handling
-          const videoGap = props.song.videoGap ?? 0;
-          const gap = video.currentTime - audio.currentTime - videoGap;
+        // Sync both audio and video with proper videoGap handling
+        const videoGap = props.song.videoGap ?? 0;
+        const gap = video.currentTime - audio.currentTime - videoGap;
 
-          if (Math.abs(gap) > 0.01) {
-            if (gap > 0) {
-              // Video is ahead, try to advance audio
-              const newAudioTime = audio.currentTime + gap;
-              if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
-                audio.currentTime = newAudioTime;
-                await Promise.all([audio.play(), video.play()]);
-              } else {
-                // Can't sync by adjusting audio time, use timeout
-                await audio.play();
-                syncTimeout = setTimeout(async () => {
-                  try {
-                    await video.play();
-                  } catch (error) {
-                    console.warn("Failed to start video playback:", error);
-                  }
-                }, gap * 1000);
-              }
+        if (Math.abs(gap) > 0.01) {
+          if (gap > 0) {
+            // Video is ahead, try to advance audio
+            const newAudioTime = audio.currentTime + gap;
+            if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
+              audio.currentTime = newAudioTime;
+              await Promise.all([audio.play(), video.play()]);
             } else {
-              // Audio is ahead, try to advance video
-              const newVideoTime = video.currentTime + Math.abs(gap);
-              if (newVideoTime >= 0 && newVideoTime <= video.duration) {
-                video.currentTime = newVideoTime;
-                await Promise.all([audio.play(), video.play()]);
-              } else {
-                // Can't sync by adjusting video time, use timeout
-                await video.play();
-                syncTimeout = setTimeout(
-                  async () => {
-                    try {
-                      await audio.play();
-                    } catch (error) {
-                      console.warn("Failed to start audio playback:", error);
-                    }
-                  },
-                  Math.abs(gap) * 1000
-                );
-              }
+              // Can't sync by adjusting audio time, use timeout
+              await audio.play();
+              syncTimeout = setTimeout(async () => {
+                try {
+                  await video.play();
+                } catch (error) {
+                  console.warn("Failed to start video playback:", error);
+                }
+              }, gap * 1000);
             }
           } else {
-            // Elements are already in sync
-            await Promise.all([audio.play(), video.play()]);
+            // Audio is ahead, try to advance video
+            const newVideoTime = video.currentTime + Math.abs(gap);
+            if (newVideoTime >= 0 && newVideoTime <= video.duration) {
+              video.currentTime = newVideoTime;
+              await Promise.all([audio.play(), video.play()]);
+            } else {
+              // Can't sync by adjusting video time, use timeout
+              await video.play();
+              syncTimeout = setTimeout(
+                async () => {
+                  try {
+                    await audio.play();
+                  } catch (error) {
+                    console.warn("Failed to start audio playback:", error);
+                  }
+                },
+                Math.abs(gap) * 1000
+              );
+            }
           }
         } else {
-          // When resuming from pause, just play both without sync adjustments
+          // Elements are already in sync
           await Promise.all([audio.play(), video.play()]);
         }
       } else if (audio) {
@@ -247,9 +238,6 @@ export default function SongPlayer(props: SongPlayerProps) {
       } else if (video) {
         await video.play();
       }
-
-      // Clear the paused state after successful play
-      setWasPaused(false);
     } catch (error) {
       console.warn("Failed to start playback:", error);
     }
@@ -261,7 +249,6 @@ export default function SongPlayer(props: SongPlayerProps) {
     videoElement()?.pause();
     clearTimeout(syncTimeout);
     clearInterval(endCheckInterval);
-    setWasPaused(true); // Mark that we were paused
   };
 
   const checkForSongEnd = () => {
@@ -293,7 +280,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   createEffect(() => {
     const shouldPlay = props.playing && isReady();
     const currentlyPlaying = isCurrentlyPlaying();
-    
+
     if (shouldPlay && !currentlyPlaying) {
       // Transition from not playing to playing
       play();
@@ -316,9 +303,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         setVideoReady(false);
         setVideoError(false);
         setHasInitialized(false);
-        setWasPaused(false); // Reset paused state for new song
-        setIsCurrentlyPlaying(false); // Reset playing state tracking
-        pause();
+        setIsCurrentlyPlaying(false);
       }
     )
   );
@@ -347,15 +332,16 @@ export default function SongPlayer(props: SongPlayerProps) {
     setVideoError(true);
     setVideoElement(undefined);
     if (!props.song.audioUrl) {
+      console.log("video error");
       props.onError?.();
     }
   };
 
   const handleAudioError = () => {
+    console.log("audio error");
     props.onError?.();
   };
 
-  // Ref implementation
   createRefContent(
     () => props.ref,
     () => ({
