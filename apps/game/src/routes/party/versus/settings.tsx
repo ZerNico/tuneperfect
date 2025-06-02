@@ -8,6 +8,7 @@ import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
 import { notify } from "~/lib/toast";
+import { lobbyStore } from "~/stores/lobby";
 import { type Settings, versusStore } from "~/stores/party/versus";
 import { settingsStore } from "~/stores/settings";
 
@@ -29,7 +30,8 @@ function VersusSettingsComponent() {
   });
 
   const startRound = () => {
-    const users = lobbyQuery.data?.users ?? [];
+    const users = [...lobbyQuery.data?.users ?? [], ...lobbyStore.localPlayersInLobby()];
+    
     if (users.length < 2) {
       notify({
         message: t("party.versus.notEnoughPlayers"),

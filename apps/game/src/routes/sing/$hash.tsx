@@ -8,7 +8,7 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
-import { lobbyStore } from "~/stores/lobby";
+import { guestUser, lobbyStore } from "~/stores/lobby";
 import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
@@ -38,7 +38,7 @@ function PlayerSelectionComponent() {
       .map((_, i) => i % voiceCount())
   );
 
-  const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || [])];
+  const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || []), guestUser];
 
   createEffect(() => {
     const availableUsers = users();

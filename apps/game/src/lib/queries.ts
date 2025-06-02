@@ -6,6 +6,9 @@ import { client } from "./orpc";
 export const lobbyQueryOptions = () =>
   queryOptions({
     queryKey: ["lobby"],
+    refetchInterval: 5000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!lobbyStore.lobby()) return null;
 

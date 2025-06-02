@@ -10,7 +10,6 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
-import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
 import IconHome from "~icons/lucide/home";
 
@@ -44,8 +43,6 @@ function LobbyComponent() {
     const localPlayers = lobbyStore.localPlayersInLobby();
 
     for (const player of localPlayers) {
-      if (isGuestUser(player)) continue;
-
       items.push({
         type: "button",
         label: (

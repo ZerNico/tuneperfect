@@ -2,7 +2,7 @@ import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
-import type { GuestUser, LocalUser } from "~/lib/types";
+import type { GuestUser } from "~/lib/types";
 import { localStore } from "./local";
 
 type LobbyStore = {
@@ -12,7 +12,7 @@ type LobbyStore = {
   };
 };
 
-const guestUser: GuestUser = {
+export const guestUser: GuestUser = {
   id: "guest",
   username: t("common.players.guest"),
   type: "guest",
@@ -51,13 +51,9 @@ function createLobbyStore() {
   };
 
   const localPlayersInLobby = () => {
-    const localPlayers: (LocalUser | GuestUser)[] = localPlayerIds()
+    return localPlayerIds()
       .map((id) => localStore.getPlayer(id))
       .filter((player): player is NonNullable<typeof player> => player !== null);
-
-    localPlayers.push(guestUser);
-
-    return localPlayers;
   };
 
   return {
