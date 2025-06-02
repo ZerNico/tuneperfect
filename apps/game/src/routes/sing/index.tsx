@@ -34,6 +34,8 @@ export const Route = createFileRoute("/sing/")({
 });
 
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>();
+const [searchQuery, setSearchQuery] = createSignal("");
+const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
 
 const SORT_OPTIONS = ["artist", "title", "year"] as const;
 
@@ -47,9 +49,7 @@ function SingComponent() {
     playSound("confirm");
     navigate({ to: "/home" });
   };
-  const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
   const [animationsDisabled, setAnimationsDisabled] = createSignal(false);
-  const [searchQuery, setSearchQuery] = createSignal("");
   const [searchFocused, setSearchFocused] = createSignal(false);
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
   let searchRef!: HTMLInputElement;
@@ -120,7 +120,11 @@ function SingComponent() {
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadY class="text-sm" />}>
                 <IconF4Key class="text-sm" />
               </Show>
-              <button type="button" class="cursor-pointer text-2xl transition-all hover:opacity-75 active:scale-95" onClick={selectRandomSong}>
+              <button
+                type="button"
+                class="cursor-pointer text-2xl transition-all hover:opacity-75 active:scale-95"
+                onClick={selectRandomSong}
+              >
                 <IconDices />
               </button>
             </div>
@@ -152,7 +156,11 @@ function SingComponent() {
                 </For>
               </div>
 
-              <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95" onClick={() => moveSorting("right")}>
+              <button
+                type="button"
+                class="cursor-pointer transition-all hover:opacity-75 active:scale-95"
+                onClick={() => moveSorting("right")}
+              >
                 <IconTriangleRight />
               </button>
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
@@ -167,6 +175,7 @@ function SingComponent() {
           <TitleBar title={t("sing.songs")} onBack={onBack} />
           <SearchBar
             ref={searchRef}
+            value={searchQuery()}
             onSearch={setSearchQuery}
             onFocus={() => {
               setSearchFocused(true);
@@ -618,6 +627,7 @@ function SongCard(props: SongCardProps) {
 }
 
 interface SearchBarProps {
+  value?: string;
   onSearch?: (query: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -693,6 +703,7 @@ function SearchBar(props: SearchBarProps) {
     <div class="flex items-center gap-1 rounded-full border-[0.12cqw] border-white px-1 py-0.5 text-sm">
       <IconSearch />
       <input
+        value={props.value}
         onFocus={onFocus}
         onBlur={onBlur}
         onInput={onInput}
