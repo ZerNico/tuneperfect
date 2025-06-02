@@ -25,12 +25,20 @@ export default function HighscoreList(props: HighscoreListProps) {
       const { scrollTop, scrollHeight, clientHeight } = containerRef;
 
       if (scrollTop >= scrollHeight - clientHeight) {
-        containerRef.scrollTop = 0;
+        setTimeout(() => {
+          if (!containerRef) return;
+          containerRef.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+          setTimeout(() => {
+            scrollTimeout = setTimeout(scroll, 50);
+          }, 1500);
+        }, 1000);
       } else {
         containerRef.scrollTop += 1;
+        scrollTimeout = setTimeout(scroll, 50);
       }
-
-      scrollTimeout = setTimeout(scroll, 50);
     };
 
     setTimeout(scroll, 3000);
@@ -47,8 +55,11 @@ export default function HighscoreList(props: HighscoreListProps) {
   });
 
   return (
-    <div class={twMerge("relative overflow-hidden", props.class)}>
-      <div ref={containerRef} class="styled-scrollbars h-full overflow-y-auto">
+    <div class={twMerge("flex h-full w-full flex-col justify-center", props.class)}>
+      <div 
+        ref={containerRef} 
+        class="styled-scrollbars flex flex-col overflow-y-auto"
+      >
         <div class="flex flex-col gap-2">
           <For each={props.scores}>
             {(score, index) => (

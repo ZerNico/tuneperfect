@@ -182,16 +182,14 @@ function ScoreComponent() {
 
   return (
     <Layout intent="secondary" header={<TitleBar title={t("score.title")} />} footer={<KeyHints hints={["confirm"]} />}>
-      <div class="flex flex-grow flex-col gap-6">
-        <div class="flex w-full flex-grow items-center">
-          <div class="grid w-full grid-cols-[2fr_3fr]">
-            <div class="relative">
-              <div
-                class="absolute inset-0 flex max-w-full justify-center transition-opacity duration-500"
-                classList={{ "opacity-0": !showHighscores() }}
-              >
-                <HighscoreList scores={highscores()} class="w-100" />
-              </div>
+      <div class="flex h-full flex-col gap-6">
+        <div class="flex min-h-0 flex-grow">
+          <div class="grid h-full w-full grid-cols-[2fr_3fr]">
+            <div
+              class="flex h-full min-h-0 items-center justify-center transition-opacity duration-500"
+              classList={{ "opacity-0": !showHighscores() }}
+            >
+              <HighscoreList scores={highscores()} class="h-full w-100 max-w-full" />
             </div>
             <div class="flex flex-grow flex-col items-center justify-center gap-4">
               <For each={scoreData()}>
@@ -209,7 +207,7 @@ function ScoreComponent() {
           </div>
         </div>
 
-        <div class="flex flex-1 items-center">
+        <div class="flex flex-shrink-0">
           <Button
             loading={updateHighscoresMutation.isPending}
             selected
