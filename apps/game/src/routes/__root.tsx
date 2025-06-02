@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/solid-query";
 import { Outlet, createRootRouteWithContext, redirect } from "@tanstack/solid-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal } from "solid-js";
+import { useWakeLock } from "~/hooks/useWakeLock";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -22,6 +23,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootComponent() {
+  useWakeLock();
+
   const toggleFullscreen = async () => {
     const window = getCurrentWindow();
     const isFullscreen = await window.isFullscreen();
