@@ -14,7 +14,9 @@ import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { getColorVar } from "~/lib/utils/color";
 import { MAX_POSSIBLE_SCORE, getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { isGuestUser, isLocalUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
+import { localStore } from "~/stores/local";
 import { type Score, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -81,11 +83,18 @@ function ScoreComponent() {
 
       if (!songHash) return;
 
-      if (!lobbyStore.lobby()) return;  
-
       for (const score of scores) {
-        if ("type" in score.player) continue;
+        if (isGuestUser(score.player)) continue;
+
         if (score.totalScore <= 0) continue;
+
+        if (isLocalUser(score.player)) {
+          localStore.addScore(score.player.id, songHash, score.totalScore);
+          continue;
+        }
+
+        // Handle API users (only if we have a lobby connection)
+        if (!lobbyStore.lobby()) continue;
 
         await client.highscore.setHighscore.call({
           hash: songHash,
@@ -129,13 +138,24 @@ function ScoreComponent() {
   });
 
   const highscores = () => {
+    const songHash = roundStore.settings()?.song?.hash;
+    if (!songHash) return [];
+
     if (updateHighscoresMutation.isPending) return [];
 
     const highscores: { user: User; score: number }[] = [...(highscoresQuery.data || [])];
+
+    // Add local scores
+    const localScores = localStore.getScoresForSong(songHash);
+    for (const localScore of localScores) {
+      highscores.push(localScore);
+    }
+
+    // Add current session scores
     const scores = scoreData();
 
     for (const score of scores) {
-      if ("type" in score.player) continue;
+      if (isGuestUser(score.player)) continue;
       if (score.totalScore <= 0) continue;
 
       const existingHighscoreIndex = highscores.findIndex((highscore) => highscore.user.id === score.player.id);

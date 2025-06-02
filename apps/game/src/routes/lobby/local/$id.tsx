@@ -53,7 +53,7 @@ function LobbyLocalPlayerComponent() {
       intent="secondary"
       header={
         <TitleBar 
-          title={currentPlayer?.name || "Unknown Player"} 
+          title={currentPlayer?.username || "Unknown Player"} 
           description="Local player in lobby" 
           onBack={onBack} 
         />

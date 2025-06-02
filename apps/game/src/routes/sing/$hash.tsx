@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Accessor, Show, createSignal } from "solid-js";
+import { type Accessor, createSignal } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -12,7 +12,6 @@ import { lobbyStore } from "~/stores/lobby";
 import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
-import IconHome from "~icons/lucide/home";
 
 export const Route = createFileRoute("/sing/$hash")({
   component: PlayerSelectionComponent,
@@ -29,14 +28,16 @@ function PlayerSelectionComponent() {
   const onBack = () => navigate({ to: "/sing" });
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
   const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
-  const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(Array(settingsStore.microphones().length).fill("guest"));
+  const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
+    Array(settingsStore.microphones().length).fill("guest")
+  );
   const [selectedVoices, setSelectedVoices] = createSignal<number[]>(
     Array(settingsStore.microphones().length)
       .fill(0)
       .map((_, i) => i % voiceCount())
   );
 
-  const users = () => [...(lobbyQuery.data?.users || []), ...lobbyStore.localPlayersInLobby()];
+  const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || [])];
 
   const startGame = () => {
     const players = selectedPlayers()
@@ -86,12 +87,7 @@ function PlayerSelectionComponent() {
           return (
             <div class="flex items-center gap-4">
               <Avatar user={player} />
-              <div class="flex items-center gap-2">
-                <span>{player.username}</span>
-                <Show when={"type" in player && ["local", "guest"].includes(player.type)}>
-                  <IconHome class="h-4 w-4" />
-                </Show>
-              </div>
+              <span>{player.username}</span>
             </div>
           );
         },

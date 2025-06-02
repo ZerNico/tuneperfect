@@ -2,14 +2,21 @@ import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
+import type { GuestUser, LocalUser } from "~/lib/types";
 import { localStore } from "./local";
 
-interface LobbyStore {
+type LobbyStore = {
   token: string;
   lobby: {
     id: string;
   };
-}
+};
+
+const guestUser: GuestUser = {
+  id: "guest",
+  username: t("common.players.guest"),
+  type: "guest",
+};
 
 function createLobbyStore() {
   const [lobby, setLobby] = makePersisted(createSignal<LobbyStore | undefined>(undefined), {
@@ -32,36 +39,24 @@ function createLobbyStore() {
   };
 
   const addLocalPlayer = (playerId: string) => {
-    const currentLobby = lobby();
-    if (!currentLobby) return;
-
-    if (!localPlayerIds().includes(playerId)) {
-      setLocalPlayerIds([...localPlayerIds(), playerId]);
+    const currentIds = localPlayerIds();
+    if (!currentIds.includes(playerId)) {
+      setLocalPlayerIds([...currentIds, playerId]);
     }
   };
 
   const removeLocalPlayer = (playerId: string) => {
-    setLocalPlayerIds(localPlayerIds().filter((id) => id !== playerId));
+    const currentIds = localPlayerIds();
+    setLocalPlayerIds(currentIds.filter((id) => id !== playerId));
   };
 
   const localPlayersInLobby = () => {
-    const localPlayers = localPlayerIds()
-      .map((id) => {
-        const player = localStore.getPlayer(id);
-        if (!player) return null;
-
-        return {
-          ...player,
-          type: "local",
-        };
-      })
+    const localPlayers: (LocalUser | GuestUser)[] = localPlayerIds()
+      .map((id) => localStore.getPlayer(id))
       .filter((player): player is NonNullable<typeof player> => player !== null);
 
-    localPlayers.push({
-      id: "guest",
-      username: t("common.players.guest"),
-      type: "guest",
-    });
+    localPlayers.push(guestUser);
+
     return localPlayers;
   };
 
@@ -69,6 +64,8 @@ function createLobbyStore() {
     lobby,
     setLobby,
     clearLobby,
+    localPlayerIds,
+    setLocalPlayerIds,
     addLocalPlayer,
     removeLocalPlayer,
     localPlayersInLobby,

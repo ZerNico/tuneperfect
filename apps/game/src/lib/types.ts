@@ -1,5 +1,3 @@
-import type { LocalUser } from "~/stores/local";
-
 export type User = LocalUser | ApiUser | GuestUser;
 
 export interface ApiUser {
@@ -12,4 +10,10 @@ export interface GuestUser {
   id: "guest";
   username: string;
   type: "guest";
+}
+
+export interface LocalUser {
+  id: string;
+  username: string;
+  type: "local";
 }

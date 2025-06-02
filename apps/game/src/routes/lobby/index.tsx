@@ -9,6 +9,7 @@ import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { lobbyQueryOptions } from "~/lib/queries";
+import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
 import IconHome from "~icons/lucide/home";
 
@@ -42,7 +43,7 @@ function LobbyComponent() {
     const localPlayers = lobbyStore.localPlayersInLobby();
 
     for (const player of localPlayers) {
-      if (player.type === "guest") continue;
+      if (isGuestUser(player)) continue;
 
       items.push({
         type: "button",

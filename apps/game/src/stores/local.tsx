@@ -1,14 +1,17 @@
 import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
+import type { LocalUser } from "~/lib/types";
 
-export interface LocalUser {
-  id: string;
-  username: string;
-}
+// Separate scores storage: userId -> songHash -> score
+type LocalScores = Record<string, Record<string, number>>;
 
 function createLocalStore() {
   const [players, setPlayers] = makePersisted(createSignal<LocalUser[]>([]), {
     name: "localStore.players",
+  });
+
+  const [scores, setScores] = makePersisted(createSignal<LocalScores>({}), {
+    name: "localStore.scores",
   });
 
   const generateId = () => {
@@ -19,6 +22,7 @@ function createLocalStore() {
     const newPlayer: LocalUser = {
       id: generateId(),
       username: username.trim(),
+      type: "local",
     };
 
     setPlayers((prev) => [...prev, newPlayer]);
@@ -31,10 +35,54 @@ function createLocalStore() {
 
   const deletePlayer = (id: string) => {
     setPlayers((prev) => prev.filter((player) => player.id !== id));
+    setScores((prev) => {
+      const newScores = { ...prev };
+      delete newScores[id];
+      return newScores;
+    });
   };
 
   const getPlayer = (id: string) => {
     return players().find((player) => player.id === id) || null;
+  };
+
+  const addScore = (userId: string, songHash: string, score: number) => {
+    setScores((prev) => {
+      const existingScore = prev[userId]?.[songHash] || 0;
+
+      if (score > existingScore) {
+        return {
+          ...prev,
+          [userId]: {
+            ...prev[userId],
+            [songHash]: score,
+          },
+        };
+      }
+
+      return prev;
+    });
+  };
+
+  const getScore = (userId: string, songHash: string) => {
+    return scores()[userId]?.[songHash] || 0;
+  };
+
+  const getScoresForSong = (songHash: string) => {
+    const currentScores = scores();
+    const result: { user: LocalUser; score: number }[] = [];
+
+    for (const [userId, userScores] of Object.entries(currentScores)) {
+      const score = userScores[songHash];
+      if (score !== undefined) {
+        const user = getPlayer(userId);
+        if (user) {
+          result.push({ user, score });
+        }
+      }
+    }
+
+    return result;
   };
 
   return {
@@ -43,6 +91,9 @@ function createLocalStore() {
     updatePlayer,
     deletePlayer,
     getPlayer,
+    addScore,
+    getScore,
+    getScoresForSong,
   };
 }
 
