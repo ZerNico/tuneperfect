@@ -80,6 +80,7 @@
       "name": "@tuneperfect/game",
       "dependencies": {
         "@fontsource/lato": "^5.2.5",
+        "@iconify-json/circle-flags": "^1.2.6",
         "@iconify-json/lucide": "^1.2.45",
         "@kobalte/core": "^0.13.10",
         "@solid-primitives/i18n": "^2.2.1",

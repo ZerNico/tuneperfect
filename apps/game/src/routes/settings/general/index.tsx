@@ -7,6 +7,8 @@ import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { settingsStore } from "~/stores/settings";
+import IconDe from "~icons/circle-flags/de";
+import IconEnUs from "~icons/circle-flags/en-us";
 
 export const Route = createFileRoute("/settings/general/")({
   component: GeneralSettingsComponent,
@@ -32,6 +34,14 @@ function GeneralSettingsComponent() {
       value: () => general().language,
       options: ["en", "de"],
       onChange: (value) => setGeneral({ ...general(), language: value }),
+      renderValue: () => {
+        if (general().language === "en") {
+          return <IconEnUs />;
+        }
+        if (general().language === "de") {
+          return <IconDe />;
+        }
+      },
     },
     {
       type: "select-string",
