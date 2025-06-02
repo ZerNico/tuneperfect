@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Accessor, createSignal } from "solid-js";
+import { type Accessor, createEffect, createSignal } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -17,6 +17,10 @@ export const Route = createFileRoute("/sing/$hash")({
   component: PlayerSelectionComponent,
 });
 
+const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
+  Array(settingsStore.microphones().length).fill("guest")
+);
+
 function PlayerSelectionComponent() {
   const params = Route.useParams();
   const roundActions = useRoundActions();
@@ -28,9 +32,6 @@ function PlayerSelectionComponent() {
   const onBack = () => navigate({ to: "/sing" });
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
   const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
-  const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
-    Array(settingsStore.microphones().length).fill("guest")
-  );
   const [selectedVoices, setSelectedVoices] = createSignal<number[]>(
     Array(settingsStore.microphones().length)
       .fill(0)
@@ -38,6 +39,34 @@ function PlayerSelectionComponent() {
   );
 
   const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || [])];
+
+  createEffect(() => {
+    const availableUsers = users();
+    const currentSelected = selectedPlayers();
+    
+    const updatedSelected = currentSelected.map(selected => {
+      if (selected === "guest") return selected;
+      if (availableUsers.find(user => user.id === selected)) return selected;
+      return "guest";
+    });
+    
+    if (updatedSelected.some((val, i) => val !== currentSelected[i])) {
+      setSelectedPlayers(updatedSelected);
+    }
+  });
+
+  createEffect(() => {
+    const micCount = settingsStore.microphones().length;
+    const currentSelected = selectedPlayers();
+    
+    if (currentSelected.length !== micCount) {
+      if (currentSelected.length < micCount) {
+        setSelectedPlayers([...currentSelected, ...Array(micCount - currentSelected.length).fill("guest")]);
+      } else {
+        setSelectedPlayers(currentSelected.slice(0, micCount));
+      }
+    }
+  });
 
   const startGame = () => {
     const players = selectedPlayers()
