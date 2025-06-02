@@ -26,60 +26,104 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [videoReady, setVideoReady] = createSignal(false);
   const [videoError, setVideoError] = createSignal(false);
   const [hasInitialized, setHasInitialized] = createSignal(false);
+  const [wasPaused, setWasPaused] = createSignal(false);
+  const [isCurrentlyPlaying, setIsCurrentlyPlaying] = createSignal(false);
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   let endCheckInterval: ReturnType<typeof setInterval> | undefined = undefined;
   const audioContext = new AudioContext();
+  let audioSource: MediaElementAudioSourceNode | undefined = undefined;
+  let videoSource: MediaElementAudioSourceNode | undefined = undefined;
 
   // Setup audio context for audio element
   createEffect(
-    on(audioElement, (audio) => {
+    on(audioElement, (audio, prevAudio) => {
+      // Clean up previous source if it exists
+      if (audioSource && prevAudio) {
+        try {
+          audioSource.disconnect();
+        } catch (e) {
+          // Ignore disconnection errors
+        }
+        audioSource = undefined;
+      }
+
       if (!audio) return;
 
-      const source = audioContext.createMediaElementSource(audio);
-      const gainNode = audioContext.createGain();
-      source.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      try {
+        audioSource = audioContext.createMediaElementSource(audio);
+        const gainNode = audioContext.createGain();
+        audioSource.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-      const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-      gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
-      // Update volume when it changes
-      createEffect(() => {
-        const volume = props.volume ?? 1;
-        gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
-      });
+        // Update volume when it changes
+        createEffect(() => {
+          const volume = props.volume ?? 1;
+          gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+        });
 
-      onCleanup(() => {
-        gainNode.disconnect();
-        source.disconnect();
-      });
+        onCleanup(() => {
+          try {
+            gainNode.disconnect();
+            if (audioSource) {
+              audioSource.disconnect();
+            }
+          } catch (e) {
+            // Ignore disconnection errors during cleanup
+          }
+        });
+      } catch (error) {
+        console.warn("Failed to create audio source:", error);
+      }
     })
   );
 
   // Setup audio context for video element
   createEffect(
-    on(videoElement, (video) => {
+    on(videoElement, (video, prevVideo) => {
+      // Clean up previous source if it exists
+      if (videoSource && prevVideo) {
+        try {
+          videoSource.disconnect();
+        } catch (e) {
+          // Ignore disconnection errors
+        }
+        videoSource = undefined;
+      }
+
       if (!video) return;
 
-      const source = audioContext.createMediaElementSource(video);
-      const gainNode = audioContext.createGain();
-      source.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      try {
+        videoSource = audioContext.createMediaElementSource(video);
+        const gainNode = audioContext.createGain();
+        videoSource.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-      const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-      gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
-      // Update volume when it changes
-      createEffect(() => {
-        const volume = props.volume ?? 1;
-        gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
-      });
+        // Update volume when it changes
+        createEffect(() => {
+          const volume = props.volume ?? 1;
+          gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+        });
 
-      onCleanup(() => {
-        gainNode.disconnect();
-        source.disconnect();
-      });
+        onCleanup(() => {
+          try {
+            gainNode.disconnect();
+            if (videoSource) {
+              videoSource.disconnect();
+            }
+          } catch (e) {
+            // Ignore disconnection errors during cleanup
+          }
+        });
+      } catch (error) {
+        console.warn("Failed to create video source:", error);
+      }
     })
   );
 
@@ -116,67 +160,85 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     if (!audio && !video) return;
 
+    // Ensure AudioContext is resumed if needed
+    if (audioContext.state === "suspended") {
+      try {
+        await audioContext.resume();
+      } catch (error) {
+        console.warn("Failed to resume audio context:", error);
+      }
+    }
+
     // Clear any existing sync timeout
     clearTimeout(syncTimeout);
 
     try {
-      if (props.isPreview) {
-        setPreviewTime();
-      } else if (props.song.start) {
-        if (audio && audio.currentTime === 0) {
-          audio.currentTime = props.song.start;
-        }
-        if (video && video.currentTime === 0) {
-          video.currentTime = props.song.start;
+      // Only set initial times if we're not resuming from a pause
+      if (!wasPaused()) {
+        if (props.isPreview) {
+          setPreviewTime();
+        } else if (props.song.start) {
+          if (audio && audio.currentTime === 0) {
+            audio.currentTime = props.song.start;
+          }
+          if (video && video.currentTime === 0) {
+            video.currentTime = props.song.start;
+          }
         }
       }
 
       if (audio && video) {
-        // Sync both audio and video with proper videoGap handling
-        const videoGap = props.song.videoGap ?? 0;
-        const gap = video.currentTime - audio.currentTime - videoGap;
+        // Only perform sync logic if we're not resuming from a pause
+        if (!wasPaused()) {
+          // Sync both audio and video with proper videoGap handling
+          const videoGap = props.song.videoGap ?? 0;
+          const gap = video.currentTime - audio.currentTime - videoGap;
 
-        if (Math.abs(gap) > 0.1) {
-          if (gap > 0) {
-            // Video is ahead, try to advance audio
-            const newAudioTime = audio.currentTime + gap;
-            if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
-              audio.currentTime = newAudioTime;
-              await Promise.all([audio.play(), video.play()]);
+          if (Math.abs(gap) > 0.01) {
+            if (gap > 0) {
+              // Video is ahead, try to advance audio
+              const newAudioTime = audio.currentTime + gap;
+              if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
+                audio.currentTime = newAudioTime;
+                await Promise.all([audio.play(), video.play()]);
+              } else {
+                // Can't sync by adjusting audio time, use timeout
+                await audio.play();
+                syncTimeout = setTimeout(async () => {
+                  try {
+                    await video.play();
+                  } catch (error) {
+                    console.warn("Failed to start video playback:", error);
+                  }
+                }, gap * 1000);
+              }
             } else {
-              // Can't sync by adjusting audio time, use timeout
-              await audio.play();
-              syncTimeout = setTimeout(async () => {
-                try {
-                  await video.play();
-                } catch (error) {
-                  console.warn("Failed to start video playback:", error);
-                }
-              }, gap * 1000);
+              // Audio is ahead, try to advance video
+              const newVideoTime = video.currentTime + Math.abs(gap);
+              if (newVideoTime >= 0 && newVideoTime <= video.duration) {
+                video.currentTime = newVideoTime;
+                await Promise.all([audio.play(), video.play()]);
+              } else {
+                // Can't sync by adjusting video time, use timeout
+                await video.play();
+                syncTimeout = setTimeout(
+                  async () => {
+                    try {
+                      await audio.play();
+                    } catch (error) {
+                      console.warn("Failed to start audio playback:", error);
+                    }
+                  },
+                  Math.abs(gap) * 1000
+                );
+              }
             }
           } else {
-            // Audio is ahead, try to advance video
-            const newVideoTime = video.currentTime + Math.abs(gap);
-            if (newVideoTime >= 0 && newVideoTime <= video.duration) {
-              video.currentTime = newVideoTime;
-              await Promise.all([audio.play(), video.play()]);
-            } else {
-              // Can't sync by adjusting video time, use timeout
-              await video.play();
-              syncTimeout = setTimeout(
-                async () => {
-                  try {
-                    await audio.play();
-                  } catch (error) {
-                    console.warn("Failed to start audio playback:", error);
-                  }
-                },
-                Math.abs(gap) * 1000
-              );
-            }
+            // Elements are already in sync
+            await Promise.all([audio.play(), video.play()]);
           }
         } else {
-          // Elements are already in sync
+          // When resuming from pause, just play both without sync adjustments
           await Promise.all([audio.play(), video.play()]);
         }
       } else if (audio) {
@@ -184,6 +246,9 @@ export default function SongPlayer(props: SongPlayerProps) {
       } else if (video) {
         await video.play();
       }
+
+      // Clear the paused state after successful play
+      setWasPaused(false);
     } catch (error) {
       console.warn("Failed to start playback:", error);
     }
@@ -195,6 +260,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     videoElement()?.pause();
     clearTimeout(syncTimeout);
     clearInterval(endCheckInterval);
+    setWasPaused(true); // Mark that we were paused
   };
 
   const checkForSongEnd = () => {
@@ -224,12 +290,19 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   // Main playback control effect
   createEffect(() => {
-    if (props.playing && isReady()) {
+    const shouldPlay = props.playing && isReady();
+    const currentlyPlaying = isCurrentlyPlaying();
+    
+    if (shouldPlay && !currentlyPlaying) {
+      // Transition from not playing to playing
       play();
       startEndTimeMonitoring();
-    } else if (!props.playing) {
+      setIsCurrentlyPlaying(true);
+    } else if (!props.playing && currentlyPlaying) {
+      // Transition from playing to not playing
       pause();
       stopEndTimeMonitoring();
+      setIsCurrentlyPlaying(false);
     }
   });
 
@@ -242,6 +315,8 @@ export default function SongPlayer(props: SongPlayerProps) {
         setVideoReady(false);
         setVideoError(false);
         setHasInitialized(false);
+        setWasPaused(false); // Reset paused state for new song
+        setIsCurrentlyPlaying(false); // Reset playing state tracking
         pause();
       }
     )
