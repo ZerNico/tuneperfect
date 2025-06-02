@@ -1,6 +1,7 @@
 import { For, onCleanup, onMount } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import type { User } from "~/lib/types";
+import IconHash from "~icons/lucide/hash";
 import Avatar from "./ui/avatar";
 
 interface HighscoreListProps {
@@ -78,8 +79,13 @@ export default function HighscoreList(props: HighscoreListProps) {
                   <Avatar user={score.user} class="h-6 w-6 flex-shrink-0" />
                   <span class="truncate">{score.user.username || "?"}</span>
                 </div>
-
-                <span class="flex-shrink-0 tabular-nums">{score.score.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                
+                <div class="flex flex-shrink-0 flex-row items-center gap-4">
+                  <span class="flex flex-shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
+                    <IconHash />
+                    {score.score.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
               </div>
             )}
           </For>
