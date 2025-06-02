@@ -130,7 +130,7 @@ function ScoreComponent() {
   onMount(() => {
     updateHighscoresMutation.mutate();
 
-    const totalAnimationTime = animatedStages().length * (ANIMATION_DELAY + ANIMATION_DURATION);
+    const totalAnimationTime = animatedStages().length * ANIMATION_DELAY;
 
     setTimeout(() => {
       setShowHighscores(true);
@@ -140,8 +140,6 @@ function ScoreComponent() {
   const highscores = () => {
     const songHash = roundStore.settings()?.song?.hash;
     if (!songHash) return [];
-
-    if (updateHighscoresMutation.isPending) return [];
 
     const highscores: { user: User; score: number }[] = [...(highscoresQuery.data || [])];
 
