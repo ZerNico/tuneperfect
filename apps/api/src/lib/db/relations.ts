@@ -23,6 +23,18 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.id,
       to: r.highscores.userId,
     }),
+    clubMemberships: r.many.clubMembers({
+      from: r.users.id,
+      to: r.clubMembers.userId,
+    }),
+    receivedClubInvites: r.many.clubInvites({
+      from: r.users.id,
+      to: r.clubInvites.inviteeId,
+    }),
+    sentClubInvites: r.many.clubInvites({
+      from: r.users.id,
+      to: r.clubInvites.inviterId,
+    }),
   },
   refreshTokens: {
     user: r.one.users({
@@ -51,6 +63,40 @@ export const relations = defineRelations(schema, (r) => ({
   highscores: {
     user: r.one.users({
       from: r.highscores.userId,
+      to: r.users.id,
+    }),
+  },
+  clubs: {
+    members: r.many.clubMembers({
+      from: r.clubs.id,
+      to: r.clubMembers.clubId,
+    }),
+    invites: r.many.clubInvites({
+      from: r.clubs.id,
+      to: r.clubInvites.clubId,
+    }),
+  },
+  clubMembers: {
+    club: r.one.clubs({
+      from: r.clubMembers.clubId,
+      to: r.clubs.id,
+    }),
+    user: r.one.users({
+      from: r.clubMembers.userId,
+      to: r.users.id,
+    }),
+  },
+  clubInvites: {
+    club: r.one.clubs({
+      from: r.clubInvites.clubId,
+      to: r.clubs.id,
+    }),
+    inviter: r.one.users({
+      from: r.clubInvites.inviterId,
+      to: r.users.id,
+    }),
+    invitee: r.one.users({
+      from: r.clubInvites.inviteeId,
       to: r.users.id,
     }),
   },

@@ -5,6 +5,7 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { CORSPlugin, ResponseHeadersPlugin, StrictGetMethodPlugin } from "@orpc/server/plugins";
 import { experimental_ValibotToJsonSchemaConverter } from "@orpc/valibot";
 import { authRouter } from "./auth/router";
+import { clubRouter } from "./club/router";
 import { env } from "./config/env";
 import { highscoreRouter } from "./highscore/router";
 import { setupJobs } from "./lib/jobs";
@@ -21,6 +22,7 @@ const router = {
   lobby: lobbyRouter,
   highscore: highscoreRouter,
   update: updateRouter,
+  club: clubRouter,
 };
 
 setupJobs();

@@ -6,6 +6,7 @@ import LoaderCircle from "~icons/lucide/loader-circle";
 interface ButtonProps extends BaseProps {
   type?: "button" | "submit" | "reset";
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 interface LinkProps extends BaseProps {
@@ -24,6 +25,7 @@ const button = cva({
     intent: {
       primary: "bg-slate-800 text-white hover:bg-slate-700",
       gradient: "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:opacity-90",
+      danger: "bg-red-500 text-white hover:bg-red-600",
     },
   },
   defaultVariants: {
@@ -46,7 +48,7 @@ export default function Button(props: ButtonProps | LinkProps) {
   }
 
   return (
-    <button type={props.type || "button"} onClick={props.onClick} classList={classes()}>
+    <button type={props.type || "button"} onClick={props.onClick} classList={classes()} disabled={props.disabled}>
       <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
     </button>
   );

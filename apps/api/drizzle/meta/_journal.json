@@ -22,6 +22,20 @@
       "when": 1746797379444,
       "tag": "0002_lame_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749118739854,
+      "tag": "0003_normal_maelstrom",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1749136457864,
+      "tag": "0004_tired_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

@@ -95,3 +95,63 @@ export const highscores = p.pgTable(
   (table) => [p.primaryKey({ columns: [table.hash, table.userId] })],
 );
 
+export const clubs = p.pgTable("clubs", {
+  id: p.uuid("id").primaryKey().defaultRandom(),
+  name: p.varchar("name", { length: 255 }).notNull(),
+  ...timestampColumns,
+});
+
+export const clubMembers = p.pgTable(
+  "club_members",
+  {
+    clubId: p
+      .uuid("club_id")
+      .notNull()
+      .references(() => clubs.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    userId: p
+      .uuid("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    role: p
+      .text("role", { enum: ["owner", "admin", "member"] })
+      .notNull()
+      .default("member"),
+    ...timestampColumns,
+  },
+  (table) => [p.primaryKey({ columns: [table.clubId, table.userId] })],
+);
+
+export const clubInvites = p.pgTable(
+  "club_invites",
+  {
+    clubId: p
+      .uuid("club_id")
+      .notNull()
+      .references(() => clubs.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    inviterId: p
+      .uuid("inviter_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    inviteeId: p
+      .uuid("invitee_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    ...timestampColumns,
+  },
+  (table) => [p.primaryKey({ columns: [table.clubId, table.inviteeId] })],
+);

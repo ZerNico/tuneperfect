@@ -7,6 +7,7 @@ import { t } from "~/lib/i18n";
 import IconUser from "~icons/lucide/user";
 import IconUserPlus from "~icons/lucide/user-plus";
 import IconUsers from "~icons/lucide/users";
+import IconUsersRound from "~icons/lucide/users-round";
 
 interface NavItemsProps {
   class?: string;
@@ -26,9 +27,14 @@ export default function NavItems(props: NavItemsProps) {
       <Show
         when={sessionQuery.data?.lobbyId !== null}
         fallback={
-          <NavItem to="/join" icon={IconUserPlus}>
-            {t("nav.join")}
-          </NavItem>
+          <>
+            <NavItem to="/join" icon={IconUserPlus}>
+              {t("nav.join")}
+            </NavItem>
+            <NavItem to="/clubs" icon={IconUsersRound}>
+              {t("nav.clubs")}
+            </NavItem>
+          </>
         }
       >
         <NavItem to="/" icon={IconUsers}>
