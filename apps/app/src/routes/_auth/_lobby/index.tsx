@@ -114,7 +114,6 @@ function LobbyComponent() {
                         <Avatar class="flex-shrink-0" user={user()} />
                         <div>
                           <div class="font-semibold text-slate-800">{user().username}</div>
-                          <div class="text-slate-500 text-sm">Online in lobby</div>
                         </div>
                       </div>
                       <Show when={user().username}>
