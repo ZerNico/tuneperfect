@@ -391,22 +391,31 @@ function ClubDetailComponent() {
                   </Show>
                 </DropdownMenu>
               </div>
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-3">
                 <For each={club().members}>
                   {(member) => (
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md">
+                      <div class="flex items-center gap-3">
                         <Show when={member.user} fallback={<div class="h-10 w-10 rounded-full bg-gray-400" />}>
-                          {(user) => <Avatar user={user()} />}
+                          {(user) => <Avatar class="flex-shrink-0" user={user()} />}
                         </Show>
-                        <div class="flex items-center gap-1">
-                          <span>{member.user?.username}</span>
-                          <Show when={member.role === "owner"}>
-                            <IconCrown class="text-yellow-500" />
-                          </Show>
-                          <Show when={member.role === "admin"}>
-                            <IconShield />
-                          </Show>
+                        <div class="flex items-center gap-2">
+                          <div>
+                            <div class="font-semibold text-slate-800">{member.user?.username}</div>
+                            <div class="flex items-center gap-1 text-slate-500 text-sm">
+                              <Show when={member.role === "owner"}>
+                                <IconCrown class="h-3 w-3 text-yellow-500" />
+                                <span>Owner</span>
+                              </Show>
+                              <Show when={member.role === "admin"}>
+                                <IconShield class="h-3 w-3" />
+                                <span>Admin</span>
+                              </Show>
+                              <Show when={member.role === "member"}>
+                                <span>Member</span>
+                              </Show>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <Show when={member.user?.id !== session.data?.id}>

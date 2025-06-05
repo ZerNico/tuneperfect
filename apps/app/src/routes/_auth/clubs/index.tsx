@@ -75,21 +75,28 @@ function ClubsIndexComponent() {
             </Show>
 
             <Show when={!clubsQuery.isPending && clubsQuery.data?.length}>
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-3">
                 <For each={clubsQuery.data}>
                   {(club) => (
                     <Link to="/clubs/$id" params={{ id: club.id }}>
-                      <div class="flex cursor-pointer items-center justify-between rounded-lg p-4 transition-all hover:scale-[1.02] hover:bg-black/5">
+                      <div class="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md">
                         <div>
-                          <div class="font-medium text-lg">{club.name}</div>
-                          <div class="text-slate-400 text-sm">{t("clubs.members", { count: club.members.length })}</div>
+                          <div class="font-semibold text-lg text-slate-800">{club.name}</div>
+                          <div class="text-slate-500 text-sm">
+                            {club.members.length === 1 
+                              ? t("clubs.membersOne", { count: club.members.length })
+                              : t("clubs.membersOther", { count: club.members.length })
+                            }
+                          </div>
                         </div>
                         <div class="flex flex-wrap gap-2">
                           <div class="-space-x-3 flex">
                             <For each={club.members.slice(0, 5)}>
                               {(member) => (
                                 <div class="rounded-full border-3 border-white">
-                                  <Avatar user={member.user} class="h-8 w-8" />
+                                  <Show when={member.user}>
+                                    {(user) => <Avatar user={user()} class="h-8 w-8" />}
+                                  </Show>
                                 </div>
                               )}
                             </For>
@@ -118,14 +125,14 @@ function ClubsIndexComponent() {
             <h3 class="font-bold text-xl">{t("clubs.invites")}</h3>
             <For each={invitesQuery.data}>
               {(invite) => (
-                <div class="flex items-center justify-between p-4">
+                <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md">
                   <div>
-                    <div class="font-medium">{invite.club?.name}</div>
-                    <div class="text-slate-400 text-sm">{t("clubs.invitedBy", { username: invite.inviter?.username || "" })}</div>
+                    <div class="font-semibold text-slate-800">{invite.club?.name}</div>
+                    <div class="text-slate-500 text-sm">{t("clubs.invitedBy", { username: invite.inviter?.username || "" })}</div>
                   </div>
                   <div class="flex gap-2">
                     <Button
-                      intent="primary"
+                      intent="gradient"
                       loading={acceptInviteMutation.isPending && acceptInviteMutation.variables === invite.club?.id}
                       onClick={() => handleAcceptInvite(invite.club?.id || "")}
                     >

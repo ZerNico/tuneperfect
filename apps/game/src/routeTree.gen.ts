@@ -22,6 +22,7 @@ import { Route as LobbyIndexImport } from './routes/lobby/index'
 import { Route as GameIndexImport } from './routes/game/index'
 import { Route as SingHashImport } from './routes/sing/$hash'
 import { Route as SettingsCreditsImport } from './routes/settings/credits'
+import { Route as LobbySelectClubImport } from './routes/lobby/select-club'
 import { Route as LobbyAddLocalPlayerImport } from './routes/lobby/add-local-player'
 import { Route as LobbyIdImport } from './routes/lobby/$id'
 import { Route as GameScoreImport } from './routes/game/score'
@@ -103,6 +104,12 @@ const SingHashRoute = SingHashImport.update({
 const SettingsCreditsRoute = SettingsCreditsImport.update({
   id: '/settings/credits',
   path: '/settings/credits',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LobbySelectClubRoute = LobbySelectClubImport.update({
+  id: '/lobby/select-club',
+  path: '/lobby/select-club',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -256,6 +263,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof LobbyAddLocalPlayerImport
       parentRoute: typeof rootRoute
     }
+    '/lobby/select-club': {
+      id: '/lobby/select-club'
+      path: '/lobby/select-club'
+      fullPath: '/lobby/select-club'
+      preLoaderRoute: typeof LobbySelectClubImport
+      parentRoute: typeof rootRoute
+    }
     '/settings/credits': {
       id: '/settings/credits'
       path: '/settings/credits'
@@ -396,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
+  '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
   '/game': typeof GameIndexRoute
@@ -425,6 +440,7 @@ export interface FileRoutesByTo {
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
+  '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
   '/game': typeof GameIndexRoute
@@ -455,6 +471,7 @@ export interface FileRoutesById {
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
+  '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
   '/game/': typeof GameIndexRoute
@@ -486,6 +503,7 @@ export interface FileRouteTypes {
     | '/game/score'
     | '/lobby/$id'
     | '/lobby/add-local-player'
+    | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
     | '/game'
@@ -514,6 +532,7 @@ export interface FileRouteTypes {
     | '/game/score'
     | '/lobby/$id'
     | '/lobby/add-local-player'
+    | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
     | '/game'
@@ -542,6 +561,7 @@ export interface FileRouteTypes {
     | '/game/score'
     | '/lobby/$id'
     | '/lobby/add-local-player'
+    | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
     | '/game/'
@@ -572,6 +592,7 @@ export interface RootRouteChildren {
   GameScoreRoute: typeof GameScoreRoute
   LobbyIdRoute: typeof LobbyIdRoute
   LobbyAddLocalPlayerRoute: typeof LobbyAddLocalPlayerRoute
+  LobbySelectClubRoute: typeof LobbySelectClubRoute
   SettingsCreditsRoute: typeof SettingsCreditsRoute
   SingHashRoute: typeof SingHashRoute
   GameIndexRoute: typeof GameIndexRoute
@@ -601,6 +622,7 @@ const rootRouteChildren: RootRouteChildren = {
   GameScoreRoute: GameScoreRoute,
   LobbyIdRoute: LobbyIdRoute,
   LobbyAddLocalPlayerRoute: LobbyAddLocalPlayerRoute,
+  LobbySelectClubRoute: LobbySelectClubRoute,
   SettingsCreditsRoute: SettingsCreditsRoute,
   SingHashRoute: SingHashRoute,
   GameIndexRoute: GameIndexRoute,
@@ -639,6 +661,7 @@ export const routeTree = rootRoute
         "/game/score",
         "/lobby/$id",
         "/lobby/add-local-player",
+        "/lobby/select-club",
         "/settings/credits",
         "/sing/$hash",
         "/game/",
@@ -682,6 +705,9 @@ export const routeTree = rootRoute
     },
     "/lobby/add-local-player": {
       "filePath": "lobby/add-local-player.tsx"
+    },
+    "/lobby/select-club": {
+      "filePath": "lobby/select-club.tsx"
     },
     "/settings/credits": {
       "filePath": "settings/credits.tsx"

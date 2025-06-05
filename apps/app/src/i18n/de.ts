@@ -125,6 +125,8 @@ const de: Dict = {
     accept: "Annehmen",
     decline: "Ablehnen",
     members: "{{ count }} Mitglieder",
+    membersOne: "{{ count }} Mitglied",
+    membersOther: "{{ count }} Mitglieder",
     noClubs: "Du hast noch keine Clubs",
     name: "Name",
     nameRequired: "Name ist erforderlich",
@@ -191,6 +193,17 @@ const de: Dict = {
     join: "Beitreten",
     clubs: "Clubs",
   },
+  lobby: {
+    title: "Lobby",
+    inviteToClub: "Zu Club einladen",
+    selectClub: "Club auswählen",
+    selectClubDescription: "Wähle den Club aus, zu dem du {{ username }} einladen möchtest:",
+    invite: "Einladen",
+    inviteUser: "{{ username }} einladen",
+    memberInvited: "{{ username }} erfolgreich zu {{ clubName }} eingeladen",
+    noClubsToInvite: "Du hast keine Berechtigung, Mitglieder zu Clubs einzuladen",
+  },
 };
 
-export default de;
+export type DictDe = typeof de;
+export const dict = de;

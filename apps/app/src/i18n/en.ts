@@ -123,6 +123,8 @@ const en = {
     accept: "Accept",
     decline: "Decline",
     members: "{{ count }} members",
+    membersOne: "{{ count }} member",
+    membersOther: "{{ count }} members",
     noClubs: "You don't have any clubs yet",
     name: "Name",
     nameRequired: "Name is required",
@@ -187,6 +189,16 @@ const en = {
     lobby: "Lobby",
     join: "Join",
     clubs: "Clubs",
+  },
+  lobby: {
+    title: "Lobby",
+    inviteToClub: "Invite to Club",
+    selectClub: "Select Club",
+    selectClubDescription: "Choose which club to invite {{ username }} to:",
+    invite: "Invite",
+    inviteUser: "Invite {{ username }}",
+    memberInvited: "Successfully invited {{ username }} to {{ clubName }}",
+    noClubsToInvite: "You don't have permission to invite members to any clubs",
   },
 };
 
