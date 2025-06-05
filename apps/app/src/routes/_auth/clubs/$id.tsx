@@ -15,6 +15,7 @@ import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 import IconCrown from "~icons/lucide/crown";
+import IconEdit from "~icons/lucide/edit";
 import IconMoreVertical from "~icons/lucide/more-vertical";
 import IconSettings from "~icons/lucide/settings";
 import IconShield from "~icons/lucide/shield";
@@ -238,6 +239,29 @@ function ClubDetailComponent() {
     },
   }));
 
+  const updateClubMutation = useMutation(() => ({
+    mutationFn: async (data: { name: string }) => {
+      return client.club.updateClub.call({ clubId: params().id, name: data.name });
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clubs"] }),
+        queryClient.invalidateQueries(client.club.getUserClubs.queryOptions()),
+      ]);
+      notify({
+        intent: "success",
+        message: t("clubs.detail.nameUpdated"),
+      });
+      setDialog(null);
+    },
+    onError: () => {
+      notify({
+        intent: "error",
+        message: t("error.unknown"),
+      });
+    },
+  }));
+
   const inviteForm = createForm(() => ({
     defaultValues: {
       username: "",
@@ -248,6 +272,25 @@ function ClubDetailComponent() {
     validators: {
       onChange: v.object({
         username: v.pipe(v.string(), v.minLength(1, t("clubs.detail.usernameRequired"))),
+      }),
+    },
+  }));
+
+  const renameForm = createForm(() => ({
+    defaultValues: {
+      name: "",
+    },
+    onSubmit: async ({ value }) => {
+      updateClubMutation.mutate({ name: value.name });
+    },
+    validators: {
+      onChange: v.object({
+        name: v.pipe(
+          v.string(),
+          v.minLength(3, t("clubs.detail.nameMinLength")),
+          v.maxLength(50, t("clubs.detail.nameMaxLength")),
+          v.nonEmpty(t("clubs.detail.nameRequired"))
+        ),
       }),
     },
   }));
@@ -300,7 +343,7 @@ function ClubDetailComponent() {
     changeRoleMutation.mutate({ userId, role: newRole });
   };
 
-  const [dialog, setDialog] = createSignal<"invite" | null>(null);
+  const [dialog, setDialog] = createSignal<"invite" | "rename" | null>(null);
 
   const currentUserRole = () => {
     return clubQuery.data?.members.find((m) => m.userId === session.data?.id)?.role;
@@ -334,6 +377,9 @@ function ClubDetailComponent() {
                   }
                 >
                   <Show when={currentUserRole() === "owner"}>
+                    <DropdownMenu.Item onClick={() => setDialog("rename")}>
+                      <IconEdit /> {t("clubs.detail.rename")}
+                    </DropdownMenu.Item>
                     <DropdownMenu.Item class="text-red-500" onClick={handleDeleteClub}>
                       <IconTrash /> {t("clubs.detail.delete")}
                     </DropdownMenu.Item>
@@ -350,7 +396,9 @@ function ClubDetailComponent() {
                   {(member) => (
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-2">
-                        <Avatar user={member.user} />
+                        <Show when={member.user} fallback={<div class="h-10 w-10 rounded-full bg-gray-400" />}>
+                          {(user) => <Avatar user={user()} />}
+                        </Show>
                         <div class="flex items-center gap-1">
                           <span>{member.user?.username}</span>
                           <Show when={member.role === "owner"}>
@@ -441,6 +489,48 @@ function ClubDetailComponent() {
                         </Button>
                       )}
                     </inviteForm.Subscribe>
+                  </div>
+                </form>
+              </Dialog>
+            </Show>
+            <Show when={dialog() === "rename"}>
+              <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.rename")}>
+                <Dialog.Description>
+                  <p>{t("clubs.detail.renameDescription")}</p>
+                </Dialog.Description>
+                <form
+                  class="mt-4 flex flex-col gap-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    renameForm.handleSubmit();
+                  }}
+                >
+                  <renameForm.Field name="name">
+                    {(field) => (
+                      <Input
+                        label={t("clubs.detail.newName")}
+                        name={field().name}
+                        value={field().state.value}
+                        onBlur={field().handleBlur}
+                        onInput={(e) => field().handleChange(e.currentTarget.value)}
+                        errorMessage={field().state.meta.errors?.[0]?.message}
+                      />
+                    )}
+                  </renameForm.Field>
+                  <div class="flex flex-col gap-2">
+                    <renameForm.Subscribe
+                      selector={(state) => ({
+                        canSubmit: state.canSubmit,
+                        isSubmitting: state.isSubmitting,
+                      })}
+                    >
+                      {(state) => (
+                        <Button type="submit" intent="gradient" loading={state().isSubmitting}>
+                          {t("clubs.detail.rename")}
+                        </Button>
+                      )}
+                    </renameForm.Subscribe>
                   </div>
                 </form>
               </Dialog>

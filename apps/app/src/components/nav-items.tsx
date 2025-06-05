@@ -24,17 +24,15 @@ export default function NavItems(props: NavItemsProps) {
         [props.class || ""]: true,
       }}
     >
+      <NavItem to="/clubs" icon={IconUsersRound}>
+        {t("nav.clubs")}
+      </NavItem>
       <Show
         when={sessionQuery.data?.lobbyId !== null}
         fallback={
-          <>
-            <NavItem to="/join" icon={IconUserPlus}>
-              {t("nav.join")}
-            </NavItem>
-            <NavItem to="/clubs" icon={IconUsersRound}>
-              {t("nav.clubs")}
-            </NavItem>
-          </>
+          <NavItem to="/join" icon={IconUserPlus}>
+            {t("nav.join")}
+          </NavItem>
         }
       >
         <NavItem to="/" icon={IconUsers}>

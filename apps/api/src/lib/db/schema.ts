@@ -78,6 +78,10 @@ export const oauthAccounts = p.pgTable(
 
 export const lobbies = p.pgTable("lobbies", {
   id: p.varchar("id").primaryKey().unique(),
+  clubId: p.uuid("club_id").references(() => clubs.id, {
+    onDelete: "set null",
+    onUpdate: "cascade",
+  }),
   ...timestampColumns,
 });
 

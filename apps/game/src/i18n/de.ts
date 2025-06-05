@@ -52,6 +52,11 @@ const de = {
     kick: "Kicken",
     removeFromLobby: "Aus Lobby entfernen",
     unknownPlayer: "Unbekannter Spieler",
+    club: "Club",
+    selectClub: "Club auswählen",
+    changeClub: "Club wechseln",
+    selectedClub: "Ausgewählter Club",
+    noClub: "Kein Club",
   },
   sing: {
     title: "Singen",

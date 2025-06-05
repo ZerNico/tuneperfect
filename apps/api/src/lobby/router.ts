@@ -99,4 +99,17 @@ export const lobbyRouter = os.prefix("/lobbies").router({
   deleteLobby: base.use(requireLobby).handler(async ({ context, errors }) => {
     await lobbyService.deleteLobby(context.payload.sub);
   }),
+
+  updateSelectedClub: base
+    .use(requireLobby)
+    .input(v.object({ clubId: v.nullable(v.string()) }))
+    .handler(async ({ context, input }) => {
+      return await lobbyService.updateLobbySelectedClub(context.payload.sub, input.clubId);
+    }),
+
+  getAvailableClubs: base
+    .use(requireLobby)
+    .handler(async ({ context }) => {
+      return await lobbyService.getAvailableClubsForLobby(context.payload.sub);
+    }),
 });

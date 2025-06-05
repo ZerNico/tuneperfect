@@ -1,5 +1,5 @@
 import { addDays, differenceInSeconds } from "date-fns";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import * as v from "valibot";
 import { env } from "../config/env";
@@ -16,6 +16,19 @@ export class LobbyService {
       },
       with: {
         users: true,
+        selectedClub: {
+          with: {
+            members: {
+              with: {
+                user: {
+                  columns: {
+                    password: false,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -96,6 +109,48 @@ export class LobbyService {
 
   async deleteLobby(lobbyId: string) {
     await db.delete(schema.lobbies).where(eq(schema.lobbies.id, lobbyId));
+  }
+
+  async updateLobbySelectedClub(lobbyId: string, clubId: string | null) {
+    const [updatedLobby] = await db
+      .update(schema.lobbies)
+      .set({ clubId: clubId })
+      .where(eq(schema.lobbies.id, lobbyId))
+      .returning();
+
+    return updatedLobby;
+  }
+
+  async getAvailableClubsForLobby(lobbyId: string) {
+    const lobby = await this.getLobbyById(lobbyId);
+    if (!lobby) {
+      return [];
+    }
+
+    // Get all unique clubs that lobby users are members of
+    const userIds = lobby.users.map((user) => user.id);
+    
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const clubMemberships = await db
+      .select({
+        clubId: schema.clubMembers.clubId,
+        club: schema.clubs,
+      })
+      .from(schema.clubMembers)
+      .innerJoin(schema.clubs, eq(schema.clubMembers.clubId, schema.clubs.id))
+      .where(inArray(schema.clubMembers.userId, userIds));
+
+    const clubsMap = new Map<string, typeof schema.clubs.$inferSelect>();
+    for (const membership of clubMemberships) {
+      if (!clubsMap.has(membership.club.id)) {
+        clubsMap.set(membership.club.id, membership.club);
+      }
+    }
+
+    return Array.from(clubsMap.values());
   }
 }
 

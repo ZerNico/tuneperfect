@@ -52,6 +52,11 @@ const en = {
     kick: "Kick",
     removeFromLobby: "Remove from Lobby",
     unknownPlayer: "Unknown Player",
+    club: "Club",
+    selectClub: "Select Club",
+    changeClub: "Change Club",
+    selectedClub: "Selected Club",
+    noClub: "No Club",
   },
   sing: {
     title: "Sing",

@@ -33,3 +33,18 @@ export const highscoreQueryOptions = (hash: string) =>
       return data;
     },
   });
+
+export const availableClubsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["availableClubs"],
+    refetchInterval: 10000,
+    queryFn: async () => {
+      if (!lobbyStore.lobby()) return [];
+
+      const [error, data] = await safe(client.lobby.getAvailableClubs.call());
+
+      if (error) return [];
+
+      return data;
+    },
+  });

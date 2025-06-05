@@ -139,10 +139,12 @@ const en = {
       invite: "Invite",
       deleteConfirmation: "Are you sure you want to delete this club? This action cannot be undone.",
       removeMember: "Remove Member",
-      removeMemberConfirmation: "Are you sure you want to remove {{ username }} from this club? This action cannot be undone.",
+      removeMemberConfirmation:
+        "Are you sure you want to remove {{ username }} from this club? This action cannot be undone.",
       memberRemoved: "Member removed successfully",
       transferOwnership: "Transfer Ownership",
-      transferOwnershipConfirmation: "Are you sure you want to transfer ownership of this club to {{ username }}? This action cannot be undone.",
+      transferOwnershipConfirmation:
+        "Are you sure you want to transfer ownership of this club to {{ username }}? This action cannot be undone.",
       ownershipTransferred: "Ownership transferred successfully",
       inviteDescription: "Enter the username of the user you want to invite to this club.",
       inviteUsername: "Username",
@@ -155,6 +157,13 @@ const en = {
       roleChanged: "Role changed successfully",
       makeAdmin: "Make Admin",
       removeAdmin: "Remove Admin",
+      rename: "Rename Club",
+      renameDescription: "Enter a new name for this club.",
+      newName: "New Name",
+      nameRequired: "Club name is required",
+      nameMinLength: "Club name must be at least 3 characters long",
+      nameMaxLength: "Club name must be at most 50 characters long",
+      nameUpdated: "Club name updated successfully",
     },
   },
   error: {

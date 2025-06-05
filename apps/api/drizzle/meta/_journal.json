@@ -36,6 +36,13 @@
       "when": 1749136457864,
       "tag": "0004_tired_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1749152460215,
+      "tag": "0005_chief_puff_adder",
+      "breakpoints": true
     }
   ]
 }

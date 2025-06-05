@@ -59,6 +59,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.lobbies.id,
       to: r.users.lobbyId,
     }),
+    selectedClub: r.one.clubs({
+      from: r.lobbies.clubId,
+      to: r.clubs.id,
+    }),
   },
   highscores: {
     user: r.one.users({
@@ -74,6 +78,10 @@ export const relations = defineRelations(schema, (r) => ({
     invites: r.many.clubInvites({
       from: r.clubs.id,
       to: r.clubInvites.clubId,
+    }),
+    selectedByLobbies: r.many.lobbies({
+      from: r.clubs.id,
+      to: r.lobbies.clubId,
     }),
   },
   clubMembers: {
