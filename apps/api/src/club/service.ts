@@ -2,9 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
 import { userService } from "../user/service";
+import { filterNullish } from "../utils/array";
 
-class ClubService {
-  async createClub(name: string, ownerId: string) {
+export class ClubService {
+  public async createClub(name: string, ownerId: string) {
     const club = await db.transaction(async (tx) => {
       const [newClub] = await tx
         .insert(schema.clubs)
@@ -29,8 +30,8 @@ class ClubService {
     return club;
   }
 
-  async getClub(clubId: string) {
-    const club = await db.query.clubs.findFirst({
+  public async getClub(clubId: string) {
+    return await db.query.clubs.findFirst({
       where: {
         id: clubId,
       },
@@ -46,36 +47,18 @@ class ClubService {
         },
       },
     });
-
-    const members =
-      club?.members.filter(
-        (
-          member,
-        ): member is NonNullable<typeof member> & {
-          user: NonNullable<typeof member.user>;
-        } => member.user !== null,
-      ) ?? [];
-
-    return {
-      ...club,
-      members,
-    };
   }
 
-  async updateClub(clubId: string, data: Partial<typeof schema.clubs.$inferSelect>) {
+  public async updateClub(clubId: string, data: { name: string }) {
     const [updatedClub] = await db.update(schema.clubs).set(data).where(eq(schema.clubs.id, clubId)).returning();
-
-    if (!updatedClub) {
-      throw new Error("Failed to update club");
-    }
 
     return updatedClub;
   }
 
-  async getUserClubs(userId: string) {
+  public async getUserClubs(userId: string) {
     const memberships = await db.query.clubMembers.findMany({
       where: {
-        userId,
+        userId: userId,
       },
       with: {
         club: {
@@ -94,63 +77,55 @@ class ClubService {
       },
     });
 
-    return memberships
-      .map((membership) => membership.club)
-      .filter((club): club is NonNullable<typeof club> => club !== null)
-      .map((club) => ({
-        ...club,
-        members: club.members.filter(
-          (
-            member,
-          ): member is NonNullable<typeof member> & {
-            user: NonNullable<typeof member.user>;
-          } => member.user !== null,
-        ),
-      }));
+    return filterNullish(memberships.map((m) => m.club));
   }
 
-  async inviteUserToClub(clubId: string, inviterId: string, username: string) {
-    const existingMember = await db.query.clubMembers.findFirst({
-      where: {
-        clubId,
-        user: {
-          username,
-        },
-      },
-    });
-
-    if (existingMember) {
-      return;
-    }
-
-    const existingInvite = await db.query.clubInvites.findFirst({
-      where: {
-        clubId,
-        invitee: {
-          username,
-        },
-      },
-    });
-
-    if (existingInvite) {
-      return;
-    }
-
-    const invitee = await userService.getUserByUsername(username);
-
-    if (!invitee) {
+  public async inviteUserToClub(clubId: string, inviterId: string, username: string) {
+    const userToInvite = await userService.getUserByUsername(username);
+    if (!userToInvite) {
       throw new Error("User not found");
+    }
+
+    const isMember = await this.isUserMemberOfClub(clubId, userToInvite.id);
+    if (isMember) {
+      throw new Error("User is already a member of this club");
+    }
+
+    const hasExistingInvite = await this.hasExistingInvite(clubId, userToInvite.id);
+    if (hasExistingInvite) {
+      throw new Error("User has a pending invite for this club");
     }
 
     await db.insert(schema.clubInvites).values({
       clubId,
       inviterId,
-      inviteeId: invitee.id,
+      inviteeId: userToInvite.id,
     });
   }
 
-  async getUserInvites(userId: string) {
-    return db.query.clubInvites.findMany({
+  private async isUserMemberOfClub(clubId: string, userId: string) {
+    const member = await db.query.clubMembers.findFirst({
+      where: {
+        clubId,
+        userId,
+      },
+    });
+
+    return !!member;
+  }
+
+  private async hasExistingInvite(clubId: string, userId: string) {
+    const invite = await db.query.clubInvites.findFirst({
+      where: {
+        clubId: clubId,
+        inviteeId: userId,
+      },
+    });
+    return !!invite;
+  }
+
+  public async getUserInvites(userId: string) {
+    return await db.query.clubInvites.findMany({
       where: {
         inviteeId: userId,
       },
@@ -165,54 +140,42 @@ class ClubService {
     });
   }
 
-  async acceptInvite(clubId: string, userId: string) {
+  public async acceptInvite(clubId: string, userId: string) {
+    const invite = await db.query.clubInvites.findFirst({
+      where: {
+        clubId,
+        inviteeId: userId,
+      },
+    });
+
+    if (!invite) {
+      throw new Error("Invite not found");
+    }
+
     await db.transaction(async (tx) => {
       await tx.insert(schema.clubMembers).values({
         clubId,
         userId,
         role: "member",
       });
-
       await tx
         .delete(schema.clubInvites)
         .where(and(eq(schema.clubInvites.clubId, clubId), eq(schema.clubInvites.inviteeId, userId)));
     });
   }
 
-  async declineInvite(clubId: string, userId: string) {
+  public async declineInvite(clubId: string, userId: string) {
     await db
       .delete(schema.clubInvites)
       .where(and(eq(schema.clubInvites.clubId, clubId), eq(schema.clubInvites.inviteeId, userId)));
   }
 
-  async transferOwnership(clubId: string, newOwnerId: string) {
+  public async transferOwnership(clubId: string, currentOwnerId: string, newOwnerId: string) {
     await db.transaction(async (tx) => {
-      const currentOwner = await tx.query.clubMembers.findFirst({
-        where: {
-          clubId,
-          role: "owner",
-        },
-      });
-
-      if (!currentOwner) {
-        throw new Error("Current owner not found");
-      }
-
-      const newOwnerMember = await tx.query.clubMembers.findFirst({
-        where: {
-          clubId,
-          userId: newOwnerId,
-        },
-      });
-
-      if (!newOwnerMember) {
-        throw new Error("New owner is not a member of this club");
-      }
-
       await tx
         .update(schema.clubMembers)
         .set({ role: "admin" })
-        .where(and(eq(schema.clubMembers.clubId, clubId), eq(schema.clubMembers.userId, currentOwner.userId)));
+        .where(and(eq(schema.clubMembers.clubId, clubId), eq(schema.clubMembers.userId, currentOwnerId)));
 
       await tx
         .update(schema.clubMembers)
@@ -221,7 +184,7 @@ class ClubService {
     });
   }
 
-  async leaveClub(clubId: string, userId: string) {
+  public async leaveClub(clubId: string, userId: string) {
     const member = await db.query.clubMembers.findFirst({
       where: {
         clubId,
@@ -230,11 +193,11 @@ class ClubService {
     });
 
     if (!member) {
-      return;
+      throw new Error("You are not a member of this club");
     }
 
     if (member.role === "owner") {
-      throw new Error("Transfer ownership first.");
+      throw new Error("You must transfer ownership before leaving the club");
     }
 
     await db
@@ -242,53 +205,33 @@ class ClubService {
       .where(and(eq(schema.clubMembers.clubId, clubId), eq(schema.clubMembers.userId, userId)));
   }
 
-  async removeMember(clubId: string, userId: string) {
-    const member = await db.query.clubMembers.findFirst({
-      where: {
-        clubId,
-        userId,
-      },
-    });
-
-    if (!member) {
-      return;
-    }
-
+  public async removeMember(clubId: string, userId: string) {
     await db
       .delete(schema.clubMembers)
       .where(and(eq(schema.clubMembers.clubId, clubId), eq(schema.clubMembers.userId, userId)));
   }
 
-  async deleteClub(clubId: string) {
-    return db.transaction(async (tx) => {
-      await tx.delete(schema.clubInvites).where(eq(schema.clubInvites.clubId, clubId));
-
-      await tx.delete(schema.clubMembers).where(eq(schema.clubMembers.clubId, clubId));
-      await tx.delete(schema.clubs).where(eq(schema.clubs.id, clubId));
-    });
+  public async deleteClub(clubId: string) {
+    await db.delete(schema.clubs).where(eq(schema.clubs.id, clubId));
   }
 
-  async changeRole(clubId: string, userId: string, role: "admin" | "member") {
-    const member = await db.query.clubMembers.findFirst({
-      where: {
-        clubId,
-        userId,
-      },
-    });
-
-    if (!member) {
-      throw new Error("Member not found");
-    }
-
-    // Don't allow changing owner's role
-    if (member.role === "owner") {
-      throw new Error("Cannot change owner's role");
-    }
-
+  public async changeRole(clubId: string, userId: string, role: "admin" | "member") {
     await db
       .update(schema.clubMembers)
       .set({ role })
       .where(and(eq(schema.clubMembers.clubId, clubId), eq(schema.clubMembers.userId, userId)));
+  }
+
+  public isOwner(member: { role: string } | undefined) {
+    return member?.role === "owner";
+  }
+
+  public isAdmin(member: { role: string } | undefined) {
+    return member?.role === "admin";
+  }
+
+  public isOwnerOrAdmin(member: { role: string } | undefined) {
+    return this.isOwner(member) || this.isAdmin(member);
   }
 }
 
