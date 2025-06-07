@@ -1,19 +1,20 @@
+import { isDefinedError } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import { For, Show, createSignal } from "solid-js";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
-import Card from "~/components/ui/card";
 import Dialog from "~/components/ui/dialog";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
+import IconUserPlus from "~icons/lucide/user-plus";
+import IconUsers from "~icons/lucide/users";
 
 export const Route = createFileRoute("/_auth/_lobby/")({
   component: LobbyComponent,
-  beforeLoad: async () => {},
 });
 
 function LobbyComponent() {
@@ -26,7 +27,6 @@ function LobbyComponent() {
   const clubsQuery = useQuery(() => client.club.getUserClubs.queryOptions());
   const session = useQuery(() => sessionQueryOptions());
 
-  // Filter clubs where user can invite (owner or admin)
   const clubsWithInvitePermission = () => {
     if (!clubsQuery.data || !session.data?.id) return [];
     const currentUserId = session.data.id;
@@ -36,50 +36,50 @@ function LobbyComponent() {
     });
   };
 
-  // Filter clubs where a specific user can be invited (not already a member)
   const availableClubsForUser = (username: string) => {
     return clubsWithInvitePermission().filter((club) => {
-      // Check if the user is already a member of this club
       const isUserAlreadyMember = club.members.some((member) => member.user?.username === username);
       return !isUserAlreadyMember;
     });
   };
 
-  const inviteMutation = useMutation(() => ({
-    mutationFn: async (data: { clubId: string; username: string }) => {
-      return await client.club.invite.call({ clubId: data.clubId, username: data.username });
-    },
-    onSuccess: async () => {
-      const club = clubsQuery.data?.find((c) => c.id === selectedClubId());
+  const inviteMutation = useMutation(() =>
+    client.club.invite.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
+      },
+      onError: (error) => {
+        if (isDefinedError(error)) {
+          if (error.code === "ALREADY_MEMBER") {
+            notify({
+              intent: "error",
+              message: t("clubs.alreadyMember", { username: selectedUser() }),
+            });
+            return;
+          }
+          if (error.code === "USER_NOT_FOUND") {
+            notify({
+              intent: "error",
+              message: t("clubs.userNotFound", { username: selectedUser() }),
+            });
+            return;
+          }
+        }
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["clubs"] }),
-        queryClient.invalidateQueries(client.club.getUserClubs.queryOptions()),
-        queryClient.invalidateQueries(client.club.getUserInvites.queryOptions()),
-      ]);
-
-      notify({
-        intent: "success",
-        message: t("lobby.memberInvited", {
-          username: selectedUser(),
-          clubName: club?.name || "Unknown Club",
-        }),
-      });
-
-      setInviteDialog(false);
-      setSelectedClubId("");
-      setSelectedUser("");
-    },
-    onError: () => {
-      notify({
-        intent: "error",
-        message: t("error.unknown"),
-      });
-    },
-  }));
+        notify({
+          intent: "error",
+          message: t("error.unknown"),
+        });
+      },
+    })
+  );
 
   const handleInviteUser = (username: string) => {
     setSelectedUser(username);
+    const availableClubs = availableClubsForUser(username);
+    if (availableClubs.length === 1) {
+      setSelectedClubId(availableClubs[0].id);
+    }
     setInviteDialog(true);
   };
 
@@ -93,50 +93,53 @@ function LobbyComponent() {
   };
 
   return (
-    <div class="flex flex-grow flex-col items-center justify-center p-2">
-      <div class="flex w-150 max-w-full flex-col gap-4">
-        <Card class="flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <h1 class="font-bold text-xl">{t("lobby.title")}</h1>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <Show when={lobbyQuery.isPending}>
-              <div class="text-center">{t("common.loading")}</div>
-            </Show>
-
-            <Show when={!lobbyQuery.isPending && lobbyQuery.data?.users?.length}>
-              <div class="flex flex-col gap-3">
-                <Key each={lobbyQuery.data?.users || []} by={(user) => user.id}>
-                  {(user) => (
-                    <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md">
-                      <div class="flex items-center gap-3">
-                        <Avatar class="flex-shrink-0" user={user()} />
-                        <div>
-                          <div class="font-semibold text-slate-800">{user().username}</div>
-                        </div>
-                      </div>
-                      <Show when={user().username}>
-                        {(username) => (
-                          <Show when={availableClubsForUser(username()).length > 0}>
-                            <Button intent="gradient" onClick={() => handleInviteUser(username())}>
-                              {t("lobby.invite")}
-                            </Button>
-                          </Show>
-                        )}
-                      </Show>
-                    </div>
-                  )}
-                </Key>
-              </div>
-            </Show>
-
-            <Show when={!lobbyQuery.isPending && (!lobbyQuery.data?.users || lobbyQuery.data.users.length === 0)}>
-              <div class="text-center text-slate-400">No users in lobby</div>
-            </Show>
-          </div>
-        </Card>
+    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+      <div class="mb-6">
+        <h1 class="font-bold text-3xl">{t("lobby.title")}</h1>
       </div>
+
+      <Show
+        when={!lobbyQuery.isPending && lobbyQuery.data?.users?.length}
+        fallback={
+          <Show
+            when={lobbyQuery.isPending}
+            fallback={
+              <div class="py-12 text-center">
+                <IconUsers class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 font-medium text-gray-900 text-sm">{t("lobby.noUsers")}</h3>
+                <p class="mt-1 text-gray-500 text-sm">{t("lobby.noUsersDescription")}</p>
+              </div>
+            }
+          >
+            <div class="text-center">{t("common.loading")}</div>
+          </Show>
+        }
+      >
+        <div class="flex flex-col gap-3">
+          <Key each={lobbyQuery.data?.users || []} by={(user) => user.id}>
+            {(user) => (
+              <div class="flex items-center justify-between rounded-lg bg-white p-4">
+                <div class="flex items-center gap-3">
+                  <Avatar class="flex-shrink-0" user={user()} />
+                  <div>
+                    <div class="font-semibold text-slate-800">{user().username}</div>
+                  </div>
+                </div>
+                <Show when={user().username}>
+                  {(username) => (
+                    <Show when={availableClubsForUser(username()).length > 0}>
+                      <Button intent="gradient" onClick={() => handleInviteUser(username())}>
+                        <IconUserPlus class="mr-2 h-4 w-4" />
+                        {t("lobby.invite")}
+                      </Button>
+                    </Show>
+                  )}
+                </Show>
+              </div>
+            )}
+          </Key>
+        </div>
+      </Show>
 
       <Show when={inviteDialog()}>
         <Dialog
@@ -155,7 +158,7 @@ function LobbyComponent() {
                 {(club) => (
                   <button
                     type="button"
-                    class="flex cursor-pointer items-center justify-between rounded-lg border-2 p-4 text-start transition-all hover:scale-[1.02] hover:shadow-md"
+                    class="flex w-full cursor-pointer items-center justify-between rounded-lg border-2 p-4 text-start transition-all hover:scale-[1.02] hover:shadow-md"
                     classList={{
                       "border-blue-500 bg-blue-50 shadow-md": selectedClubId() === club.id,
                       "border-slate-200 bg-white hover:border-slate-300": selectedClubId() !== club.id,
@@ -173,7 +176,7 @@ function LobbyComponent() {
                       </div>
                     </div>
                     <div
-                      class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
+                      class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all"
                       classList={{
                         "border-blue-500 bg-blue-500": selectedClubId() === club.id,
                         "border-slate-300 bg-white": selectedClubId() !== club.id,

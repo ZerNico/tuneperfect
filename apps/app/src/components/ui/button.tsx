@@ -7,10 +7,12 @@ interface ButtonProps extends BaseProps {
   type?: "button" | "submit" | "reset";
   onClick?: () => void;
   disabled?: boolean;
+  ref?: HTMLButtonElement;
 }
 
 interface LinkProps extends BaseProps {
   to: TanstackLinkProps["to"];
+  ref?: HTMLAnchorElement;
 }
 
 interface BaseProps extends VariantProps<typeof button> {
@@ -26,6 +28,7 @@ const button = cva({
       primary: "bg-slate-800 text-white hover:bg-slate-700",
       gradient: "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:opacity-90",
       danger: "bg-red-500 text-white hover:bg-red-600",
+      white: "bg-white text-slate-800 hover:bg-slate-100",
     },
   },
   defaultVariants: {
@@ -41,14 +44,14 @@ export default function Button(props: ButtonProps | LinkProps) {
 
   if ("to" in props) {
     return (
-      <Link to={props.to} classList={classes()}>
+      <Link to={props.to} classList={classes()} ref={props.ref}>
         <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
       </Link>
     );
   }
 
   return (
-    <button type={props.type || "button"} onClick={props.onClick} classList={classes()} disabled={props.disabled}>
+    <button type={props.type || "button"} onClick={props.onClick} classList={classes()} disabled={props.disabled} ref={props.ref}>
       <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
     </button>
   );

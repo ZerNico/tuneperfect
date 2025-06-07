@@ -25,7 +25,6 @@ import { Route as AuthNoLobbyImport } from './routes/_auth/_no-lobby'
 import { Route as AuthLobbyImport } from './routes/_auth/_lobby'
 import { Route as AuthClubsIndexImport } from './routes/_auth/clubs/index'
 import { Route as AuthLobbyIndexImport } from './routes/_auth/_lobby/index'
-import { Route as AuthClubsCreateImport } from './routes/_auth/clubs/create'
 import { Route as AuthClubsIdImport } from './routes/_auth/clubs/$id'
 import { Route as AuthNoLobbyJoinIndexImport } from './routes/_auth/_no-lobby/join/index'
 import { Route as AuthNoLobbyJoinIdImport } from './routes/_auth/_no-lobby/join/$id'
@@ -110,12 +109,6 @@ const AuthLobbyIndexRoute = AuthLobbyIndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthLobbyRoute,
-} as any)
-
-const AuthClubsCreateRoute = AuthClubsCreateImport.update({
-  id: '/clubs/create',
-  path: '/clubs/create',
-  getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthClubsIdRoute = AuthClubsIdImport.update({
@@ -231,13 +224,6 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthClubsIdImport
       parentRoute: typeof AuthImport
     }
-    '/_auth/clubs/create': {
-      id: '/_auth/clubs/create'
-      path: '/clubs/create'
-      fullPath: '/clubs/create'
-      preLoaderRoute: typeof AuthClubsCreateImport
-      parentRoute: typeof AuthImport
-    }
     '/_auth/_lobby/': {
       id: '/_auth/_lobby/'
       path: '/'
@@ -304,7 +290,6 @@ interface AuthRouteChildren {
   AuthCompleteProfileRoute: typeof AuthCompleteProfileRoute
   AuthEditProfileRoute: typeof AuthEditProfileRoute
   AuthClubsIdRoute: typeof AuthClubsIdRoute
-  AuthClubsCreateRoute: typeof AuthClubsCreateRoute
   AuthClubsIndexRoute: typeof AuthClubsIndexRoute
 }
 
@@ -315,7 +300,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCompleteProfileRoute: AuthCompleteProfileRoute,
   AuthEditProfileRoute: AuthEditProfileRoute,
   AuthClubsIdRoute: AuthClubsIdRoute,
-  AuthClubsCreateRoute: AuthClubsCreateRoute,
   AuthClubsIndexRoute: AuthClubsIndexRoute,
 }
 
@@ -351,7 +335,6 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
   '/clubs/$id': typeof AuthClubsIdRoute
-  '/clubs/create': typeof AuthClubsCreateRoute
   '/': typeof AuthLobbyIndexRoute
   '/clubs': typeof AuthClubsIndexRoute
   '/join/$id': typeof AuthNoLobbyJoinIdRoute
@@ -369,7 +352,6 @@ export interface FileRoutesByTo {
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
   '/clubs/$id': typeof AuthClubsIdRoute
-  '/clubs/create': typeof AuthClubsCreateRoute
   '/': typeof AuthLobbyIndexRoute
   '/clubs': typeof AuthClubsIndexRoute
   '/join/$id': typeof AuthNoLobbyJoinIdRoute
@@ -391,7 +373,6 @@ export interface FileRoutesById {
   '/_no-auth/sign-up': typeof NoAuthSignUpRoute
   '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
   '/_auth/clubs/$id': typeof AuthClubsIdRoute
-  '/_auth/clubs/create': typeof AuthClubsCreateRoute
   '/_auth/_lobby/': typeof AuthLobbyIndexRoute
   '/_auth/clubs/': typeof AuthClubsIndexRoute
   '/_auth/_no-lobby/join/$id': typeof AuthNoLobbyJoinIdRoute
@@ -411,7 +392,6 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/clubs/$id'
-    | '/clubs/create'
     | '/'
     | '/clubs'
     | '/join/$id'
@@ -428,7 +408,6 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify-email'
     | '/clubs/$id'
-    | '/clubs/create'
     | '/'
     | '/clubs'
     | '/join/$id'
@@ -448,7 +427,6 @@ export interface FileRouteTypes {
     | '/_no-auth/sign-up'
     | '/_no-auth/verify-email'
     | '/_auth/clubs/$id'
-    | '/_auth/clubs/create'
     | '/_auth/_lobby/'
     | '/_auth/clubs/'
     | '/_auth/_no-lobby/join/$id'
@@ -489,7 +467,6 @@ export const routeTree = rootRoute
         "/_auth/complete-profile",
         "/_auth/edit-profile",
         "/_auth/clubs/$id",
-        "/_auth/clubs/create",
         "/_auth/clubs/"
       ]
     },
@@ -552,10 +529,6 @@ export const routeTree = rootRoute
     },
     "/_auth/clubs/$id": {
       "filePath": "_auth/clubs/$id.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/clubs/create": {
-      "filePath": "_auth/clubs/create.tsx",
       "parent": "/_auth"
     },
     "/_auth/_lobby/": {

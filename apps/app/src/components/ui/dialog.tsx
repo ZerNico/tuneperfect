@@ -16,7 +16,7 @@ function DialogRoot(props: DialogProps) {
       <KDialog.Portal>
         <KDialog.Overlay class="fixed inset-0 z-15 bg-black/40 backdrop-blur-sm" />
         <div class="fixed inset-0 z-16 flex items-center justify-center">
-          <KDialog.Content class="m-4 max-h-[calc(100vh-2rem)] max-w-md overflow-auto shadow-lg">
+          <KDialog.Content class="m-4 max-h-[calc(100vh-2rem)] min-w-100 max-w-md overflow-auto shadow-lg">
             <Card class="flex flex-col gap-4">
               <div class="flex items-center justify-between">
                 <KDialog.Title class="font-semibold text-lg">{props.title}</KDialog.Title>
