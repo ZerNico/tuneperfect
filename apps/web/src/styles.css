@@ -211,3 +211,8 @@
     transform: translateY(0);
   }
 }
+
+html,
+body {
+  overscroll-behavior: none;
+}

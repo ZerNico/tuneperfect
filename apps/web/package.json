@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start"
+    "dev": "vite dev --port 3000",
+    "build": "vite build",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@fontsource/lato": "^5.2.6",
@@ -14,8 +14,9 @@
     "@iconify-json/lucide": "^1.2.46",
     "@kobalte/core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.8",
-    "@tanstack/solid-router": "^1.120.17",
-    "@tanstack/solid-start": "^1.120.18",
+    "@tanstack/router-core": "^1.121.0-alpha.22",
+    "@tanstack/solid-router": "^1.121.0-alpha.22",
+    "@tanstack/solid-start": "^1.121.0-alpha.25",
     "clsx": "^2.1.1",
     "cva": "^1.0.0-beta.4",
     "posthog-js": "^1.249.4",
@@ -24,7 +25,7 @@
     "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
-    "@tanstack/solid-router-devtools": "^1.120.17",
+    "@tanstack/solid-router-devtools": "^1.121.0-alpha.22",
     "typescript": "^5.8.3",
     "unplugin-icons": "^22.1.0",
     "vite": "^6.3.5",

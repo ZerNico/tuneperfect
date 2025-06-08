@@ -8,49 +8,51 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import type { CreateFileRoute, FileRoutesByPath } from '@tanstack/solid-router'
+
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as TermsOfServiceImport } from './routes/terms-of-service'
-import { Route as PrivacyPolicyImport } from './routes/privacy-policy'
-import { Route as IndexImport } from './routes/index'
-import { Route as DownloadWindowsImport } from './routes/download/windows'
-import { Route as DownloadMacosImport } from './routes/download/macos'
-import { Route as DownloadLinuxImport } from './routes/download/linux'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
+import { Route as DownloadMacosRouteImport } from './routes/download/macos'
+import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 
 // Create/Update Routes
 
-const TermsOfServiceRoute = TermsOfServiceImport.update({
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   id: '/terms-of-service',
   path: '/terms-of-service',
   getParentRoute: () => rootRoute,
 } as any)
 
-const PrivacyPolicyRoute = PrivacyPolicyImport.update({
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
   getParentRoute: () => rootRoute,
 } as any)
 
-const IndexRoute = IndexImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DownloadWindowsRoute = DownloadWindowsImport.update({
+const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
   id: '/download/windows',
   path: '/download/windows',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DownloadMacosRoute = DownloadMacosImport.update({
+const DownloadMacosRoute = DownloadMacosRouteImport.update({
   id: '/download/macos',
   path: '/download/macos',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DownloadLinuxRoute = DownloadLinuxImport.update({
+const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
   id: '/download/linux',
   path: '/download/linux',
   getParentRoute: () => rootRoute,
@@ -64,45 +66,102 @@ declare module '@tanstack/solid-router' {
       id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRoute
     }
     '/privacy-policy': {
       id: '/privacy-policy'
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyImport
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRoute
     }
     '/terms-of-service': {
       id: '/terms-of-service'
       path: '/terms-of-service'
       fullPath: '/terms-of-service'
-      preLoaderRoute: typeof TermsOfServiceImport
+      preLoaderRoute: typeof TermsOfServiceRouteImport
       parentRoute: typeof rootRoute
     }
     '/download/linux': {
       id: '/download/linux'
       path: '/download/linux'
       fullPath: '/download/linux'
-      preLoaderRoute: typeof DownloadLinuxImport
+      preLoaderRoute: typeof DownloadLinuxRouteImport
       parentRoute: typeof rootRoute
     }
     '/download/macos': {
       id: '/download/macos'
       path: '/download/macos'
       fullPath: '/download/macos'
-      preLoaderRoute: typeof DownloadMacosImport
+      preLoaderRoute: typeof DownloadMacosRouteImport
       parentRoute: typeof rootRoute
     }
     '/download/windows': {
       id: '/download/windows'
       path: '/download/windows'
       fullPath: '/download/windows'
-      preLoaderRoute: typeof DownloadWindowsImport
+      preLoaderRoute: typeof DownloadWindowsRouteImport
       parentRoute: typeof rootRoute
     }
   }
+}
+
+// Add type-safety to the createFileRoute function across the route tree
+
+declare module './routes/index' {
+  const createFileRoute: CreateFileRoute<
+    '/',
+    FileRoutesByPath['/']['parentRoute'],
+    FileRoutesByPath['/']['id'],
+    FileRoutesByPath['/']['path'],
+    FileRoutesByPath['/']['fullPath']
+  >
+}
+declare module './routes/privacy-policy' {
+  const createFileRoute: CreateFileRoute<
+    '/privacy-policy',
+    FileRoutesByPath['/privacy-policy']['parentRoute'],
+    FileRoutesByPath['/privacy-policy']['id'],
+    FileRoutesByPath['/privacy-policy']['path'],
+    FileRoutesByPath['/privacy-policy']['fullPath']
+  >
+}
+declare module './routes/terms-of-service' {
+  const createFileRoute: CreateFileRoute<
+    '/terms-of-service',
+    FileRoutesByPath['/terms-of-service']['parentRoute'],
+    FileRoutesByPath['/terms-of-service']['id'],
+    FileRoutesByPath['/terms-of-service']['path'],
+    FileRoutesByPath['/terms-of-service']['fullPath']
+  >
+}
+declare module './routes/download/linux' {
+  const createFileRoute: CreateFileRoute<
+    '/download/linux',
+    FileRoutesByPath['/download/linux']['parentRoute'],
+    FileRoutesByPath['/download/linux']['id'],
+    FileRoutesByPath['/download/linux']['path'],
+    FileRoutesByPath['/download/linux']['fullPath']
+  >
+}
+declare module './routes/download/macos' {
+  const createFileRoute: CreateFileRoute<
+    '/download/macos',
+    FileRoutesByPath['/download/macos']['parentRoute'],
+    FileRoutesByPath['/download/macos']['id'],
+    FileRoutesByPath['/download/macos']['path'],
+    FileRoutesByPath['/download/macos']['fullPath']
+  >
+}
+declare module './routes/download/windows' {
+  const createFileRoute: CreateFileRoute<
+    '/download/windows',
+    FileRoutesByPath['/download/windows']['parentRoute'],
+    FileRoutesByPath['/download/windows']['id'],
+    FileRoutesByPath['/download/windows']['path'],
+    FileRoutesByPath['/download/windows']['fullPath']
+  >
 }
 
 // Create and export the route tree

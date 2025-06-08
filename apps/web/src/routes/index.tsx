@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/solid-router";
+;
 import { createSignal } from "solid-js";
 import { onMount } from "solid-js";
 import FeatureCard from "~/components/feature-card";
@@ -14,7 +14,7 @@ import IconUsers from "~icons/lucide/users";
 import IconLinux from "~icons/sing/linux";
 import IconWindows from "~icons/sing/windows";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute({
   component: RouteComponent,
 });
 
