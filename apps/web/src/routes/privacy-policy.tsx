@@ -15,7 +15,7 @@ function PrivacyPolicyComponent() {
     <div class="mx-auto max-w-4xl px-4 py-12">
       <div class="mb-8">
         <h1 class="mb-4 font-bold text-3xl md:text-4xl">Privacy Policy</h1>
-        <p class="text-slate-300">Last updated: {new Date().toLocaleDateString()}</p>
+        <p class="text-slate-300">Last updated: June 8th, 2025</p>
       </div>
 
       <div class="space-y-8 text-slate-200">
@@ -110,7 +110,47 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">4. Information We Collect</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">4. Website Analytics with PostHog</h2>
+          <p>
+            We use PostHog, an open-source product analytics platform, to better understand how our users interact with our website. This
+            helps us improve our services and provide a better user experience. PostHog is configured to respect your privacy and operates
+            in a cookie-less mode.
+          </p>
+          <div class="mt-4 space-y-2">
+            <p>
+              <strong>What data do we collect?</strong>
+            </p>
+            <ul class="list-disc space-y-2 pl-6">
+              <li>
+                <strong>Pageviews and Events:</strong> We track which pages you visit and what actions you take, such as starting a
+                download. This includes information like your operating system, browser version, and screen resolution.
+              </li>
+              <li>
+                <strong>Anonymized Data:</strong> We do not store your full IP address. User identification is managed in-memory and does
+                not persist across sessions, meaning we do not track you over time.
+              </li>
+            </ul>
+          </div>
+          <p class="mt-4">
+            <strong>Why do we collect this data?</strong>
+          </p>
+          <ul class="mt-2 list-disc space-y-2 pl-6">
+            <li>To analyze website traffic and user behavior to improve our content and offerings.</li>
+            <li>To identify which platforms (e.g., Windows, macOS, Linux) are most popular for downloads.</li>
+            <li>To monitor the performance and stability of our website.</li>
+          </ul>
+          <p class="mt-4">
+            The legal basis for this processing is our legitimate interest (Art. 6 para. 1 lit. f GDPR) in optimizing and securing our
+            website. For more information, please refer to{" "}
+            <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline hover:text-blue-300">
+              PostHog's Privacy Policy
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
+          <h2 class="mb-4 font-semibold text-white text-xl">5. Information We Collect</h2>
           <div class="space-y-4">
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Account Information</h3>
@@ -155,7 +195,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">5. How We Use Your Information</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">6. How We Use Your Information</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>To create and manage your account</li>
             <li>To provide the karaoke gaming experience</li>
@@ -169,7 +209,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">6. Data Storage and Security</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">7. Data Storage and Security</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>Your data is stored securely in our database with appropriate technical and organizational measures</li>
             <li>Passwords are hashed using industry-standard encryption (argon2id)</li>
@@ -181,7 +221,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibent text-white text-xl">7. Data Sharing and Third Parties</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">8. Data Sharing and Third Parties</h2>
           <p class="mb-2">We do not sell, trade, or share your personal information with third parties, except:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>When required by law or legal process</li>
@@ -196,7 +236,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">8. International Data Transfers</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">9. International Data Transfers</h2>
           <p>
             If we transfer personal data to countries outside the European Economic Area (EEA), we ensure appropriate safeguards are in
             place, such as:
@@ -210,7 +250,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">9. Your Rights Under GDPR</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">10. Your Rights Under GDPR</h2>
           <p class="mb-2">Under the General Data Protection Regulation, you have the following rights:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>
@@ -245,115 +285,62 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">10. Data Retention</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">11. Data Retention</h2>
           <p class="mb-2">
             We retain your data for as long as your account is active or as needed to provide you services. When you delete your account:
           </p>
           <ul class="list-disc space-y-2 pl-6">
-            <li>Your personal information is permanently deleted within 30 days</li>
-            <li>Your game scores may be anonymized for statistical purposes</li>
-            <li>Some data may be retained for legal compliance if required by law</li>
-            <li>Backup copies are deleted according to our backup retention schedule (maximum 90 days)</li>
+            <li>
+              Most of your personal data will be deleted. Some information, like high scores associated with your profile, may be retained
+              anonymously.
+            </li>
+            <li>
+              We may retain some data for legitimate interests, such as fraud prevention or to comply with legal obligations.
+            </li>
           </ul>
-          <p class="mt-4">
-            We review our data retention practices regularly and delete data when it is no longer necessary for the purposes for which it
-            was collected. As a non-commercial project, we have no business interest in retaining your data longer than necessary.
-          </p>
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">11. Cookies and Tracking</h2>
-          <div class="space-y-4">
-            <div>
-              <h3 class="mb-2 font-medium text-lg text-white">Essential Cookies</h3>
-              <p>
-                We use session cookies to keep you logged in and ensure proper functionality of our service. These are necessary for the
-                operation of our website.
-              </p>
-              <p class="mt-2 text-slate-300 text-sm">
-                Legal basis: Art. 6 para. 1 lit. f GDPR (legitimate interest in website functionality)
-              </p>
-            </div>
-            <div>
-              <h3 class="mb-2 font-medium text-lg text-white">Analytics and Performance</h3>
-              <p>
-                We may use analytics cookies to understand how our website is used and to improve our services. We only use privacy-friendly
-                analytics that do not track individual users.
-              </p>
-              <p class="mt-2 text-slate-300 text-sm">
-                Legal basis: Art. 6 para. 1 lit. f GDPR (legitimate interest in website improvement)
-              </p>
-            </div>
-            <div>
-              <h3 class="mb-2 font-medium text-lg text-white">Cookie Control</h3>
-              <p>
-                You can control cookies through your browser settings. However, disabling certain cookies may affect the functionality of
-                our website.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">12. Children's Privacy</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">12. Cookies</h2>
           <p>
-            Tune Perfect is not intended for children under 16 years of age. We do not knowingly collect personal information from children
-            under 16. If we become aware that we have collected personal data from a child under 16 without parental consent, we will take
-            steps to delete such information.
+            We use essential session cookies to maintain your login status and ensure the basic functionality of our service. We do not use
+            cookies for tracking or advertising purposes.
           </p>
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">13. Automated Decision Making and Profiling</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">13. Links to Other Websites</h2>
           <p>
-            We do not use automated decision-making or profiling that would have legal effects or similarly significantly affect you. Any
-            automated processing we perform (such as game scoring) is purely functional and does not involve profiling of personal
-            characteristics.
+            Our website may contain links to other websites that are not operated by us. If you click on a third-party link, you will be
+            directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit.
           </p>
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">14. Right to Lodge a Complaint</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">14. Children's Privacy</h2>
           <p>
-            You have the right to lodge a complaint with a supervisory authority if you believe that the processing of your personal data
-            violates the GDPR. You can contact your local data protection authority or the authority in the country where you believe the
-            violation occurred.
-          </p>
-          <p class="mt-2">
-            For Germany, you can contact the Federal Commissioner for Data Protection and Freedom of Information (Bundesbeauftragte für den
-            Datenschutz und die Informationsfreiheit) or your local state data protection authority.
+            Our service does not address anyone under the age of 13. We do not knowingly collect personal identifiable information from
+            children under 13. If you are a parent or guardian and you are aware that your child has provided us with personal information,
+            please contact us.
           </p>
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">15. Changes to This Policy</h2>
+          <h2 class="mb-4 font-semibold text-white text-xl">15. Changes to This Privacy Policy</h2>
           <p>
-            We may update this privacy policy from time to time to reflect changes in our practices or for other operational, legal, or
-            regulatory reasons. We will notify you of any material changes by posting the new policy on this page and updating the "Last
-            updated" date. For significant changes, we may also send you a notification via email.
+            We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this
+            page. You are advised to review this Privacy Policy periodically for any changes.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">16. Contact Us</h2>
-          <p>If you have any questions about this privacy policy or our data practices, please contact us:</p>
-          <ul class="mt-2 list-disc space-y-2 pl-6">
-            <li>
-              Email:{" "}
-              <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
-                {supportEmail()}
-              </a>
-            </li>
-            <li>
-              GitHub:{" "}
-              <a href={githubUrl()} target="_blank" rel="noopener noreferrer" class="text-blue-400 underline hover:text-blue-300">
-                {githubUrl()}
-              </a>
-            </li>
-          </ul>
-          <p class="mt-4">
-            We will respond to your inquiry within one month, or sooner if possible. In complex cases, we may extend this period by two
-            additional months, in which case we will inform you of the extension and the reasons for it.
+          <p>
+            If you have any questions about this Privacy Policy, you can contact us at{" "}
+            <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+              {supportEmail()}
+            </a>
+            .
           </p>
         </section>
       </div>

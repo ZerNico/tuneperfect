@@ -15,7 +15,7 @@ function TermsOfServiceComponent() {
     <div class="mx-auto max-w-4xl px-4 py-12">
       <div class="mb-8">
         <h1 class="mb-4 font-bold text-3xl md:text-4xl">Terms of Service</h1>
-        <p class="text-slate-300">Last updated: {new Date().toLocaleDateString()}</p>
+        <p class="text-slate-300">Last updated: June 8th, 2025</p>
       </div>
 
       <div class="space-y-8 text-slate-200">
