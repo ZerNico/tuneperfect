@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/solid-router";
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
-import IconChip from "~icons/lucide/chip";
 import IconPackage from "~icons/lucide/package";
 import IconLinux from "~icons/sing/linux";
 
@@ -49,8 +48,8 @@ function RouteComponent() {
             ]}
             extension="AppImage"
             platform="linux"
-            onDownload={() => handleDownload("x64", "AppImage")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.AppImage`}
+            onDownload={() => handleDownload("x86_64", "AppImage")}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x86_64.AppImage`}
           />
 
           <DownloadCard
@@ -66,8 +65,8 @@ function RouteComponent() {
             ]}
             extension="deb"
             platform="linux"
-            onDownload={() => handleDownload("x64", "deb")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.deb`}
+            onDownload={() => handleDownload("x86_64", "deb")}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x86_64.deb`}
           />
 
           <DownloadCard
@@ -83,39 +82,8 @@ function RouteComponent() {
             ]}
             extension="rpm"
             platform="linux"
-            onDownload={() => handleDownload("x64", "rpm")}
+            onDownload={() => handleDownload("x86_64", "rpm")}
             url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect-${version()}-1.x86_64.rpm`}
-          />
-
-          <DownloadCard
-            icon={<IconChip class="h-6 w-6 text-white" />}
-            gradientFrom="#3b82f6"
-            gradientTo="#8b5cf6"
-            title="AppImage"
-            subtitle="Universal Linux package"
-            description="Works on most Linux distributions. Just download, make executable, and run."
-            tags={[
-              { text: "Recommended", color: "blue" },
-              { text: "x64", color: "slate" },
-            ]}
-            extension="AppImage"
-            platform="linux"
-            onDownload={() => handleDownload("x64", "AppImage")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.AppImage`}
-          />
-
-          <DownloadCard
-            icon={<IconChip class="h-6 w-6 text-white" />}
-            gradientFrom="#6b7280"
-            gradientTo="#374151"
-            title="Flatpak"
-            subtitle="Sandboxed package"
-            description="Install from Flathub. Includes automatic updates and sandboxing."
-            tags={[{ text: "x64", color: "slate" }]}
-            extension="flatpak"
-            platform="linux"
-            onDownload={() => handleDownload("x64", "flatpak")}
-            url="https://flathub.org/apps/com.tuneperfect.TunePerfect"
           />
         </div>
 
