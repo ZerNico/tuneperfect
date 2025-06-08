@@ -6,5 +6,6 @@ export const config = createServerFn({ method: "GET" }).handler(async () => {
     VERSION: process.env.VERSION,
     GITHUB_REPO: process.env.GITHUB_REPO,
     SUPPORT_EMAIL: process.env.SUPPORT_EMAIL,
+    VITE_POSTHOG_TOKEN: process.env.VITE_POSTHOG_TOKEN,
   };
 });

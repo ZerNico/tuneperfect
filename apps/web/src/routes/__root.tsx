@@ -1,7 +1,10 @@
 import { Outlet, createRootRoute } from "@tanstack/solid-router";
+import { onMount } from "solid-js";
+import { isServer } from "solid-js/web";
 import Footer from "~/components/footer";
 import Header from "~/components/header";
 import { config } from "~/lib/config";
+import { initPostHog } from "~/lib/posthog";
 import styles from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -48,6 +51,16 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const context = Route.useRouteContext();
+
+  onMount(() => {
+    const token = context().config.VITE_POSTHOG_TOKEN;
+
+    if (isServer || !token) {
+      return;
+    }
+
+    initPostHog(token);
+  });
 
   return (
     <main class="min-h-screen bg-[#101024] font-primary text-white">

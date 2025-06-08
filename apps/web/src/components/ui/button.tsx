@@ -9,12 +9,14 @@ interface ButtonProps extends BaseProps {
 
 interface InternalLinkProps extends BaseProps {
   to: TanstackLinkProps["to"];
+  onClick?: () => void;
 }
 
 interface LinkProps extends BaseProps {
   href: string;
   target?: "_blank" | "_self" | "_parent" | "_top";
   download?: string;
+  onClick?: () => void;
 }
 
 interface BaseProps extends VariantProps<typeof button> {
@@ -45,7 +47,7 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
 
   if ("to" in props) {
     return (
-      <Link to={props.to} classList={classes()}>
+      <Link to={props.to} classList={classes()} onClick={props.onClick}>
         <ButtonContent>{props.children}</ButtonContent>
       </Link>
     );
@@ -53,12 +55,12 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
 
   if ("href" in props) {
     return (
-      <a href={props.href} target={props.target} classList={classes()} download={props.download}>
+      <a href={props.href} target={props.target} classList={classes()} download={props.download} onClick={props.onClick}>
         <ButtonContent>{props.children}</ButtonContent>
       </a>
     );
   }
-  
+
   return (
     <button type={props.type || "button"} onClick={props.onClick} classList={classes()}>
       <ButtonContent>{props.children}</ButtonContent>

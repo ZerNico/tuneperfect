@@ -19,6 +19,8 @@ interface DownloadCardProps {
   tags: Tag[];
   extension: string;
   url: string;
+  platform?: "macos" | "windows" | "linux";
+  onDownload?: () => void;
 }
 
 export default function DownloadCard(props: DownloadCardProps) {
@@ -39,8 +41,17 @@ export default function DownloadCard(props: DownloadCardProps) {
     }
   };
 
+  const handleDownload = () => {
+    props.onDownload?.();
+  };
+
   return (
-    <div class={cn("group flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-slate-750 hover:shadow-2xl", props.class)}>
+    <div
+      class={cn(
+        "group flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-slate-750 hover:shadow-2xl",
+        props.class
+      )}
+    >
       <div class="flex items-center gap-4">
         <div
           class="rounded-full p-3"
@@ -64,7 +75,7 @@ export default function DownloadCard(props: DownloadCardProps) {
       </div>
 
       <div class="mt-auto">
-        <Button href={props.url}  intent="gradient-settings">
+        <Button href={props.url} intent="gradient-settings" onClick={handleDownload}>
           Download (.{props.extension})
         </Button>
       </div>

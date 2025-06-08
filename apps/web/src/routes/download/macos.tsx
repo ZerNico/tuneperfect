@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/solid-router";
 import DownloadCard from "~/components/download-card";
+import { posthog } from "~/lib/posthog";
 import IconChip from "~icons/lucide/cpu";
 import IconApple from "~icons/sing/apple";
 
@@ -11,6 +12,15 @@ function RouteComponent() {
   const context = Route.useRouteContext();
   const version = () => context()?.config?.VERSION?.replace(/^v/, '') || '';
   const githubRepo = () => context()?.config?.GITHUB_REPO || '';
+
+  const handleDownload = (architecture: string, extension: string) => {
+    posthog.capture("download_started", {
+      download_os: "macos",
+      download_version: version(),
+      download_architecture: architecture,
+      download_extension: extension,
+    });
+  };
 
   return (
     <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
@@ -36,6 +46,8 @@ function RouteComponent() {
               { text: "arm64", color: "slate" },
             ]}
             extension="dmg"
+            platform="macos"
+            onDownload={() => handleDownload("arm64", "dmg")}
             url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_aarch64.dmg`}
           />
 
@@ -48,6 +60,8 @@ function RouteComponent() {
             description="For older Macs with Intel processors. Compatible with all Intel-based Macs."
             tags={[{ text: "x86_64", color: "slate" }]}
             extension="dmg"
+            platform="macos"
+            onDownload={() => handleDownload("x86_64", "dmg")}
             url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.dmg`}
           />
         </div>

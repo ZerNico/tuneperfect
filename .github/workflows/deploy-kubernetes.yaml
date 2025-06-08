@@ -60,6 +60,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
         run: |
           echo "Deploying with image tag $IMAGE_TAG to domain $DOMAIN_NAME"
           helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
@@ -83,6 +84,7 @@ jobs:
             --set apps.web.env.VERSION=$IMAGE_TAG \
             --set apps.web.env.GITHUB_REPO=${{ github.repository }} \
             --set apps.web.env.SUPPORT_EMAIL=support@$DOMAIN_NAME \
+            --set apps.web.env.VITE_POSTHOG_TOKEN=$POSTHOG_TOKEN \
             --set apps.app.ingress.enabled=true \
             --set apps.app.ingress.hosts[0].host=app.$DOMAIN_NAME \
             --set apps.app.ingress.tls[0].hosts[0]=app.$DOMAIN_NAME \
