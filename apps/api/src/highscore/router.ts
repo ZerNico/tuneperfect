@@ -45,6 +45,12 @@ export const highscoreRouter = os.prefix("/highscores").router({
 
   getHighscores: base
     .use(requireLobby)
+    .meta({
+      rateLimit: {
+        windowMs: 1000 * 60 * 5,
+        limit: 5000,
+      },
+    })
     .input(v.object({ hash: v.string() }))
     .handler(async ({ context, input }) => {
       return await highscoreService.getHighscoresForLobby(context.payload.sub, input.hash);
