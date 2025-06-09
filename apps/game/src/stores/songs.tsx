@@ -2,7 +2,6 @@ import { ReactiveMap } from "@solid-primitives/map";
 import { makePersisted } from "@solid-primitives/storage";
 import { createMemo, createSignal } from "solid-js";
 import { type LocalSong, parseLocalFileTree } from "~/lib/ultrastar/parser/local";
-import type { Song } from "~/lib/ultrastar/song";
 import { readFileTree } from "~/lib/utils/fs";
 
 function createSongsStore() {
@@ -45,7 +44,7 @@ function createSongsStore() {
       }
     }
 
-    return Array.from(songs.values());
+    return Array.from(songs.values()).sort((a, b) => a.artist.localeCompare(b.artist));
   });
 
   return {

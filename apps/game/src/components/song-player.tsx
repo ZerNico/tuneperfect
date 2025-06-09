@@ -96,33 +96,36 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       if (!video) return;
 
-      try {
-        videoSource = audioContext.createMediaElementSource(video);
-        const gainNode = audioContext.createGain();
-        videoSource.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+      // Only create audio source for video if there's no separate audio element
+      if (!props.song.audioUrl) {
+        try {
+          videoSource = audioContext.createMediaElementSource(video);
+          const gainNode = audioContext.createGain();
+          videoSource.connect(gainNode);
+          gainNode.connect(audioContext.destination);
 
-        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+          const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+          gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
-        // Update volume when it changes
-        createEffect(() => {
-          const volume = props.volume ?? 1;
-          gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
-        });
+          // Update volume when it changes
+          createEffect(() => {
+            const volume = props.volume ?? 1;
+            gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+          });
 
-        onCleanup(() => {
-          try {
-            gainNode.disconnect();
-            if (videoSource) {
-              videoSource.disconnect();
+          onCleanup(() => {
+            try {
+              gainNode.disconnect();
+              if (videoSource) {
+                videoSource.disconnect();
+              }
+            } catch (e) {
+              // Ignore disconnection errors during cleanup
             }
-          } catch (e) {
-            // Ignore disconnection errors during cleanup
-          }
-        });
-      } catch (error) {
-        console.warn("Failed to create video source:", error);
+          });
+        } catch (error) {
+          console.warn("Failed to create video source:", error);
+        }
       }
     })
   );
