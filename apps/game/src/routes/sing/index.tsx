@@ -1,8 +1,10 @@
+import { safe } from "@orpc/client";
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on } from "solid-js";
-import { Transition } from "solid-transition-group";
+import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
+import { Motion, Presence } from "solid-motionone";
+import HighscoreList, { type Highscore } from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
@@ -11,8 +13,10 @@ import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { useNavigation } from "~/hooks/navigation";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
@@ -190,58 +194,42 @@ function SingComponent() {
       }
       background={
         <div class="relative h-full w-full">
-          <Transition
-            onExit={(el, done) => {
-              const element = el as HTMLElement;
-              element.style.position = "absolute";
-              element.style.zIndex = "1";
-              element.style.top = "0";
-              element.style.left = "0";
-
-              const a = el.animate([{ opacity: 1 }, { opacity: 0 }], {
-                duration: 300,
-              });
-              a.finished.then(done);
-            }}
-            onEnter={(el, done) => {
-              const element = el as HTMLElement;
-              element.style.position = "absolute";
-              element.style.zIndex = "1";
-              element.style.top = "0";
-              element.style.left = "0";
-
-              const a = el.animate([{ opacity: 0 }, { opacity: 1 }], {
-                duration: 300,
-              });
-              a.finished.then(done);
-            }}
-          >
+          <Presence>
             <Show when={!isFastScrolling() && currentSong()} keyed>
-              {(currentSong) => (
-                <div class="h-full w-full">
-                  <SongPlayer
-                    isPreview
-                    volume={settingsStore.getVolume("preview")}
-                    class="h-full w-full opacity-60"
-                    playing
-                    song={currentSong}
-                  />
-                </div>
-              )}
+              {(currentSong) => {
+                console.log("currentSong", currentSong);
+                return (
+                  <Motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    class="absolute inset-0 z-1"
+                  >
+                    <SongPlayer
+                      isPreview
+                      volume={settingsStore.getVolume("preview")}
+                      class="h-full w-full opacity-60"
+                      playing
+                      song={currentSong}
+                    />
+                  </Motion.div>
+                );
+              }}
             </Show>
-          </Transition>
+          </Presence>
         </div>
       }
     >
-      <div class="relative flex flex-grow flex-col">
+      <div class="relative grid h-full grid-rows-[1fr_auto]">
         <Show when={searchFocused() && keyMode() === "gamepad"}>
           <div class="absolute z-10">
             <VirtualKeyboard inputRef={searchRef} />
           </div>
         </Show>
 
-        <div class="flex flex-grow flex-col justify-center">
-          <div class="relative flex flex-col">
+        <div class="flex flex-grow items-center">
+          <div class="relative flex flex-grow flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
             <div class="max-w-200">
               <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">{currentSong()?.title}</span>
@@ -252,6 +240,7 @@ function SingComponent() {
               </Show>
             </div>
           </div>
+          <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
         </div>
         <div>
           <SongScroller
@@ -720,6 +709,43 @@ function SearchBar(props: SearchBarProps) {
       >
         <IconF3Key class="transition-opacity" classList={{ "opacity-0": focused() }} />
       </Show>
+    </div>
+  );
+}
+interface DebouncedHighscoreListProps {
+  songHash: string;
+}
+
+function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
+  const [highscores, setHighscores] = createSignal<Highscore[]>([]);
+
+  createEffect(
+    on(
+      () => props.songHash,
+      () => {
+        setHighscores([]);
+
+        const timeout = setTimeout(async () => {
+          if (!lobbyStore.lobby()) return;
+
+          const hash = props.songHash;
+          if (!hash) return;
+          const [error, data] = await safe(client.highscore.getHighscores.call({ hash }));
+          if (error) return;
+
+          setHighscores(data);
+        }, 1000);
+
+        onCleanup(() => {
+          clearTimeout(timeout);
+        });
+      }
+    )
+  );
+
+  return (
+    <div class="h-full transition-opacity duration-250" classList={{ "opacity-0": highscores().length === 0 }}>
+      <HighscoreList scores={highscores()} />
     </div>
   );
 }

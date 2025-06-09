@@ -194,3 +194,8 @@
 .gradient-bg-secondary {
   background: radial-gradient(at top, #2d3438 0%, #203141 100%);
 }
+
+html,
+body {
+  overscroll-behavior: none;
+}

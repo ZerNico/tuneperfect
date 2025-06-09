@@ -20,7 +20,7 @@ export const lobbyQueryOptions = () =>
     },
   });
 
-export const highscoreQueryOptions = (hash: string) =>
+export const highscoreQueryOptions = (hash: string, options?: { enabled: boolean }) =>
   queryOptions({
     queryKey: ["highscore", hash],
     queryFn: async () => {
@@ -32,6 +32,7 @@ export const highscoreQueryOptions = (hash: string) =>
 
       return data;
     },
+    ...options,
   });
 
 export const availableClubsQueryOptions = () =>

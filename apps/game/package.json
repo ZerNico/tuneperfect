@@ -45,6 +45,7 @@
     "p-limit": "^6.2.0",
     "qrcode": "^1.5.4",
     "solid-js": "^1.9.7",
+    "solid-motionone": "^1.0.4",
     "solid-transition-group": "^0.3.0",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.8",

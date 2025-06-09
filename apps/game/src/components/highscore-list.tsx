@@ -4,11 +4,13 @@ import type { User } from "~/lib/types";
 import IconHash from "~icons/lucide/hash";
 import Avatar from "./ui/avatar";
 
+export interface Highscore {
+  score: number;
+  user: User;
+}
+
 interface HighscoreListProps {
-  scores: {
-    score: number;
-    user: User;
-  }[];
+  scores: Highscore[];
   class?: string;
   classList?: Record<string, boolean>;
 }
@@ -56,15 +58,12 @@ export default function HighscoreList(props: HighscoreListProps) {
   });
 
   return (
-    <div class={twMerge("flex h-full w-full flex-col justify-center", props.class)}>
-      <div 
-        ref={containerRef} 
-        class="styled-scrollbars flex flex-col overflow-y-auto"
-      >
-        <div class="flex flex-col gap-2">
+    <div class={twMerge("relative h-full w-100", props.class)}>
+      <div ref={containerRef} class="styled-scrollbars absolute flex h-full w-full flex-col overflow-y-auto">
+        <div class="justify-center-safe flex min-h-full flex-col gap-2">
           <For each={props.scores}>
             {(score, index) => (
-              <div class="flex h-7 w-full items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4">
+              <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4">
                 <div
                   class="flex h-full w-10 flex-shrink-0 items-center justify-center text-center"
                   classList={{
@@ -79,7 +78,7 @@ export default function HighscoreList(props: HighscoreListProps) {
                   <Avatar user={score.user} class="h-6 w-6 flex-shrink-0" />
                   <span class="truncate">{score.user.username || "?"}</span>
                 </div>
-                
+
                 <div class="flex flex-shrink-0 flex-row items-center gap-4">
                   <span class="flex flex-shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
                     <IconHash />
