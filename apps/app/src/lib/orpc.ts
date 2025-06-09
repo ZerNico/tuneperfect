@@ -9,6 +9,29 @@ import { config } from "./config";
 
 const ORPC_URL = joinURL(config.API_URL, "/rpc");
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function attemptTokenRefresh(): Promise<boolean> {
+  if (refreshPromise) {
+    return await refreshPromise;
+  }
+
+  refreshPromise = (async (): Promise<boolean> => {
+    try {
+      const [refreshError] = await safe(client.auth.refreshToken.call());
+      if (refreshError) {
+        window.dispatchEvent(new CustomEvent("session:expired"));
+        return false;
+      }
+      return true;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return await refreshPromise;
+}
+
 const link = new RPCLink({
   url: ORPC_URL,
 
@@ -24,24 +47,15 @@ const link = new RPCLink({
       default: {
         retry: 1,
         retryDelay: 0,
-        shouldRetry: async ({ error, path }) => {
+        shouldRetry: async ({ error, path }): Promise<boolean> => {
           if (path.join("/") === "auth/refreshToken") {
             return false;
           }
 
-          if (error instanceof ORPCError) {
-            if (error.status === 401) {
-              const [refreshError] = await safe(client.auth.refreshToken.call());
-
-              if (refreshError) {
-                window.dispatchEvent(new CustomEvent("session:expired"));
-
-                return false;
-              }
-
-              return true;
-            }
+          if (error instanceof ORPCError && error.status === 401) {
+            return await attemptTokenRefresh();
           }
+
           return false;
         },
       },
