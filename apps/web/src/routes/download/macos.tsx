@@ -67,6 +67,21 @@ function RouteComponent() {
         </div>
 
         <div class="mt-12 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
+          <h3 class="mb-4 font-semibold text-slate-200">Installation Instructions</h3>
+          <div class="space-y-4">
+            <div>
+              <h4 class="mb-2 font-medium text-slate-300 text-sm">First Launch:</h4>
+              <p class="mb-2 text-slate-300 text-sm">
+                Since the app is not signed, you'll need to remove the quarantine attribute before first launch:
+              </p>
+              <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
+                xattr -d com.apple.quarantine "/Applications/Tune Perfect.app"
+              </code>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
           <h3 class="mb-3 font-semibold text-slate-200">Not sure which version to choose?</h3>
           <p class="mb-4 text-slate-300 text-sm">
             Check your Mac's processor by clicking the Apple menu → About This Mac. If you see "Apple M1", "Apple M2", etc., choose Apple
