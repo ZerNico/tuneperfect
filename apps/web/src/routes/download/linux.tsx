@@ -95,9 +95,9 @@ function RouteComponent() {
               <div>
                 <h4 class="mb-2 font-medium text-slate-300 text-sm">AppImage:</h4>
                 <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
-                  chmod +x TunePerfect-*.AppImage
+                  chmod +x Tune.Perfect_{version()}_amd64.AppImage
                   <br />
-                  ./TunePerfect-*.AppImage
+                  ./Tune.Perfect_{version()}_amd64.AppImage
                 </code>
               </div>
 
@@ -106,7 +106,7 @@ function RouteComponent() {
                 <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
                   sudo apt update && sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
                   <br />
-                  sudo dpkg -i tuneperfect_*.deb
+                  sudo dpkg -i Tune.Perfect_{version()}_amd64.deb
                   <br />
                   sudo apt-get install -f # If dependencies are missing
                 </code>
@@ -117,7 +117,7 @@ function RouteComponent() {
                 <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
                   sudo dnf install libwebkit2gtk-4.1-0 libgtk-3-0
                   <br />
-                  sudo dnf install tuneperfect-*.rpm
+                  sudo dnf install Tune.Perfect-{version()}-1.x86_64.rpm
                 </code>
               </div>
             </div>
