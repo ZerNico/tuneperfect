@@ -1,7 +1,5 @@
 import { createEventListener } from "@solid-primitives/event-listener";
-import { createQuery } from "@tanstack/solid-query";
-import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/solid-router";
-import { createEffect } from "solid-js";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
 import { sessionQueryOptions } from "~/lib/auth";
 import { tryCatch } from "~/lib/utils/try-catch";

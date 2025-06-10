@@ -2,7 +2,7 @@ import { safe } from "@orpc/client";
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { For, type Ref, Show, batch, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
+import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, type Ref, Show } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import HighscoreList, { type Highscore } from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
@@ -10,8 +10,7 @@ import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
-import { useNavigation } from "~/hooks/navigation";
-import { keyMode } from "~/hooks/navigation";
+import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
@@ -232,7 +231,9 @@ function SingComponent() {
           <div class="relative flex flex-grow flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
             <div class="max-w-200">
-              <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">{currentSong()?.title}</span>
+              <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">
+                {currentSong()?.title}
+              </span>
             </div>
             <div class="absolute top-full">
               <Show when={(currentSong()?.voices.length || 0) > 1}>
@@ -340,8 +341,8 @@ function SongScroller(props: SongScrollerProps) {
           props.onSongChange?.(newCurrentSong || null);
         }
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   );
 
   const displayedSongs = createMemo(() => {
@@ -643,7 +644,10 @@ function SearchBar(props: SearchBarProps) {
 
   const moveCursor = (direction: "left" | "right") => {
     const start = searchRef.selectionStart ?? 0;
-    searchRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
+    searchRef.setSelectionRange(
+      Math.max(0, start + (direction === "left" ? -1 : 1)),
+      Math.max(0, start + (direction === "left" ? -1 : 1)),
+    );
   };
 
   const writeCharacter = (char: string) => {
@@ -739,8 +743,8 @@ function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
         onCleanup(() => {
           clearTimeout(timeout);
         });
-      }
-    )
+      },
+    ),
   );
 
   return (

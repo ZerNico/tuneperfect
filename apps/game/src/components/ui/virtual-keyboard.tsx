@@ -1,4 +1,4 @@
-import { For, type JSX, createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, For, type JSX } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import IconArrowBigDown from "~icons/lucide/arrow-big-down";
 import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
@@ -220,7 +220,13 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
         { content: <IconTriangleLeft class="text-sm" />, highlight: true, action: () => moveCursor("left") },
         { content: <IconTriangleRight class="text-sm" />, highlight: true, action: () => moveCursor("right") },
         { content: "", colSpan: 5, highlight: true, action: () => {} },
-        { content: "Done", hint: <IconGamepadStart />, colSpan: 3, highlight: true, action: () => props.inputRef.blur() },
+        {
+          content: "Done",
+          hint: <IconGamepadStart />,
+          colSpan: 3,
+          highlight: true,
+          action: () => props.inputRef.blur(),
+        },
       ],
     ];
 

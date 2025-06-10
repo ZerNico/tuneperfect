@@ -7,7 +7,7 @@ import { requireLobby, requireLobbyOrUser } from "./middleware";
 import { lobbyService } from "./service";
 
 export const lobbyRouter = os.prefix("/lobbies").router({
-  createLobby: base.handler(async ({ context, errors }) => {
+  createLobby: base.handler(async ({ errors }) => {
     const lobby = await lobbyService.createLobby();
 
     if (!lobby) {
@@ -96,7 +96,7 @@ export const lobbyRouter = os.prefix("/lobbies").router({
       await lobbyService.kickUser(context.payload.sub, input.userId);
     }),
 
-  deleteLobby: base.use(requireLobby).handler(async ({ context, errors }) => {
+  deleteLobby: base.use(requireLobby).handler(async ({ context }) => {
     await lobbyService.deleteLobby(context.payload.sub);
   }),
 
@@ -107,9 +107,7 @@ export const lobbyRouter = os.prefix("/lobbies").router({
       return await lobbyService.updateLobbySelectedClub(context.payload.sub, input.clubId);
     }),
 
-  getAvailableClubs: base
-    .use(requireLobby)
-    .handler(async ({ context }) => {
-      return await lobbyService.getAvailableClubsForLobby(context.payload.sub);
-    }),
+  getAvailableClubs: base.use(requireLobby).handler(async ({ context }) => {
+    return await lobbyService.getAvailableClubsForLobby(context.payload.sub);
+  }),
 });

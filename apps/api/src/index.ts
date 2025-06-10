@@ -75,7 +75,7 @@ const openAPIHandler = new OpenAPIHandler(router, {
 
 const server = Bun.serve({
   port: env.PORT,
-  async fetch(request, server) {
+  async fetch(request) {
     const rpcResponse = await rpcHandler.handle(request, {
       prefix: "/rpc",
       context: {

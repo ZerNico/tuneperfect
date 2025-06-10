@@ -1,5 +1,3 @@
-;
-
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
 import IconChip from "~icons/lucide/cpu";
@@ -11,8 +9,8 @@ export const Route = createFileRoute({
 
 function RouteComponent() {
   const context = Route.useRouteContext();
-  const version = () => context()?.config?.VERSION?.replace(/^v/, '') || '';
-  const githubRepo = () => context()?.config?.GITHUB_REPO || '';
+  const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
+  const githubRepo = () => context()?.config?.GITHUB_REPO || "";
 
   const handleDownload = (architecture: string, extension: string) => {
     posthog.capture("download_started", {
@@ -51,7 +49,7 @@ function RouteComponent() {
             onDownload={() => handleDownload("x64", "exe")}
             url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
           />
-          
+
           <DownloadCard
             icon={<IconChip class="h-6 w-6 text-white" />}
             gradientFrom="#6b7280"
@@ -70,8 +68,8 @@ function RouteComponent() {
         <div class="mt-12 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
           <h3 class="mb-3 font-semibold text-slate-200">Not sure which version to choose?</h3>
           <p class="mb-4 text-slate-300 text-sm">
-            Most modern Windows PCs use 64-bit Windows. If you're not sure, you can check by going to Settings → System → About and looking
-            at the "System type" field.
+            Most modern Windows PCs use 64-bit Windows. If you're not sure, you can check by going to Settings → System
+            → About and looking at the "System type" field.
           </p>
           <div class="space-y-2 text-slate-400 text-xs">
             <p>

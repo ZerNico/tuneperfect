@@ -18,7 +18,7 @@ export const Route = createFileRoute("/sing/$hash")({
 });
 
 const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
-  Array(settingsStore.microphones().length).fill("guest")
+  Array(settingsStore.microphones().length).fill("guest"),
 );
 
 function PlayerSelectionComponent() {
@@ -35,7 +35,7 @@ function PlayerSelectionComponent() {
   const [selectedVoices, setSelectedVoices] = createSignal<number[]>(
     Array(settingsStore.microphones().length)
       .fill(0)
-      .map((_, i) => i % voiceCount())
+      .map((_, i) => i % voiceCount()),
   );
 
   const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || []), guestUser];
@@ -43,13 +43,13 @@ function PlayerSelectionComponent() {
   createEffect(() => {
     const availableUsers = users();
     const currentSelected = selectedPlayers();
-    
-    const updatedSelected = currentSelected.map(selected => {
+
+    const updatedSelected = currentSelected.map((selected) => {
       if (selected === "guest") return selected;
-      if (availableUsers.find(user => user.id === selected)) return selected;
+      if (availableUsers.find((user) => user.id === selected)) return selected;
       return "guest";
     });
-    
+
     if (updatedSelected.some((val, i) => val !== currentSelected[i])) {
       setSelectedPlayers(updatedSelected);
     }
@@ -58,7 +58,7 @@ function PlayerSelectionComponent() {
   createEffect(() => {
     const micCount = settingsStore.microphones().length;
     const currentSelected = selectedPlayers();
-    
+
     if (currentSelected.length !== micCount) {
       if (currentSelected.length < micCount) {
         setSelectedPlayers([...currentSelected, ...Array(micCount - currentSelected.length).fill("guest")]);

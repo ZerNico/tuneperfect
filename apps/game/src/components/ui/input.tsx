@@ -1,7 +1,6 @@
 import { mergeRefs } from "@solid-primitives/refs";
-import { type JSX, type Ref, createEffect, createSignal } from "solid-js";
-import { useNavigation } from "~/hooks/navigation";
-import { keyMode } from "~/hooks/navigation";
+import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
+import { keyMode, useNavigation } from "~/hooks/navigation";
 import { VirtualKeyboard } from "./virtual-keyboard";
 
 interface InputProps {
@@ -21,7 +20,11 @@ interface InputProps {
 
 export default function Input(props: InputProps) {
   const [focused, setFocused] = createSignal(false);
-  const [keyboardPosition, setKeyboardPosition] = createSignal<{ top: number; left: number; showAbove: boolean } | null>(null);
+  const [keyboardPosition, setKeyboardPosition] = createSignal<{
+    top: number;
+    left: number;
+    showAbove: boolean;
+  } | null>(null);
   let inputRef!: HTMLInputElement;
   let containerRef!: HTMLDivElement;
 
@@ -39,7 +42,10 @@ export default function Input(props: InputProps) {
 
   const moveCursor = (direction: "left" | "right") => {
     const start = inputRef.selectionStart ?? 0;
-    inputRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
+    inputRef.setSelectionRange(
+      Math.max(0, start + (direction === "left" ? -1 : 1)),
+      Math.max(0, start + (direction === "left" ? -1 : 1)),
+    );
   };
 
   useNavigation(() => ({
@@ -97,7 +103,12 @@ export default function Input(props: InputProps) {
 
   return (
     <>
-      <div ref={containerRef} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This is a input */}
+      <div
+        ref={containerRef}
+        class="grid h-16 items-center overflow-hidden rounded-lg"
+        onMouseEnter={props.onMouseEnter}
+      >
         <div
           class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
           classList={{

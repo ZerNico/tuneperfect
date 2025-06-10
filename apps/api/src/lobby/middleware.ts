@@ -64,7 +64,7 @@ export const requireLobbyOrUser = init
           },
         });
       }
-    } catch (error) {
+    } catch {
       // Do nothing
     }
 
@@ -87,7 +87,7 @@ export const requireLobbyOrUser = init
           type: "access",
         },
       });
-    } catch (error) {
+    } catch {
       // Do nothing
     }
 

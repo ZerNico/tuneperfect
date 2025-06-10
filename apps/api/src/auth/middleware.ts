@@ -1,5 +1,3 @@
-import { os } from "@orpc/server";
-import { base } from "../base";
 import { init } from "../lib/orpc";
 import { authService } from "./service";
 

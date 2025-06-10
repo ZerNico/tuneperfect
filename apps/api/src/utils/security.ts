@@ -1,4 +1,4 @@
-import { hasProtocol, parseURL } from "ufo";
+import { parseURL } from "ufo";
 
 export async function executeWithConstantTime<T>(fn: () => Promise<T>, targetTimeMs: number) {
   const startTime = performance.now();

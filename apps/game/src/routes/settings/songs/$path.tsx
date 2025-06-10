@@ -34,7 +34,13 @@ function SongsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={`${t("settings.sections.songs.title")} / ${path()}`} onBack={onBack} />}
+      header={
+        <TitleBar
+          title={t("settings.title")}
+          description={`${t("settings.sections.songs.title")} / ${path()}`}
+          onBack={onBack}
+        />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

@@ -32,7 +32,7 @@ function SelectClubComponent() {
         await queryClient.invalidateQueries(lobbyQueryOptions());
         navigate({ to: "/lobby" });
       },
-    })
+    }),
   );
 
   const menuItems: Accessor<MenuItem[]> = createMemo(() => {

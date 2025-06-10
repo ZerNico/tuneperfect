@@ -1,5 +1,5 @@
 import { TextField } from "@kobalte/core/text-field";
-import { type JSX, Show, createSignal } from "solid-js";
+import { createSignal, type JSX, Show } from "solid-js";
 import Eye from "~icons/lucide/eye";
 import EyeOff from "~icons/lucide/eye-off";
 
@@ -28,7 +28,9 @@ export default function Input(props: InputProps) {
 
   return (
     <TextField validationState={props.errorMessage ? "invalid" : "valid"} class={props.class}>
-      <Show when={props.label}>{(label) => <TextField.Label class="block text-slate-800 text-sm">{label()}</TextField.Label>}</Show>
+      <Show when={props.label}>
+        {(label) => <TextField.Label class="block text-slate-800 text-sm">{label()}</TextField.Label>}
+      </Show>
       <div class="flex items-center gap-1 pb-1">
         <TextField.Input
           value={props.value}

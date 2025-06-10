@@ -1,6 +1,6 @@
 import { createMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { Match, Switch, onMount } from "solid-js";
+import { Match, onMount, Switch } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -25,7 +25,7 @@ function IndexComponent() {
         lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId } });
         goToLoading();
       },
-    })
+    }),
   );
 
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
@@ -41,7 +41,7 @@ function IndexComponent() {
       try {
         await queryClient.fetchQuery(client.lobby.currentLobby.queryOptions());
         goToLoading();
-      } catch (error) {
+      } catch {
         lobbyStore.clearLobby();
         createLobbyMutation.mutate({});
       }

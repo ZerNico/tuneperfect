@@ -1,6 +1,6 @@
 import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
 import DiscordLogin from "~/components/discord-login";
@@ -24,7 +24,8 @@ function SignInComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
+  const absoluteRedirect = () =>
+    search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
 
   const form = createForm(() => ({
     defaultValues: {
@@ -36,7 +37,7 @@ function SignInComponent() {
         client.auth.signIn.call({
           email: value.email,
           password: value.password,
-        })
+        }),
       );
 
       if (error) {

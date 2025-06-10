@@ -31,7 +31,7 @@ function RouteComponent() {
       const [error, _data, isDefined] = await safe(
         client.user.updateMe.call({
           username: value.username,
-        })
+        }),
       );
 
       if (error) {
@@ -59,7 +59,7 @@ function RouteComponent() {
           v.string(),
           v.minLength(3, t("completeProfile.usernameMinLength")),
           v.maxLength(20, t("completeProfile.usernameMaxLength")),
-          v.regex(/^[a-zA-Z0-9_]+$/, t("completeProfile.usernameInvalid"))
+          v.regex(/^[a-zA-Z0-9_]+$/, t("completeProfile.usernameInvalid")),
         ),
       }),
     },

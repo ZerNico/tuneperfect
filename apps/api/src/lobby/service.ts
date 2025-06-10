@@ -129,7 +129,7 @@ export class LobbyService {
 
     // Get all unique clubs that lobby users are members of
     const userIds = lobby.users.map((user) => user.id);
-    
+
     if (userIds.length === 0) {
       return [];
     }

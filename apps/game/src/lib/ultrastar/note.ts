@@ -8,4 +8,3 @@ export interface Note {
   txtPitch: number;
   midiNote: number;
 }
-

@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import Layout from "~/components/layout";
-import Menu from "~/components/menu";
 import type { MenuItem } from "~/components/menu";
+import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
@@ -30,8 +30,8 @@ function VersusSettingsComponent() {
   });
 
   const startRound = () => {
-    const users = [...lobbyQuery.data?.users ?? [], ...lobbyStore.localPlayersInLobby()];
-    
+    const users = [...(lobbyQuery.data?.users ?? []), ...lobbyStore.localPlayersInLobby()];
+
     if (users.length < 2) {
       notify({
         message: t("party.versus.notEnoughPlayers"),

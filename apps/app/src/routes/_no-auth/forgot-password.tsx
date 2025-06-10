@@ -1,6 +1,6 @@
 import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import * as v from "valibot";
 import Button from "~/components/ui/button";
@@ -26,7 +26,7 @@ function ForgotPasswordComponent() {
       const [error, _data] = await safe(
         client.auth.requestPasswordReset.call({
           email: value.email,
-        })
+        }),
       );
 
       if (error) {

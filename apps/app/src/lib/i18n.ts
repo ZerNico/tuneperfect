@@ -14,7 +14,7 @@ export type Dictionary = i18n.Flatten<en.Dict>;
 function getDefaultLocale() {
   const browserLocales = navigator.languages;
   for (const locale of browserLocales) {
-    const lang = locale.split('-')[0]; // Extract language code (e.g., 'de' from 'de-DE')
+    const lang = locale.split("-")[0]; // Extract language code (e.g., 'de' from 'de-DE')
     if (Object.keys(dictionaries).includes(lang)) {
       return lang as Locale;
     }

@@ -1,9 +1,9 @@
 import { createEventListener } from "@solid-primitives/event-listener";
 import { ReactiveMap } from "@solid-primitives/map";
-import { type MaybeAccessor, access } from "@solid-primitives/utils";
+import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import mitt from "mitt";
 import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
-import { type GamepadButton, createGamepad } from "./gamepad";
+import { createGamepad, type GamepadButton } from "./gamepad";
 
 export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");
 

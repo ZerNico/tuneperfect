@@ -12,7 +12,8 @@ export class CookiesPlugin<T extends CookiesPluginContext> implements StandardHa
     options.rootInterceptors ??= [];
 
     options.rootInterceptors.unshift(async (options) => {
-      const cookieHeader = typeof options.request.headers.cookie === "string" ? options.request.headers.cookie : undefined;
+      const cookieHeader =
+        typeof options.request.headers.cookie === "string" ? options.request.headers.cookie : undefined;
       const resHeaders = options.context.resHeaders ?? new Headers();
 
       const result = await options.next({

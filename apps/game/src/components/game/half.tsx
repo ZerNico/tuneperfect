@@ -1,4 +1,4 @@
-import { Show, createEffect, createSignal } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";

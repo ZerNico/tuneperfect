@@ -34,18 +34,28 @@ function RouteComponent() {
           <Note class="absolute bottom-[20%] left-[30%] w-12 md:bottom-[25%]" color="red" />
           <Note class="absolute right-[35%] bottom-[15%] w-40 max-md:hidden" color="green" />
           <Note class="absolute top-[18%] right-[40%] max-md:hidden" color="purple" />
-          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center font-bold text-4xl opacity-0 md:text-6xl">Tune Perfect</h1>
+          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center font-bold text-4xl opacity-0 md:text-6xl">
+            Tune Perfect
+          </h1>
           <p class="max-w-xl animate-[fadeInUp_0.6s_ease-out_0.2s_forwards] text-center text-white/90 text-wrap-balance opacity-0">
-            Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete with friends, and
-            have a blast!
+            Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete
+            with friends, and have a blast!
           </p>
-          <Button onClick={scrollToDownload} intent="gradient-sing" class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0">
+          <Button
+            onClick={scrollToDownload}
+            intent="gradient-sing"
+            class="animate-[fadeInUp_0.6s_ease-out_0.4s_forwards] opacity-0"
+          >
             Download
           </Button>
         </section>
 
         <section class="relative w-full">
-          <img src="/images/home.webp" class="relative z-2 mx-auto w-full max-w-6xl" alt="Screenshot of Tune Perfect home page" />
+          <img
+            src="/images/home.webp"
+            class="relative z-2 mx-auto w-full max-w-6xl"
+            alt="Screenshot of Tune Perfect home page"
+          />
           <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
 
@@ -83,11 +93,18 @@ function RouteComponent() {
         </section>
 
         <section class="relative w-full">
-          <img src="/images/game.webp" class="relative z-2 mx-auto w-full max-w-6xl" alt="Screenshot of Tune Perfect game page" />
+          <img
+            src="/images/game.webp"
+            class="relative z-2 mx-auto w-full max-w-6xl"
+            alt="Screenshot of Tune Perfect game page"
+          />
           <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
 
-        <section class="relative z-2 mx-auto flex min-h-120 max-w-5xl flex-col items-center justify-center px-4" id="download">
+        <section
+          class="relative z-2 mx-auto flex min-h-120 max-w-5xl flex-col items-center justify-center px-4"
+          id="download"
+        >
           <div class="mb-4 flex flex-col items-center gap-2">
             <h2 class="text-center font-bold text-2xl md:text-3xl">Download</h2>
             <div class="gradient-settings mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
@@ -125,8 +142,16 @@ function RouteComponent() {
           <Slider class="relative z-2" autoScroll={5000}>
             <img src="/images/list.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect song list" />
             <img src="/images/scores.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect scores" />
-            <img src="/images/versus.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect versus party mode" />
-            <img src="/images/microphone-settings.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect microphone settings" />
+            <img
+              src="/images/versus.webp"
+              class="w-full object-cover"
+              alt="Screenshot of Tune Perfect versus party mode"
+            />
+            <img
+              src="/images/microphone-settings.webp"
+              class="w-full object-cover"
+              alt="Screenshot of Tune Perfect microphone settings"
+            />
           </Slider>
           <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
@@ -159,7 +184,9 @@ function Note(props: NoteProps) {
       <div
         class="h-full w-full rounded-full transition-[clip-path] ease-in-out"
         style={{
-          "clip-path": filled() ? "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)" : "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
+          "clip-path": filled()
+            ? "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)"
+            : "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
           "transition-duration": `${randomDuration}ms`,
           background: `linear-gradient(to right, ${colorFrom}, ${colorTo})`,
         }}

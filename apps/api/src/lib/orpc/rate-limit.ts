@@ -1,8 +1,7 @@
-import * as v from "valibot";
-import { init } from ".";
 import { tryCatch } from "../../utils/try-catch";
 import { logger } from "../logger";
 import { redis } from "../redis";
+import { init } from ".";
 
 export interface RateLimitMetadata {
   rateLimit: {
@@ -98,32 +97,31 @@ function applyRateLimitHeaders(
   context.resHeaders?.set("RateLimit-Policy", `${limit};w=${Math.ceil(windowMs / 1000)}`); // Policy with window size in seconds
 }
 
-export const rateLimit = init
-  .middleware(async ({ procedure, next, path, errors, context }) => {
-    const rateLimitMeta = procedure["~orpc"].meta.rateLimit;
-    const windowMs = rateLimitMeta?.windowMs;
-    const limit = rateLimitMeta?.limit;
+export const rateLimit = init.middleware(async ({ procedure, next, path, errors, context }) => {
+  const rateLimitMeta = procedure["~orpc"].meta.rateLimit;
+  const windowMs = rateLimitMeta?.windowMs;
+  const limit = rateLimitMeta?.limit;
 
-    const ip = context.headers?.get("x-forwarded-for") ?? context.headers?.get("x-real-ip") ?? "unknown";
-    const key = `rate-limit:${path.join(":")}:${ip}`;
+  const ip = context.headers?.get("x-forwarded-for") ?? context.headers?.get("x-real-ip") ?? "unknown";
+  const key = `rate-limit:${path.join(":")}:${ip}`;
 
-    const [current, ttl] = await executeRateLimit(key, limit, windowMs);
+  const [current, ttl] = await executeRateLimit(key, limit, windowMs);
 
-    const remaining = Math.max(0, limit - current);
-    const reset = Math.ceil(ttl / 1000);
-    const retryAfter = reset;
+  const remaining = Math.max(0, limit - current);
+  const reset = Math.ceil(ttl / 1000);
+  const retryAfter = reset;
 
-    applyRateLimitHeaders(context, limit, remaining, reset, windowMs);
+  applyRateLimitHeaders(context, limit, remaining, reset, windowMs);
 
-    if (current > limit) {
-      context.resHeaders?.set("Retry-After", retryAfter.toString());
-      throw errors.RATE_LIMIT({
-        message: "Rate limit exceeded",
-        data: {
-          retryAfter,
-        },
-      });
-    }
+  if (current > limit) {
+    context.resHeaders?.set("Retry-After", retryAfter.toString());
+    throw errors.RATE_LIMIT({
+      message: "Rate limit exceeded",
+      data: {
+        retryAfter,
+      },
+    });
+  }
 
-    return next();
-  });
+  return next();
+});

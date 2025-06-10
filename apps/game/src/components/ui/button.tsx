@@ -1,4 +1,4 @@
-import { type JSX, type Ref, createSignal } from "solid-js";
+import { createSignal, type JSX, type Ref } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 

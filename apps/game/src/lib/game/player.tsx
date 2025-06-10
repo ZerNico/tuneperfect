@@ -1,5 +1,5 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { type Accessor, type JSX, createEffect, createMemo, createSignal } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, type JSX } from "solid-js";
 import { commands } from "~/bindings";
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -180,7 +180,9 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     score,
   };
 
-  const Provider = (props: { children: JSX.Element }) => <PlayerProvider value={values}>{props.children}</PlayerProvider>;
+  const Provider = (props: { children: JSX.Element }) => (
+    <PlayerProvider value={values}>{props.children}</PlayerProvider>
+  );
 
   return {
     ...values,

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { type Component, For, createEffect, createMemo, createSignal, on } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -72,7 +72,7 @@ function SongsComponent() {
           }),
       });
     }
-    
+
     if (songsStore.paths().length < 7) {
       buttons.push({ label: t("settings.add"), icon: IconPlus, action: pickFolder, loading: loading() });
     }

@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/solid-query";
-import { Outlet, createRootRouteWithContext } from "@tanstack/solid-router";
+import { createRootRouteWithContext, Outlet } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 import { Suspense } from "solid-js";
 import Footer from "~/components/footer";

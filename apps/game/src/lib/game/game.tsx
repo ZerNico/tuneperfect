@@ -1,5 +1,5 @@
 import createRAF from "@solid-primitives/raf";
-import { type Accessor, type JSX, batch, createEffect, createSignal } from "solid-js";
+import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
 import { beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";

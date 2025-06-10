@@ -49,7 +49,7 @@ export default function DownloadCard(props: DownloadCardProps) {
     <div
       class={cn(
         "group flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-slate-750 hover:shadow-2xl",
-        props.class
+        props.class,
       )}
     >
       <div class="flex items-center gap-4">
@@ -70,7 +70,9 @@ export default function DownloadCard(props: DownloadCardProps) {
       <div class="space-y-3">
         <p class="text-slate-300 text-sm">{props.description}</p>
         <div class="flex flex-wrap gap-2">
-          <For each={props.tags}>{(tag) => <span class={`rounded-full px-3 py-1 text-xs ${getTagColor(tag.color)}`}>{tag.text}</span>}</For>
+          <For each={props.tags}>
+            {(tag) => <span class={`rounded-full px-3 py-1 text-xs ${getTagColor(tag.color)}`}>{tag.text}</span>}
+          </For>
         </div>
       </div>
 

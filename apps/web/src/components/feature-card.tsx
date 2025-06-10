@@ -20,14 +20,10 @@ export default function FeatureCard(props: FeatureCardProps) {
           background: `linear-gradient(to right, ${colorFrom}, ${colorTo})`,
         }}
       >
-        <div class="text-3xl text-white">
-          {props.icon}
-        </div>
+        <div class="text-3xl text-white">{props.icon}</div>
       </div>
       <h3 class="font-semibold text-slate-100 text-xl tracking-tight">{props.title}</h3>
-      <p class="text-balance text-center text-slate-300 text-sm">
-        {props.description}
-      </p>
+      <p class="text-balance text-center text-slate-300 text-sm">{props.description}</p>
     </div>
   );
-} 
+}

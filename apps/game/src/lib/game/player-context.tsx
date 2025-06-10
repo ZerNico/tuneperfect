@@ -1,5 +1,5 @@
 import type { ReactiveMap } from "@solid-primitives/map";
-import { type Accessor, type JSX, createContext, useContext } from "solid-js";
+import { type Accessor, createContext, type JSX, useContext } from "solid-js";
 import type { Phrase } from "~/lib/ultrastar/phrase";
 import type { Score } from "~/stores/round";
 import type { Microphone } from "~/stores/settings";

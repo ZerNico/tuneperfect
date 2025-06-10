@@ -57,7 +57,10 @@ export default function Header() {
   return (
     <>
       <div class="h-16" />
-      <header class="fixed top-0 right-0 left-0 z-10 border-white/10 border-b bg-[#203141]/60 backdrop-blur-lg" style={{ "margin-right": "var(--scrollbar-width, 0px)" }}>
+      <header
+        class="fixed top-0 right-0 left-0 z-10 border-white/10 border-b bg-[#203141]/60 backdrop-blur-lg"
+        style={{ "margin-right": "var(--scrollbar-width, 0px)" }}
+      >
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
             <span class="font-bold text-lg">{t("header.appName")}</span>

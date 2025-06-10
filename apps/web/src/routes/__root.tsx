@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute } from "@tanstack/solid-router";
+import { createRootRoute, Outlet } from "@tanstack/solid-router";
 import { onMount } from "solid-js";
 import { isServer } from "solid-js/web";
 import Footer from "~/components/footer";

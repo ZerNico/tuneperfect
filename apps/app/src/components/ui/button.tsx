@@ -1,5 +1,5 @@
 import { Link, type LinkProps as TanstackLinkProps } from "@tanstack/solid-router";
-import { type VariantProps, cva } from "cva";
+import { cva, type VariantProps } from "cva";
 import { type JSX, Show } from "solid-js";
 import LoaderCircle from "~icons/lucide/loader-circle";
 
@@ -51,7 +51,13 @@ export default function Button(props: ButtonProps | LinkProps) {
   }
 
   return (
-    <button type={props.type || "button"} onClick={props.onClick} classList={classes()} disabled={props.disabled} ref={props.ref}>
+    <button
+      type={props.type || "button"}
+      onClick={props.onClick}
+      classList={classes()}
+      disabled={props.disabled}
+      ref={props.ref}
+    >
       <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
     </button>
   );

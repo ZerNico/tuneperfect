@@ -1,5 +1,5 @@
 import { Key } from "@solid-primitives/keyed";
-import { For, createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, For } from "solid-js";
 import { usePlayer } from "~/lib/game/player-context";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
@@ -138,7 +138,7 @@ export default function Pitch() {
     const startBeat = firstNote.startBeat;
 
     const grouped: DisplayedProcessedBeat[] = [];
-    let currentGroup: DisplayedProcessedBeat | undefined = undefined;
+    let currentGroup: DisplayedProcessedBeat | undefined;
 
     for (const beat of current) {
       if (!currentGroup) {
@@ -223,7 +223,7 @@ interface PitchNoteProps {
 function SparkleParticles(props: { length: number }) {
   // Scale particles based on note length: base 4 particles + 2 per beat, capped at 16
   const particleCount = Math.min(4 + Math.floor(props.length * 2), 16);
-  
+
   // Generate random particles with different delays and positions
   const particles = Array.from({ length: particleCount }, (_, i) => ({
     id: i,

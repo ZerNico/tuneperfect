@@ -1,5 +1,5 @@
 import { Key } from "@solid-primitives/keyed";
-import { For, Show, createMemo } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { useGame } from "~/lib/game/game-context";
 import { usePlayer } from "~/lib/game/player-context";
 import { msToBeatWithoutGap } from "~/lib/ultrastar/bpm";

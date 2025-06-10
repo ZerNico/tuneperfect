@@ -1,6 +1,6 @@
 import { Key } from "@solid-primitives/keyed";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { For, Show, batch, createMemo, createSignal } from "solid-js";
+import { batch, createMemo, createSignal, For, Show } from "solid-js";
 import { Transition } from "solid-transition-group";
 import { twMerge } from "tailwind-merge";
 import KeyHints from "~/components/key-hints";
@@ -280,7 +280,10 @@ function VersusComponent() {
 
   const currentMatchup = createMemo(() => versusStore.state().matchups[0] ?? null);
 
-  const [jokers, setJokers] = createSignal<[number, number]>([versusStore.settings()?.jokers ?? 0, versusStore.settings()?.jokers ?? 0]);
+  const [jokers, setJokers] = createSignal<[number, number]>([
+    versusStore.settings()?.jokers ?? 0,
+    versusStore.settings()?.jokers ?? 0,
+  ]);
 
   const winners = createMemo(() => {
     const players = versusStore.state().players;
@@ -399,7 +402,10 @@ function VersusComponent() {
         <div>
           <VersusHighscoreList />
         </div>
-        <Show when={currentMatchup()} fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}>
+        <Show
+          when={currentMatchup()}
+          fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}
+        >
           {(matchup) => (
             <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center gap-14 py-4">
               <MatchupPlayerDisplay
@@ -413,7 +419,8 @@ function VersusComponent() {
               <div
                 class="pointer-events-none flex transform-gpu justify-center will-change-transform"
                 style={{
-                  transform: state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
+                  transform:
+                    state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
                   transition: state() === "animating" ? "transform 3s cubic-bezier(0.42, 0, 0.4, 1)" : "",
                   width: `${(TOTAL_SONG_ITEMS / SONGS_ON_SCREEN) * 100}%`,
                 }}
@@ -422,7 +429,9 @@ function VersusComponent() {
                 <Show when={displayedSongs()}>
                   {(data) => (
                     <>
-                      <For each={times(PADDING)}>{() => <div class="flex-shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}</For>
+                      <For each={times(PADDING)}>
+                        {() => <div class="flex-shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}
+                      </For>
                       <Key each={data()} by={(item) => item.id}>
                         {(songItem, index) => (
                           <button
@@ -557,7 +566,11 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
             <IconGamepadRB class="text-base" />
           </Show>
         </Show>
-        <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95 " onClick={props.onReroll}>
+        <button
+          type="button"
+          class="cursor-pointer transition-all hover:opacity-75 active:scale-95 "
+          onClick={props.onReroll}
+        >
           <IconDices class="text-xl" />
         </button>
         <p class="">{props.jokers}</p>

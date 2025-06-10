@@ -1,7 +1,7 @@
 import { createForm } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { For, Show, createSignal } from "solid-js";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
+import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
@@ -34,7 +34,7 @@ function ClubsIndexComponent() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
-    })
+    }),
   );
 
   const declineInviteMutation = useMutation(() =>
@@ -42,7 +42,7 @@ function ClubsIndexComponent() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
-    })
+    }),
   );
 
   const createClubMutation = useMutation(() =>
@@ -53,7 +53,7 @@ function ClubsIndexComponent() {
         });
         navigate({ to: "/clubs/$id", params: { id: club.clubId } });
       },
-    })
+    }),
   );
 
   const form = createForm(() => ({
@@ -65,7 +65,11 @@ function ClubsIndexComponent() {
     },
     validators: {
       onChange: v.object({
-        name: v.pipe(v.string(), v.minLength(3, t("clubs.nameMinLength", { minLength: 3 })), v.maxLength(20, t("clubs.nameMaxLength", { maxLength: 20 }))),
+        name: v.pipe(
+          v.string(),
+          v.minLength(3, t("clubs.nameMinLength", { minLength: 3 })),
+          v.maxLength(20, t("clubs.nameMaxLength", { maxLength: 20 })),
+        ),
       }),
     },
   }));
@@ -99,14 +103,18 @@ function ClubsIndexComponent() {
                 <Card class="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
                   <div>
                     <div class="font-semibold text-slate-800">{invite.club?.name}</div>
-                    <div class="text-slate-500 text-sm">{t("clubs.invitedBy", { username: invite.inviter?.username || "" })}</div>
+                    <div class="text-slate-500 text-sm">
+                      {t("clubs.invitedBy", { username: invite.inviter?.username || "" })}
+                    </div>
                   </div>
                   <div class="flex w-full shrink-0 gap-2 sm:w-auto">
                     <Button
                       type="button"
                       intent="gradient"
                       class="w-full"
-                      loading={acceptInviteMutation.isPending && acceptInviteMutation.variables.clubId === invite.club?.id}
+                      loading={
+                        acceptInviteMutation.isPending && acceptInviteMutation.variables.clubId === invite.club?.id
+                      }
                       onClick={() => handleAcceptInvite(invite.club?.id || "")}
                     >
                       <IconCheck class="mr-2 h-4 w-4" />
@@ -116,7 +124,9 @@ function ClubsIndexComponent() {
                       type="button"
                       intent="danger"
                       class="w-full"
-                      loading={declineInviteMutation.isPending && declineInviteMutation.variables.clubId === invite.club?.id}
+                      loading={
+                        declineInviteMutation.isPending && declineInviteMutation.variables.clubId === invite.club?.id
+                      }
                       onClick={() => handleDeclineInvite(invite.club?.id || "")}
                     >
                       <IconX class="mr-2 h-4 w-4" />
@@ -216,7 +226,12 @@ function ClubsIndexComponent() {
               })}
             >
               {(state) => (
-                <Button type="submit" class="w-full" intent="gradient" loading={state().isSubmitting || createClubMutation.isPending}>
+                <Button
+                  type="submit"
+                  class="w-full"
+                  intent="gradient"
+                  loading={state().isSubmitting || createClubMutation.isPending}
+                >
                   {t("clubs.create")}
                 </Button>
               )}

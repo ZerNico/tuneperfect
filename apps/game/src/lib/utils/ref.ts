@@ -1,4 +1,4 @@
-import { type Accessor, type Ref, createRenderEffect } from "solid-js";
+import { type Accessor, createRenderEffect, type Ref } from "solid-js";
 
 export function createRefContent<T>(ref: Accessor<Ref<T> | undefined>, content: Accessor<T>) {
   createRenderEffect(() => {

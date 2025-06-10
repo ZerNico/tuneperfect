@@ -2,7 +2,7 @@ import { isDefinedError } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { For, Show, createSignal } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
@@ -71,7 +71,7 @@ function LobbyComponent() {
           message: t("error.unknown"),
         });
       },
-    })
+    }),
   );
 
   const handleInviteUser = (username: string) => {

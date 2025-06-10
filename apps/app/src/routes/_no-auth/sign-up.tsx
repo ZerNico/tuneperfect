@@ -1,6 +1,6 @@
 import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
 import DiscordLogin from "~/components/discord-login";
@@ -25,7 +25,8 @@ function SignUpComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
+  const absoluteRedirect = () =>
+    search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
 
   const form = createForm(() => ({
     defaultValues: {
@@ -39,7 +40,7 @@ function SignUpComponent() {
           email: value.email,
           password: value.password,
           redirect: absoluteRedirect(),
-        })
+        }),
       );
 
       if (error) {
@@ -70,10 +71,10 @@ function SignUpComponent() {
           v.partialCheck(
             [["password"], ["confirmPassword"]],
             (input) => input.password === input.confirmPassword,
-            t("signUp.passwordsDontMatch")
+            t("signUp.passwordsDontMatch"),
           ),
-          ["confirmPassword"]
-        )
+          ["confirmPassword"],
+        ),
       ),
     },
   }));

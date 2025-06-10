@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { For, createMemo, createSignal, onMount } from "solid-js";
+import { createMemo, createSignal, For, onMount } from "solid-js";
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -13,11 +13,11 @@ import { highscoreQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { getColorVar } from "~/lib/utils/color";
-import { MAX_POSSIBLE_SCORE, getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { getMaxScore, getRelativeScore, MAX_POSSIBLE_SCORE } from "~/lib/utils/score";
 import { isGuestUser, isLocalUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
 import { localStore } from "~/stores/local";
-import { type Score, roundStore, useRoundActions } from "~/stores/round";
+import { roundStore, type Score, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/game/score")({
@@ -253,7 +253,7 @@ function ScoreCard(props: ScoreCardProps) {
     startValue: number,
     endValue: number,
     setValue: (value: number) => void,
-    duration: number
+    duration: number,
   ): ReturnType<typeof setInterval> => {
     const stepValue = (endValue - startValue) / ANIMATION_STEPS;
     const stepDuration = duration / ANIMATION_STEPS;
@@ -289,7 +289,12 @@ function ScoreCard(props: ScoreCardProps) {
         setAnimated((prev) => ({ ...prev, [category]: true }));
 
         const scoreValue = props.score[category];
-        animateCounter(0, scoreValue, (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })), ANIMATION_DURATION);
+        animateCounter(
+          0,
+          scoreValue,
+          (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })),
+          ANIMATION_DURATION,
+        );
       }, index * ANIMATION_DELAY); // Using the increased delay between animations
     }
   });
@@ -306,18 +311,40 @@ function ScoreCard(props: ScoreCardProps) {
           <Avatar user={props.player} />
           <div class="font-bold text-lg text-white">{props.player.username}</div>
         </div>
-        <div class="font-bold text-3xl text-white">{animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+        <div class="font-bold text-3xl text-white">
+          {animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}
+        </div>
       </div>
 
       <div class="flex h-10 w-full overflow-hidden rounded-lg bg-black/20">
-        <ScoreBar isAnimated={animated().normal} percentage={getPercentage(props.score.normal)} color={getColorVar(props.micColor, 400)} />
-        <ScoreBar isAnimated={animated().golden} percentage={getPercentage(props.score.golden)} color={getColorVar(props.micColor, 300)} />
-        <ScoreBar isAnimated={animated().bonus} percentage={getPercentage(props.score.bonus)} color={getColorVar(props.micColor, 50)} />
+        <ScoreBar
+          isAnimated={animated().normal}
+          percentage={getPercentage(props.score.normal)}
+          color={getColorVar(props.micColor, 400)}
+        />
+        <ScoreBar
+          isAnimated={animated().golden}
+          percentage={getPercentage(props.score.golden)}
+          color={getColorVar(props.micColor, 300)}
+        />
+        <ScoreBar
+          isAnimated={animated().bonus}
+          percentage={getPercentage(props.score.bonus)}
+          color={getColorVar(props.micColor, 50)}
+        />
       </div>
 
       <div class="grid grid-cols-3 gap-3">
-        <ScoreDetail label={t("score.normal")} value={animatedScores().normal} color={getColorVar(props.micColor, 400)} />
-        <ScoreDetail label={t("score.golden")} value={animatedScores().golden} color={getColorVar(props.micColor, 300)} />
+        <ScoreDetail
+          label={t("score.normal")}
+          value={animatedScores().normal}
+          color={getColorVar(props.micColor, 400)}
+        />
+        <ScoreDetail
+          label={t("score.golden")}
+          value={animatedScores().golden}
+          color={getColorVar(props.micColor, 300)}
+        />
         <ScoreDetail label={t("score.bonus")} value={animatedScores().bonus} color={getColorVar(props.micColor, 50)} />
       </div>
     </div>
@@ -343,7 +370,9 @@ function ScoreDetail(props: { label: string; value: number; color: string }) {
       <div class="h-4 w-4 rounded-sm" style={{ "background-color": props.color }} />
       <div class="flex flex-col">
         <span class="text-white/70 text-xs">{props.label}</span>
-        <span class="font-medium text-sm text-white">{props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+        <span class="font-medium text-sm text-white">
+          {props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+        </span>
       </div>
     </div>
   );

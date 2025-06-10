@@ -25,7 +25,7 @@ function ChangePasswordComponent() {
       const [error, _data, _isDefined] = await safe(
         client.user.updateMe.call({
           password: value.newPassword,
-        })
+        }),
       );
 
       if (error) {
@@ -52,10 +52,10 @@ function ChangePasswordComponent() {
           v.partialCheck(
             [["newPassword"], ["confirmPassword"]],
             (input) => input.newPassword === input.confirmPassword,
-            t("changePassword.passwordsDontMatch")
+            t("changePassword.passwordsDontMatch"),
           ),
-          ["confirmPassword"]
-        )
+          ["confirmPassword"],
+        ),
       ),
     },
   }));

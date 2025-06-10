@@ -9,6 +9,18 @@
     "lineWidth": 120,
     "lineEnding": "lf"
   },
+  "files": {
+    "includes": [
+      "**",
+      "!**/routeTree.gen.ts",
+      "!**/styles.css",
+      "!**/bindings.ts",
+      "!**/.nitro/**",
+      "!**/.tanstack-start/**",
+      "!**/.output/**",
+      "!**/drizzle/meta/**"
+    ]
+  },
   "linter": {
     "enabled": true,
     "domains": {

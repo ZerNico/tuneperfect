@@ -1,4 +1,4 @@
-import { type MaybeAccessor, access } from "@solid-primitives/utils";
+import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import QRCode, { type QRCodeToDataURLOptions } from "qrcode";
 import { createEffect, createSignal } from "solid-js";
 

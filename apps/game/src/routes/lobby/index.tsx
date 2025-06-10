@@ -31,7 +31,7 @@ function LobbyComponent() {
       onSuccess: async () => {
         await queryClient.invalidateQueries(lobbyQueryOptions());
       },
-    })
+    }),
   );
 
   const menuItems: Accessor<MenuItem[]> = createMemo(() => {

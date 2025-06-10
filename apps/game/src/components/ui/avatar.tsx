@@ -1,4 +1,4 @@
-import { Show, createEffect, createSignal, on } from "solid-js";
+import { createEffect, createSignal, on, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import { joinURL } from "ufo";
 
@@ -18,8 +18,8 @@ export default function Avatar(props: AvatarProps) {
       () => props.user,
       () => {
         setError(false);
-      }
-    )
+      },
+    ),
   );
 
   const fallback = () => props.user?.username?.at(0) || "?";
@@ -33,9 +33,7 @@ export default function Avatar(props: AvatarProps) {
   };
 
   return (
-    <div
-      class={twMerge("grid h-10 w-10", props.class)}
-    >
+    <div class={twMerge("grid h-10 w-10", props.class)}>
       <div class="gradient-settings col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-gradient-to-tr text-white">
         {fallback()}
       </div>

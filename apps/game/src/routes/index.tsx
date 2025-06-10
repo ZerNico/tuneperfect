@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
-import { Match, Switch, createEffect } from "solid-js";
+import { createEffect, Match, Switch } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -118,7 +118,9 @@ function RouteComponent() {
             <div class="flex w-full flex-grow flex-col justify-center">
               <h1 class="mb-4 text-center font-bold text-4xl">{t("update.available")}</h1>
               <div class="mb-[10cqh] text-center">
-                <p class="text-xl">{t("update.version")} {update()?.version}</p>
+                <p class="text-xl">
+                  {t("update.version")} {update()?.version}
+                </p>
               </div>
               <Menu items={updateMenuItems} gradient="gradient-settings" class="h-min grow-0" />
             </div>

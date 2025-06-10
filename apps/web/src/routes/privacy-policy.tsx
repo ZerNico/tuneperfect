@@ -1,5 +1,3 @@
-;
-
 export const Route = createFileRoute({
   component: PrivacyPolicyComponent,
 });
@@ -25,13 +23,18 @@ function PrivacyPolicyComponent() {
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Responsible Party (Controller)</h3>
               <p>
-                The data controller for this website is the operator of Tune Perfect, a non-commercial open-source project. You can contact
-                us at{" "}
+                The data controller for this website is the operator of Tune Perfect, a non-commercial open-source
+                project. You can contact us at{" "}
                 <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
                   {supportEmail()}
                 </a>{" "}
                 or through our{" "}
-                <a href={githubUrl()} target="_blank" rel="noopener noreferrer" class="text-blue-400 underline hover:text-blue-300">
+                <a
+                  href={githubUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-blue-400 underline hover:text-blue-300"
+                >
                   GitHub repository
                 </a>
                 .
@@ -56,34 +59,36 @@ function PrivacyPolicyComponent() {
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Scope of Personal Data Processing</h3>
               <p>
-                We process personal data of our users only to the extent necessary to provide a functional website and our gaming services.
-                Tune Perfect is a non-commercial, open-source project that does not generate revenue. The processing of personal data takes
-                place regularly only with the consent of the user. An exception applies in cases where prior consent cannot be obtained for
-                factual reasons and the processing of the data is permitted by law.
+                We process personal data of our users only to the extent necessary to provide a functional website and
+                our gaming services. Tune Perfect is a non-commercial, open-source project that does not generate
+                revenue. The processing of personal data takes place regularly only with the consent of the user. An
+                exception applies in cases where prior consent cannot be obtained for factual reasons and the processing
+                of the data is permitted by law.
               </p>
             </div>
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Legal Basis for Data Processing</h3>
               <p>
-                Insofar as we obtain consent from the data subject for personal data processing operations, Art. 6 para. 1 lit. a EU General
-                Data Protection Regulation (GDPR) serves as the legal basis.
+                Insofar as we obtain consent from the data subject for personal data processing operations, Art. 6 para.
+                1 lit. a EU General Data Protection Regulation (GDPR) serves as the legal basis.
               </p>
               <p class="mt-2">
-                When processing personal data that is necessary for the performance of providing our free gaming service, Art. 6 para. 1
-                lit. b GDPR serves as the legal basis.
+                When processing personal data that is necessary for the performance of providing our free gaming
+                service, Art. 6 para. 1 lit. b GDPR serves as the legal basis.
               </p>
               <p class="mt-2">
-                When processing personal data that is necessary for compliance with a legal obligation, Art. 6 para. 1 lit. c GDPR serves as
-                the legal basis.
+                When processing personal data that is necessary for compliance with a legal obligation, Art. 6 para. 1
+                lit. c GDPR serves as the legal basis.
               </p>
               <p class="mt-2">
-                When processing personal data that is necessary to protect the vital interests of the data subject or another natural
-                person, Art. 6 para. 1 lit. d GDPR serves as the legal basis.
+                When processing personal data that is necessary to protect the vital interests of the data subject or
+                another natural person, Art. 6 para. 1 lit. d GDPR serves as the legal basis.
               </p>
               <p class="mt-2">
-                If processing is necessary to safeguard a legitimate interest (such as maintaining the security and functionality of our
-                free service) and if the interests, fundamental rights and freedoms of the data subject do not outweigh this interest, Art.
-                6 para. 1 lit. f GDPR serves as the legal basis for processing.
+                If processing is necessary to safeguard a legitimate interest (such as maintaining the security and
+                functionality of our free service) and if the interests, fundamental rights and freedoms of the data
+                subject do not outweigh this interest, Art. 6 para. 1 lit. f GDPR serves as the legal basis for
+                processing.
               </p>
             </div>
           </div>
@@ -92,8 +97,8 @@ function PrivacyPolicyComponent() {
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">3. Server Log Files</h2>
           <p>
-            The website provider automatically collects and stores information in so-called server log files, which your browser
-            automatically transmits to us. These are:
+            The website provider automatically collects and stores information in so-called server log files, which your
+            browser automatically transmits to us. These are:
           </p>
           <ul class="mt-2 list-disc space-y-2 pl-6">
             <li>Browser type and browser version</li>
@@ -104,17 +109,17 @@ function PrivacyPolicyComponent() {
             <li>IP address</li>
           </ul>
           <p class="mt-4">
-            This data is not merged with other data sources. The basis for data processing is Art. 6 para. 1 lit. f GDPR, which allows the
-            processing of data to fulfill a contract or for measures preliminary to a contract.
+            This data is not merged with other data sources. The basis for data processing is Art. 6 para. 1 lit. f
+            GDPR, which allows the processing of data to fulfill a contract or for measures preliminary to a contract.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">4. Website Analytics with PostHog</h2>
           <p>
-            We use PostHog, an open-source product analytics platform, to better understand how our users interact with our website. This
-            helps us improve our services and provide a better user experience. PostHog is configured to respect your privacy and operates
-            in a cookie-less mode.
+            We use PostHog, an open-source product analytics platform, to better understand how our users interact with
+            our website. This helps us improve our services and provide a better user experience. PostHog is configured
+            to respect your privacy and operates in a cookie-less mode.
           </p>
           <div class="mt-4 space-y-2">
             <p>
@@ -122,12 +127,13 @@ function PrivacyPolicyComponent() {
             </p>
             <ul class="list-disc space-y-2 pl-6">
               <li>
-                <strong>Pageviews and Events:</strong> We track which pages you visit and what actions you take, such as starting a
-                download. This includes information like your operating system, browser version, and screen resolution.
+                <strong>Pageviews and Events:</strong> We track which pages you visit and what actions you take, such as
+                starting a download. This includes information like your operating system, browser version, and screen
+                resolution.
               </li>
               <li>
-                <strong>Anonymized Data:</strong> We do not store your full IP address. User identification is managed in-memory and does
-                not persist across sessions, meaning we do not track you over time.
+                <strong>Anonymized Data:</strong> We do not store your full IP address. User identification is managed
+                in-memory and does not persist across sessions, meaning we do not track you over time.
               </li>
             </ul>
           </div>
@@ -140,9 +146,14 @@ function PrivacyPolicyComponent() {
             <li>To monitor the performance and stability of our website.</li>
           </ul>
           <p class="mt-4">
-            The legal basis for this processing is our legitimate interest (Art. 6 para. 1 lit. f GDPR) in optimizing and securing our
-            website. For more information, please refer to{" "}
-            <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline hover:text-blue-300">
+            The legal basis for this processing is our legitimate interest (Art. 6 para. 1 lit. f GDPR) in optimizing
+            and securing our website. For more information, please refer to{" "}
+            <a
+              href="https://posthog.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-blue-400 underline hover:text-blue-300"
+            >
               PostHog's Privacy Policy
             </a>
             .
@@ -160,7 +171,9 @@ function PrivacyPolicyComponent() {
                 <li>Password (securely hashed and stored)</li>
                 <li>Profile image (optional)</li>
               </ul>
-              <p class="mt-2 text-slate-300 text-sm">Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)</p>
+              <p class="mt-2 text-slate-300 text-sm">
+                Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
+              </p>
             </div>
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">OAuth Information</h3>
@@ -168,7 +181,9 @@ function PrivacyPolicyComponent() {
                 <li>When you sign in with Discord or Google, we store your account ID from those services</li>
                 <li>We do not store your passwords from third-party services</li>
               </ul>
-              <p class="mt-2 text-slate-300 text-sm">Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)</p>
+              <p class="mt-2 text-slate-300 text-sm">
+                Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
+              </p>
             </div>
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Game Data</h3>
@@ -177,7 +192,9 @@ function PrivacyPolicyComponent() {
                 <li>Lobby participation data</li>
                 <li>Game session information</li>
               </ul>
-              <p class="mt-2 text-slate-300 text-sm">Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)</p>
+              <p class="mt-2 text-slate-300 text-sm">
+                Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
+              </p>
             </div>
             <div>
               <h3 class="mb-2 font-medium text-lg text-white">Technical Information</h3>
@@ -227,19 +244,22 @@ function PrivacyPolicyComponent() {
             <li>When required by law or legal process</li>
             <li>To protect our rights, property, and safety, or that of our users</li>
             <li>With your explicit consent</li>
-            <li>With service providers who assist us in operating our website (under strict data processing agreements)</li>
+            <li>
+              With service providers who assist us in operating our website (under strict data processing agreements)
+            </li>
           </ul>
           <p class="mt-4">
-            Any third-party service providers are carefully selected and contractually bound to process data only according to our
-            instructions and in compliance with GDPR. As a non-commercial project, we have no financial incentive to share your data.
+            Any third-party service providers are carefully selected and contractually bound to process data only
+            according to our instructions and in compliance with GDPR. As a non-commercial project, we have no financial
+            incentive to share your data.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">9. International Data Transfers</h2>
           <p>
-            If we transfer personal data to countries outside the European Economic Area (EEA), we ensure appropriate safeguards are in
-            place, such as:
+            If we transfer personal data to countries outside the European Economic Area (EEA), we ensure appropriate
+            safeguards are in place, such as:
           </p>
           <ul class="mt-2 list-disc space-y-2 pl-6">
             <li>Adequacy decisions by the European Commission</li>
@@ -254,25 +274,30 @@ function PrivacyPolicyComponent() {
           <p class="mb-2">Under the General Data Protection Regulation, you have the following rights:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>
-              <strong>Right of access (Art. 15 GDPR):</strong> You can request information about your personal data we process
+              <strong>Right of access (Art. 15 GDPR):</strong> You can request information about your personal data we
+              process
             </li>
             <li>
-              <strong>Right to rectification (Art. 16 GDPR):</strong> You can request correction of inaccurate personal data
+              <strong>Right to rectification (Art. 16 GDPR):</strong> You can request correction of inaccurate personal
+              data
             </li>
             <li>
               <strong>Right to erasure (Art. 17 GDPR):</strong> You can request deletion of your personal data
             </li>
             <li>
-              <strong>Right to restriction of processing (Art. 18 GDPR):</strong> You can request limitation of processing
+              <strong>Right to restriction of processing (Art. 18 GDPR):</strong> You can request limitation of
+              processing
             </li>
             <li>
               <strong>Right to data portability (Art. 20 GDPR):</strong> You can request your data in a portable format
             </li>
             <li>
-              <strong>Right to object (Art. 21 GDPR):</strong> You can object to processing based on legitimate interests
+              <strong>Right to object (Art. 21 GDPR):</strong> You can object to processing based on legitimate
+              interests
             </li>
             <li>
-              <strong>Right to withdraw consent:</strong> Where processing is based on consent, you can withdraw it at any time
+              <strong>Right to withdraw consent:</strong> Where processing is based on consent, you can withdraw it at
+              any time
             </li>
           </ul>
           <p class="mt-4">
@@ -287,15 +312,17 @@ function PrivacyPolicyComponent() {
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">11. Data Retention</h2>
           <p class="mb-2">
-            We retain your data for as long as your account is active or as needed to provide you services. When you delete your account:
+            We retain your data for as long as your account is active or as needed to provide you services. When you
+            delete your account:
           </p>
           <ul class="list-disc space-y-2 pl-6">
             <li>
-              Most of your personal data will be deleted. Some information, like high scores associated with your profile, may be retained
-              anonymously.
+              Most of your personal data will be deleted. Some information, like high scores associated with your
+              profile, may be retained anonymously.
             </li>
             <li>
-              We may retain some data for legitimate interests, such as fraud prevention or to comply with legal obligations.
+              We may retain some data for legitimate interests, such as fraud prevention or to comply with legal
+              obligations.
             </li>
           </ul>
         </section>
@@ -303,33 +330,34 @@ function PrivacyPolicyComponent() {
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">12. Cookies</h2>
           <p>
-            We use essential session cookies to maintain your login status and ensure the basic functionality of our service. We do not use
-            cookies for tracking or advertising purposes.
+            We use essential session cookies to maintain your login status and ensure the basic functionality of our
+            service. We do not use cookies for tracking or advertising purposes.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">13. Links to Other Websites</h2>
           <p>
-            Our website may contain links to other websites that are not operated by us. If you click on a third-party link, you will be
-            directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit.
+            Our website may contain links to other websites that are not operated by us. If you click on a third-party
+            link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy
+            of every site you visit.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">14. Children's Privacy</h2>
           <p>
-            Our service does not address anyone under the age of 13. We do not knowingly collect personal identifiable information from
-            children under 13. If you are a parent or guardian and you are aware that your child has provided us with personal information,
-            please contact us.
+            Our service does not address anyone under the age of 13. We do not knowingly collect personal identifiable
+            information from children under 13. If you are a parent or guardian and you are aware that your child has
+            provided us with personal information, please contact us.
           </p>
         </section>
 
         <section>
           <h2 class="mb-4 font-semibold text-white text-xl">15. Changes to This Privacy Policy</h2>
           <p>
-            We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this
-            page. You are advised to review this Privacy Policy periodically for any changes.
+            We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new
+            Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
           </p>
         </section>
 

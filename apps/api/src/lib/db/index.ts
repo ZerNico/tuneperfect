@@ -19,5 +19,3 @@ await locked(client, MIGRATION_LOCK_ID, async () => {
   await migrate(db, { migrationsFolder: "drizzle" });
   logger.info("Migrations completed successfully");
 });
-
-

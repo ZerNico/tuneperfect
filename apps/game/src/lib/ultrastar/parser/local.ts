@@ -7,11 +7,9 @@ import type { Song } from "../song";
 import { ParseError } from "./error";
 import { parseUltrastarTxt } from "./txt";
 
-
 function normalizeFilename(filename: string): string {
   return filename.normalize("NFC").toLowerCase();
 }
-
 
 function findFileByName(files: DirEntryWithChildren[], targetFilename: string): DirEntryWithChildren | undefined {
   const normalizedTarget = normalizeFilename(targetFilename);
@@ -29,7 +27,7 @@ async function getMediaUrl(filePath: string): Promise<string> {
   } catch (error) {
     console.warn("Failed to get media server base URL:", error);
   }
-  
+
   // Fallback to asset protocol
   return convertFileSrc(filePath);
 }

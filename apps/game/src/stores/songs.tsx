@@ -27,7 +27,9 @@ function createSongsStore() {
           localSongs.set(path, songs);
         }
       }
-    } catch (error) {}
+    } catch {
+      // Do nothing
+    }
   };
 
   const needsUpdate = createMemo(() => {

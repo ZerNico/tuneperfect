@@ -1,7 +1,7 @@
 import { createForm } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { For, Show, createSignal } from "solid-js";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
+import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
@@ -45,7 +45,7 @@ function getMemberMenuItems(
     removeMember: (userId: string, username: string) => void;
     transferOwnership: (userId: string, username: string) => void;
     changeRole: (userId: string, username: string, role: "admin" | "member") => void;
-  }
+  },
 ): MenuItem[] {
   const items: MenuItem[] = [];
   const userId = member.user?.id;
@@ -106,7 +106,7 @@ function ClubDetailComponent() {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
         navigate({ to: "/clubs" });
       },
-    })
+    }),
   );
 
   const removeMemberMutation = useMutation(() =>
@@ -114,7 +114,7 @@ function ClubDetailComponent() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
-    })
+    }),
   );
 
   const transferOwnershipMutation = useMutation(() =>
@@ -122,7 +122,7 @@ function ClubDetailComponent() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
-    })
+    }),
   );
 
   const inviteMemberMutation = useMutation(() =>
@@ -131,7 +131,7 @@ function ClubDetailComponent() {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
         setDialog(null);
       },
-    })
+    }),
   );
 
   const changeRoleMutation = useMutation(() =>
@@ -139,7 +139,7 @@ function ClubDetailComponent() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
-    })
+    }),
   );
 
   const leaveClubMutation = useMutation(() =>
@@ -148,7 +148,7 @@ function ClubDetailComponent() {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
         navigate({ to: "/clubs" });
       },
-    })
+    }),
   );
 
   const updateClubMutation = useMutation(() =>
@@ -157,7 +157,7 @@ function ClubDetailComponent() {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
         setDialog(null);
       },
-    })
+    }),
   );
 
   const inviteForm = createForm(() => ({
@@ -187,7 +187,7 @@ function ClubDetailComponent() {
           v.string(),
           v.nonEmpty(t("clubs.detail.nameRequired")),
           v.minLength(3, t("clubs.nameMinLength", { minLength: 3 })),
-          v.maxLength(20, t("clubs.nameMaxLength", { maxLength: 20 }))
+          v.maxLength(20, t("clubs.nameMaxLength", { maxLength: 20 })),
         ),
       }),
     },
@@ -396,9 +396,16 @@ function ClubDetailComponent() {
                       />
                     )}
                   </inviteForm.Field>
-                  <inviteForm.Subscribe selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}>
+                  <inviteForm.Subscribe
+                    selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}
+                  >
                     {(state) => (
-                      <Button type="submit" intent="gradient" loading={state().isSubmitting} disabled={!state().canSubmit}>
+                      <Button
+                        type="submit"
+                        intent="gradient"
+                        loading={state().isSubmitting}
+                        disabled={!state().canSubmit}
+                      >
                         {t("clubs.detail.invite")}
                       </Button>
                     )}
@@ -431,7 +438,9 @@ function ClubDetailComponent() {
                       />
                     )}
                   </renameForm.Field>
-                  <renameForm.Subscribe selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}>
+                  <renameForm.Subscribe
+                    selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}
+                  >
                     {(state) => (
                       <Button
                         type="submit"

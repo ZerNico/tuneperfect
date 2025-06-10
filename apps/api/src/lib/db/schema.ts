@@ -1,5 +1,5 @@
-import { uniqueIndex } from "drizzle-orm/pg-core";
 import * as p from "drizzle-orm/pg-core";
+import { uniqueIndex } from "drizzle-orm/pg-core";
 import { lower } from "../../utils/db";
 
 const timestampColumns = {

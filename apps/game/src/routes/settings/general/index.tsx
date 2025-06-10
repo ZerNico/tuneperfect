@@ -46,7 +46,7 @@ function GeneralSettingsComponent() {
     {
       type: "select-string",
       label: t("settings.sections.general.forceOfflineMode"),
-      value: () => general().forceOfflineMode ? t("common.yes") : t("common.no"),
+      value: () => (general().forceOfflineMode ? t("common.yes") : t("common.no")),
       options: [t("common.no"), t("common.yes")],
       onChange: (value) => setGeneral({ ...general(), forceOfflineMode: value === t("common.yes") }),
     },
@@ -60,7 +60,9 @@ function GeneralSettingsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

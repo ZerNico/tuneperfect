@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { type Matchup, generateMatchups } from "~/lib/party/versus/matchup";
+import { generateMatchups, type Matchup } from "~/lib/party/versus/matchup";
 import type { User } from "~/lib/types";
 import type { Song } from "~/lib/ultrastar/song";
 import { toShuffled } from "~/lib/utils/array";

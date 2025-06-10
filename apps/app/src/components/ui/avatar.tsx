@@ -1,4 +1,4 @@
-import { Show, createEffect, createSignal, on } from "solid-js";
+import { createEffect, createSignal, on, Show } from "solid-js";
 import { joinURL } from "ufo";
 import { config } from "~/lib/config";
 
@@ -18,8 +18,8 @@ export default function Avatar(props: AvatarProps) {
       () => props.user,
       () => {
         setError(false);
-      }
-    )
+      },
+    ),
   );
 
   const fallback = () => props.user?.username?.at(0) || "?";

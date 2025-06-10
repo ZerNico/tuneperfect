@@ -2,7 +2,7 @@ import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
 import { createQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { Show, createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import * as v from "valibot";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
@@ -33,7 +33,7 @@ function EditProfileComponent() {
         client.user.updateMe.call({
           username: value.username,
           imageFile: file() ?? undefined,
-        })
+        }),
       );
 
       if (error) {
@@ -65,7 +65,7 @@ function EditProfileComponent() {
           v.string(),
           v.minLength(3, t("editProfile.usernameMinLength")),
           v.maxLength(20, t("editProfile.usernameMaxLength")),
-          v.regex(/^[a-zA-Z0-9_]+$/, t("editProfile.usernameInvalid"))
+          v.regex(/^[a-zA-Z0-9_]+$/, t("editProfile.usernameInvalid")),
         ),
       }),
     },
@@ -103,7 +103,9 @@ function EditProfileComponent() {
             />
             <Show
               when={file()}
-              fallback={<Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>}
+              fallback={
+                <Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>
+              }
             >
               <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full" />
             </Show>

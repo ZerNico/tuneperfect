@@ -54,6 +54,7 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
   }));
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: This is a select
     <div ref={props.ref} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import GameLayout from "~/components/game/game-layout";
 import Half from "~/components/game/half";
 import PauseMenu from "~/components/game/pause-menu";
@@ -115,7 +115,13 @@ function GameComponent() {
           </div>
 
           <Show when={paused()}>
-            <PauseMenu class="absolute inset-0" onClose={resume} onExit={handleEnded} onRestart={handleRestart} gradient={gradient()} />
+            <PauseMenu
+              class="absolute inset-0"
+              onClose={resume}
+              onExit={handleEnded}
+              onRestart={handleRestart}
+              gradient={gradient()}
+            />
           </Show>
 
           <div
@@ -132,7 +138,9 @@ function GameComponent() {
             <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">
               <p class="text-3xl">{roundStore.settings()?.song.artist}</p>
               <div class="max-w-200">
-                <span class={`${gradient()} bg-gradient-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}>
+                <span
+                  class={`${gradient()} bg-gradient-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}
+                >
                   {roundStore.settings()?.song.title}
                 </span>
               </div>

@@ -1,4 +1,14 @@
-import { Body, Container, Head, Heading, Html, Preview, Tailwind, type TailwindConfig, Text } from "@react-email/components";
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Tailwind,
+  type TailwindConfig,
+  Text,
+} from "@react-email/components";
 import type { ReactNode } from "react";
 
 const tailwindConfig: TailwindConfig = {
@@ -71,19 +81,19 @@ export function VerifyEmail(props: VerifyEmailProps): ReactNode {
       <Head />
       <Preview>Verify your Email</Preview>
       <Tailwind config={tailwindConfig}>
-        <Body className="mx-auto my-auto bg-[#203141] px-2 py-10 font-sans text-slate-800">
-          <Container className="mx-auto max-w-[465px] py-5 text-center">
-            <Heading className="m-0 font-semibold text-[30px] text-white">Tune Perfect</Heading>
+        <Body class="mx-auto my-auto bg-[#203141] px-2 py-10 font-sans text-slate-800">
+          <Container class="mx-auto max-w-[465px] py-5 text-center">
+            <Heading class="m-0 font-semibold text-[30px] text-white">Tune Perfect</Heading>
           </Container>
-          <Container className="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
-            <Heading className="m-0 font-semibold text-[20px]">Verify your Email</Heading>
-            <Text className="m-0 text-slate-500">Click the button below to verify your Email address.</Text>
+          <Container class="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
+            <Heading class="m-0 font-semibold text-[20px]">Verify your Email</Heading>
+            <Text class="m-0 text-slate-500">Click the button below to verify your Email address.</Text>
 
-            <Text className="m-0 py-12 text-center">
+            <Text class="m-0 py-12 text-center">
               <a
                 href={props.verifyUrl}
                 target="_blank"
-                className="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
+                class="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
                 rel="noreferrer"
                 style={{
                   background: "linear-gradient(to right, #36d1dc, #5b86e5)",
@@ -93,16 +103,16 @@ export function VerifyEmail(props: VerifyEmailProps): ReactNode {
               </a>
             </Text>
 
-            <Text className="m-0">If you didn't request this, you can just ignore this Email.</Text>
+            <Text class="m-0">If you didn't request this, you can just ignore this Email.</Text>
           </Container>
-          <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
-            <Text className="m-0">
+          <Container class="mx-auto max-w-[465px] py-5 text-center text-white">
+            <Text class="m-0">
               Need help?{" "}
-              <a href={`mailto:${props.supportEmail}`} target="_blank" className="text-white no-underline" rel="noreferrer">
+              <a href={`mailto:${props.supportEmail}`} target="_blank" class="text-white no-underline" rel="noreferrer">
                 Contact Support
               </a>
             </Text>
-            <Text className="m-0">© {currentYear} Tune Perfect.</Text>
+            <Text class="m-0">© {currentYear} Tune Perfect.</Text>
           </Container>
         </Body>
       </Tailwind>

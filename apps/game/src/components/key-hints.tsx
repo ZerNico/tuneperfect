@@ -21,14 +21,16 @@ interface KeyHintsProps {
 export default function KeyHints(props: KeyHintsProps) {
   const getIcon = (type: HintType) => {
     const isGamepad = keyMode() === "gamepad";
-    
+
     switch (type) {
       case "back":
         return isGamepad ? <IconGamepadB /> : <IconEscKey />;
       case "confirm":
         return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
       case "navigate":
-        return isGamepad ? <IconGamepadDPad /> : (
+        return isGamepad ? (
+          <IconGamepadDPad />
+        ) : (
           <div class="flex flex-col items-center gap-0.5 text-xs">
             <IconUpArrowKey />
             <div class="flex gap-0.5">

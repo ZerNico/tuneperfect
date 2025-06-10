@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate  } from "@tanstack/solid-router";
+import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

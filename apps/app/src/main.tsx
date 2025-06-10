@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
-import { RouterProvider, createRouter } from "@tanstack/solid-router";
+import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
@@ -40,6 +40,6 @@ if (rootElement) {
         </DialogProvider>
       </QueryClientProvider>
     ),
-    rootElement
+    rootElement,
   );
 }

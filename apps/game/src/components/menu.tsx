@@ -1,4 +1,4 @@
-import { For, type JSX, Match, Switch, createEffect, on } from "solid-js";
+import { createEffect, For, type JSX, Match, on, Switch } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
@@ -101,13 +101,13 @@ export default function Menu(props: MenuProps) {
           });
         }
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   );
 
   return (
     <div class={twMerge("flex h-full max-h-full w-full flex-grow flex-col justify-center", props.class)}>
-      <div 
+      <div
         ref={scrollContainer}
         class="styled-scrollbars flex max-h-full flex-col overflow-y-auto"
         style="max-height: calc(100vh - 12rem);"

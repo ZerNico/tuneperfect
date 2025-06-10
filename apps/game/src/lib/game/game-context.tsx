@@ -1,4 +1,4 @@
-import { type Accessor, type JSX, createContext, useContext } from "solid-js";
+import { type Accessor, createContext, type JSX, useContext } from "solid-js";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import type { Score } from "~/stores/round";
 

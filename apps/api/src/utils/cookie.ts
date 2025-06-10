@@ -1,4 +1,3 @@
-import { differenceInSeconds } from "date-fns";
 import { env } from "../config/env";
 
 export const defaultCookieOptions = {

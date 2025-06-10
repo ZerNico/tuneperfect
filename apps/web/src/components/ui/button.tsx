@@ -1,5 +1,5 @@
 import { Link, type LinkProps as TanstackLinkProps } from "@tanstack/solid-router";
-import { type VariantProps, cva } from "cva";
+import { cva, type VariantProps } from "cva";
 import type { JSX } from "solid-js";
 
 interface ButtonProps extends BaseProps {
@@ -55,7 +55,13 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
 
   if ("href" in props) {
     return (
-      <a href={props.href} target={props.target} classList={classes()} download={props.download} onClick={props.onClick}>
+      <a
+        href={props.href}
+        target={props.target}
+        classList={classes()}
+        download={props.download}
+        onClick={props.onClick}
+      >
         <ButtonContent>{props.children}</ButtonContent>
       </a>
     );
@@ -71,7 +77,9 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
 function ButtonContent(props: { children: JSX.Element }) {
   return (
     <>
-      <span class="col-start-1 row-start-1 flex items-center justify-center gap-2 transition-opacity">{props.children}</span>
+      <span class="col-start-1 row-start-1 flex items-center justify-center gap-2 transition-opacity">
+        {props.children}
+      </span>
     </>
   );
 }

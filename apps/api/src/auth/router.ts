@@ -29,7 +29,7 @@ export const authRouter = os.prefix("/auth").router({
         redirect: v.optional(v.string()),
       }),
     )
-    .handler(async ({ input, context, errors }) => {
+    .handler(async ({ input, errors }) => {
       const existingUser = await userService.getUserByEmail(input.email);
 
       if (existingUser) {
@@ -115,7 +115,7 @@ export const authRouter = os.prefix("/auth").router({
         redirect: v.optional(v.string()),
       }),
     )
-    .handler(async ({ input, errors }) => {
+    .handler(async ({ input }) => {
       await executeWithConstantTime(async () => {
         const user = await userService.getUserByEmail(input.email);
 
@@ -173,7 +173,7 @@ export const authRouter = os.prefix("/auth").router({
         email: v.pipe(v.string(), v.email()),
       }),
     )
-    .handler(async ({ input, errors }) => {
+    .handler(async ({ input }) => {
       await executeWithConstantTime(async () => {
         const user = await userService.getUserByEmail(input.email);
 

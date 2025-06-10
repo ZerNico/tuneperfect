@@ -1,5 +1,3 @@
-;
-
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
 import IconPackage from "~icons/lucide/package";

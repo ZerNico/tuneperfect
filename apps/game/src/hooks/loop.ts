@@ -1,4 +1,4 @@
-import { type MaybeAccessor, access } from "@solid-primitives/utils";
+import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import { createSignal } from "solid-js";
 
 export function createLoop(max: MaybeAccessor<number>) {

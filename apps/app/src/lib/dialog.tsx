@@ -1,4 +1,4 @@
-import { type JSX, Show, createContext, createSignal, useContext } from "solid-js";
+import { createContext, createSignal, type JSX, Show, useContext } from "solid-js";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
 
@@ -42,7 +42,10 @@ export function DialogProvider(props: { children: JSX.Element }) {
             <Dialog.Description>{dialogOptions()?.description}</Dialog.Description>
             <div class="mt-4 flex justify-end gap-2">
               <Button onClick={() => handleClose(false)}>Cancel</Button>
-              <Button onClick={() => handleClose(true)} intent={dialogOptions()?.intent === "delete" ? "danger" : "gradient"}>
+              <Button
+                onClick={() => handleClose(true)}
+                intent={dialogOptions()?.intent === "delete" ? "danger" : "gradient"}
+              >
                 Confirm
               </Button>
             </div>

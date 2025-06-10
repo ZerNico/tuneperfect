@@ -29,7 +29,9 @@ export default function Slider(props: SliderProps) {
   const percentage = () => ((props.value - props.min) / (props.max - props.min)) * 100;
 
   const changeValue = (direction: "right" | "left", amount: number = props.step) => {
-    const newValue = Number((props.value + (direction === "right" ? amount : -amount)).toFixed(getDecimalPlaces(props.step)));
+    const newValue = Number(
+      (props.value + (direction === "right" ? amount : -amount)).toFixed(getDecimalPlaces(props.step)),
+    );
     props.onInput?.(clamp(newValue, props.min, props.max));
   };
 
@@ -58,6 +60,7 @@ export default function Slider(props: SliderProps) {
   }));
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: This is a slider
     <div ref={props.ref} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
@@ -74,7 +77,10 @@ export default function Slider(props: SliderProps) {
           </button>
           <div class="grid h-5 flex-grow items-center">
             <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
-            <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-white" style={{ width: `${percentage()}%` }} />
+            <div
+              class="col-start-1 row-start-1 h-full w-full rounded-md bg-white"
+              style={{ width: `${percentage()}%` }}
+            />
             <div
               class="col-start-1 row-start-1 text-center font-bold text-sm text-white"
               style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}

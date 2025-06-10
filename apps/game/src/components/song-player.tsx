@@ -1,4 +1,4 @@
-import { Match, type Ref, Show, Switch, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { createEffect, createSignal, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { createRefContent } from "~/lib/utils/ref";
@@ -29,11 +29,11 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [hasInitialized, setHasInitialized] = createSignal(false);
   const [isCurrentlyPlaying, setIsCurrentlyPlaying] = createSignal(false);
 
-  let syncTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
-  let endCheckInterval: ReturnType<typeof setInterval> | undefined = undefined;
+  let syncTimeout: ReturnType<typeof setTimeout> | undefined;
+  let endCheckInterval: ReturnType<typeof setInterval> | undefined;
   const audioContext = new AudioContext();
-  let audioSource: MediaElementAudioSourceNode | undefined = undefined;
-  let videoSource: MediaElementAudioSourceNode | undefined = undefined;
+  let audioSource: MediaElementAudioSourceNode | undefined;
+  let videoSource: MediaElementAudioSourceNode | undefined;
 
   // Setup audio context for audio element
   createEffect(
@@ -42,7 +42,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       if (audioSource && prevAudio) {
         try {
           audioSource.disconnect();
-        } catch (e) {
+        } catch {
           // Ignore disconnection errors
         }
         audioSource = undefined;
@@ -71,14 +71,14 @@ export default function SongPlayer(props: SongPlayerProps) {
             if (audioSource) {
               audioSource.disconnect();
             }
-          } catch (e) {
+          } catch {
             // Ignore disconnection errors during cleanup
           }
         });
       } catch (error) {
         console.warn("Failed to create audio source:", error);
       }
-    })
+    }),
   );
 
   // Setup audio context for video element
@@ -88,7 +88,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       if (videoSource && prevVideo) {
         try {
           videoSource.disconnect();
-        } catch (e) {
+        } catch {
           // Ignore disconnection errors
         }
         videoSource = undefined;
@@ -119,7 +119,7 @@ export default function SongPlayer(props: SongPlayerProps) {
               if (videoSource) {
                 videoSource.disconnect();
               }
-            } catch (e) {
+            } catch {
               // Ignore disconnection errors during cleanup
             }
           });
@@ -127,7 +127,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           console.warn("Failed to create video source:", error);
         }
       }
-    })
+    }),
   );
 
   // Check if all required media is ready
@@ -220,16 +220,13 @@ export default function SongPlayer(props: SongPlayerProps) {
             } else {
               // Can't sync by adjusting video time, use timeout
               await video.play();
-              syncTimeout = setTimeout(
-                async () => {
-                  try {
-                    await audio.play();
-                  } catch (error) {
-                    console.warn("Failed to start audio playback:", error);
-                  }
-                },
-                Math.abs(gap) * 1000
-              );
+              syncTimeout = setTimeout(async () => {
+                try {
+                  await audio.play();
+                } catch (error) {
+                  console.warn("Failed to start audio playback:", error);
+                }
+              }, Math.abs(gap) * 1000);
             }
           }
         } else {
@@ -307,8 +304,8 @@ export default function SongPlayer(props: SongPlayerProps) {
         setVideoError(false);
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
-      }
-    )
+      },
+    ),
   );
 
   // Handle ready state notifications
@@ -358,7 +355,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         const video = videoElement();
         return audio?.duration ?? video?.duration ?? 0;
       },
-    })
+    }),
   );
 
   onCleanup(() => {

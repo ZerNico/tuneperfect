@@ -1,5 +1,3 @@
-import { env } from "../config/env";
-
 export class UpdateService {
   async getReleaseName(target: string, arch: string, version: string) {
     const fileMap = new Map<string, string>([

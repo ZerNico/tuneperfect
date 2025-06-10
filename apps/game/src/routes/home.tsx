@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, For, Show, createEffect, createSignal, on } from "solid-js";
+import { type Component, createEffect, createSignal, For, on, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

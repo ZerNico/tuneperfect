@@ -1,6 +1,6 @@
 import { safe } from "@orpc/client";
 import { createForm } from "@tanstack/solid-form";
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import * as v from "valibot";
 import Button from "~/components/ui/button";
@@ -42,7 +42,7 @@ function ResetPasswordComponent() {
         client.auth.resetPassword.call({
           token: value.token,
           password: value.password,
-        })
+        }),
       );
 
       if (error) {
@@ -72,7 +72,7 @@ function ResetPasswordComponent() {
       }
 
       setSuccess(true);
-      
+
       setTimeout(() => {
         navigate({ to: "/sign-in" });
       }, 3000);
@@ -90,7 +90,7 @@ function ResetPasswordComponent() {
     <div class="flex flex-grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
         <h1 class="font-semibold text-xl">{t("resetPassword.title")}</h1>
-        
+
         {success() ? (
           <div class="flex flex-col gap-4">
             <p>{t("resetPassword.success")}</p>
@@ -179,4 +179,4 @@ function ResetPasswordComponent() {
       </Card>
     </div>
   );
-} 
+}

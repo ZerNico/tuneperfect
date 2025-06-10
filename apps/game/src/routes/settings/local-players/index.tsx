@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, For, createEffect, createMemo, createSignal, on } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -107,8 +107,8 @@ function LocalPlayersComponent() {
           });
         }
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   );
 
   createEffect(on(position, () => playSound("select"), { defer: true }));
@@ -116,7 +116,9 @@ function LocalPlayersComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.localPlayers.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.localPlayers.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <div class="flex w-full flex-grow items-center justify-center gap-4">

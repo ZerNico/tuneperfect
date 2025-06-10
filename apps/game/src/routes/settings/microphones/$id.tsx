@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { Show, Suspense, createResource, createSignal } from "solid-js";
+import { createResource, createSignal, Show, Suspense } from "solid-js";
 import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -36,7 +36,9 @@ function MicrophoneComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Suspense
@@ -56,7 +58,7 @@ function MicrophoneComponent() {
                 delay: 200,
                 gain: 1,
                 threshold: 2,
-              }
+              },
             );
 
             const deleteMicrophone = () => {

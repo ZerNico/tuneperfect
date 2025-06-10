@@ -79,7 +79,9 @@ function VolumeComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.volume.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.volume.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

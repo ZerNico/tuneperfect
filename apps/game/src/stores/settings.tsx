@@ -36,7 +36,7 @@ function createSettingsStore() {
     }),
     {
       name: "settingsStore.volume",
-    }
+    },
   );
   const [general, setGeneral] = makePersisted(
     createSignal<GeneralSettings>({
@@ -45,7 +45,7 @@ function createSettingsStore() {
     }),
     {
       name: "settingsStore.general",
-    }
+    },
   );
 
   const saveMicrophone = (index: number, microphone: Microphone) => {

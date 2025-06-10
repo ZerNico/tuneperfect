@@ -1,4 +1,4 @@
-import { Navigate, createFileRoute } from "@tanstack/solid-router";
+import { createFileRoute, Navigate } from "@tanstack/solid-router";
 
 export const Route = createFileRoute("/game/restart")({
   component: RestartComponent,
