@@ -1,4 +1,5 @@
 ;
+
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
 import IconPackage from "~icons/lucide/package";
@@ -44,12 +45,12 @@ function RouteComponent() {
             description="Works on any Linux distribution. Just download, make executable, and run."
             tags={[
               { text: "Recommended", color: "green" },
-              { text: "Universal", color: "slate" },
+              { text: "amd64", color: "slate" },
             ]}
             extension="AppImage"
             platform="linux"
-            onDownload={() => handleDownload("x86_64", "AppImage")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x86_64.AppImage`}
+            onDownload={() => handleDownload("amd64", "AppImage")}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.AppImage`}
           />
 
           <DownloadCard
@@ -60,13 +61,13 @@ function RouteComponent() {
             subtitle=".deb package"
             description="For Debian, Ubuntu, Linux Mint, Pop!_OS, and other Debian-based distributions."
             tags={[
-              { text: "x86_64", color: "slate" },
+              { text: "amd64", color: "slate" },
               { text: ".deb", color: "orange" },
             ]}
             extension="deb"
             platform="linux"
-            onDownload={() => handleDownload("x86_64", "deb")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x86_64.deb`}
+            onDownload={() => handleDownload("amd64", "deb")}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_amd64.deb`}
           />
 
           <DownloadCard

@@ -1,4 +1,5 @@
 ;
+
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
 import IconChip from "~icons/lucide/cpu";
@@ -39,8 +40,8 @@ function RouteComponent() {
             gradientFrom="#3b82f6"
             gradientTo="#8b5cf6"
             title="64-bit"
-            subtitle="x86_64 processors"
-            description="For modern Windows PCs. Recommended for most users."
+            subtitle="x64 processors"
+            description="For modern Windows PCs with Intel/AMD processors. Recommended for most users."
             tags={[
               { text: "Recommended", color: "blue" },
               { text: "x64", color: "slate" },
@@ -48,21 +49,21 @@ function RouteComponent() {
             extension="exe"
             platform="windows"
             onDownload={() => handleDownload("x64", "exe")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.exe`}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64-setup.exe`}
           />
           
           <DownloadCard
             icon={<IconChip class="h-6 w-6 text-white" />}
             gradientFrom="#6b7280"
             gradientTo="#374151"
-            title="32-bit"
-            subtitle="x86 processors"
-            description="For older Windows PCs. Only use if 64-bit version doesn't work."
-            tags={[{ text: "x86", color: "slate" }]}
+            title="ARM64"
+            subtitle="ARM processors"
+            description="For Windows PCs with ARM processors (like Surface Pro X)."
+            tags={[{ text: "ARM64", color: "slate" }]}
             extension="exe"
             platform="windows"
-            onDownload={() => handleDownload("x86", "exe")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x86.exe`}
+            onDownload={() => handleDownload("arm64", "exe")}
+            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_arm64-setup.exe`}
           />
         </div>
 
