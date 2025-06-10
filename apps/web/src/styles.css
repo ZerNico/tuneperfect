@@ -177,6 +177,10 @@
   --color-slate-950: oklch(0.129 0.042 264.695);
 }
 
+@utility no-scrollbar {
+  @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+}
+
 .gradient-sing {
   @apply from-green-400 to-teal-600;
 }

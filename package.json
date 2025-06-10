@@ -8,7 +8,7 @@
     "turbo": "^2.5.4"
   },
   "dependencies": {
-    "@biomejs/biome": "^1.9.4"
+    "@biomejs/biome": "2.0.0-beta.6"
   },
   "workspaces": [
     "packages/*",

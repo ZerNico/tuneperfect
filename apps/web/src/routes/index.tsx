@@ -1,7 +1,6 @@
-;
-import { createSignal } from "solid-js";
-import { onMount } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import FeatureCard from "~/components/feature-card";
+import Slider from "~/components/slider";
 import Button from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";
 import { getColorVar } from "~/lib/utils/color";
@@ -19,7 +18,6 @@ export const Route = createFileRoute({
 });
 
 function RouteComponent() {
-
   const scrollToDownload = () => {
     const downloadSection = document.getElementById("download");
     if (downloadSection) {
@@ -47,7 +45,7 @@ function RouteComponent() {
         </section>
 
         <section class="relative w-full">
-          <img src="/images/home.png" class="relative z-2 mx-auto w-full max-w-6xl" alt="Screenshot of Tune Perfect home page" />
+          <img src="/images/home.webp" class="relative z-2 mx-auto w-full max-w-6xl" alt="Screenshot of Tune Perfect home page" />
           <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
 
@@ -84,8 +82,8 @@ function RouteComponent() {
           </div>
         </section>
 
-        <section class="relative mx-auto max-w-6xl px-4">
-          <img src="/images/game.png" class="relative z-2 w-full" alt="Screenshot of Tune Perfect game page" />
+        <section class="relative w-full">
+          <img src="/images/game.webp" class="relative z-2 mx-auto w-full max-w-6xl" alt="Screenshot of Tune Perfect game page" />
           <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
 
@@ -117,6 +115,20 @@ function RouteComponent() {
               GitHub
             </Button>
           </div>
+        </section>
+
+        <section class="relative z-2 mx-auto w-full max-w-6xl ">
+          <div class="relative z-2 mb-4 flex flex-col items-center gap-2">
+            <h2 class="text-center font-bold text-2xl md:text-3xl">More Screenshots</h2>
+            <div class="gradient-lobby mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
+          </div>
+          <Slider class="relative z-2" autoScroll={5000}>
+            <img src="/images/list.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect song list" />
+            <img src="/images/scores.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect scores" />
+            <img src="/images/versus.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect versus party mode" />
+            <img src="/images/microphone-settings.webp" class="w-full object-cover" alt="Screenshot of Tune Perfect microphone settings" />
+          </Slider>
+          <div class="pointer-events-none absolute inset-0 z-0 bg-[#1e244b] blur-[20rem]" />
         </section>
       </div>
     </>

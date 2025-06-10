@@ -1,8 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.6.3/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.0.0-beta.6/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
@@ -13,6 +11,9 @@
   },
   "linter": {
     "enabled": true,
+    "domains": {
+      "solid": "recommended"
+    },
     "rules": {
       "recommended": true,
       "a11y": {
@@ -26,6 +27,18 @@
             "functions": ["clsx", "cva"]
           }
         }
+      },
+      "style": {
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
       }
     }
   }
