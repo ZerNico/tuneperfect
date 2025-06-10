@@ -131,7 +131,7 @@ export function parseUltrastarTxt(content: string) {
           text: text.join(" "),
         };
         notes.push(note);
-        md5.appendStr(line);
+        md5.appendStr(`${tag} ${startBeat} ${length} ${txtPitch}`);
       } else if (line.charAt(0) === "-") {
         const [, disappearBeat]: string[] = line.slice(1).split(" ");
         if (!disappearBeat) {
