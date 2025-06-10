@@ -50,7 +50,7 @@ jobs:
 
       - name: Deploy Helm Chart
         env:
-          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
           IMAGE_TAG: ${{ inputs.tag }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}

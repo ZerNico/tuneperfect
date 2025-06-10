@@ -104,8 +104,8 @@ jobs:
         id: tauri-build
         uses: tauri-apps/tauri-action@v0
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+          VITE_API_URL: ${{ vars.API_URL }}
+          VITE_APP_URL: ${{ vars.APP_URL }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: apps/game
@@ -117,7 +117,7 @@ jobs:
                 "updater": {
                   "pubkey": "${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}",
                   "endpoints": [
-                    "https://api.${{ secrets.DOMAIN_NAME }}/v1.0/updates/{{target}}/{{arch}}/{{current_version}}"
+                    "https://api.${{ vars.DOMAIN_NAME }}/v1.0/updates/{{target}}/{{arch}}/{{current_version}}"
                   ]
                 }
               }
