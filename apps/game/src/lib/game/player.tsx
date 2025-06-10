@@ -80,13 +80,14 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   });
 
   const beats = createMemo(() => {
-    const beatMap = new Map<number, { note: Note; isFirstInPhrase: boolean }>();
+    const beatMap = new Map<number, { note: Note; isFirstInPhrase: boolean; isFirstInNote: boolean }>();
     for (const phrase of voice()?.phrases || []) {
-      for (const note of phrase.notes) {
+      for (const [noteIndex, note] of phrase.notes.entries()) {
         for (let i = 0; i < note.length; i++) {
           beatMap.set(note.startBeat + i, {
             note,
-            isFirstInPhrase: note === phrase.notes[0] && i === 0,
+            isFirstInPhrase: noteIndex === 0 && i === 0,
+            isFirstInNote: i === 0,
           });
         }
       }
@@ -95,7 +96,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return beatMap;
   });
 
-  const processedBeats = new ReactiveMap<number, { note: Note; midiNote: number; isFirstInPhrase: boolean }>();
+  const processedBeats = new ReactiveMap<number, { note: Note; midiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }>();
 
   const delayedFlooredBeat = createMemo(() => {
     return Math.floor(delayedBeat());
@@ -156,6 +157,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       note: beatInfo.note,
       midiNote,
       isFirstInPhrase: beatInfo.isFirstInPhrase,
+      isFirstInNote: beatInfo.isFirstInNote,
     });
   });
 
@@ -180,9 +182,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     score,
   };
 
-  const Provider = (props: { children: JSX.Element }) => (
-    <PlayerProvider value={values}>{props.children}</PlayerProvider>
-  );
+  const Provider = (props: { children: JSX.Element }) => <PlayerProvider value={values}>{props.children}</PlayerProvider>;
 
   return {
     ...values,

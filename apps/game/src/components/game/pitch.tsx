@@ -116,7 +116,7 @@ export default function Pitch() {
     for (let i = startBeat; i < endBeat; i++) {
       const beat = player.processedBeats.get(i);
       if (beat) {
-        currentProcessedBeats.push({ beat: i, note: beat.note, midiNote: beat.midiNote });
+        currentProcessedBeats.push({ beat: i, note: beat.note, midiNote: beat.midiNote, isFirstInNote: beat.isFirstInNote });
       }
     }
 
@@ -124,50 +124,39 @@ export default function Pitch() {
   });
 
   const groupedProcessedBeats = createMemo(() => {
-    const current = currentProcessedBeats();
+    // group processed beats by note
 
+    const currentBeats = currentProcessedBeats();
     const phrase = player.phrase();
-    if (!phrase) {
+
+    const startBeat = phrase?.notes[0]?.startBeat;
+    if (startBeat === undefined) {
       return [];
     }
 
-    const firstNote = phrase.notes[0];
-    if (!firstNote) {
-      return [];
-    }
-    const startBeat = firstNote.startBeat;
+    return currentBeats.reduce((grouped, beat) => {
+      const lastGroup = grouped[grouped.length - 1];
 
-    const grouped: DisplayedProcessedBeat[] = [];
-    let currentGroup: DisplayedProcessedBeat | undefined;
+      // Determine if this beat should start a new group.
+      const shouldStartNewGroup =
+        !lastGroup || // It's the first beat
+        beat.isFirstInNote || // The beat is explicitly the start of a note
+        lastGroup.midiNote !== beat.midiNote || // The note pitch has changed
+        lastGroup.beat + lastGroup.length !== beat.beat; // There's a time gap
 
-    for (const beat of current) {
-      if (!currentGroup) {
-        currentGroup = {
-          ...beat,
-          length: 1,
-          row: getNoteRow(beat.midiNote),
-          column: beat.beat - startBeat + 1,
-        };
-        continue;
-      }
-      if (currentGroup.midiNote !== beat.midiNote || currentGroup.beat + currentGroup.length !== beat.beat) {
-        grouped.push(currentGroup);
-        currentGroup = {
+      if (shouldStartNewGroup) {
+        grouped.push({
           ...beat,
           length: 1,
           row: getProcessedBeatRow(beat),
           column: beat.beat - startBeat + 1,
-        };
-        continue;
+        });
+      } else {
+        lastGroup.length++;
       }
-      currentGroup.length++;
-    }
 
-    if (currentGroup) {
-      grouped.push(currentGroup);
-    }
-
-    return grouped;
+      return grouped;
+    }, [] as DisplayedProcessedBeat[]);
   });
 
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
@@ -198,7 +187,7 @@ export default function Pitch() {
       >
         <Key each={groupedProcessedBeats()} by={(item) => item.column}>
           {(groupedBeat) => (
-            <ProcessedBeat
+            <ProcessedNote
               beat={groupedBeat().beat}
               note={groupedBeat().note}
               length={groupedBeat().length}
@@ -278,7 +267,7 @@ function PitchNote(props: PitchNoteProps) {
   );
 }
 
-interface ProcessedBeatProps {
+interface ProcessedNoteProps {
   note: Note;
   beat: number;
   length: number;
@@ -288,7 +277,7 @@ interface ProcessedBeatProps {
   micColor: string;
 }
 
-function ProcessedBeat(props: ProcessedBeatProps) {
+function ProcessedNote(props: ProcessedNoteProps) {
   const [firstBeat] = createSignal(props.delayedBeat);
 
   const fill = createMemo(() => {
@@ -335,6 +324,7 @@ interface ProcessedBeat {
   beat: number;
   note: Note;
   midiNote: number;
+  isFirstInNote: boolean;
 }
 
 interface DisplayedProcessedBeat extends ProcessedBeat {
