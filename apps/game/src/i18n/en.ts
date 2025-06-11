@@ -152,6 +152,9 @@ const en = {
       wins: "wins",
     },
   },
+  loading: {
+    parsing: "Parsing",
+  },
 };
 
 export type Dict = typeof en;

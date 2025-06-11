@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { getMatches } from "@tauri-apps/plugin-cli";
-import { createEffect, createSignal, onMount } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import * as v from "valibot";
 import Layout from "~/components/layout";
+import { t } from "~/lib/i18n";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { songsStore } from "~/stores/songs";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
@@ -40,14 +41,6 @@ function LoadingComponent() {
     });
   });
 
-  createEffect(() => {
-    if (progress() === 1) {
-      navigate({
-        to: search().redirect,
-      });
-    }
-  });
-
   return (
     <Layout>
       <div class="flex flex-grow flex-col items-center justify-center gap-8 p-4">
@@ -57,7 +50,7 @@ function LoadingComponent() {
 
         <div class="w-full max-w-lg">
           <div class="mb-2 flex justify-between text-sm">
-            <span>Parsing {currentPath().split("/").pop() || ""}</span>
+            <span>{t("loading.parsing")} {currentPath().split("/").pop() || ""}</span>
             <span>{Math.round(progress() * 100)}%</span>
           </div>
 

@@ -153,6 +153,9 @@ const de = {
       wins: "hat gewonnen",
     },
   },
+  loading: {
+    parsing: "Parse",
+  },
 };
 
 export type Dict = typeof de;
