@@ -41,6 +41,8 @@ http-range = "0.1"
 percent-encoding = "2.3"
 tauri-utils = "2"
 tauri-plugin-store = "2"
+tauri-plugin-log = "2"
+log = "0.4"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-cli = "2"

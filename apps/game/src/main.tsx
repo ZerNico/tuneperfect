@@ -1,9 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
+import { error, warn } from "@tauri-apps/plugin-log";
 import { render } from "solid-js/web";
+import { forwardConsole } from "./lib/utils/console";
 import { routeTree } from "./routeTree.gen";
-
 import "./styles.css";
+
+forwardConsole("warn", warn);
+forwardConsole("error", error);
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +44,6 @@ if (rootElement) {
         <RouterProvider router={router} />
       </QueryClientProvider>
     ),
-    rootElement,
+    rootElement
   );
 }

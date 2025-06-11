@@ -14,10 +14,8 @@ export function useWakeLock() {
       if ("wakeLock" in navigator) {
         const lock = await navigator.wakeLock.request("screen");
         setWakeLock(lock);
-        console.log("Wake lock requested");
 
         lock.addEventListener("release", () => {
-          console.log("Wake lock released");
           setWakeLock(null);
         });
       }
