@@ -3,7 +3,10 @@ import { createSignal } from "solid-js";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import type { GuestUser } from "~/lib/types";
+import { tauriStorage } from "~/lib/utils/storage";
 import { localStore } from "./local";
+
+export const storage = tauriStorage("lobby.json", { autoSave: true });
 
 type LobbyStore = {
   token: string;
@@ -20,7 +23,8 @@ export const guestUser: GuestUser = {
 
 function createLobbyStore() {
   const [lobby, setLobby] = makePersisted(createSignal<LobbyStore | undefined>(undefined), {
-    name: "lobbyStore.lobby",
+    name: "lobby",
+    storage,
   });
 
   const [localPlayerIds, setLocalPlayerIds] = createSignal<string[]>([]);

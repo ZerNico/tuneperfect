@@ -3,9 +3,12 @@ import { makePersisted } from "@solid-primitives/storage";
 import { createMemo, createSignal } from "solid-js";
 import { type LocalSong, parseLocalFileTree } from "~/lib/ultrastar/parser/local";
 import { readFileTree } from "~/lib/utils/fs";
+import { tauriStorage } from "~/lib/utils/storage";
+
+export const storage = tauriStorage("songs.json", { autoSave: true });
 
 function createSongsStore() {
-  const [paths, setPaths] = makePersisted(createSignal<string[]>([]), { name: "songsStore.paths" });
+  const [paths, setPaths] = makePersisted(createSignal<string[]>([]), { name: "paths", storage });
   const localSongs = new ReactiveMap<string, LocalSong[]>();
 
   const addSongPath = (path: string) => {

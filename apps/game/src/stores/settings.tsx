@@ -1,5 +1,8 @@
 import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
+import { tauriStorage } from "~/lib/utils/storage";
+
+export const storage = tauriStorage("settings.json", { autoSave: true });
 
 export interface Microphone {
   name: string;
@@ -25,7 +28,8 @@ export interface GeneralSettings {
 function createSettingsStore() {
   const [initialized, setInitialized] = createSignal(false);
   const [microphones, setMicrophones] = makePersisted(createSignal<Microphone[]>([]), {
-    name: "settingsStore.microphones",
+    name: "microphones",
+    storage,
   });
   const [volume, setVolume] = makePersisted(
     createSignal<VolumeSettings>({
@@ -35,8 +39,9 @@ function createSettingsStore() {
       menu: 0.5,
     }),
     {
-      name: "settingsStore.volume",
-    },
+      name: "volume",
+      storage,
+    }
   );
   const [general, setGeneral] = makePersisted(
     createSignal<GeneralSettings>({
@@ -44,8 +49,9 @@ function createSettingsStore() {
       forceOfflineMode: false,
     }),
     {
-      name: "settingsStore.general",
-    },
+      name: "general",
+      storage,
+    }
   );
 
   const saveMicrophone = (index: number, microphone: Microphone) => {

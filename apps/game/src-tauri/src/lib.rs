@@ -60,6 +60,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(create_media_server_plugin())
         .setup(|app| {
             app.manage(AppState::default());

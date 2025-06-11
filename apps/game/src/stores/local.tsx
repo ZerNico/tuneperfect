@@ -1,17 +1,22 @@
 import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
 import type { LocalUser } from "~/lib/types";
+import { tauriStorage } from "~/lib/utils/storage";
+
+export const storage = tauriStorage("local.json", { autoSave: true });
 
 // Separate scores storage: userId -> songHash -> score
 type LocalScores = Record<string, Record<string, number>>;
 
 function createLocalStore() {
   const [players, setPlayers] = makePersisted(createSignal<LocalUser[]>([]), {
-    name: "localStore.players",
+    name: "players",
+    storage,
   });
 
   const [scores, setScores] = makePersisted(createSignal<LocalScores>({}), {
-    name: "localStore.scores",
+    name: "scores",
+    storage,
   });
 
   const generateId = () => {

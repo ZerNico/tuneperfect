@@ -11,6 +11,13 @@
     "fs:read-files",
     "fs:read-meta",
     "core:window:allow-set-fullscreen",
-    "shell:allow-open"
+    "store:default",
+    "store:allow-load",
+    "shell:allow-open",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-delete",
+    "store:allow-keys",
+    "store:allow-clear"
   ]
 }
