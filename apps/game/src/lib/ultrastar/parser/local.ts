@@ -32,7 +32,17 @@ async function getMediaUrl(filePath: string): Promise<string> {
   return convertFileSrc(filePath);
 }
 
-export async function parseLocalFileTree(root: DirEntryWithChildren) {
+export interface SongLoadingProgress {
+  songPath: string;
+  songName: string;
+  current: number;
+  total: number;
+}
+
+export async function parseLocalFileTree(
+  root: DirEntryWithChildren, 
+  onProgress?: (progress: SongLoadingProgress) => void
+) {
   const songFiles: { txt: DirEntryWithChildren; files: DirEntryWithChildren[] }[] = [];
 
   const findTxtFiles = (node: DirEntryWithChildren) => {
@@ -47,8 +57,23 @@ export async function parseLocalFileTree(root: DirEntryWithChildren) {
   findTxtFiles(root);
 
   const limit = pLimit(5);
+  const totalSongs = songFiles.length;
+  
   const results = await Promise.allSettled(
-    songFiles.map((song) => limit(() => parseLocalTxtFile(song.txt, song.files))),
+    songFiles.map((song, index) => 
+      limit(async () => {
+        const result = await parseLocalTxtFile(song.txt, song.files);
+        if (onProgress) {
+          onProgress({
+            songPath: song.txt.path,
+            songName: song.txt.name,
+            current: index + 1,
+            total: totalSongs,
+          });
+        }
+        return result;
+      })
+    )
   );
   const fulfilled = results.filter((result) => result.status === "fulfilled");
   const rejected = results.filter((result) => result.status === "rejected");

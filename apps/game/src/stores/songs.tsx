@@ -1,7 +1,7 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { makePersisted } from "@solid-primitives/storage";
 import { createMemo, createSignal } from "solid-js";
-import { type LocalSong, parseLocalFileTree } from "~/lib/ultrastar/parser/local";
+import { type LocalSong, parseLocalFileTree, } from "~/lib/ultrastar/parser/local";
 import { readFileTree } from "~/lib/utils/fs";
 import { tauriStorage } from "~/lib/utils/storage";
 
@@ -17,27 +17,32 @@ function createSongsStore() {
 
   const removeSongPath = (path: string) => {
     setPaths((prev) => prev.filter((p) => p !== path));
-
     localSongs.delete(path);
   };
 
-  const updateLocalSongs = async (paths: string[]) => {
+  const updateLocalSongs = async (
+    paths: string[],
+    onProgress?: (path: string, progress: number) => void
+  ) => {
     try {
       for (const path of paths) {
         if (!localSongs.has(path)) {
+          onProgress?.(path, 0);
           const root = await readFileTree(path);
-          const songs = await parseLocalFileTree(root);
+          const songs = await parseLocalFileTree(root, (progress) => {
+            onProgress?.(path, progress.current / progress.total);
+          });
           localSongs.set(path, songs);
         }
       }
+      onProgress?.("", 1);
     } catch {
-      // Do nothing
+      onProgress?.("", 1);
     }
   };
 
   const needsUpdate = createMemo(() => {
     const hasMissingPaths = paths().some((path) => !localSongs.has(path));
-
     return hasMissingPaths;
   });
 
