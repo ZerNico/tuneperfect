@@ -13,6 +13,8 @@ use commands::*;
 use media_server::create_media_server_plugin;
 use specta_typescript::Typescript;
 use tauri::Manager;
+use tauri_plugin_cli::CliExt;
+use tauri_plugin_fs::FsExt;
 use tauri_specta::{collect_commands, Builder};
 
 pub struct AppState {
@@ -46,6 +48,7 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
@@ -63,7 +66,28 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(create_media_server_plugin())
         .setup(|app| {
+            let fs_scope = app.fs_scope();
+            let asset_scope = app.asset_protocol_scope();
+
+            match app.cli().matches() {
+                Ok(matches) => {
+                    if let Some(songpath) = matches.args.get("songpath") {
+                        if let Some(paths) = songpath.value.as_array() {
+                            for path in paths {
+                                if let Some(path_str) = path.as_str() {
+                                    println!("Allowing directory: {}", path_str);
+                                    fs_scope.allow_directory(path_str, true)?;
+                                    asset_scope.allow_directory(path_str, true)?;
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(_) => {}
+            }
+
             app.manage(AppState::default());
+
             Ok(())
         })
         .invoke_handler(builder.invoke_handler())

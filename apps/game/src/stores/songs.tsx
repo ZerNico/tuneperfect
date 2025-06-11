@@ -21,9 +21,9 @@ function createSongsStore() {
     localSongs.delete(path);
   };
 
-  const updateLocalSongs = async () => {
+  const updateLocalSongs = async (paths: string[]) => {
     try {
-      for (const path of paths()) {
+      for (const path of paths) {
         if (!localSongs.has(path)) {
           const root = await readFileTree(path);
           const songs = await parseLocalFileTree(root);

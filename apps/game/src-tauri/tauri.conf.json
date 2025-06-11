@@ -25,7 +25,6 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*; font-src 'self' data:; img-src 'self' data: asset: http://asset.localhost http://localhost:* http://127.0.0.1:* https://*.tuneperfect.org https://*.tuneperfect.localhost https://*.googleusercontent.com https://cdn.discordapp.com data:; media-src 'self' data: asset: http://asset.localhost http://localhost:* http://127.0.0.1:* data:; connect-src 'self' ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* *"
     }
   },
-
   "bundle": {
     "active": true,
     "targets": "all",
@@ -52,6 +51,17 @@
     "updater": {
       "pubkey": "",
       "endpoints": []
+    },
+    "cli": {
+      "description": "Tune Perfect",
+      "args": [
+        {
+          "name": "songpath",
+          "short": "s",
+          "takesValue": true,
+          "multiple": true
+        }
+      ]
     }
   }
 }

@@ -10,6 +10,7 @@
     "fs:read-dirs",
     "fs:read-files",
     "fs:read-meta",
+    "cli:default",
     "core:window:allow-set-fullscreen",
     "store:default",
     "store:allow-load",
