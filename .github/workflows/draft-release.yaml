@@ -51,12 +51,20 @@ jobs:
           path: artifacts
           pattern: tuneperfect-*
 
+      - name: Generate Changelog
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          writeToFile: false
+
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: true
+          body: ${{ steps.changelog.outputs.changes }}
           files: artifacts/**/*
           fail_on_unmatched_files: false
-          generate_release_notes: true
