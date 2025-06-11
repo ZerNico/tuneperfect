@@ -8,6 +8,7 @@ interface IconButtonProps {
   selected?: boolean;
   active?: boolean;
   label: string;
+  subtitle?: string;
   gradient: string;
   loading?: boolean;
   icon: Component<{ class?: string }>;
@@ -19,7 +20,7 @@ export default function IconButton(props: IconButtonProps) {
   return (
     <button
       ref={props.ref}
-      class={`flex h-44 w-32 cursor-pointer flex-col gap-1 text-start transition-all ease-in-out active:scale-95 ${props.class || ""}`}
+      class={`flex w-32 cursor-pointer flex-col gap-1 text-start transition-all ease-in-out active:scale-95 ${props.class || ""}`}
       classList={{
         "opacity-50": !props.selected,
         "scale-95": props.active,
@@ -30,7 +31,7 @@ export default function IconButton(props: IconButtonProps) {
     >
       <div class="max-w-full truncate text-ellipsis font-semibold text-sm uppercase">{props.label}</div>
       <div
-        class="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-b"
+        class="flex h-36 w-full items-center justify-center rounded-lg bg-gradient-to-b"
         classList={{
           [props.gradient || ""]: true,
         }}
@@ -39,6 +40,9 @@ export default function IconButton(props: IconButtonProps) {
           <Dynamic class="text-6xl" component={props.icon} />
         </Show>
       </div>
+    
+        <div class="max-w-full truncate text-ellipsis text-xs opacity-75">{props.subtitle || "\u00A0"}</div>
+
     </button>
   );
 }

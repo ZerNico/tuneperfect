@@ -52,9 +52,18 @@ function SongsComponent() {
     return name || "Unknown";
   };
 
+  const getSongCount = (path: string) => {
+    if (!songsStore.localSongs.has(path)) {
+      return undefined;
+    }
+    const songs = songsStore.localSongs.get(path) || [];
+    return `${songs.length} ${t("sing.songs")}`;
+  };
+
   const buttons = createMemo(() => {
     const buttons: {
       label: string;
+      subtitle?: string;
       icon: Component<{ class?: string }>;
       action?: () => void;
       loading?: boolean;
@@ -62,6 +71,7 @@ function SongsComponent() {
     for (const path of songsStore.paths()) {
       buttons.push({
         label: folderName(path),
+        subtitle: getSongCount(path),
         icon: IconFolder,
         action: () =>
           navigate({
@@ -123,6 +133,7 @@ function SongsComponent() {
               loading={button.loading}
               icon={button.icon}
               label={button.label}
+              subtitle={button.subtitle}
               gradient="gradient-settings"
             />
           )}
