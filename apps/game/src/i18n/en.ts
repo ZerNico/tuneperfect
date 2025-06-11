@@ -28,6 +28,10 @@ const en = {
     settingsDescription: "Change your settings or add your songs and microphones.",
     microphoneRequired: "You have no microphones configured. Go to settings to add one.",
   },
+  quit: {
+    title: "Quit Game",
+    message: "Are you sure you want to quit the game?",
+  },
   update: {
     checking: "Checking for updates...",
     available: "Update Available",

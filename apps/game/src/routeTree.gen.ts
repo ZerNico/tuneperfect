@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as QuitImport } from './routes/quit'
 import { Route as LoadingImport } from './routes/loading'
 import { Route as HomeImport } from './routes/home'
 import { Route as CreateLobbyImport } from './routes/create-lobby'
@@ -40,6 +41,12 @@ import { Route as PartyVersusSettingsImport } from './routes/party/versus/settin
 import { Route as LobbyLocalIdImport } from './routes/lobby/local/$id'
 
 // Create/Update Routes
+
+const QuitRoute = QuitImport.update({
+  id: '/quit',
+  path: '/quit',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoadingRoute = LoadingImport.update({
   id: '/loading',
@@ -235,6 +242,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof LoadingImport
       parentRoute: typeof rootRoute
     }
+    '/quit': {
+      id: '/quit'
+      path: '/quit'
+      fullPath: '/quit'
+      preLoaderRoute: typeof QuitImport
+      parentRoute: typeof rootRoute
+    }
     '/game/restart': {
       id: '/game/restart'
       path: '/game/restart'
@@ -406,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/quit': typeof QuitRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -436,6 +451,7 @@ export interface FileRoutesByTo {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/quit': typeof QuitRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -467,6 +483,7 @@ export interface FileRoutesById {
   '/create-lobby': typeof CreateLobbyRoute
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
+  '/quit': typeof QuitRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -499,6 +516,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/quit'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -528,6 +546,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/quit'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -557,6 +576,7 @@ export interface FileRouteTypes {
     | '/create-lobby'
     | '/home'
     | '/loading'
+    | '/quit'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -588,6 +608,7 @@ export interface RootRouteChildren {
   CreateLobbyRoute: typeof CreateLobbyRoute
   HomeRoute: typeof HomeRoute
   LoadingRoute: typeof LoadingRoute
+  QuitRoute: typeof QuitRoute
   GameRestartRoute: typeof GameRestartRoute
   GameScoreRoute: typeof GameScoreRoute
   LobbyIdRoute: typeof LobbyIdRoute
@@ -618,6 +639,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreateLobbyRoute: CreateLobbyRoute,
   HomeRoute: HomeRoute,
   LoadingRoute: LoadingRoute,
+  QuitRoute: QuitRoute,
   GameRestartRoute: GameRestartRoute,
   GameScoreRoute: GameScoreRoute,
   LobbyIdRoute: LobbyIdRoute,
@@ -657,6 +679,7 @@ export const routeTree = rootRoute
         "/create-lobby",
         "/home",
         "/loading",
+        "/quit",
         "/game/restart",
         "/game/score",
         "/lobby/$id",
@@ -693,6 +716,9 @@ export const routeTree = rootRoute
     },
     "/loading": {
       "filePath": "loading.tsx"
+    },
+    "/quit": {
+      "filePath": "quit.tsx"
     },
     "/game/restart": {
       "filePath": "game/restart.tsx"

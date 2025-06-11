@@ -84,7 +84,10 @@ function HomeComponent() {
   useNavigation(() => ({
     layer: 0,
     onKeydown(event) {
-      if (event.action === "left") {
+      if (event.action === "back") {
+        navigate({ to: "/quit" });
+        playSound("confirm");
+      } else if (event.action === "left") {
         decrement();
       } else if (event.action === "right") {
         increment();
@@ -120,7 +123,7 @@ function HomeComponent() {
           </div>
         </div>
       }
-      footer={<KeyHints hints={["navigate", "confirm"]} />}
+      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <div class="flex flex-grow flex-col gap-[6cqh]">
         <div class="flex flex-grow">

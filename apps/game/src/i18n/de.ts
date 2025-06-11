@@ -28,6 +28,11 @@ const de = {
     settingsDescription: "Ändere deine Einstellungen oder füge Lieder und Mikrofone hinzu.",
     microphoneRequired: "Du hast keine Mikrofone konfiguriert. Gehe zu den Einstellungen, um eines hinzuzufügen.",
   },
+  quit: {
+    title: "Spiel beenden",
+    message: "Möchtest du das Spiel wirklich beenden?",
+    
+  },
   update: {
     checking: "Suche nach Updates...",
     available: "Update verfügbar",
