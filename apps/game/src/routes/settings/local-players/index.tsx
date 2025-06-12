@@ -97,7 +97,6 @@ function LocalPlayersComponent() {
       position,
       () => {
         const selectedButton = buttonRefs[position()];
-        console.log(selectedButton, scrollContainer);
 
         if (selectedButton && scrollContainer) {
           selectedButton.scrollIntoView({

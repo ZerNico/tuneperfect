@@ -112,7 +112,7 @@ export const Route = createFileRoute("/party/versus/")({
     const scores = roundStore.scores();
 
     if (scores.length !== 2 || !voice || players.length !== 2) {
-      console.log("Conditions not met for processing round results:", { settings, voice, players, scores });
+      console.warn("Conditions not met for processing round results:", { settings, voice, players, scores });
       return;
     }
 
@@ -123,7 +123,7 @@ export const Route = createFileRoute("/party/versus/")({
     });
 
     if (totalScores.every((score) => score === 0)) {
-      console.log("All scores are zero, skipping round result processing.");
+      console.warn("All scores are zero, skipping round result processing.");
       return;
     }
 

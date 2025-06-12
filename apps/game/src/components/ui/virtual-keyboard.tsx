@@ -106,7 +106,6 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   const writeCharacter = (character: string) => {
     const input = props.inputRef;
     const cursor = input.selectionStart;
-    console.log(cursor);
     if (cursor === null) return;
     input.value = input.value.slice(0, cursor) + character + input.value.slice(cursor);
     input.setSelectionRange(cursor + 1, cursor + 1);

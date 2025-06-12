@@ -30,8 +30,6 @@ function createSongsStore() {
         }
       }
 
-      console.log(paths, allSongFiles);
-
       if (allSongFiles.length === 0) {
         onProgress?.("", 1);
         return;

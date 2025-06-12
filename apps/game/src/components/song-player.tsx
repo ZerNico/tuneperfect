@@ -1,4 +1,4 @@
-import { createEffect, createSignal, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
+import { createEffect, createSignal, type JSX, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
 import { createRefContent } from "~/lib/utils/ref";
@@ -78,7 +78,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       } catch (error) {
         console.warn("Failed to create audio source:", error);
       }
-    }),
+    })
   );
 
   // Setup audio context for video element
@@ -127,7 +127,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           console.warn("Failed to create video source:", error);
         }
       }
-    }),
+    })
   );
 
   // Check if all required media is ready
@@ -220,13 +220,16 @@ export default function SongPlayer(props: SongPlayerProps) {
             } else {
               // Can't sync by adjusting video time, use timeout
               await video.play();
-              syncTimeout = setTimeout(async () => {
-                try {
-                  await audio.play();
-                } catch (error) {
-                  console.warn("Failed to start audio playback:", error);
-                }
-              }, Math.abs(gap) * 1000);
+              syncTimeout = setTimeout(
+                async () => {
+                  try {
+                    await audio.play();
+                  } catch (error) {
+                    console.warn("Failed to start audio playback:", error);
+                  }
+                },
+                Math.abs(gap) * 1000
+              );
             }
           }
         } else {
@@ -304,8 +307,8 @@ export default function SongPlayer(props: SongPlayerProps) {
         setVideoError(false);
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
-      },
-    ),
+      }
+    )
   );
 
   // Handle ready state notifications
@@ -328,17 +331,19 @@ export default function SongPlayer(props: SongPlayerProps) {
     setVideoReady(true);
   };
 
-  const handleVideoError = () => {
+  const handleVideoError: JSX.EventHandler<HTMLVideoElement, Event> = (error) => {
     setVideoError(true);
     setVideoElement(undefined);
     if (!props.song.audioUrl) {
-      console.log("video error");
+      console.error("Failed to play video:", error);
       props.onError?.();
+    } else {
+      console.warn("Failed to play video:", error);
     }
   };
 
-  const handleAudioError = () => {
-    console.log("audio error");
+  const handleAudioError: JSX.EventHandler<HTMLAudioElement, Event> = (error) => {
+    console.error("Failed to play audio:", error);
     props.onError?.();
   };
 
@@ -355,7 +360,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         const video = videoElement();
         return audio?.duration ?? video?.duration ?? 0;
       },
-    }),
+    })
   );
 
   onCleanup(() => {

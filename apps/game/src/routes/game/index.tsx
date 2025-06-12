@@ -66,7 +66,6 @@ function GameComponent() {
   };
 
   const handleRestart = () => {
-    console.log("restart");
     roundStore.setScores([]);
     navigate({ to: "/game/restart", replace: true });
   };
