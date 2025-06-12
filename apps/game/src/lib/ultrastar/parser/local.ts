@@ -32,62 +32,98 @@ async function getMediaUrl(filePath: string): Promise<string> {
   return convertFileSrc(filePath);
 }
 
-export interface SongLoadingProgress {
-  songPath: string;
-  songName: string;
+export interface SongParsingProgress {
+  currentSong: string;
   current: number;
   total: number;
 }
 
-export async function parseLocalFileTree(
-  root: DirEntryWithChildren, 
-  onProgress?: (progress: SongLoadingProgress) => void
-) {
-  const songFiles: { txt: DirEntryWithChildren; files: DirEntryWithChildren[] }[] = [];
+export interface SongFile {
+  txt: DirEntryWithChildren;
+  files: DirEntryWithChildren[];
+  sourcePath: string;
+}
+
+export function collectSongFiles(root: DirEntryWithChildren, sourcePath: string): SongFile[] {
+  const songFiles: SongFile[] = [];
 
   const findTxtFiles = (node: DirEntryWithChildren) => {
     for (const child of node.children) {
       if (child.isDirectory) {
         findTxtFiles(child);
       } else if (child.name.endsWith(".txt")) {
-        songFiles.push({ txt: child, files: node.children });
+        songFiles.push({ 
+          txt: child, 
+          files: node.children, 
+          sourcePath 
+        });
       }
     }
   };
+  
   findTxtFiles(root);
+  return songFiles;
+}
 
+export async function parseAllSongFiles(
+  songFiles: SongFile[],
+  onProgress?: (progress: SongParsingProgress) => void
+): Promise<{ songs: LocalSong[]; songsByPath: Map<string, LocalSong[]> }> {
   const limit = pLimit(5);
   const totalSongs = songFiles.length;
+  const songsByPath = new Map<string, LocalSong[]>();
   
   const results = await Promise.allSettled(
-    songFiles.map((song, index) => 
+    songFiles.map((songFile, index) => 
       limit(async () => {
-        const result = await parseLocalTxtFile(song.txt, song.files);
+        const result = await parseLocalTxtFile(songFile.txt, songFile.files);
+        
         if (onProgress) {
           onProgress({
-            songPath: song.txt.path,
-            songName: song.txt.name,
+            currentSong: songFile.txt.name,
             current: index + 1,
             total: totalSongs,
           });
         }
-        return result;
+        
+        return { song: result, sourcePath: songFile.sourcePath };
       })
     )
   );
+
   const fulfilled = results.filter((result) => result.status === "fulfilled");
   const rejected = results.filter((result) => result.status === "rejected");
 
-  // TODO: Display errors
   for (const result of rejected) {
-    console.error(result.reason);
+    console.error("Failed to parse song:", result.reason);
   }
 
-  const songs = fulfilled.map((result) => result.value);
+  const songs: LocalSong[] = [];
+  
+  for (const result of fulfilled) {
+    const { song, sourcePath } = result.value;
+    songs.push(song);
+    
+    if (!songsByPath.has(sourcePath)) {
+      songsByPath.set(sourcePath, []);
+    }
+    songsByPath.get(sourcePath)?.push(song);
+  }
+
+  return { songs, songsByPath };
+}
+
+// Keep the old function for backward compatibility but simplify it
+export async function parseLocalFileTree(
+  root: DirEntryWithChildren, 
+  onProgress?: (progress: SongParsingProgress) => void
+) {
+  const songFiles = collectSongFiles(root, root.path);
+  const { songs } = await parseAllSongFiles(songFiles, onProgress);
   return songs;
 }
 
-export async function parseLocalTxtFile(txt: DirEntryWithChildren, files: DirEntryWithChildren[]) {
+async function parseLocalTxtFile(txt: DirEntryWithChildren, files: DirEntryWithChildren[]) {
   try {
     const content = await readTextFile(txt.path);
     const song = parseUltrastarTxt(content);

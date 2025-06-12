@@ -18,20 +18,20 @@ export const Route = createFileRoute("/loading")({
 function LoadingComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [currentPath, setCurrentPath] = createSignal("");
+  const [currentSong, setCurrentSong] = createSignal("");
   const [progress, setProgress] = createSignal(0);
 
   onMount(async () => {
     const [_error, matches] = await tryCatch(getMatches());
 
     if (matches?.args.songpath && Array.isArray(matches.args.songpath.value)) {
-      await songsStore.updateLocalSongs(matches.args.songpath.value, (path, progress) => {
-        setCurrentPath(path);
+      await songsStore.updateLocalSongs(matches.args.songpath.value, (song, progress) => {
+        setCurrentSong(song);
         setProgress(progress);
       });
     } else {
-      await songsStore.updateLocalSongs(songsStore.paths(), (path, progress) => {
-        setCurrentPath(path);
+      await songsStore.updateLocalSongs(songsStore.paths(), (song, progress) => {
+        setCurrentSong(song);
         setProgress(progress);
       });
     }
@@ -50,7 +50,7 @@ function LoadingComponent() {
 
         <div class="w-full max-w-lg">
           <div class="mb-2 flex justify-between text-sm">
-            <span>{t("loading.parsing")} {currentPath().split("/").pop() || ""}</span>
+            <span>{t("loading.parsing")} {currentSong() || "..."}</span>
             <span>{Math.round(progress() * 100)}%</span>
           </div>
 
