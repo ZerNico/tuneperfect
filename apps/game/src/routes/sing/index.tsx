@@ -1,4 +1,5 @@
 import { safe } from "@orpc/client";
+import { Key } from "@solid-primitives/keyed";
 import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
@@ -31,6 +32,11 @@ import IconGamepadStart from "~icons/sing/gamepad-start";
 import IconGamepadY from "~icons/sing/gamepad-y";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
+interface SongItem {
+  song: LocalSong;
+  id: string;
+}
 
 export const Route = createFileRoute("/sing/")({
   component: SingComponent,
@@ -324,8 +330,34 @@ function SongScroller(props: SongScrollerProps) {
     return index === -1 ? 0 : index;
   };
 
+  const generateDisplayedSongs = (songs: LocalSong[], centerIndex: number): SongItem[] => {
+    const numSongs = songs.length;
+    if (numSongs === 0) return [];
+
+    const result: SongItem[] = [];
+    const offset = MIDDLE_SONG_INDEX;
+
+    for (let i = 0; i < DISPLAYED_SONGS; i++) {
+      const relativeIndex = i - offset;
+      const songIndex = positiveModulo(centerIndex + relativeIndex, numSongs);
+      const song = songs[songIndex];
+      if (song) {
+        result.push({ song, id: crypto.randomUUID() });
+      } else if (numSongs > 0) {
+        const firstSong = songs[0];
+        if (firstSong) {
+          result.push({ song: firstSong, id: crypto.randomUUID() });
+        }
+      }
+    }
+    return result;
+  };
+
   const initialSongs = filteredAndSortedSongs();
   const [currentIndex, setCurrentIndex] = createSignal(calculateIndex(initialSongs, props.currentSong));
+  const [displayedSongs, setDisplayedSongs] = createSignal<SongItem[]>(
+    generateDisplayedSongs(initialSongs, currentIndex()),
+  );
 
   createEffect(
     on(
@@ -335,6 +367,7 @@ function SongScroller(props: SongScrollerProps) {
         const newCurrentSong = songs.length > 0 ? songs[newIndex] : null;
 
         setCurrentIndex(newIndex);
+        setDisplayedSongs(generateDisplayedSongs(songs, newIndex));
 
         if (newCurrentSong !== currentSongProp) {
           props.onSongChange?.(newCurrentSong || null);
@@ -343,31 +376,6 @@ function SongScroller(props: SongScrollerProps) {
       { defer: true },
     ),
   );
-
-  const displayedSongs = createMemo(() => {
-    const songs = filteredAndSortedSongs();
-    const numSongs = songs.length;
-    if (numSongs === 0) return [];
-
-    const result: LocalSong[] = [];
-    const index = currentIndex();
-    const offset = MIDDLE_SONG_INDEX;
-
-    for (let i = 0; i < DISPLAYED_SONGS; i++) {
-      const relativeIndex = i - offset;
-      const songIndex = positiveModulo(index + relativeIndex, numSongs);
-      const song = songs[songIndex];
-      if (song) {
-        result.push(song);
-      } else if (numSongs > 0) {
-        const firstSong = songs[0];
-        if (firstSong) {
-          result.push(firstSong);
-        }
-      }
-    }
-    return result;
-  });
 
   useNavigation(() => ({
     onKeydown(event) {
@@ -391,7 +399,7 @@ function SongScroller(props: SongScrollerProps) {
         if (!animating() && props.currentSong) {
           const displayed = displayedSongs();
           const middleDisplayedSong = displayed[MIDDLE_SONG_INDEX];
-          if (middleDisplayedSong === props.currentSong) {
+          if (middleDisplayedSong && middleDisplayedSong.song === props.currentSong) {
             props.onSelect?.(props.currentSong);
           }
         }
@@ -424,7 +432,7 @@ function SongScroller(props: SongScrollerProps) {
     }
 
     const songs = filteredAndSortedSongs();
-    if (songs.length <= 1) return;
+    if (songs.length === 0) return;
 
     if (isHeld()) {
       props.onIsFastScrolling?.(true);
@@ -466,6 +474,36 @@ function SongScroller(props: SongScrollerProps) {
 
     batch(() => {
       setCurrentIndex(nextIndex);
+
+      if (numSongs > 1) {
+        if (direction === "left") {
+          const newFirstSongIndex = positiveModulo(nextIndex - MIDDLE_SONG_INDEX, numSongs);
+          const song = songs[newFirstSongIndex];
+          if (song) {
+            setDisplayedSongs((d) => [{ song, id: crypto.randomUUID() }, ...d.slice(0, -1)]);
+          }
+        } else {
+          const newLastSongIndex = positiveModulo(nextIndex + MIDDLE_SONG_INDEX, numSongs);
+          const song = songs[newLastSongIndex];
+          if (song) {
+            setDisplayedSongs((d) => [...d.slice(1), { song, id: crypto.randomUUID() }]);
+          }
+        }
+      } else if (numSongs === 1) {
+        if (direction === "left") {
+          setDisplayedSongs((d) => {
+            const last = d.at(-1);
+            if (!last) return d;
+            return [last, ...d.slice(0, -1)];
+          });
+        } else {
+          setDisplayedSongs((d) => {
+            const first = d[0];
+            if (!first) return d;
+            return [...d.slice(1), first];
+          });
+        }
+      }
 
       if (nextSong && nextSong !== props.currentSong) {
         props.onSongChange?.(nextSong);
@@ -521,13 +559,15 @@ function SongScroller(props: SongScrollerProps) {
     return "translate-x-8";
   };
 
-  const scrollerClasses = createMemo(() => ({
-    "translate-x-0": animating() === null,
-    "translate-x-1/11 transition-transform duration-250": animating() === "left",
-    "-translate-x-1/11 transition-transform duration-250": animating() === "right",
-    "duration-150! ease-linear!": isFastScrolling() && !!animating(),
-    "duration-0! ease-linear!": props.animationsDisabled,
-  }));
+  const scrollerClasses = createMemo(() => {
+    return {
+      "translate-x-0": animating() === null,
+      "translate-x-1/11 transition-transform duration-250": animating() === "left",
+      "-translate-x-1/11 transition-transform duration-250": animating() === "right",
+      "duration-150! ease-linear!": isFastScrolling() && !!animating(),
+      "duration-0! ease-linear!": props.animationsDisabled,
+    };
+  });
 
   const songCardClasses = (index: number, currentAnimating: "left" | "right" | null) => ({
     [getSongTransform(index, currentAnimating)]: true,
@@ -544,9 +584,10 @@ function SongScroller(props: SongScrollerProps) {
         classList={scrollerClasses()}
         onTransitionEnd={onTransitionEnd}
       >
-        <For each={displayedSongs()}>
-          {(song, index) => {
+        <Key each={displayedSongs()} by={(item) => item.id}>
+          {(item, index) => {
             const active = createMemo(() => isActive(index(), animating()));
+            const song = item().song;
 
             return (
               <button
@@ -573,7 +614,7 @@ function SongScroller(props: SongScrollerProps) {
               </button>
             );
           }}
-        </For>
+        </Key>
       </div>
     </div>
   );
@@ -715,6 +756,7 @@ function SearchBar(props: SearchBarProps) {
     </div>
   );
 }
+
 interface DebouncedHighscoreListProps {
   songHash: string;
 }
