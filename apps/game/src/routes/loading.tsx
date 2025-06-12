@@ -50,15 +50,14 @@ function LoadingComponent() {
 
         <div class="w-full max-w-lg">
           <div class="mb-2 flex justify-between text-sm">
-            <span>{t("loading.parsing")} {currentSong() || "..."}</span>
+            <span>
+              {t("loading.parsing")} {currentSong() || "..."}
+            </span>
             <span>{Math.round(progress() * 100)}%</span>
           </div>
 
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-            <div
-              class="h-full rounded-full bg-white"
-              style={{ width: `${progress() * 100}%` }}
-            />
+            <div class="h-full rounded-full bg-white" style={{ width: `${progress() * 100}%` }} />
           </div>
         </div>
       </div>

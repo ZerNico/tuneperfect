@@ -20,6 +20,7 @@
     "store:allow-delete",
     "store:allow-keys",
     "store:allow-clear",
-    "log:default"
+    "log:default",
+    "os:allow-platform"
   ]
 }

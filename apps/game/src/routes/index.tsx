@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { platform } from "@tauri-apps/plugin-os";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import { createEffect, Match, Switch } from "solid-js";
@@ -26,15 +27,21 @@ function RouteComponent() {
     retry: false,
   }));
 
+  const askForMicrophonePermission = async () => {
+    try {
+      const currentPlatform = platform();
+      if (currentPlatform === "macos") {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+    } catch (error) {
+      console.error("Failed to get microphone permissions on startup:", error);
+    }
+  };
+
   createEffect(async () => {
     if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data) {
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (error) {
-        console.error("Failed to get microphone permissions on startup:", error);
-      } finally {
-        navigate({ to: "/create-lobby" });
-      }
+      await askForMicrophonePermission();
+      navigate({ to: "/create-lobby" });
     }
   });
 
@@ -51,7 +58,8 @@ function RouteComponent() {
     },
   }));
 
-  const skipUpdate = () => {
+  const skipUpdate = async () => {
+    await askForMicrophonePermission();
     navigate({ to: "/create-lobby" });
   };
 
