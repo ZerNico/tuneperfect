@@ -3,7 +3,7 @@ import { debounce } from "@solid-primitives/scheduled";
 import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { createSignal } from "solid-js";
+import { createSignal, Suspense } from "solid-js";
 import { useWakeLock } from "~/hooks/useWakeLock";
 
 interface RouterContext {
@@ -53,7 +53,7 @@ function RootComponent() {
         event.stopPropagation();
       }
     },
-    { capture: true },
+    { capture: true }
   );
 
   createEventListener(
@@ -70,7 +70,7 @@ function RootComponent() {
         event.stopPropagation();
       }
     },
-    { capture: true },
+    { capture: true }
   );
 
   const [mouseHidden, setMouseHidden] = createSignal(false);
@@ -97,7 +97,7 @@ function RootComponent() {
 
         event.preventDefault();
       },
-      { capture: true },
+      { capture: true }
     );
   }
 
@@ -114,7 +114,7 @@ function RootComponent() {
 
         event.preventDefault();
       },
-      { capture: true },
+      { capture: true }
     );
   }
 
@@ -126,7 +126,9 @@ function RootComponent() {
           "cursor-none": mouseHidden(),
         }}
       >
-        <Outlet />
+        <Suspense>
+          <Outlet />
+        </Suspense>
       </div>
     </>
   );

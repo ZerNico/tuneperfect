@@ -1,32 +1,27 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { makePersisted } from "@solid-primitives/storage";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, } from "solid-js";
 import { collectSongFiles, type LocalSong, parseAllSongFiles } from "~/lib/ultrastar/parser/local";
 import { readFileTree } from "~/lib/utils/fs";
-import { tauriStorage } from "~/lib/utils/storage";
-
-export const storage = tauriStorage("songs.json", { autoSave: true });
+import { settings, updateSettings } from "./settings";
 
 function createSongsStore() {
-  const [paths, setPaths] = makePersisted(createSignal<string[]>([]), { name: "paths", storage });
+  const paths = () => settings().songs.paths;
+
   const localSongs = new ReactiveMap<string, LocalSong[]>();
 
   const addSongPath = (path: string) => {
-    setPaths((prev) => [...prev, path]);
+    updateSettings("songs", "paths", (prev: string[]) => [...prev, path]);
   };
 
   const removeSongPath = (path: string) => {
-    setPaths((prev) => prev.filter((p) => p !== path));
+    updateSettings("songs", "paths", (prev: string[]) => prev.filter((p: string) => p !== path));
     localSongs.delete(path);
   };
 
-  const updateLocalSongs = async (
-    paths: string[],
-    onProgress?: (currentSong: string, progress: number) => void
-  ) => {
+  const updateLocalSongs = async (paths: string[], onProgress?: (currentSong: string, progress: number) => void) => {
     try {
       const allSongFiles = [];
-      
+
       for (const path of paths) {
         if (!localSongs.has(path)) {
           const root = await readFileTree(path);
@@ -34,6 +29,8 @@ function createSongsStore() {
           allSongFiles.push(...songFiles);
         }
       }
+
+      console.log(paths, allSongFiles);
 
       if (allSongFiles.length === 0) {
         onProgress?.("", 1);
@@ -56,7 +53,7 @@ function createSongsStore() {
   };
 
   const needsUpdate = createMemo(() => {
-    const hasMissingPaths = paths().some((path) => !localSongs.has(path));
+    const hasMissingPaths = paths().some((path: string) => !localSongs.has(path));
     return hasMissingPaths;
   });
 

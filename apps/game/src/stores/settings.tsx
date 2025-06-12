@@ -1,61 +1,78 @@
-import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
-import { tauriStorage } from "~/lib/utils/storage";
+import * as v from "valibot";
+import { createPersistentStore } from "../lib/utils/store";
 
-export const storage = tauriStorage("settings.json", { autoSave: true });
+const settingsStoreSchema = v.object({
+  version: v.literal("1.0.0"),
+  general: v.object({
+    language: v.string(),
+    forceOfflineMode: v.boolean(),
+  }),
+  volume: v.object({
+    master: v.number(),
+    game: v.number(),
+    preview: v.number(),
+    menu: v.number(),
+  }),
+  microphones: v.array(
+    v.object({
+      name: v.string(),
+      channel: v.number(),
+      color: v.string(),
+      delay: v.number(),
+      gain: v.number(),
+      threshold: v.number(),
+    })
+  ),
+  songs: v.object({
+    paths: v.array(v.string()),
+  }),
+});
 
-export interface Microphone {
-  name: string;
-  channel: number;
-  color: string;
-  delay: number;
-  gain: number;
-  threshold: number;
-}
+export type SettingsStore = v.InferOutput<typeof settingsStoreSchema>;
 
-export interface VolumeSettings {
-  master: number;
-  game: number;
-  preview: number;
-  menu: number;
-}
+const defaultSettings: SettingsStore = {
+  version: "1.0.0",
+  general: {
+    language: "en",
+    forceOfflineMode: false,
+  },
+  volume: {
+    master: 1,
+    game: 1,
+    preview: 0.5,
+    menu: 0.5,
+  },
+  microphones: [],
+  songs: {
+    paths: [],
+  },
+};
 
-export interface GeneralSettings {
-  language: string;
-  forceOfflineMode: boolean;
-}
+const settingsStoreInstance = createPersistentStore({
+  filename: "settings.json",
+  schema: settingsStoreSchema,
+  defaults: defaultSettings,
+});
+
+export const settings = settingsStoreInstance.settings;
+export const setSettings = settingsStoreInstance.setSettings;
+export const updateSettings = settingsStoreInstance.updateSettings;
+export const initializeSettings = settingsStoreInstance.initialize;
+
+type Microphone = SettingsStore["microphones"][number];
+type VolumeSettings = SettingsStore["volume"];
+type GeneralSettings = SettingsStore["general"];
 
 function createSettingsStore() {
   const [initialized, setInitialized] = createSignal(false);
-  const [microphones, setMicrophones] = makePersisted(createSignal<Microphone[]>([]), {
-    name: "microphones",
-    storage,
-  });
-  const [volume, setVolume] = makePersisted(
-    createSignal<VolumeSettings>({
-      master: 1,
-      game: 1,
-      preview: 0.5,
-      menu: 0.5,
-    }),
-    {
-      name: "volume",
-      storage,
-    }
-  );
-  const [general, setGeneral] = makePersisted(
-    createSignal<GeneralSettings>({
-      language: "en",
-      forceOfflineMode: false,
-    }),
-    {
-      name: "general",
-      storage,
-    }
-  );
+
+  const volume = () => settings().volume;
+  const microphones = () => settings().microphones;
+  const general = () => settings().general;
 
   const saveMicrophone = (index: number, microphone: Microphone) => {
-    setMicrophones((prev) => {
+    updateSettings("microphones", (prev) => {
       const next = [...prev];
       next[index] = microphone;
       return next;
@@ -63,7 +80,7 @@ function createSettingsStore() {
   };
 
   const deleteMicrophone = (index: number) => {
-    setMicrophones((prev) => {
+    updateSettings("microphones", (prev) => {
       const next = [...prev];
       next.splice(index, 1);
       return next;
@@ -71,7 +88,7 @@ function createSettingsStore() {
   };
 
   const saveVolume = (settings: VolumeSettings) => {
-    setVolume(settings);
+    updateSettings("volume", settings);
   };
 
   const getVolume = (key: keyof VolumeSettings) => {
@@ -79,7 +96,7 @@ function createSettingsStore() {
   };
 
   const saveGeneral = (settings: GeneralSettings) => {
-    setGeneral(settings);
+    updateSettings("general", settings);
   };
 
   return {

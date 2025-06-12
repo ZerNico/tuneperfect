@@ -9,10 +9,16 @@ import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import { t } from "~/lib/i18n";
+import { initializeLobbySettings } from "~/stores/lobby";
+import { initializeLocalSettings } from "~/stores/local";
+import { initializeSettings } from "~/stores/settings";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
+  loader: async () => {
+    await Promise.all([initializeSettings(), initializeLocalSettings(), initializeLobbySettings()]);
+  },
 });
 
 function RouteComponent() {

@@ -1,19 +1,36 @@
-import { makePersisted } from "@solid-primitives/storage";
 import { createSignal } from "solid-js";
+import * as v from "valibot";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import type { GuestUser } from "~/lib/types";
-import { tauriStorage } from "~/lib/utils/storage";
+import { createPersistentStore } from "~/lib/utils/store";
 import { localStore } from "./local";
 
-export const storage = tauriStorage("lobby.json", { autoSave: true });
+const lobbyDataSchema = v.object({
+  token: v.string(),
+  lobby: v.object({
+    id: v.string(),
+  }),
+});
 
-type LobbyStore = {
-  token: string;
-  lobby: {
-    id: string;
-  };
+const lobbyStoreSchema = v.object({
+  version: v.literal("1.0.0"),
+  data: v.nullable(lobbyDataSchema),
+});
+
+type LobbyStore = v.InferOutput<typeof lobbyStoreSchema>;
+type LobbyData = v.InferOutput<typeof lobbyDataSchema>;
+
+const defaultLobbySettings: LobbyStore = {
+  version: "1.0.0",
+  data: null,
 };
+
+const lobbyStoreInstance = createPersistentStore({
+  filename: "lobby.json",
+  schema: lobbyStoreSchema,
+  defaults: defaultLobbySettings,
+});
 
 export const guestUser: GuestUser = {
   id: "guest",
@@ -22,12 +39,15 @@ export const guestUser: GuestUser = {
 };
 
 function createLobbyStore() {
-  const [lobby, setLobby] = makePersisted(createSignal<LobbyStore | undefined>(undefined), {
-    name: "lobby",
-    storage,
-  });
-
   const [localPlayerIds, setLocalPlayerIds] = createSignal<string[]>([]);
+
+  const lobby = () => {
+    return lobbyStoreInstance.settings().data;
+  };
+
+  const setLobby = (newLobby: LobbyData | undefined) => {
+    lobbyStoreInstance.updateSettings("data", newLobby || null);
+  };
 
   const clearLobby = async () => {
     if (!lobby()) {
@@ -73,3 +93,4 @@ function createLobbyStore() {
 }
 
 export const lobbyStore = createLobbyStore();
+export const initializeLobbySettings = lobbyStoreInstance.initialize;

@@ -6,6 +6,7 @@ export function tauriStorage(name: string, options?: StoreOptions): AsyncStorage
 
   return {
     getItem: async (key) => {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return (await (await store).get(key)) ?? null;
     },
     setItem: async (key, value) => {
