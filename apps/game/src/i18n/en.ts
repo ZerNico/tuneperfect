@@ -76,6 +76,11 @@ const en = {
       title: "Title",
       year: "Year",
     },
+    songCount: {
+      one: "{{count}} song",
+      other: "{{count}} songs",
+      filtered: "{{filtered}} / {{total}} songs",
+    },
   },
   score: {
     title: "Score",

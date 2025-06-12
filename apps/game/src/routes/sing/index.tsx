@@ -20,6 +20,7 @@ import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
+import IconMusic from "~icons/lucide/music";
 import IconSearch from "~icons/lucide/search";
 import IconDuet from "~icons/sing/duet";
 import IconF3Key from "~icons/sing/f3-key";
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/sing/")({
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>();
 const [searchQuery, setSearchQuery] = createSignal("");
 const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
+const [filteredSongCount, setFilteredSongCount] = createSignal(songsStore.songs().length);
 
 const SORT_OPTIONS = ["artist", "title", "year"] as const;
 
@@ -180,21 +182,36 @@ function SingComponent() {
         </div>
       }
       header={
-        <div class="flex gap-20">
+        <div class="flex items-center gap-20">
           <TitleBar title={t("sing.songs")} onBack={onBack} />
-          <SearchBar
-            ref={searchRef}
-            value={searchQuery()}
-            onSearch={setSearchQuery}
-            onFocus={() => {
-              setSearchFocused(true);
-              setAnimationsDisabled(true);
-            }}
-            onBlur={() => {
-              setSearchFocused(false);
-              setAnimationsDisabled(false);
-            }}
-          />
+          <div class="flex items-center gap-4">
+            <SearchBar
+              ref={searchRef}
+              value={searchQuery()}
+              onSearch={setSearchQuery}
+              onFocus={() => {
+                setSearchFocused(true);
+                setAnimationsDisabled(true);
+              }}
+              onBlur={() => {
+                setSearchFocused(false);
+                setAnimationsDisabled(false);
+              }}
+            />
+            <div class="flex items-center gap-2 text-sm opacity-80">
+              <IconMusic />
+              <Show when={filteredSongCount() !== songsStore.songs().length} fallback={<span>
+                {songsStore.songs().length === 1 
+                  ? t('sing.songCount.one', {count: songsStore.songs().length})
+                  : t('sing.songCount.other', {count: songsStore.songs().length})
+                }
+              </span>}>
+                <span>
+                  {t('sing.songCount.filtered', {filtered: filteredSongCount(), total: songsStore.songs().length})}
+                </span>
+              </Show>
+            </div>
+          </div>
         </div>
       }
       background={
@@ -236,9 +253,7 @@ function SingComponent() {
           <div class="relative flex flex-grow flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
             <div class="max-w-200">
-              <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">
-                {currentSong()?.title}
-              </span>
+              <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">{currentSong()?.title}</span>
             </div>
             <div class="absolute top-full">
               <Show when={(currentSong()?.voices.length || 0) > 1}>
@@ -258,6 +273,7 @@ function SingComponent() {
             currentSong={currentSong() || null}
             animationsDisabled={animationsDisabled()}
             onIsFastScrolling={setIsFastScrolling}
+            onFilteredSongsChange={setFilteredSongCount}
           />
         </div>
       </div>
@@ -274,6 +290,7 @@ interface SongScrollerProps {
   onSongChange?: (song: LocalSong | null) => void;
   onSelect?: (song: LocalSong) => void;
   onIsFastScrolling?: (fastScrolling: boolean) => void;
+  onFilteredSongsChange?: (count: number) => void;
 }
 
 const DISPLAYED_SONGS = 11;
@@ -355,9 +372,7 @@ function SongScroller(props: SongScrollerProps) {
 
   const initialSongs = filteredAndSortedSongs();
   const [currentIndex, setCurrentIndex] = createSignal(calculateIndex(initialSongs, props.currentSong));
-  const [displayedSongs, setDisplayedSongs] = createSignal<SongItem[]>(
-    generateDisplayedSongs(initialSongs, currentIndex()),
-  );
+  const [displayedSongs, setDisplayedSongs] = createSignal<SongItem[]>(generateDisplayedSongs(initialSongs, currentIndex()));
 
   createEffect(
     on(
@@ -373,8 +388,8 @@ function SongScroller(props: SongScrollerProps) {
           props.onSongChange?.(newCurrentSong || null);
         }
       },
-      { defer: true },
-    ),
+      { defer: true }
+    )
   );
 
   useNavigation(() => ({
@@ -577,6 +592,12 @@ function SongScroller(props: SongScrollerProps) {
     "duration-0! ease-linear!": props.animationsDisabled,
   });
 
+  // Update the parent component with the song count
+  createEffect(() => {
+    const songCount = filteredAndSortedSongs().length;
+    props.onFilteredSongsChange?.(songCount);
+  });
+
   return (
     <div class="flex w-full flex-col items-center justify-center">
       <div
@@ -684,10 +705,7 @@ function SearchBar(props: SearchBarProps) {
 
   const moveCursor = (direction: "left" | "right") => {
     const start = searchRef.selectionStart ?? 0;
-    searchRef.setSelectionRange(
-      Math.max(0, start + (direction === "left" ? -1 : 1)),
-      Math.max(0, start + (direction === "left" ? -1 : 1)),
-    );
+    searchRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
   };
 
   const writeCharacter = (char: string) => {
@@ -784,8 +802,8 @@ function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
         onCleanup(() => {
           clearTimeout(timeout);
         });
-      },
-    ),
+      }
+    )
   );
 
   return (

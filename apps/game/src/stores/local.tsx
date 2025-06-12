@@ -26,7 +26,7 @@ const defaultLocalSettings: LocalStore = {
 const localStoreInstance = createPersistentStore({
   filename: "local.json",
   schema: localStoreSchema,
-  defaults: defaultLocalSettings,
+  defaults: defaultLocalSettings, 
 });
 
 export const localSettings = localStoreInstance.settings;

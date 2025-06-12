@@ -77,6 +77,11 @@ const de = {
       title: "Titel",
       year: "Jahr",
     },
+    songCount: {
+      one: "{{count}} Lied",
+      other: "{{count}} Lieder",
+      filtered: "{{filtered}} / {{total}} Lieder",
+    },
   },
   score: {
     title: "Punktzahl",
