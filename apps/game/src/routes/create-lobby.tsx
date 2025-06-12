@@ -1,5 +1,6 @@
-import { createMutation } from "@tanstack/solid-query";
+import { useMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { differenceInDays } from "date-fns";
 import { Match, onMount, Switch } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -19,13 +20,13 @@ export const Route = createFileRoute("/create-lobby")({
 function IndexComponent() {
   const navigate = useNavigate();
 
-  const createLobbyMutation = createMutation(() =>
+  const createLobbyMutation = useMutation(() =>
     client.lobby.createLobby.mutationOptions({
       onSuccess: (data) => {
-        lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId } });
+        lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId }, createdAt: Date.now() });
         goToLoading();
       },
-    }),
+    })
   );
 
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
@@ -37,7 +38,16 @@ function IndexComponent() {
       return;
     }
 
-    if (lobbyStore.lobby()) {
+    const currentLobby = lobbyStore.lobby();
+    if (currentLobby) {
+      const isLobbyOlderThanOneDay = differenceInDays(Date.now(), currentLobby.createdAt) >= 1;
+      
+      if (isLobbyOlderThanOneDay) {
+        lobbyStore.clearLobby();
+        createLobbyMutation.mutate({});
+        return;
+      }
+
       try {
         await queryClient.fetchQuery(client.lobby.currentLobby.queryOptions());
         goToLoading();

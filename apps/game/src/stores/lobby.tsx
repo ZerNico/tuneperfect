@@ -11,6 +11,7 @@ const lobbyDataSchema = v.object({
   lobby: v.object({
     id: v.string(),
   }),
+  createdAt: v.number(),
 });
 
 const lobbyStoreSchema = v.object({
