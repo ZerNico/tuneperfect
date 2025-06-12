@@ -62,6 +62,7 @@ const de = {
     changeClub: "Club wechseln",
     selectedClub: "Ausgewählter Club",
     noClub: "Kein Club",
+    recreateLobby: "Lobby neu erstellen",
   },
   sing: {
     title: "Singen",

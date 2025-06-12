@@ -61,6 +61,7 @@ const en = {
     changeClub: "Change Club",
     selectedClub: "Selected Club",
     noClub: "No Club",
+    recreateLobby: "Recreate Lobby",
   },
   sing: {
     title: "Sing",

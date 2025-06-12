@@ -13,6 +13,7 @@ import { client } from "~/lib/orpc";
 import { availableClubsQueryOptions, lobbyQueryOptions } from "~/lib/queries";
 import { lobbyStore } from "~/stores/lobby";
 import IconHome from "~icons/lucide/home";
+import IconRefreshCw from "~icons/lucide/refresh-cw";
 
 export const Route = createFileRoute("/lobby/")({
   component: LobbyComponent,
@@ -26,6 +27,12 @@ function LobbyComponent() {
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
   const availableClubsQuery = useQuery(() => availableClubsQueryOptions());
 
+  const recreateLobby = () => {
+    lobbyStore.clearLobby();
+    queryClient.clear();
+    navigate({ to: "/create-lobby" });
+  };
+
   const updateSelectedClubMutation = useMutation(() =>
     client.lobby.updateSelectedClub.mutationOptions({
       onSuccess: async () => {
@@ -36,7 +43,7 @@ function LobbyComponent() {
 
   const menuItems: Accessor<MenuItem[]> = createMemo(() => {
     const items: MenuItem[] = [];
-
+    
     const clubs = availableClubsQuery.data || [];
     const selectedClub = lobbyQuery.data?.selectedClub;
 
@@ -99,6 +106,19 @@ function LobbyComponent() {
       label: t("lobby.addLocalPlayer"),
       action: () => navigate({ to: "/lobby/add-local-player" }),
     });
+
+    if (lobbyStore.lobby()) {
+      items.push({
+        type: "button",
+        label: (
+          <div class="flex items-center gap-2">
+            <IconRefreshCw class="h-4 w-4" />
+            <span>{t("lobby.recreateLobby")}</span>
+          </div>
+        ),
+        action: recreateLobby,
+      });
+    }
 
     return items;
   });
