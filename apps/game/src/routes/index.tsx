@@ -26,9 +26,15 @@ function RouteComponent() {
     retry: false,
   }));
 
-  createEffect(() => {
+  createEffect(async () => {
     if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data) {
-      navigate({ to: "/create-lobby" });
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (error) {
+        console.error("Failed to get microphone permissions on startup:", error);
+      } finally {
+        navigate({ to: "/create-lobby" });
+      }
     }
   });
 
