@@ -1,3 +1,4 @@
+import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import Menu, { type MenuItem } from "../menu";
 
@@ -10,6 +11,15 @@ interface PauseMenuProps {
 }
 
 export default function PauseMenu(props: PauseMenuProps) {
+  useNavigation({
+    layer: 1,
+    onKeydown: (event) => {
+      if (event.action === "back") {
+        props.onClose?.();
+      }
+    },
+  });
+
   const menuItems: MenuItem[] = [
     {
       type: "button",
