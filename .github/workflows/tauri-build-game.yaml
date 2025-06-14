@@ -112,6 +112,7 @@ jobs:
           tauriScript: bun run tauri
           args: |
             --target ${{ matrix.platform.target }} --config '{
+              "identifier": "org.tuneperfect.game",
               "version": "${{ steps.version.outputs.app_version }}",
               "plugins": {
                 "updater": {
