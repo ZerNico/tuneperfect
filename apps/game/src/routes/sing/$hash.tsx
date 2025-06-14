@@ -134,13 +134,13 @@ function PlayerSelectionComponent() {
             if (!s || value === null) {
               return value;
             }
-            const duetSingerKey = `duetSingerP${value + 1}` as "p1" | "p2";
+            const duetSingerKey = `p${value + 1}` as "p1" | "p2";
             if (duetSingerKey in s) {
               const duetSinger = s[duetSingerKey];
               return <span>{duetSinger}</span>;
             }
 
-            return <span>{value}</span>;
+            return <span>{t("sing.voice")} {value + 1}</span>;
           },
         });
       }
