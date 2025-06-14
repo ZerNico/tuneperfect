@@ -51,6 +51,13 @@ function GeneralSettingsComponent() {
       onChange: (value) => setGeneral({ ...general(), forceOfflineMode: value === t("common.yes") }),
     },
     {
+      type: "select-string",
+      label: t("settings.sections.general.showNoteSegments"),
+      value: () => (general().showNoteSegments ? t("common.yes") : t("common.no")),
+      options: [t("common.no"), t("common.yes")],
+      onChange: (value) => setGeneral({ ...general(), showNoteSegments: value === t("common.yes") }),
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveGeneral,
@@ -60,9 +67,7 @@ function GeneralSettingsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={
-        <TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />
-      }
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

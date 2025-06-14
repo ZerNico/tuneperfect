@@ -7,6 +7,7 @@ const settingsStoreSchema = v.object({
   general: v.object({
     language: v.string(),
     forceOfflineMode: v.boolean(),
+    showNoteSegments: v.fallback(v.boolean(), false),
   }),
   volume: v.object({
     master: v.number(),
@@ -36,6 +37,7 @@ const defaultSettings: SettingsStore = {
   general: {
     language: "en",
     forceOfflineMode: false,
+    showNoteSegments: false,
   },
   volume: {
     master: 1,

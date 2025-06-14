@@ -109,6 +109,7 @@ const de = {
         title: "Allgemein",
         language: "Sprache",
         forceOfflineMode: "Offline-Modus erzwingen",
+        showNoteSegments: "Notenabschnitte anzeigen",
       },
       songs: {
         title: "Lieder",

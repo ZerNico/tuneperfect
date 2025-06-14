@@ -108,6 +108,7 @@ const en = {
         title: "General",
         language: "Language",
         forceOfflineMode: "Force Offline Mode",
+        showNoteSegments: "Show Note Segments",
       },
       songs: {
         title: "Songs",
