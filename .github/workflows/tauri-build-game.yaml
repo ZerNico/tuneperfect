@@ -114,6 +114,9 @@ jobs:
             --target ${{ matrix.platform.target }} --config '{
               "identifier": "org.tuneperfect.game",
               "version": "${{ steps.version.outputs.app_version }}",
+              "bundle": {
+                "createUpdaterArtifacts": true
+              },
               "plugins": {
                 "updater": {
                   "pubkey": "${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}",
