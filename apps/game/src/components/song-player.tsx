@@ -6,6 +6,7 @@ import { createRefContent } from "~/lib/utils/ref";
 export interface SongPlayerRef {
   getCurrentTime: () => number;
   getDuration: () => number;
+  setCurrentTime: (time: number) => void;
 }
 
 interface SongPlayerProps {
@@ -359,6 +360,20 @@ export default function SongPlayer(props: SongPlayerProps) {
         const audio = audioElement();
         const video = videoElement();
         return audio?.duration ?? video?.duration ?? 0;
+      },
+      setCurrentTime: (time: number) => {
+        const audio = audioElement();
+        const video = videoElement();
+
+        if (audio && video) {
+          const videoGap = props.song.videoGap ?? 0;
+          audio.currentTime = time;
+          video.currentTime = time + videoGap;
+        } else if (audio) {
+          audio.currentTime = time;
+        } else if (video) {
+          video.currentTime = time;
+        }
       },
     })
   );

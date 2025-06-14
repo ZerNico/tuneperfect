@@ -7,6 +7,7 @@ export interface GameContextValue {
   stop: () => void;
   pause: () => void;
   resume: () => void;
+  skip: () => void;
   started: Accessor<boolean>;
   playing: Accessor<boolean>;
   ms: Accessor<number>;

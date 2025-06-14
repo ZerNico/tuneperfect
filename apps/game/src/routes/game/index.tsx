@@ -22,7 +22,7 @@ function GameComponent() {
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
   const roundActions = useRoundActions();
 
-  const { GameProvider, start, pause, resume, playing, started, scores } = createGame(() => ({
+  const { GameProvider, start, stop, pause, resume, playing, started, scores, skip } = createGame(() => ({
     songPlayerRef: songPlayerRef(),
     song: roundStore.settings()?.song,
   }));
@@ -32,8 +32,14 @@ function GameComponent() {
   useNavigation(() => ({
     layer: 0,
     onKeydown: (event) => {
-      if (event.action === "back" && started()) {
+      if (!started()) {
+        return;
+      }
+
+      if (event.action === "back") {
         pause();
+      } else if (event.action === "skip") {
+        skip();
       }
     },
   }));

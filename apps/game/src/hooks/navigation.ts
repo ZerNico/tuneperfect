@@ -32,6 +32,7 @@ type NavigationEvent = {
     | "sort-right"
     | "joker-1"
     | "joker-2"
+    | "skip"
     | "unknown";
 };
 
@@ -49,6 +50,7 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"]>([
   ["F6", "sort-right"],
   ["F1", "joker-1"],
   ["F2", "joker-2"],
+  ["s", "skip"],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -62,6 +64,7 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["Y", ["random"]],
   ["LB", ["sort-left", "joker-1"]],
   ["RB", ["sort-right", "joker-2"]],
+  ["X", ["skip"]],
   ["X", ["unknown"]],
   ["Y", ["unknown"]],
 ]);
@@ -92,8 +95,8 @@ const REPEAT_DELAY = 100;
 
 createEventListener(document, "keydown", (event) => {
   if (event.repeat) return;
-
   const action = KEY_MAPPINGS.get(event.key);
+
   if (action) {
     setKeyMode("keyboard");
     event.preventDefault();

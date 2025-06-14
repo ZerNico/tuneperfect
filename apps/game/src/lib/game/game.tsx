@@ -2,9 +2,9 @@ import createRAF from "@solid-primitives/raf";
 import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
-import { beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
+import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/parser/local";
-import type { Score } from "~/stores/round";
+import { roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { type GameContextValue, GameProvider } from "./game-context";
 
@@ -50,6 +50,65 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const resume = () => {
     setPlaying(true);
+  };
+
+  const skip = () => {
+    const opts = options();
+    const currentSong = opts.song;
+    const playerRef = opts.songPlayerRef;
+
+    if (!currentSong || !playerRef) {
+      return;
+    }
+
+    const currentTimeMs = playerRef.getCurrentTime() * 1000;
+
+    const usedVoices = roundStore.settings()?.voices || [];
+
+    for (const voiceIndex of usedVoices) {
+      const voice = currentSong.voices[voiceIndex];
+      if (!voice) continue;
+
+      for (const phrase of voice.phrases) {
+        for (const note of phrase.notes) {
+          if (note.type === "Freestyle") continue;
+
+          const noteStartMs = beatToMs(currentSong, note.startBeat);
+          const noteEndMs = beatToMs(currentSong, note.startBeat + note.length);
+
+          if (currentTimeMs >= noteStartMs && currentTimeMs < noteEndMs) {
+            // is currently singing
+            return;
+          }
+        }
+      }
+    }
+
+    let nextNoteTime: number | null = null;
+
+    for (const voiceIndex of usedVoices) {
+      const voice = currentSong.voices[voiceIndex];
+      if (!voice) continue;
+
+      for (const phrase of voice.phrases) {
+        for (const note of phrase.notes) {
+          if (note.type === "Freestyle") continue;
+
+          const noteStartMs = beatToMs(currentSong, note.startBeat);
+
+          if (noteStartMs > currentTimeMs) {
+            if (nextNoteTime === null || noteStartMs < nextNoteTime) {
+              nextNoteTime = noteStartMs;
+            }
+          }
+        }
+      }
+    }
+
+    if (nextNoteTime !== null && nextNoteTime - currentTimeMs > 5000) {
+      const targetTime = Math.max(0, (nextNoteTime - 5000) / 1000);
+      playerRef.setCurrentTime(targetTime);
+    }
   };
 
   const [_, startLoop, stopLoop] = createRAF(() => {
@@ -103,6 +162,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     stop,
     pause,
     resume,
+    skip,
     started,
     playing,
     ms,
