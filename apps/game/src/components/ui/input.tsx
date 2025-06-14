@@ -16,6 +16,7 @@ interface InputProps {
   label?: string;
   gradient?: string;
   onMouseEnter?: () => void;
+  maxLength?: number;
 }
 
 export default function Input(props: InputProps) {
@@ -49,7 +50,13 @@ export default function Input(props: InputProps) {
     const start = inputRef.selectionStart ?? 0;
     const end = inputRef.selectionEnd ?? 0;
     const value = inputRef.value;
-    inputRef.value = value.substring(0, start) + char + value.substring(end);
+    const newValue = value.substring(0, start) + char + value.substring(end);
+    
+    if (props.maxLength && newValue.length > props.maxLength) {
+      return;
+    }
+    
+    inputRef.value = newValue;
     inputRef.setSelectionRange(start + 1, start + 1);
   };
 
@@ -136,6 +143,7 @@ export default function Input(props: InputProps) {
                 type="text"
                 value={props.value || ""}
                 placeholder={props.placeholder}
+                maxLength={props.maxLength}
                 onInput={props.onInput}
                 onFocus={handleFocus}
                 onBlur={handleBlur}

@@ -55,6 +55,7 @@ function LocalPlayerComponent() {
       value: () => playerName(),
       onInput: setPlayerName,
       placeholder: t("settings.sections.localPlayers.enterName"),
+      maxLength: 32,
     },
   ];
 
