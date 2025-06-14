@@ -58,6 +58,16 @@ export default function Input(props: InputProps) {
     
     inputRef.value = newValue;
     inputRef.setSelectionRange(start + 1, start + 1);
+    sendInputEvent();
+  };
+
+  const sendInputEvent = () => {
+    const data = {
+      target: inputRef,
+      currentTarget: inputRef,
+      bubbles: true,
+    };
+    inputRef.dispatchEvent(new Event("input", data));
   };
 
   useNavigation(() => ({

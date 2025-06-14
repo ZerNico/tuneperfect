@@ -714,6 +714,16 @@ function SearchBar(props: SearchBarProps) {
     const value = searchRef.value;
     searchRef.value = value.substring(0, start) + char + value.substring(end);
     searchRef.setSelectionRange(start + 1, start + 1);
+    sendInputEvent();
+  };
+
+  const sendInputEvent = () => {
+    const data = {
+      target: searchRef,
+      currentTarget: searchRef,
+      bubbles: true,
+    };
+    searchRef.dispatchEvent(new Event("input", data));
   };
 
   useNavigation(() => ({
