@@ -42,10 +42,15 @@ export default function Input(props: InputProps) {
 
   const moveCursor = (direction: "left" | "right") => {
     const start = inputRef.selectionStart ?? 0;
-    inputRef.setSelectionRange(
-      Math.max(0, start + (direction === "left" ? -1 : 1)),
-      Math.max(0, start + (direction === "left" ? -1 : 1)),
-    );
+    inputRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
+  };
+
+  const writeCharacter = (char: string) => {
+    const start = inputRef.selectionStart ?? 0;
+    const end = inputRef.selectionEnd ?? 0;
+    const value = inputRef.value;
+    inputRef.value = value.substring(0, start) + char + value.substring(end);
+    inputRef.setSelectionRange(start + 1, start + 1);
   };
 
   useNavigation(() => ({
@@ -58,6 +63,14 @@ export default function Input(props: InputProps) {
         moveCursor("left");
       } else if (event.action === "right") {
         moveCursor("right");
+      } else if (event.origin === "keyboard") {
+        if (event.originalKey === " ") {
+          writeCharacter(" ");
+        }
+
+        if (event.originalKey === "s") {
+          writeCharacter("s");
+        }
       }
     },
     onKeyup(event) {
@@ -104,11 +117,7 @@ export default function Input(props: InputProps) {
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: This is a input */}
-      <div
-        ref={containerRef}
-        class="grid h-16 items-center overflow-hidden rounded-lg"
-        onMouseEnter={props.onMouseEnter}
-      >
+      <div ref={containerRef} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
         <div
           class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
           classList={{

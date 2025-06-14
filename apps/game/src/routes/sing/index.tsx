@@ -732,8 +732,14 @@ function SearchBar(props: SearchBarProps) {
         }
       }
 
-      if (event.origin === "keyboard" && event.originalKey === " ") {
-        writeCharacter(" ");
+      if (event.origin === "keyboard") {
+        if (event.originalKey === " ") {
+          writeCharacter(" ");
+        }
+
+        if (event.originalKey === "s") {
+          writeCharacter("s");
+        }
       }
     },
 
