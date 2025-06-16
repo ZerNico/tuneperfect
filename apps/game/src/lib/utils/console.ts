@@ -3,8 +3,8 @@ export function forwardConsole(
   logger: (message: string) => Promise<void>,
 ) {
   const original = console[fnName];
-  console[fnName] = (message) => {
-    original(message);
-    logger(message);
+  console[fnName] = (...args: Parameters<typeof original>) => {
+    original(...args);
+    logger(args.map((arg) => arg.toString()).join(" "));
   };
 }
