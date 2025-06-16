@@ -26,7 +26,7 @@ export default function Avatar(props: AvatarProps) {
 
   const pictureUrl = () => {
     if (props.user?.image?.startsWith("/")) {
-      return joinURL(import.meta.env.VITE_API_URL, props.user.image);
+      return joinURL(import.meta.env.VITE_API_URL ?? "", props.user.image);
     }
 
     return props.user?.image || undefined;

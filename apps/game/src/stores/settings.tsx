@@ -62,9 +62,9 @@ export const setSettings = settingsStoreInstance.setSettings;
 export const updateSettings = settingsStoreInstance.updateSettings;
 export const initializeSettings = settingsStoreInstance.initialize;
 
-type Microphone = SettingsStore["microphones"][number];
-type VolumeSettings = SettingsStore["volume"];
-type GeneralSettings = SettingsStore["general"];
+export type Microphone = SettingsStore["microphones"][number];
+export type VolumeSettings = SettingsStore["volume"];
+export type GeneralSettings = SettingsStore["general"];
 
 function createSettingsStore() {
   const [initialized, setInitialized] = createSignal(false);

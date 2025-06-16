@@ -1,7 +1,7 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { createMemo, } from "solid-js";
-import { collectSongFiles, type LocalSong, parseAllSongFiles } from "~/lib/ultrastar/parser/local";
-import { readFileTree } from "~/lib/utils/fs";
+import { createMemo } from "solid-js";
+import { commands } from "~/bindings";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { settings, updateSettings } from "./settings";
 
 function createSongsStore() {
@@ -18,35 +18,22 @@ function createSongsStore() {
     localSongs.delete(path);
   };
 
-  const updateLocalSongs = async (paths: string[], onProgress?: (currentSong: string, progress: number) => void) => {
+  const updateLocalSongs = async (paths: string[]) => {
     try {
-      const allSongFiles = [];
+      const pathsToUpdate = paths.filter((path: string) => !localSongs.has(path));
 
-      for (const path of paths) {
-        if (!localSongs.has(path)) {
-          const root = await readFileTree(path);
-          const songFiles = collectSongFiles(root, path);
-          allSongFiles.push(...songFiles);
-        }
-      }
+      const result = await commands.parseSongsFromPaths(pathsToUpdate);
 
-      if (allSongFiles.length === 0) {
-        onProgress?.("", 1);
+      if (result.status === "error") {
+        console.error("Failed to update local songs:", result.error);
         return;
       }
 
-      const { songsByPath } = await parseAllSongFiles(allSongFiles, (progress) => {
-        onProgress?.(progress.currentSong, progress.current / progress.total);
-      });
-
-      for (const [path, songs] of songsByPath.entries()) {
-        localSongs.set(path, songs);
+      for (const group of result.data) {
+        localSongs.set(group.path, group.songs);
       }
-
-      onProgress?.("", 1);
     } catch (error) {
       console.error("Failed to update local songs:", error);
-      onProgress?.("", 1);
     }
   };
 

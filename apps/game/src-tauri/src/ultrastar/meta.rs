@@ -1,6 +1,7 @@
-use crate::error::AppError;
 use lofty::{file::TaggedFileExt, probe::Probe, tag::ItemKey};
 use serde::Serialize;
+
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, specta::Type)]
 pub struct ReplayGainInfo {
@@ -14,8 +15,6 @@ fn parse_replay_gain(value: Option<&str>) -> Option<f32> {
     value.and_then(|s| s.trim_end_matches(" dB").parse::<f32>().ok())
 }
 
-#[tauri::command]
-#[specta::specta]
 pub fn get_replay_gain(path: &str) -> Result<ReplayGainInfo, AppError> {
     let file = Probe::open(path)?.read()?;
 

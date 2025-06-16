@@ -14,6 +14,10 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "rust-analyzer.linkedProjects": ["apps/game/src-tauri/Cargo.toml"],
+  "rust-analyzer.cargo.extraEnv": {
+    "MACOSX_DEPLOYMENT_TARGET": "10.13"
+  },
+  "rust-analyzer.cargo.targetDir": "target/analyzer",
   "tailwindCSS.experimental.classRegex": [
     ["classList={{([^;]*)}}", "\\s*?[\"'`]([^\"'`]*).*?:"],
     ["cva\\(((?:[^()]|\\([^()]*\\))*)\\)", "[\"'`]?([^\"'`]+)[\"'`]?"],

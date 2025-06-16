@@ -1,6 +1,6 @@
 import { createEffect, createSignal, type JSX, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
 export interface SongPlayerRef {
@@ -437,7 +437,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 }
 
 const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
-  if (song.previewStart !== undefined) {
+  if (song.previewStart !== null) {
     return Math.max(0, song.previewStart);
   }
 

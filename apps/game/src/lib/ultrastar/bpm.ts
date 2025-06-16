@@ -1,4 +1,4 @@
-import type { LocalSong } from "./parser/local";
+import type { LocalSong } from "./song";
 
 export function msToBeat(song: LocalSong, ms: number) {
   return msToBeatWithoutGap(song, ms - song.gap);

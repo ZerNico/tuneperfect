@@ -1,5 +1,5 @@
 import { type Accessor, createContext, type JSX, useContext } from "solid-js";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import type { Score } from "~/stores/round";
 
 export interface GameContextValue {

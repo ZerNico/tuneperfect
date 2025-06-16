@@ -12,7 +12,7 @@ import Avatar from "~/components/ui/avatar";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import type { User } from "~/lib/types";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { times } from "~/lib/utils/loop";
 import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
@@ -529,7 +529,7 @@ function SongCard(props: SongCardProps) {
         [props.class ?? ""]: true,
       }}
     >
-      <img loading="lazy" src={props.song.coverUrl} alt={props.song.title} class="h-full w-full object-cover" />
+      <img loading="lazy" src={props.song.coverUrl ?? ""} alt={props.song.title} class="h-full w-full object-cover" />
     </div>
   );
 }

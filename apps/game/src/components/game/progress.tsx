@@ -1,7 +1,7 @@
 import { createMemo, For, Show } from "solid-js";
 import { useGame } from "~/lib/game/game-context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { settingsStore } from "~/stores/settings";
 
 const formatTime = (seconds: number): string => {

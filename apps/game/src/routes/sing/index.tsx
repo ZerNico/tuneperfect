@@ -15,7 +15,7 @@ import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
@@ -331,9 +331,9 @@ function SongScroller(props: SongScrollerProps) {
         return a.title.localeCompare(b.title);
       }
       if (props.sort === "year") {
-        if (a.year === undefined && b.year === undefined) return 0;
-        if (a.year === undefined) return 1;
-        if (b.year === undefined) return -1;
+        if (a.year === null && b.year === null) return 0;
+        if (a.year === null) return 1;
+        if (b.year === null) return -1;
         return a.year - b.year;
       }
       return a.artist.localeCompare(b.artist);
@@ -669,7 +669,7 @@ function SongCard(props: SongCardProps) {
           "duration-150! ease-linear!": props.fastScrolling,
           "duration-0! ease-linear!": props.animationsDisabled,
         }}
-        src={props.song.coverUrl}
+        src={props.song.coverUrl ?? ""}
         alt={props.song.title}
       />
       <div class="absolute inset-0 bg-black" />

@@ -52,12 +52,27 @@ async getMediaServerBaseUrl() : Promise<Result<string | null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async parseSongsFromPaths(paths: string[]) : Promise<Result<SongGroup[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("parse_songs_from_paths", { paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
 /** user-defined events **/
 
 
+export const events = __makeEvents__<{
+progressEvent: ProgressEvent,
+startParsingEvent: StartParsingEvent
+}>({
+progressEvent: "progress-event",
+startParsingEvent: "start-parsing-event"
+})
 
 /** user-defined constants **/
 
@@ -65,10 +80,18 @@ async getMediaServerBaseUrl() : Promise<Result<string | null, string>> {
 
 /** user-defined types **/
 
-export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string }
+export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string }
+export type LocalSong = ({ title: string; artist: string; bpm: number; gap: number; videoGap: number; start: number | null; end: number | null; hash: string; album: string | null; language: string | null; edition: string | null; genre: string | null; year: number | null; author: string | null; relative: boolean | null; audio: string | null; cover: string | null; video: string | null; background: string | null; p1: string | null; p2: string | null; previewStart: number | null; voices: Voice[] }) & { audioUrl: string | null; videoUrl: string | null; coverUrl: string | null; backgroundUrl: string | null; replayGainTrackGain: number | null; replayGainTrackPeak: number | null }
 export type Microphone = { name: string; channels: number }
 export type MicrophoneOptions = { name: string; channel: number; gain: number; threshold: number }
+export type Note = { type: NoteType; startBeat: number; length: number; text: string; txtPitch: number; midiNote: number }
+export type NoteType = "Normal" | "Golden" | "Freestyle" | "Rap" | "RapGolden"
+export type Phrase = { disappearBeat: number; notes: Note[] }
+export type ProgressEvent = { song: string }
 export type ReplayGainInfo = { track_gain: number | null; track_peak: number | null; album_gain: number | null; album_peak: number | null }
+export type SongGroup = { path: string; songs: LocalSong[] }
+export type StartParsingEvent = { total_songs: number }
+export type Voice = { phrases: Phrase[] }
 
 /** tauri-specta globals **/
 

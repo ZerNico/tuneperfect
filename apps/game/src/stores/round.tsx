@@ -1,7 +1,7 @@
 import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import type { User } from "~/lib/types";
-import type { LocalSong } from "~/lib/ultrastar/parser/local";
+import type { LocalSong } from "~/lib/ultrastar/song";
 
 export interface RoundSettings {
   song: LocalSong;

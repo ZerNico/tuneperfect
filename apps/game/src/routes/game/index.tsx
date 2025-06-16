@@ -137,7 +137,7 @@ function GameComponent() {
           >
             <img
               class="absolute inset-0 block h-full w-full scale-110 transform object-cover opacity-60 blur-xl"
-              src={roundStore.settings()?.song.coverUrl || roundStore.settings()?.song.backgroundUrl}
+              src={roundStore.settings()?.song.coverUrl ?? roundStore.settings()?.song.backgroundUrl ?? ""}
               alt=""
             />
             <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">

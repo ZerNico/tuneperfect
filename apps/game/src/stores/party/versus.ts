@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { generateMatchups, type Matchup } from "~/lib/party/versus/matchup";
 import type { User } from "~/lib/types";
-import type { Song } from "~/lib/ultrastar/song";
+import type { LocalSong } from "~/lib/ultrastar/song";
 import { toShuffled } from "~/lib/utils/array";
 
 export interface Settings {
@@ -17,7 +17,7 @@ export interface State {
   players: User[];
   rounds: Record<User["id"], Round[]>;
   matchups: Matchup[];
-  playedSongs: Song[];
+  playedSongs: LocalSong[];
   playing: boolean;
 }
 

@@ -18,6 +18,9 @@ pub enum AppError {
 
     #[error("cpal error: {0}")]
     CpalError(String),
+
+    #[error("ultrastar error: {0}")]
+    UltrastarError(String),
 }
 
 macro_rules! impl_from_errors {
