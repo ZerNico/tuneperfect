@@ -1,9 +1,8 @@
 import { safe } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
-import { mergeRefs } from "@solid-primitives/refs";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
-import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, type Ref, Show } from "solid-js";
+import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import HighscoreList, { type Highscore } from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
@@ -12,6 +11,7 @@ import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { useTextInput } from "~/hooks/use-text-input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
@@ -45,6 +45,8 @@ export const Route = createFileRoute("/sing/")({
 
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>();
 const [searchQuery, setSearchQuery] = createSignal("");
+const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" | "year" | "genre">("all");
+const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
 const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(songsStore.songs().length);
 
@@ -57,13 +59,17 @@ function SingComponent() {
 
   const navigate = useNavigate();
   const onBack = () => {
+    if (searchQuery().trim()) {
+      setSearchQuery("");
+      playSound("confirm");
+      return;
+    }
+
     playSound("confirm");
     navigate({ to: "/home" });
   };
   const [animationsDisabled, setAnimationsDisabled] = createSignal(false);
-  const [searchFocused, setSearchFocused] = createSignal(false);
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
-  let searchRef!: HTMLInputElement;
 
   const startGame = (song: LocalSong) => {
     playSound("confirm");
@@ -96,7 +102,7 @@ function SingComponent() {
       if (event.action === "back") {
         onBack();
       } else if (event.action === "search") {
-        searchRef.focus();
+        setSearchPopupOpen(!searchPopupOpen());
         playSound("select");
       } else if (event.action === "random") {
         selectRandomSong();
@@ -184,31 +190,32 @@ function SingComponent() {
       header={
         <div class="flex items-center gap-20">
           <TitleBar title={t("sing.songs")} onBack={onBack} />
-          <div class="flex items-center gap-4">
-            <SearchBar
-              ref={searchRef}
-              value={searchQuery()}
-              onSearch={setSearchQuery}
-              onFocus={() => {
-                setSearchFocused(true);
-                setAnimationsDisabled(true);
-              }}
-              onBlur={() => {
-                setSearchFocused(false);
-                setAnimationsDisabled(false);
-              }}
-            />
+          <div class="relative flex items-center gap-4">
+            <SearchButton searchQuery={searchQuery()} searchFilter={searchFilter()} onClick={() => setSearchPopupOpen(true)} />
+
+            <Show when={searchPopupOpen()}>
+              <SearchPopup
+                searchQuery={searchQuery()}
+                searchFilter={searchFilter()}
+                onSearchQuery={setSearchQuery}
+                onSearchFilter={setSearchFilter}
+                onClose={() => setSearchPopupOpen(false)}
+              />
+            </Show>
+
             <div class="flex items-center gap-2 text-sm opacity-80">
               <IconMusic />
-              <Show when={filteredSongCount() !== songsStore.songs().length} fallback={<span>
-                {songsStore.songs().length === 1 
-                  ? t('sing.songCount.one', {count: songsStore.songs().length})
-                  : t('sing.songCount.other', {count: songsStore.songs().length})
+              <Show
+                when={filteredSongCount() !== songsStore.songs().length}
+                fallback={
+                  <span>
+                    {songsStore.songs().length === 1
+                      ? t("sing.songCount.one", { count: songsStore.songs().length })
+                      : t("sing.songCount.other", { count: songsStore.songs().length })}
+                  </span>
                 }
-              </span>}>
-                <span>
-                  {t('sing.songCount.filtered', {filtered: filteredSongCount(), total: songsStore.songs().length})}
-                </span>
+              >
+                <span>{t("sing.songCount.filtered", { filtered: filteredSongCount(), total: songsStore.songs().length })}</span>
               </Show>
             </div>
           </div>
@@ -243,12 +250,6 @@ function SingComponent() {
       }
     >
       <div class="relative grid h-full grid-rows-[1fr_auto]">
-        <Show when={searchFocused() && keyMode() === "gamepad"}>
-          <div class="absolute z-10">
-            <VirtualKeyboard inputRef={searchRef} />
-          </div>
-        </Show>
-
         <div class="flex flex-grow items-center">
           <div class="relative flex flex-grow flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
@@ -266,6 +267,7 @@ function SingComponent() {
         <div>
           <SongScroller
             searchQuery={searchQuery()}
+            searchFilter={searchFilter()}
             onSongChange={setCurrentSong}
             onSelect={startGame}
             songs={songsStore.songs()}
@@ -287,6 +289,7 @@ interface SongScrollerProps {
   currentSong: LocalSong | null;
   animationsDisabled: boolean;
   searchQuery: string;
+  searchFilter: "all" | "artist" | "title" | "year" | "genre";
   onSongChange?: (song: LocalSong | null) => void;
   onSelect?: (song: LocalSong) => void;
   onIsFastScrolling?: (fastScrolling: boolean) => void;
@@ -305,9 +308,16 @@ function SongScroller(props: SongScrollerProps) {
   const [animating, setAnimating] = createSignal<null | "left" | "right">(null);
 
   const fuseInstance = createMemo(() => {
+    const keys =
+      props.searchFilter === "all"
+        ? ["title", "artist", "year", "genre"]
+        : props.searchFilter === "genre"
+          ? ["genre"]
+          : [props.searchFilter];
+
     return new Fuse(props.songs, {
-      keys: ["title", "artist"],
-      threshold: 0.2,
+      keys,
+      threshold: 0.1,
       includeScore: true,
       ignoreLocation: true,
     });
@@ -677,61 +687,101 @@ function SongCard(props: SongCardProps) {
   );
 }
 
-interface SearchBarProps {
-  value?: string;
-  onSearch?: (query: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  ref?: Ref<HTMLInputElement>;
+interface SearchButtonProps {
+  searchQuery: string;
+  searchFilter: "all" | "artist" | "title" | "year" | "genre";
+  onClick: () => void;
 }
 
-function SearchBar(props: SearchBarProps) {
-  const [focused, setFocused] = createSignal(false);
+function SearchButton(props: SearchButtonProps) {
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre"; label: string }> = [
+    { value: "all", label: t("sing.filter.all") },
+    { value: "artist", label: t("sing.sort.artist") },
+    { value: "title", label: t("sing.sort.title") },
+    { value: "year", label: t("sing.sort.year") },
+    { value: "genre", label: t("sing.filter.genre") },
+  ];
+
+  const filterLabel = () => filterOptions.find((option) => option.value === props.searchFilter)?.label || t("sing.filter.all");
+
+  return (
+    <button
+      type="button"
+      class="flex w-40 items-center gap-1 rounded-full border-[0.12cqw] border-white px-1 py-0.5 text-sm transition-all hover:opacity-75 active:scale-95"
+      onClick={props.onClick}
+    >
+      <IconSearch class="flex-shrink-0" />
+      <div class="flex w-full min-w-0 items-center gap-2">
+        <span class="flex-grow truncate text-start">{props.searchQuery || t("sing.search")}</span>
+        <Show when={props.searchQuery}>
+          <span class="flex-shrink-0 rounded-full bg-white/20 px-1.5 py-0.4 text-xs">{filterLabel()}</span>
+        </Show>
+      </div>
+      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="flex-shrink-0 text-xs" />}>
+        <IconF3Key class="flex-shrink-0 text-xs" />
+      </Show>
+    </button>
+  );
+}
+
+interface SearchPopupProps {
+  searchQuery: string;
+  searchFilter: "all" | "artist" | "title" | "year" | "genre";
+  onSearchQuery: (query: string) => void;
+  onSearchFilter: (filter: "all" | "artist" | "title" | "year" | "genre") => void;
+  onClose: () => void;
+}
+
+function SearchPopup(props: SearchPopupProps) {
   let searchRef!: HTMLInputElement;
+  let popupRef!: HTMLDivElement;
 
-  const onFocus = () => {
-    setFocused(true);
-    props.onFocus?.();
-  };
+  const { moveCursor, writeCharacter, deleteCharacter } = useTextInput(() => searchRef);
 
-  const onBlur = () => {
-    setFocused(false);
-    props.onBlur?.();
-  };
+  createEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef && !popupRef.contains(event.target as Node)) {
+        props.onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    onCleanup(() => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    });
+  });
 
   const onInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
-    props.onSearch?.(e.currentTarget.value);
+    props.onSearchQuery(e.currentTarget.value);
   };
 
-  const moveCursor = (direction: "left" | "right") => {
-    const start = searchRef.selectionStart ?? 0;
-    searchRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
-  };
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre"; label: string }> = [
+    { value: "all", label: t("sing.filter.all") },
+    { value: "artist", label: t("sing.sort.artist") },
+    { value: "title", label: t("sing.sort.title") },
+    { value: "year", label: t("sing.sort.year") },
+    { value: "genre", label: t("sing.filter.genre") },
+  ];
 
-  const writeCharacter = (char: string) => {
-    const start = searchRef.selectionStart ?? 0;
-    const end = searchRef.selectionEnd ?? 0;
-    const value = searchRef.value;
-    searchRef.value = value.substring(0, start) + char + value.substring(end);
-    searchRef.setSelectionRange(start + 1, start + 1);
-    sendInputEvent();
-  };
-
-  const sendInputEvent = () => {
-    const data = {
-      target: searchRef,
-      currentTarget: searchRef,
-      bubbles: true,
-    };
-    searchRef.dispatchEvent(new Event("input", data));
+  const moveFilter = (direction: "left" | "right") => {
+    const currentIndex = filterOptions.findIndex((option) => option.value === props.searchFilter);
+    const newIndex = (currentIndex + (direction === "left" ? -1 : 1) + filterOptions.length) % filterOptions.length;
+    const newOption = filterOptions[newIndex];
+    if (newOption) {
+      props.onSearchFilter(newOption.value);
+    }
   };
 
   useNavigation(() => ({
-    layer: 1,
-    enabled: focused(),
+    layer: 2,
+    enabled: true,
     onKeydown(event) {
-      if (event.action === "back") {
-        searchRef.blur();
+      if (event.action === "back" || event.action === "search") {
+        props.onClose();
+      } else if (event.action === "filter-left") {
+        moveFilter("left");
+      } else if (event.action === "filter-right") {
+        moveFilter("right");
       }
 
       if (event.origin === "keyboard") {
@@ -739,16 +789,20 @@ function SearchBar(props: SearchBarProps) {
           moveCursor("left");
         } else if (event.action === "right") {
           moveCursor("right");
+        } else if (event.originalKey === " ") {
+          writeCharacter(" ");
+        } if (event.action === "clear") {
+          deleteCharacter();
+        } if (event.originalKey === "s") {
+          writeCharacter("s");
         }
       }
+    },
 
+    onKeyup(event) {
       if (event.origin === "keyboard") {
-        if (event.originalKey === " ") {
-          writeCharacter(" ");
-        }
-
-        if (event.originalKey === "s") {
-          writeCharacter("s");
+        if (event.action === "confirm") {
+          props.onClose();
         }
       }
     },
@@ -763,30 +817,78 @@ function SearchBar(props: SearchBarProps) {
       } else if (event.action === "right") {
         moveCursor("right");
       }
+
+      if (event.action === "clear") {
+        deleteCharacter();
+      }
     },
   }));
 
+  onMount(() => {
+    searchRef.focus();
+  });
+
   return (
-    <div class="flex items-center gap-1 rounded-full border-[0.12cqw] border-white px-1 py-0.5 text-sm">
-      <IconSearch />
-      <input
-        value={props.value}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onInput={onInput}
-        ref={mergeRefs(props.ref, (el) => {
-          searchRef = el;
-        })}
-        type="text"
-        placeholder={t("sing.search")}
-        class="bg-transparent text-white focus:outline-none"
-      />
-      <Show
-        when={keyMode() === "keyboard"}
-        fallback={<IconGamepadStart class="transition-opacity" classList={{ "opacity-0": focused() }} />}
+    <div class="absolute top-full left-0 z-20 mt-2" ref={popupRef}>
+      <Motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        class="w-96 rounded-lg bg-slate-900 p-4 text-white shadow-xl"
       >
-        <IconF3Key class="transition-opacity" classList={{ "opacity-0": focused() }} />
-      </Show>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
+                <IconF5Key class="text-sm" />
+              </Show>
+              <button
+                type="button"
+                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-slate-800 transition-transform hover:opacity-75 active:scale-95"
+                onClick={() => moveFilter("left")}
+              >
+                <IconTriangleLeft class="text-xs" />
+              </button>
+            </div>
+
+            <div class="flex justify-center">
+              <div class="rounded-md bg-slate-800 px-3 py-1">
+                <span class="font-medium text-sm text-white">
+                  {filterOptions.find((option) => option.value === props.searchFilter)?.label || t("sing.filter.all")}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-slate-800 transition-transform hover:opacity-75 active:scale-95"
+                onClick={() => moveFilter("right")}
+              >
+                <IconTriangleRight class="text-xs" />
+              </button>
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
+                <IconF6Key class="text-sm" />
+              </Show>
+            </div>
+          </div>
+
+          <input
+            value={props.searchQuery}
+            onInput={onInput}
+            ref={searchRef}
+            type="text"
+            placeholder={t("sing.search")}
+            class="focus:gradient-sing w-full rounded-md bg-slate-800 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-gradient-to-r focus:outline-none"
+          />
+        </div>
+
+        <Show when={keyMode() === "gamepad"}>
+          <div class="mt-4 flex justify-center">
+            <VirtualKeyboard inputRef={searchRef}  />
+          </div>
+        </Show>
+      </Motion.div>
     </div>
   );
 }

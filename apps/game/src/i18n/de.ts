@@ -73,6 +73,10 @@ const de = {
     voice: "Stimme",
     start: "Starten",
     random: "Zufällig",
+    filter: {
+      all: "Alle",
+      genre: "Genre",
+    },
     sort: {
       artist: "Künstler",
       title: "Titel",

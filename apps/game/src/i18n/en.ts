@@ -72,6 +72,10 @@ const en = {
     voice: "Voice",
     start: "Start",
     random: "Random",
+    filter: {
+      all: "All",
+      genre: "Genre",
+    },
     sort: {
       artist: "Artist",
       title: "Title",

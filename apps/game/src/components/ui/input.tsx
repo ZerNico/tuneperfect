@@ -1,6 +1,7 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { useTextInput } from "~/hooks/use-text-input";
 import { VirtualKeyboard } from "./virtual-keyboard";
 
 interface InputProps {
@@ -29,6 +30,22 @@ export default function Input(props: InputProps) {
   let inputRef!: HTMLInputElement;
   let containerRef!: HTMLDivElement;
 
+  const { moveCursor, writeCharacter: baseWriteCharacter } = useTextInput(() => inputRef);
+
+  const writeCharacter = (char: string) => {
+    // Check max length before writing
+    const start = inputRef.selectionStart ?? 0;
+    const end = inputRef.selectionEnd ?? 0;
+    const value = inputRef.value;
+    const newValue = value.substring(0, start) + char + value.substring(end);
+    
+    if (props.maxLength && newValue.length > props.maxLength) {
+      return;
+    }
+    
+    baseWriteCharacter(char);
+  };
+
   const handleFocus = () => {
     setFocused(true);
     props.onFocus?.();
@@ -40,35 +57,6 @@ export default function Input(props: InputProps) {
   };
 
   const showVirtualKeyboard = () => keyMode() === "gamepad" && focused();
-
-  const moveCursor = (direction: "left" | "right") => {
-    const start = inputRef.selectionStart ?? 0;
-    inputRef.setSelectionRange(Math.max(0, start + (direction === "left" ? -1 : 1)), Math.max(0, start + (direction === "left" ? -1 : 1)));
-  };
-
-  const writeCharacter = (char: string) => {
-    const start = inputRef.selectionStart ?? 0;
-    const end = inputRef.selectionEnd ?? 0;
-    const value = inputRef.value;
-    const newValue = value.substring(0, start) + char + value.substring(end);
-    
-    if (props.maxLength && newValue.length > props.maxLength) {
-      return;
-    }
-    
-    inputRef.value = newValue;
-    inputRef.setSelectionRange(start + 1, start + 1);
-    sendInputEvent();
-  };
-
-  const sendInputEvent = () => {
-    const data = {
-      target: inputRef,
-      currentTarget: inputRef,
-      bubbles: true,
-    };
-    inputRef.dispatchEvent(new Event("input", data));
-  };
 
   useNavigation(() => ({
     layer: props.layer || 0,

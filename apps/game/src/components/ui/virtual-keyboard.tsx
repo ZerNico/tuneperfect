@@ -1,13 +1,11 @@
 import { createMemo, createSignal, For, type JSX } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
+import { useTextInput } from "~/hooks/use-text-input";
 import IconArrowBigDown from "~icons/lucide/arrow-big-down";
 import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
 import IconArrowBigUp from "~icons/lucide/arrow-big-up";
-import IconGamepadLB from "~icons/sing/gamepad-lb";
-import IconGamepadRB from "~icons/sing/gamepad-rb";
 import IconGamepadStart from "~icons/sing/gamepad-start";
 import IconGamepadX from "~icons/sing/gamepad-x";
-import IconGamepadY from "~icons/sing/gamepad-y";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
 
@@ -28,6 +26,8 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   const [shift, setShift] = createSignal(false);
   const [symbols, setSymbols] = createSignal(false);
   const [pressed, setPressed] = createSignal(false);
+
+  const { moveCursor, writeCharacter, deleteCharacter } = useTextInput(() => props.inputRef);
 
   const goLeft = () => {
     const keys = activeKeys();
@@ -93,56 +93,6 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
     return symbols() ? "symbols-lowercase" : "lowercase";
   };
 
-  const deleteCharacter = () => {
-    const input = props.inputRef;
-    const cursor = input.selectionStart;
-    if (cursor === null || cursor === 0) return;
-    input.value = input.value.slice(0, cursor - 1) + input.value.slice(cursor);
-    input.setSelectionRange(cursor - 1, cursor - 1);
-    scrollToSelectionStart();
-    sendInputEvent();
-  };
-
-  const writeCharacter = (character: string) => {
-    const input = props.inputRef;
-    const cursor = input.selectionStart;
-    if (cursor === null) return;
-    input.value = input.value.slice(0, cursor) + character + input.value.slice(cursor);
-    input.setSelectionRange(cursor + 1, cursor + 1);
-    sendInputEvent();
-    scrollToSelectionStart();
-  };
-
-  const scrollToSelectionStart = () => {
-    const fontSize = window.getComputedStyle(props.inputRef).fontSize;
-    const fontSizeNumber = Number.parseFloat(fontSize);
-    const charWidth = fontSizeNumber * 0.55;
-    if (props.inputRef.selectionStart) {
-      props.inputRef.scrollLeft = props.inputRef.selectionStart * charWidth - props.inputRef.clientWidth / 2;
-    }
-  };
-
-  const moveCursor = (direction: "left" | "right") => {
-    const selectionStart = props.inputRef.selectionStart;
-    if (selectionStart === null) return;
-    const newSelectionStart = selectionStart + (direction === "left" ? -1 : 1);
-    if (newSelectionStart < 0) {
-      return;
-    }
-
-    props.inputRef.setSelectionRange(newSelectionStart, newSelectionStart);
-    scrollToSelectionStart();
-  };
-
-  const sendInputEvent = () => {
-    const data = {
-      target: props.inputRef,
-      currentTarget: props.inputRef,
-      bubbles: true,
-    };
-    props.inputRef.dispatchEvent(new Event("input", data));
-  };
-
   useNavigation(() => ({
     layer: 2,
     onKeydown(event) {
@@ -156,16 +106,8 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
         goDown();
       } else if (event.action === "confirm") {
         setPressed(true);
-      } else if (event.action === "back" || event.action === "search") {
-        props.inputRef.blur();
-      } else if (event.origin === "gamepad") {
-        if (event.originalKey === "LB") {
-          setShift((prev) => !prev);
-        } else if (event.originalKey === "RB") {
-          setSymbols((prev) => !prev);
-        } else if (event.originalKey === "X") {
-          deleteCharacter();
-        }
+      } else if (event.action === "clear") {
+        deleteCharacter();
       }
     },
     onKeyup(event) {
@@ -188,21 +130,18 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
       [
         {
           content: shift() ? <IconArrowBigDown /> : <IconArrowBigUp />,
-          hint: <IconGamepadLB />,
           colSpan: 2,
           highlight: true,
           action: () => setShift((prev) => !prev),
         },
         {
           content: symbols() ? "Aa" : "@#",
-          hint: <IconGamepadRB />,
           colSpan: 2,
           highlight: true,
           action: () => setSymbols((prev) => !prev),
         },
         {
           content: "Space",
-          hint: <IconGamepadY />,
           colSpan: 4,
           highlight: true,
           action: () => writeCharacter(" "),
@@ -248,7 +187,14 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
                 }}
                 style={{ "grid-column": `span ${key.colSpan || 1}` }}
                 onMouseEnter={() => setPosition({ row: rowIndex(), col: colIndex() })}
-                onClick={() => key.action?.()}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  if (key.action) {
+                    key.action();
+                  } else if (typeof key.content === "string") {
+                    writeCharacter(key.content);
+                  }
+                }}
               >
                 {key.content}
                 {key.hint && <div class="absolute top-1 left-1 text-xs">{key.hint}</div>}

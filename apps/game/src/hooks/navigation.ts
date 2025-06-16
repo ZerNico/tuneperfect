@@ -30,9 +30,12 @@ type NavigationEvent = {
     | "random"
     | "sort-left"
     | "sort-right"
+    | "filter-left"
+    | "filter-right"
     | "joker-1"
     | "joker-2"
     | "skip"
+    | "clear"
     | "unknown";
 };
 
@@ -48,9 +51,12 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"]>([
   ["F4", "random"],
   ["F5", "sort-left"],
   ["F6", "sort-right"],
+  ["F5", "filter-left"],
+  ["F6", "filter-right"],
   ["F1", "joker-1"],
   ["F2", "joker-2"],
   ["s", "skip"],
+  ["Backspace", "clear"],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -62,11 +68,9 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["A", ["confirm"]],
   ["START", ["search"]],
   ["Y", ["random"]],
-  ["LB", ["sort-left", "joker-1"]],
-  ["RB", ["sort-right", "joker-2"]],
-  ["X", ["skip"]],
-  ["X", ["unknown"]],
-  ["Y", ["unknown"]],
+  ["LB", ["sort-left", "filter-left", "joker-1"]],
+  ["RB", ["sort-right", "filter-right", "joker-2"]],
+  ["X", ["skip", "clear"]],
 ]);
 
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
@@ -95,8 +99,8 @@ const REPEAT_DELAY = 100;
 
 createEventListener(document, "keydown", (event) => {
   if (event.repeat) return;
-  const action = KEY_MAPPINGS.get(event.key);
 
+  const action = KEY_MAPPINGS.get(event.key);
   if (action) {
     setKeyMode("keyboard");
     event.preventDefault();
