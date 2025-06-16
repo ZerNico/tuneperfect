@@ -1,6 +1,7 @@
 import { createMemo, createSignal, For, type JSX } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import { useTextInput } from "~/hooks/use-text-input";
+import { t } from "~/lib/i18n";
 import IconArrowBigDown from "~icons/lucide/arrow-big-down";
 import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
 import IconArrowBigUp from "~icons/lucide/arrow-big-up";
@@ -141,7 +142,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
           action: () => setSymbols((prev) => !prev),
         },
         {
-          content: "Space",
+          content: t("virtualKeyboard.space"),
           colSpan: 4,
           highlight: true,
           action: () => writeCharacter(" "),
@@ -159,7 +160,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
         { content: <IconTriangleRight class="text-sm" />, highlight: true, action: () => moveCursor("right") },
         { content: "", colSpan: 5, highlight: true, action: () => {} },
         {
-          content: "Done",
+          content: t("virtualKeyboard.done"),
           hint: <IconGamepadStart />,
           colSpan: 3,
           highlight: true,

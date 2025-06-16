@@ -45,7 +45,7 @@ export const Route = createFileRoute("/sing/")({
 
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>();
 const [searchQuery, setSearchQuery] = createSignal("");
-const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" | "year" | "genre">("all");
+const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator">("all");
 const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
 const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(songsStore.songs().length);
@@ -289,7 +289,7 @@ interface SongScrollerProps {
   currentSong: LocalSong | null;
   animationsDisabled: boolean;
   searchQuery: string;
-  searchFilter: "all" | "artist" | "title" | "year" | "genre";
+  searchFilter: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
   onSongChange?: (song: LocalSong | null) => void;
   onSelect?: (song: LocalSong) => void;
   onIsFastScrolling?: (fastScrolling: boolean) => void;
@@ -310,10 +310,8 @@ function SongScroller(props: SongScrollerProps) {
   const fuseInstance = createMemo(() => {
     const keys =
       props.searchFilter === "all"
-        ? ["title", "artist", "year", "genre"]
-        : props.searchFilter === "genre"
-          ? ["genre"]
-          : [props.searchFilter];
+        ? ["title", "artist", "year", "genre", "language", "edition", "creator"]
+        : [props.searchFilter];
 
     return new Fuse(props.songs, {
       keys,
@@ -689,17 +687,20 @@ function SongCard(props: SongCardProps) {
 
 interface SearchButtonProps {
   searchQuery: string;
-  searchFilter: "all" | "artist" | "title" | "year" | "genre";
+  searchFilter: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
   onClick: () => void;
 }
 
 function SearchButton(props: SearchButtonProps) {
-  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre"; label: string }> = [
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> = [
     { value: "all", label: t("sing.filter.all") },
     { value: "artist", label: t("sing.sort.artist") },
     { value: "title", label: t("sing.sort.title") },
     { value: "year", label: t("sing.sort.year") },
     { value: "genre", label: t("sing.filter.genre") },
+    { value: "language", label: t("sing.filter.language") },
+    { value: "edition", label: t("sing.filter.edition") },
+    { value: "creator", label: t("sing.filter.creator") },
   ];
 
   const filterLabel = () => filterOptions.find((option) => option.value === props.searchFilter)?.label || t("sing.filter.all");
@@ -726,9 +727,9 @@ function SearchButton(props: SearchButtonProps) {
 
 interface SearchPopupProps {
   searchQuery: string;
-  searchFilter: "all" | "artist" | "title" | "year" | "genre";
+  searchFilter: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
   onSearchQuery: (query: string) => void;
-  onSearchFilter: (filter: "all" | "artist" | "title" | "year" | "genre") => void;
+  onSearchFilter: (filter: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator") => void;
   onClose: () => void;
 }
 
@@ -755,12 +756,15 @@ function SearchPopup(props: SearchPopupProps) {
     props.onSearchQuery(e.currentTarget.value);
   };
 
-  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre"; label: string }> = [
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> = [
     { value: "all", label: t("sing.filter.all") },
     { value: "artist", label: t("sing.sort.artist") },
     { value: "title", label: t("sing.sort.title") },
     { value: "year", label: t("sing.sort.year") },
     { value: "genre", label: t("sing.filter.genre") },
+    { value: "language", label: t("sing.filter.language") },
+    { value: "edition", label: t("sing.filter.edition") },
+    { value: "creator", label: t("sing.filter.creator") },
   ];
 
   const moveFilter = (direction: "left" | "right") => {

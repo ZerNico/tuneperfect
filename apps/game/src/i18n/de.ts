@@ -76,6 +76,9 @@ const de = {
     filter: {
       all: "Alle",
       genre: "Genre",
+      language: "Sprache",
+      edition: "Edition",
+      creator: "Ersteller",
     },
     sort: {
       artist: "Künstler",
@@ -166,6 +169,10 @@ const de = {
   },
   loading: {
     parsing: "Parse",
+  },
+  virtualKeyboard: {
+    space: "Leertaste",
+    done: "Fertig",
   },
 };
 

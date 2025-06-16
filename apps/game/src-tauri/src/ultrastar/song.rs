@@ -52,7 +52,7 @@ pub struct Song {
     pub edition: Option<String>,
     pub genre: Option<String>,
     pub year: Option<i32>,
-    pub author: Option<String>,
+    pub creator: Option<String>,
     pub relative: Option<bool>,
     pub audio: Option<String>,
     pub cover: Option<String>,
