@@ -72,12 +72,13 @@ function LoadingComponent() {
           <IconLoaderCircle class="animate-spin text-6xl" />
         </div>
 
-        <div class="w-full max-w-lg">
+        <div class="w-full max-w-2xl">
           <div class="mb-2 flex justify-between text-sm">
-            <span>
-              {t("loading.parsing")} {currentSong() || "..."}
-            </span>
-            <span>{progress()}%</span>
+            <div class="flex min-w-0 flex-1 items-center">
+              <span class="flex-shrink-0">{t("loading.parsing")}&nbsp;</span>
+              <span class="min-w-0 truncate text-left" style="direction: rtl;">{currentSong() || "..."}</span>
+            </div>
+            <span class="ml-2 flex-shrink-0">{progress()}%</span>
           </div>
 
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
