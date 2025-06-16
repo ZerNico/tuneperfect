@@ -6,6 +6,7 @@ use crate::ultrastar::song::LocalSong;
 use log;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tauri_plugin_fs::FsExt;
 use std::sync::{Arc, Mutex};
 use tauri::State;
 use tauri_specta::Event;
@@ -51,7 +52,21 @@ pub async fn parse_songs_from_paths(
 ) -> Result<Vec<SongGroup>, AppError> {
     let media_base_url = get_media_base_url(&media_server_state);
 
-    let txt_files_map = traverse_and_find_txt_files(paths.clone())?;
+    let fs_scope = app_handle.fs_scope();
+
+    let allowed_paths: Vec<String> = paths
+        .into_iter()
+        .filter(|path| {
+            if !fs_scope.is_allowed(path) {
+                log::warn!("Skipping disallowed path: {}", path);
+                false
+            } else {
+                true
+            }
+        })
+        .collect();
+
+    let txt_files_map = traverse_and_find_txt_files(allowed_paths.clone())?;
 
     let mut song_groups = Vec::new();
 
@@ -63,7 +78,7 @@ pub async fn parse_songs_from_paths(
 
     let num_workers = num_cpus::get();
 
-    for start_path in paths {
+    for start_path in allowed_paths {
         let mut songs_for_path = Vec::new();
 
         let txt_files_for_path: Vec<_> = txt_files_map
