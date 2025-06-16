@@ -805,7 +805,7 @@ function SearchPopup(props: SearchPopupProps) {
 
     onKeyup(event) {
       if (event.origin === "keyboard") {
-        if (event.action === "confirm") {
+        if (event.action === "confirm" && event.originalKey !== " ") {
           props.onClose();
         }
       }
