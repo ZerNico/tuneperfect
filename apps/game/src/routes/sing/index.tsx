@@ -1,5 +1,6 @@
 import { safe } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
+import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import Fuse from "fuse.js";
 import { batch, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
@@ -308,6 +309,22 @@ function SongScroller(props: SongScrollerProps) {
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
   const [animating, setAnimating] = createSignal<null | "left" | "right">(null);
 
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
+  
+  const shouldDebounce = () => props.songs.length > 1000;
+  
+  const debouncedSetQuery = debounce((query: string) => {
+    setDebouncedSearchQuery(query);
+  }, 500);
+  
+  createEffect(() => {
+    if (shouldDebounce()) {
+      debouncedSetQuery(props.searchQuery);
+    } else {
+      setDebouncedSearchQuery(props.searchQuery);
+    }
+  });
+  
   const fuseInstance = createMemo(() => {
     const keys =
       props.searchFilter === "all" ? ["title", "artist", "year", "genre", "language", "edition", "creator"] : [props.searchFilter];
@@ -323,8 +340,8 @@ function SongScroller(props: SongScrollerProps) {
   const filteredAndSortedSongs = createMemo(() => {
     let songs = props.songs;
 
-    if (props.searchQuery.trim()) {
-      const query = props.searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery().trim()) {
+      const query = debouncedSearchQuery().toLowerCase().trim();
       const searchResults = fuseInstance().search(query);
       songs = searchResults.map((result) => result.item);
     }
