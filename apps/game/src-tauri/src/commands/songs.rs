@@ -35,9 +35,9 @@ fn get_media_base_url(media_server_state: &State<Arc<Mutex<Option<MediaServerSta
         }
     }
     #[cfg(any(windows, target_os = "android"))]
-    let base = "http://asset.localhost/";
+    let base = "http://asset.localhost";
     #[cfg(not(any(windows, target_os = "android")))]
-    let base = "asset://localhost/";
+    let base = "asset://localhost";
 
     base.to_string()
 }
