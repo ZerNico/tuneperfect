@@ -76,12 +76,13 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     let lines: Vec<&str> = content.lines().collect();
 
     for (_index, line) in lines.iter().enumerate() {
-        let line = line.trim();
+        let line = line.trim_start();
         if line.is_empty() {
             continue;
         }
 
         if line.starts_with('#') {
+            let line = line.trim();
             if let Some((property, value)) = line[1..].split_once(':') {
                 let property = property.trim().to_lowercase();
                 let value = value.trim();
