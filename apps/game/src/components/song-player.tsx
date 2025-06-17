@@ -1,5 +1,6 @@
 import { createEffect, createSignal, type JSX, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
+import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
@@ -474,6 +475,13 @@ export default function SongPlayer(props: SongPlayerProps) {
 const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
   if (song.previewStart !== null) {
     return Math.max(0, song.previewStart);
+  }
+
+  const smartPreviewTime = findSmartPreviewPosition(song);
+  
+  if (smartPreviewTime !== null) {
+    const previewGap = videoGap < 0 ? videoGap : 0;
+    return Math.max(0, smartPreviewTime + previewGap);
   }
 
   const firstNote = song.voices[0]?.phrases[0]?.notes[0];
