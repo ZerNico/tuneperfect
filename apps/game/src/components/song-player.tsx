@@ -21,6 +21,39 @@ interface SongPlayerProps {
   isPreview?: boolean;
 }
 
+// Utility function to get detailed media error message
+const getMediaErrorMessage = (element: HTMLMediaElement): string => {
+  const mediaError = element.error;
+  
+  if (!mediaError) {
+    return "Unknown media error";
+  }
+  
+  let errorMessage = "";
+  switch (mediaError.code) {
+    case MediaError.MEDIA_ERR_ABORTED:
+      errorMessage = "Media playback was aborted";
+      break;
+    case MediaError.MEDIA_ERR_NETWORK:
+      errorMessage = "Network error occurred while loading media";
+      break;
+    case MediaError.MEDIA_ERR_DECODE:
+      errorMessage = "Media decoding error occurred";
+      break;
+    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+      errorMessage = "Media format not supported";
+      break;
+    default:
+      errorMessage = "Unknown media error";
+  }
+  
+  if (mediaError.message) {
+    errorMessage += ` (${mediaError.message})`;
+  }
+  
+  return errorMessage;
+};
+
 export default function SongPlayer(props: SongPlayerProps) {
   const [audioElement, setAudioElement] = createSignal<HTMLAudioElement | undefined>();
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
@@ -328,18 +361,25 @@ export default function SongPlayer(props: SongPlayerProps) {
   };
 
   const handleVideoError: JSX.EventHandler<HTMLVideoElement, Event> = (error) => {
+    const videoEl = error.currentTarget;
+    const errorMessage = getMediaErrorMessage(videoEl);
+    
     setVideoError(true);
     setVideoElement(undefined);
+    
     if (!props.song.audioUrl) {
-      console.error("Failed to play video:", error);
+      console.error("Failed to play video:", errorMessage);
       props.onError?.();
     } else {
-      console.warn("Failed to play video:", error);
+      console.warn("Failed to play video:", errorMessage);
     }
   };
 
   const handleAudioError: JSX.EventHandler<HTMLAudioElement, Event> = (error) => {
-    console.error("Failed to play audio:", error);
+    const audioEl = error.currentTarget;
+    const errorMessage = getMediaErrorMessage(audioEl);
+    
+    console.error("Failed to play audio:", errorMessage);
     props.onError?.();
   };
 
