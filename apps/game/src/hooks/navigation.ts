@@ -59,6 +59,7 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["s", ["skip"]],
   ["Backspace", ["clear"]],
   ["Meta+Enter", ["fullscreen"]],
+  ["Alt+Enter", ["fullscreen"]],
   ["F11", ["fullscreen"]],
 ]);
 
