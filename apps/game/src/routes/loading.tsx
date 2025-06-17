@@ -41,6 +41,7 @@ function LoadingComponent() {
   const onProgress = (event: Event<ProgressEvent>) => {
     setCurrentSongs((currentSongs) => currentSongs + 1);
     setCurrentSong(event.payload.song);
+    console.log(event.payload.song);
   };
 
   const onStartParsing = (event: Event<StartParsingEvent>) => {
@@ -72,11 +73,11 @@ function LoadingComponent() {
           <IconLoaderCircle class="animate-spin text-6xl" />
         </div>
 
-        <div class="w-full max-w-2xl">
+        <div class="w-full max-w-200">
           <div class="mb-2 flex justify-between text-sm">
             <div class="flex min-w-0 flex-1 items-center">
               <span class="flex-shrink-0">{t("loading.parsing")}&nbsp;</span>
-              <span class="min-w-0 truncate text-left" style="direction: rtl;">{currentSong() || "..."}</span>
+              <span class="min-w-0 truncate text-left" style="direction: rtl; unicode-bidi: plaintext;">{currentSong() || "..."}</span>
             </div>
             <span class="ml-2 flex-shrink-0">{progress()}%</span>
           </div>
