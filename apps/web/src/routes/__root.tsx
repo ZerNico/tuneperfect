@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from "@tanstack/solid-router";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/solid-router";
 import { onMount } from "solid-js";
 import { isServer } from "solid-js/web";
 import Footer from "~/components/footer";
@@ -63,10 +63,16 @@ function RootComponent() {
   });
 
   return (
-    <main class="min-h-screen bg-[#101024] font-primary text-white">
-      <Header appUrl={context().config.VITE_APP_URL ?? ""} />
-      <Outlet />
-      <Footer />
-    </main>
+    <>
+      <HeadContent />
+      <div class="min-h-screen bg-[#101024] font-primary text-white">
+        <Header appUrl={context().config.VITE_APP_URL ?? ""} />
+        <main>
+          <Outlet />
+        </main>
+        <Footer />
+        <Scripts />
+      </div>
+    </>
   );
 }

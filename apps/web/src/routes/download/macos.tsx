@@ -1,9 +1,10 @@
+import { createFileRoute } from "@tanstack/solid-router"
 import DownloadCard from "~/components/download-card";
 import { posthog } from "~/lib/posthog";
 import IconChip from "~icons/lucide/cpu";
 import IconApple from "~icons/sing/apple";
 
-export const Route = createFileRoute({
+export const Route = createFileRoute("/download/macos")({
   component: RouteComponent,
 });
 
