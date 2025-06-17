@@ -4,6 +4,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import { createEffect, Match, Switch } from "solid-js";
+import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -37,7 +38,7 @@ function RouteComponent() {
     try {
       const currentPlatform = platform();
       if (currentPlatform === "macos") {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        await commands.getMicrophones();
       }
     } catch (error) {
       console.error("Failed to get microphone permissions on startup:", error);
