@@ -5,7 +5,7 @@ import { t } from "~/lib/i18n";
 import IconArrowBigDown from "~icons/lucide/arrow-big-down";
 import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
 import IconArrowBigUp from "~icons/lucide/arrow-big-up";
-import IconGamepadStart from "~icons/sing/gamepad-start";
+import IconGamepadB from "~icons/sing/gamepad-b";
 import IconGamepadX from "~icons/sing/gamepad-x";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
@@ -165,7 +165,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
         { content: "", colSpan: 5, highlight: true, action: () => {} },
         {
           content: t("virtualKeyboard.done"),
-          hint: <IconGamepadStart />,
+          hint: <IconGamepadB />,
           colSpan: 3,
           highlight: true,
           action: () => props.onClose?.(),

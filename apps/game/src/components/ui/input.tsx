@@ -1,5 +1,6 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
+import { Motion, Presence } from "solid-motionone";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { VirtualKeyboard } from "./virtual-keyboard";
 
@@ -29,7 +30,6 @@ export default function Input(props: InputProps) {
     showAbove: boolean;
   } | null>(null);
   let inputRef!: HTMLInputElement;
-  let containerRef!: HTMLDivElement;
 
   const handleFocus = () => {
     setFocused(true);
@@ -66,11 +66,11 @@ export default function Input(props: InputProps) {
   });
 
   createEffect(() => {
-    if (showVirtualKeyboard() && containerRef) {
-      const rect = containerRef.getBoundingClientRect();
+    if (showVirtualKeyboard() && inputRef) {
+      const rect = inputRef.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const keyboardHeight = 300;
-      const gap = rect.height * 0.125;
+      const gap = rect.height * 0.5;
 
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
@@ -79,7 +79,7 @@ export default function Input(props: InputProps) {
 
       const top = showAbove ? rect.top - keyboardHeight - gap : rect.bottom + gap;
 
-      const left = rect.left + rect.width / 2;
+      const left = rect.left;
 
       setKeyboardPosition({ top, left, showAbove });
     } else {
@@ -90,7 +90,7 @@ export default function Input(props: InputProps) {
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: This is a input */}
-      <div ref={containerRef} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
+      <div class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
         <div
           class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
           classList={{
@@ -121,18 +121,22 @@ export default function Input(props: InputProps) {
         </div>
       </div>
 
-      {keyboardPosition() && (
-        <div
-          class="fixed z-50"
-          style={{
-            top: `${keyboardPosition()?.top}px`,
-            left: `${keyboardPosition()?.left}px`,
-            transform: "translateX(-50%)",
-          }}
-        >
-          <VirtualKeyboard inputRef={inputRef} layer={layer() + 1} onClose={() => inputRef.blur()} />
-        </div>
-      )}
+      <Presence>
+        {keyboardPosition() && (
+          <Motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            class="fixed z-50"
+            style={{
+              top: `${keyboardPosition()?.top}px`,
+              left: `${keyboardPosition()?.left}px`,
+            }}
+          >
+            <VirtualKeyboard inputRef={inputRef} layer={layer() + 1} onClose={() => inputRef.blur()} />
+          </Motion.div>
+        )}
+      </Presence>
     </>
   );
 }
