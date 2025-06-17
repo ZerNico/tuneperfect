@@ -34,7 +34,6 @@ export default function SongPlayer(props: SongPlayerProps) {
   let endCheckInterval: ReturnType<typeof setInterval> | undefined;
   const audioContext = new AudioContext();
   let audioSource: MediaElementAudioSourceNode | undefined;
-  let videoSource: MediaElementAudioSourceNode | undefined;
 
   // Setup audio context for audio element
   createEffect(
@@ -51,82 +50,78 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       if (!audio) return;
 
+      let currentAudioSource: MediaElementAudioSourceNode | undefined;
+      let currentGainNode: GainNode | undefined;
+
       try {
-        audioSource = audioContext.createMediaElementSource(audio);
-        const gainNode = audioContext.createGain();
-        audioSource.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        currentAudioSource = audioContext.createMediaElementSource(audio);
+        currentGainNode = audioContext.createGain();
+        currentAudioSource.connect(currentGainNode);
+        currentGainNode.connect(audioContext.destination);
+
+        audioSource = currentAudioSource;
 
         const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-        gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+        currentGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
         // Update volume when it changes
         createEffect(() => {
-          const volume = props.volume ?? 1;
-          gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+          if (currentGainNode) {
+            const volume = props.volume ?? 1;
+            currentGainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+          }
         });
 
         onCleanup(() => {
           try {
-            gainNode.disconnect();
-            if (audioSource) {
-              audioSource.disconnect();
+            if (currentGainNode) {
+              currentGainNode.disconnect();
+            }
+            if (currentAudioSource) {
+              currentAudioSource.disconnect();
             }
           } catch {
             // Ignore disconnection errors during cleanup
           }
+          // Clear the global reference if it matches our current source
+          if (audioSource === currentAudioSource) {
+            audioSource = undefined;
+          }
         });
       } catch (error) {
         console.warn("Failed to create audio source:", error);
+        // Clean up any partially created nodes if error occurred
+        try {
+          if (currentGainNode) {
+            currentGainNode.disconnect();
+          }
+          if (currentAudioSource) {
+            currentAudioSource.disconnect();
+          }
+        } catch {
+          // Ignore cleanup errors
+        }
+        audioSource = undefined;
       }
     })
   );
 
-  // Setup audio context for video element
+  // Setup volume control for video element
   createEffect(
-    on(videoElement, (video, prevVideo) => {
-      // Clean up previous source if it exists
-      if (videoSource && prevVideo) {
-        try {
-          videoSource.disconnect();
-        } catch {
-          // Ignore disconnection errors
-        }
-        videoSource = undefined;
-      }
-
+    on(videoElement, (video) => {
       if (!video) return;
 
-      // Only create audio source for video if there's no separate audio element
+      // Only control volume for video if there's no separate audio element
       if (!props.song.audioUrl) {
-        try {
-          videoSource = audioContext.createMediaElementSource(video);
-          const gainNode = audioContext.createGain();
-          videoSource.connect(gainNode);
-          gainNode.connect(audioContext.destination);
+        const updateVolume = () => {
+          video.volume = props.volume ?? 1;
+        };
 
-          const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
-          gainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+        updateVolume();
 
-          // Update volume when it changes
-          createEffect(() => {
-            const volume = props.volume ?? 1;
-            gainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
-          });
-
-          onCleanup(() => {
-            try {
-              gainNode.disconnect();
-              if (videoSource) {
-                videoSource.disconnect();
-              }
-            } catch {
-              // Ignore disconnection errors during cleanup
-            }
-          });
-        } catch (error) {
-          console.warn("Failed to create video source:", error);
-        }
+        createEffect(() => {
+          updateVolume();
+        });
       }
     })
   );
