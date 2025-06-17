@@ -12,6 +12,8 @@ import IconTriangleRight from "~icons/sing/triangle-right";
 
 interface VirtualKeyboardProps {
   inputRef: HTMLInputElement;
+  layer?: number;
+  onClose?: () => void;
 }
 
 interface Key {
@@ -95,7 +97,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   };
 
   useNavigation(() => ({
-    layer: 2,
+    layer: props.layer || 0,
     onKeydown(event) {
       if (event.action === "left") {
         goLeft();
@@ -109,6 +111,8 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
         setPressed(true);
       } else if (event.action === "clear") {
         deleteCharacter();
+      } else if (event.action === "back") {
+        props.onClose?.();
       }
     },
     onKeyup(event) {
@@ -164,7 +168,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
           hint: <IconGamepadStart />,
           colSpan: 3,
           highlight: true,
-          action: () => props.inputRef.blur(),
+          action: () => props.onClose?.(),
         },
       ],
     ];

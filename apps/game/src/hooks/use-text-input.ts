@@ -55,6 +55,11 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     }
   };
 
+  const selectAll = () => {
+    const input = inputRef();
+    input.select();
+  };
+
   const sendInputEvent = () => {
     const input = inputRef();
     const data = {
@@ -71,5 +76,6 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     deleteCharacter,
     scrollToSelectionStart,
     sendInputEvent,
+    selectAll,
   };
 } 

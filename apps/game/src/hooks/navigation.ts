@@ -3,12 +3,13 @@ import { ReactiveMap } from "@solid-primitives/map";
 import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import mitt from "mitt";
 import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
+import { isPrintableKey } from "~/lib/utils/keyboard";
 import { createGamepad, type GamepadButton } from "./gamepad";
 
 export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");
 
 interface UseNavigationOptions {
-  layer?: number;
+  layer?: number | false;
   enabled?: boolean;
   onKeydown?: (event: NavigationEvent) => void;
   onKeyup?: (event: NavigationEvent) => void;
@@ -19,6 +20,7 @@ interface UseNavigationOptions {
 type NavigationEvent = {
   origin: "gamepad" | "keyboard";
   originalKey: string;
+  modifiers?: string[];
   action:
     | "left"
     | "right"
@@ -36,27 +38,28 @@ type NavigationEvent = {
     | "joker-2"
     | "skip"
     | "clear"
+    | "fullscreen"
     | "unknown";
 };
 
-const KEY_MAPPINGS = new Map<string, NavigationEvent["action"]>([
-  ["ArrowLeft", "left"],
-  ["ArrowRight", "right"],
-  ["ArrowUp", "up"],
-  ["ArrowDown", "down"],
-  ["Escape", "back"],
-  ["Enter", "confirm"],
-  [" ", "confirm"],
-  ["F3", "search"],
-  ["F4", "random"],
-  ["F5", "sort-left"],
-  ["F6", "sort-right"],
-  ["F5", "filter-left"],
-  ["F6", "filter-right"],
-  ["F1", "joker-1"],
-  ["F2", "joker-2"],
-  ["s", "skip"],
-  ["Backspace", "clear"],
+const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
+  ["ArrowLeft", ["left"]],
+  ["ArrowRight", ["right"]],
+  ["ArrowUp", ["up"]],
+  ["ArrowDown", ["down"]],
+  ["Escape", ["back"]],
+  ["Enter", ["confirm"]],
+  [" ", ["confirm"]],
+  ["F3", ["search"]],
+  ["F4", ["random"]],
+  ["F5", ["sort-left", "filter-left"]],
+  ["F6", ["sort-right", "filter-right"]],
+  ["F1", ["joker-1"]],
+  ["F2", ["joker-2"]],
+  ["s", ["skip"]],
+  ["Backspace", ["clear"]],
+  ["Meta+Enter", ["fullscreen"]],
+  ["F11", ["fullscreen"]],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -84,6 +87,25 @@ const getAxisAction = (button: GamepadButton, direction: number): NavigationEven
   }
 };
 
+const getKeyInfo = (event: KeyboardEvent): { keyString: string; originalKey: string; modifiers: string[] } => {
+  const modifiers: string[] = [];
+  if (event.ctrlKey) modifiers.push("Ctrl");
+  if (event.shiftKey) modifiers.push("Shift");
+  if (event.altKey) modifiers.push("Alt");
+  if (event.metaKey) modifiers.push("Meta");
+
+  const originalKey = event.key;
+
+  let normalizedKey = originalKey;
+  if (originalKey.length === 1 && originalKey >= "A" && originalKey <= "Z") {
+    normalizedKey = originalKey.toLowerCase();
+  }
+
+  const keyString = modifiers.length > 0 ? `${modifiers.join("+")}+${normalizedKey}` : normalizedKey;
+
+  return { keyString, originalKey, modifiers };
+};
+
 type Events = {
   keydown: NavigationEvent;
   keyup: NavigationEvent;
@@ -94,64 +116,138 @@ type Events = {
 const emitter = mitt<Events>();
 const pressedKeys = new Map<string, { holdTimeout: number; repeatInterval?: number }>();
 const pressedGamepadButtons = new Map<string, { holdTimeout: number; repeatInterval?: number }>();
-const HOLD_DELAY = 500;
-const REPEAT_DELAY = 100;
+const HOLD_DELAY = 400;
+const REPEAT_DELAY = 50;
 
 createEventListener(document, "keydown", (event) => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+    if (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      return;
+    }
+  }
+
+  event.preventDefault();
+
   if (event.repeat) return;
 
-  const action = KEY_MAPPINGS.get(event.key);
-  if (action) {
-    setKeyMode("keyboard");
-    event.preventDefault();
+  const { keyString, originalKey, modifiers } = getKeyInfo(event);
+  const actionsArray = KEY_MAPPINGS.get(keyString);
+
+  setKeyMode("keyboard");
+
+  if (actionsArray && actionsArray.length > 0) {
+    const existingTimers = pressedKeys.get(keyString);
+    if (existingTimers) {
+      clearTimeout(existingTimers.holdTimeout);
+      if (existingTimers.repeatInterval) {
+        clearInterval(existingTimers.repeatInterval);
+      }
+    }
+
+    const holdTimeout = window.setTimeout(() => {
+      for (const action of actionsArray) {
+        emitter.emit("hold", {
+          origin: "keyboard",
+          originalKey,
+          modifiers: modifiers.length > 0 ? modifiers : undefined,
+          action,
+        });
+      }
+
+      const repeatInterval = window.setInterval(() => {
+        for (const action of actionsArray) {
+          emitter.emit("repeat", {
+            origin: "keyboard",
+            originalKey,
+            modifiers: modifiers.length > 0 ? modifiers : undefined,
+            action,
+          });
+        }
+      }, REPEAT_DELAY);
+
+      pressedKeys.set(keyString, { holdTimeout, repeatInterval });
+    }, HOLD_DELAY);
+
+    pressedKeys.set(keyString, { holdTimeout });
+
+    for (const action of actionsArray) {
+      emitter.emit("keydown", {
+        origin: "keyboard",
+        originalKey,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        action,
+      });
+    }
+  } else {
     emitter.emit("keydown", {
       origin: "keyboard",
-      originalKey: event.key,
-      action: action,
+      originalKey,
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
+      action: "unknown",
     });
 
     const holdTimeout = window.setTimeout(() => {
       emitter.emit("hold", {
         origin: "keyboard",
-        originalKey: event.key,
-        action: action,
+        originalKey,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        action: "unknown",
       });
 
-      // Start repeat interval after hold
       const repeatInterval = window.setInterval(() => {
         emitter.emit("repeat", {
           origin: "keyboard",
-          originalKey: event.key,
-          action: action,
+          originalKey,
+          modifiers: modifiers.length > 0 ? modifiers : undefined,
+          action: "unknown",
         });
       }, REPEAT_DELAY);
 
-      pressedKeys.set(event.key, { holdTimeout, repeatInterval });
+      pressedKeys.set(keyString, { holdTimeout, repeatInterval });
     }, HOLD_DELAY);
 
-    pressedKeys.set(event.key, { holdTimeout });
+    pressedKeys.set(keyString, { holdTimeout });
   }
 });
 
 createEventListener(document, "keyup", (event) => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+    if (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+      return;
+    }
+  }
+
+  event.preventDefault();
   if (event.repeat) return;
 
-  const action = KEY_MAPPINGS.get(event.key);
-  if (action) {
-    event.preventDefault();
-    const timeouts = pressedKeys.get(event.key);
-    if (timeouts) {
-      clearTimeout(timeouts.holdTimeout);
-      if (timeouts.repeatInterval) {
-        clearInterval(timeouts.repeatInterval);
-      }
-      pressedKeys.delete(event.key);
-    }
+  const { keyString, originalKey, modifiers } = getKeyInfo(event);
 
+  const timeouts = pressedKeys.get(keyString);
+  if (timeouts) {
+    clearTimeout(timeouts.holdTimeout);
+    if (timeouts.repeatInterval) {
+      clearInterval(timeouts.repeatInterval);
+    }
+    pressedKeys.delete(keyString);
+  }
+
+  const actionsArray = KEY_MAPPINGS.get(keyString);
+  if (actionsArray && actionsArray.length > 0) {
+    for (const action of actionsArray) {
+      emitter.emit("keyup", {
+        origin: "keyboard",
+        originalKey,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        action,
+      });
+    }
+  } else {
+    // Handle unknown key
     emitter.emit("keyup", {
       origin: "keyboard",
-      originalKey: event.key,
-      action: action,
+      originalKey,
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
+      action: "unknown",
     });
   }
 });
@@ -278,7 +374,7 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     on(
       () => access(options),
       (options) => {
-        if (options.enabled === false) return;
+        if (options.enabled === false || options.layer === false) return;
 
         const layer = options.layer ?? 0;
         layerInstances.set(layer, (layerInstances.get(layer) ?? 0) + 1);
@@ -299,8 +395,11 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     const opts = access(options);
     if (opts?.enabled === false) return false;
 
+    const layer = opts.layer ?? 0;
+    if (layer === false) return true;
+
     const highestLayer = Math.max(...layerInstances.keys());
-    return (opts.layer ?? 0) === highestLayer;
+    return layer === highestLayer;
   });
 
   createEffect(() => {

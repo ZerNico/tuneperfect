@@ -1,7 +1,6 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
 import { keyMode, useNavigation } from "~/hooks/navigation";
-import { useTextInput } from "~/hooks/use-text-input";
 import { VirtualKeyboard } from "./virtual-keyboard";
 
 interface InputProps {
@@ -21,6 +20,8 @@ interface InputProps {
 }
 
 export default function Input(props: InputProps) {
+  const layer = () => props.layer || 0;
+
   const [focused, setFocused] = createSignal(false);
   const [keyboardPosition, setKeyboardPosition] = createSignal<{
     top: number;
@@ -29,22 +30,6 @@ export default function Input(props: InputProps) {
   } | null>(null);
   let inputRef!: HTMLInputElement;
   let containerRef!: HTMLDivElement;
-
-  const { moveCursor, writeCharacter: baseWriteCharacter } = useTextInput(() => inputRef);
-
-  const writeCharacter = (char: string) => {
-    // Check max length before writing
-    const start = inputRef.selectionStart ?? 0;
-    const end = inputRef.selectionEnd ?? 0;
-    const value = inputRef.value;
-    const newValue = value.substring(0, start) + char + value.substring(end);
-    
-    if (props.maxLength && newValue.length > props.maxLength) {
-      return;
-    }
-    
-    baseWriteCharacter(char);
-  };
 
   const handleFocus = () => {
     setFocused(true);
@@ -59,25 +44,8 @@ export default function Input(props: InputProps) {
   const showVirtualKeyboard = () => keyMode() === "gamepad" && focused();
 
   useNavigation(() => ({
-    layer: props.layer || 0,
+    layer: layer(),
     enabled: props.selected,
-    onKeydown(event) {
-      if (!focused()) return;
-
-      if (event.action === "left") {
-        moveCursor("left");
-      } else if (event.action === "right") {
-        moveCursor("right");
-      } else if (event.origin === "keyboard") {
-        if (event.originalKey === " ") {
-          writeCharacter(" ");
-        }
-
-        if (event.originalKey === "s") {
-          writeCharacter("s");
-        }
-      }
-    },
     onKeyup(event) {
       if (event.action === "confirm") {
         inputRef.focus();
@@ -162,7 +130,7 @@ export default function Input(props: InputProps) {
             transform: "translateX(-50%)",
           }}
         >
-          <VirtualKeyboard inputRef={inputRef} />
+          <VirtualKeyboard inputRef={inputRef} layer={layer() + 1} onClose={() => inputRef.blur()} />
         </div>
       )}
     </>

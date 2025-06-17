@@ -11,7 +11,6 @@ import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { keyMode, useNavigation } from "~/hooks/navigation";
-import { useTextInput } from "~/hooks/use-text-input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
@@ -45,7 +44,9 @@ export const Route = createFileRoute("/sing/")({
 
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>();
 const [searchQuery, setSearchQuery] = createSignal("");
-const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator">("all");
+const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator">(
+  "all"
+);
 const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
 const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(songsStore.songs().length);
@@ -309,9 +310,7 @@ function SongScroller(props: SongScrollerProps) {
 
   const fuseInstance = createMemo(() => {
     const keys =
-      props.searchFilter === "all"
-        ? ["title", "artist", "year", "genre", "language", "edition", "creator"]
-        : [props.searchFilter];
+      props.searchFilter === "all" ? ["title", "artist", "year", "genre", "language", "edition", "creator"] : [props.searchFilter];
 
     return new Fuse(props.songs, {
       keys,
@@ -692,16 +691,17 @@ interface SearchButtonProps {
 }
 
 function SearchButton(props: SearchButtonProps) {
-  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> = [
-    { value: "all", label: t("sing.filter.all") },
-    { value: "artist", label: t("sing.sort.artist") },
-    { value: "title", label: t("sing.sort.title") },
-    { value: "year", label: t("sing.sort.year") },
-    { value: "genre", label: t("sing.filter.genre") },
-    { value: "language", label: t("sing.filter.language") },
-    { value: "edition", label: t("sing.filter.edition") },
-    { value: "creator", label: t("sing.filter.creator") },
-  ];
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> =
+    [
+      { value: "all", label: t("sing.filter.all") },
+      { value: "artist", label: t("sing.sort.artist") },
+      { value: "title", label: t("sing.sort.title") },
+      { value: "year", label: t("sing.sort.year") },
+      { value: "genre", label: t("sing.filter.genre") },
+      { value: "language", label: t("sing.filter.language") },
+      { value: "edition", label: t("sing.filter.edition") },
+      { value: "creator", label: t("sing.filter.creator") },
+    ];
 
   const filterLabel = () => filterOptions.find((option) => option.value === props.searchFilter)?.label || t("sing.filter.all");
 
@@ -737,8 +737,6 @@ function SearchPopup(props: SearchPopupProps) {
   let searchRef!: HTMLInputElement;
   let popupRef!: HTMLDivElement;
 
-  const { moveCursor, writeCharacter, deleteCharacter } = useTextInput(() => searchRef);
-
   createEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popupRef && !popupRef.contains(event.target as Node)) {
@@ -756,16 +754,17 @@ function SearchPopup(props: SearchPopupProps) {
     props.onSearchQuery(e.currentTarget.value);
   };
 
-  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> = [
-    { value: "all", label: t("sing.filter.all") },
-    { value: "artist", label: t("sing.sort.artist") },
-    { value: "title", label: t("sing.sort.title") },
-    { value: "year", label: t("sing.sort.year") },
-    { value: "genre", label: t("sing.filter.genre") },
-    { value: "language", label: t("sing.filter.language") },
-    { value: "edition", label: t("sing.filter.edition") },
-    { value: "creator", label: t("sing.filter.creator") },
-  ];
+  const filterOptions: Array<{ value: "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator"; label: string }> =
+    [
+      { value: "all", label: t("sing.filter.all") },
+      { value: "artist", label: t("sing.sort.artist") },
+      { value: "title", label: t("sing.sort.title") },
+      { value: "year", label: t("sing.sort.year") },
+      { value: "genre", label: t("sing.filter.genre") },
+      { value: "language", label: t("sing.filter.language") },
+      { value: "edition", label: t("sing.filter.edition") },
+      { value: "creator", label: t("sing.filter.creator") },
+    ];
 
   const moveFilter = (direction: "left" | "right") => {
     const currentIndex = filterOptions.findIndex((option) => option.value === props.searchFilter);
@@ -777,8 +776,7 @@ function SearchPopup(props: SearchPopupProps) {
   };
 
   useNavigation(() => ({
-    layer: 2,
-    enabled: true,
+    layer: 1,
     onKeydown(event) {
       if (event.action === "back" || event.action === "search") {
         props.onClose();
@@ -787,20 +785,6 @@ function SearchPopup(props: SearchPopupProps) {
       } else if (event.action === "filter-right") {
         moveFilter("right");
       }
-
-      if (event.origin === "keyboard") {
-        if (event.action === "left") {
-          moveCursor("left");
-        } else if (event.action === "right") {
-          moveCursor("right");
-        } else if (event.originalKey === " ") {
-          writeCharacter(" ");
-        } if (event.action === "clear") {
-          deleteCharacter();
-        } if (event.originalKey === "s") {
-          writeCharacter("s");
-        }
-      }
     },
 
     onKeyup(event) {
@@ -808,22 +792,6 @@ function SearchPopup(props: SearchPopupProps) {
         if (event.action === "confirm" && event.originalKey !== " ") {
           props.onClose();
         }
-      }
-    },
-
-    onRepeat(event) {
-      if (event.origin !== "keyboard") {
-        return;
-      }
-
-      if (event.action === "left") {
-        moveCursor("left");
-      } else if (event.action === "right") {
-        moveCursor("right");
-      }
-
-      if (event.action === "clear") {
-        deleteCharacter();
       }
     },
   }));
@@ -889,7 +857,7 @@ function SearchPopup(props: SearchPopupProps) {
 
         <Show when={keyMode() === "gamepad"}>
           <div class="mt-4 flex justify-center">
-            <VirtualKeyboard inputRef={searchRef}  />
+            <VirtualKeyboard inputRef={searchRef} layer={1} onClose={props.onClose} />
           </div>
         </Show>
       </Motion.div>

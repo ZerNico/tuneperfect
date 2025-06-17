@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal, Suspense } from "solid-js";
+import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/useWakeLock";
 
 interface RouterContext {
@@ -32,46 +33,14 @@ function RootComponent() {
     await window.setFullscreen(!isFullscreen);
   };
 
-  createEventListener(
-    document,
-    "keydown",
-    (event) => {
-      if (event.key === "Enter" && (event.metaKey || event.altKey)) {
+  useNavigation({
+    layer: false,
+    onKeydown: (event) => {
+      if (event.action === "fullscreen") {
         toggleFullscreen();
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      if (event.key === "F11") {
-        toggleFullscreen();
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      if (event.key === "Tab") {
-        event.preventDefault();
-        event.stopPropagation();
       }
     },
-    { capture: true }
-  );
-
-  createEventListener(
-    document,
-    "keyup",
-    (event) => {
-      if (event.key === "Enter" && (event.metaKey || event.altKey)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      if (event.key === "F11") {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    },
-    { capture: true }
-  );
+  });
 
   const [mouseHidden, setMouseHidden] = createSignal(false);
 
