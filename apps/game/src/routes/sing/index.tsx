@@ -163,9 +163,9 @@ function SingComponent() {
                   {(sortKey) => (
                     <button
                       type="button"
-                      class="gradient-sing cursor-pointer rounded-full px-2 text-md text-white capitalize shadow-xl transition-all hover:opacity-75 active:scale-95"
+                      class="gradient-sing cursor-pointer rounded-full px-2 text-md text-white capitalize transition-all hover:opacity-75 active:scale-95"
                       classList={{
-                        "gradient-sing bg-gradient-to-b": sortKey.toLowerCase() === sort(),
+                        "gradient-sing bg-gradient-to-b shadow-xl": sortKey.toLowerCase() === sort(),
                       }}
                       onClick={() => setSort(sortKey)}
                     >
