@@ -308,6 +308,7 @@ function SongScroller(props: SongScrollerProps) {
   const [isHeld, setIsHeld] = createSignal(false);
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
   const [animating, setAnimating] = createSignal<null | "left" | "right">(null);
+  const [pendingDirection, setPendingDirection] = createSignal<null | "left" | "right">(null);
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
   
@@ -418,13 +419,19 @@ function SongScroller(props: SongScrollerProps) {
 
   useNavigation(() => ({
     onKeydown(event) {
-      if (animating()) return;
-
       if (event.action === "left") {
-        animateTo("left");
+        if (animating()) {
+          setPendingDirection("left");
+        } else {
+          animateTo("left");
+        }
         playSound("select");
       } else if (event.action === "right") {
-        animateTo("right");
+        if (animating()) {
+          setPendingDirection("right");
+        } else {
+          animateTo("right");
+        }
         playSound("select");
       } else if (event.action === "confirm") {
         setIsPressed(true);
@@ -451,16 +458,18 @@ function SongScroller(props: SongScrollerProps) {
     },
 
     onHold(event) {
-      if (animating()) return;
-
       if (event.action === "left") {
         setIsHeld(true);
-        animateTo("left");
-        playSound("select");
+        if (!animating()) {
+          animateTo("left");
+          playSound("select");
+        }
       } else if (event.action === "right") {
         setIsHeld(true);
-        animateTo("right");
-        playSound("select");
+        if (!animating()) {
+          animateTo("right");
+          playSound("select");
+        }
       }
     },
   }));
@@ -549,7 +558,13 @@ function SongScroller(props: SongScrollerProps) {
       }
       setAnimating(null);
 
-      if (isHeld()) {
+      const pending = pendingDirection();
+      if (pending) {
+        setPendingDirection(null);
+        setTimeout(() => {
+          animateTo(pending);
+        }, 0);
+      } else if (isHeld()) {
         props.onIsFastScrolling?.(true);
         setIsFastScrolling(true);
         playSound("select");
