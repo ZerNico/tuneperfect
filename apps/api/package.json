@@ -34,11 +34,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",
-    "@types/bun": "^1.2.16",
+    "@types/bun": "^1.2.17",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
     "@types/semver": "^7.7.0",
     "drizzle-kit": "^1.0.0-beta.1-c0277c0",
-    "pg": "^8.16.0"
+    "pg": "^8.16.2"
   }
 }
