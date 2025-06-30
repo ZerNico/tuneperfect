@@ -21,18 +21,28 @@ fn tag_to_note_type(tag: &str) -> NoteType {
     }
 }
 
-fn parse_us_int(value: &str) -> Result<i32, AppError> {
+fn parse_us_int(value: &str, property: &str) -> Result<i32, AppError> {
     value
         .replace(",", ".")
         .parse::<i32>()
-        .map_err(|_| AppError::UltrastarError(format!("Failed to parse integer: {}", value)))
+        .map_err(|_| {
+            AppError::UltrastarError(format!(
+                "Failed to parse integer for {}: {}",
+                property, value
+            ))
+        })
 }
 
-fn parse_us_float(value: &str) -> Result<f64, AppError> {
+fn parse_us_float(value: &str, property: &str) -> Result<f64, AppError> {
     value
         .replace(",", ".")
         .parse::<f64>()
-        .map_err(|_| AppError::UltrastarError(format!("Failed to parse float: {}", value)))
+        .map_err(|_| {
+            AppError::UltrastarError(format!(
+                "Failed to parse float for {}: {}",
+                property, value
+            ))
+        })
 }
 
 fn parse_us_bool(value: &str) -> bool {
@@ -93,21 +103,29 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "language" => song.language = Some(value.to_string()),
                     "edition" => song.edition = Some(value.to_string()),
                     "genre" => song.genre = Some(value.to_string()),
-                    "year" => song.year = Some(parse_us_int(value)?),
-                    "bpm" => song.bpm = parse_us_float(value)?,
-                    "gap" => song.gap = parse_us_float(value)?,
-                    "start" => song.start = Some(parse_us_float(value)?),
-                    "end" => song.end = Some(parse_us_int(value)?),
+                    "year" => {
+                        if value.is_empty() {
+                            song.year = None;
+                        } else {
+                            song.year = Some(parse_us_int(value, &property)?);
+                        }
+                    }
+                    "bpm" => song.bpm = parse_us_float(value, &property)?,
+                    "gap" => song.gap = parse_us_float(value, &property)?,
+                    "start" => song.start = Some(parse_us_float(value, &property)?),
+                    "end" => song.end = Some(parse_us_int(value, &property)?),
                     "mp3" | "audio" => song.audio = Some(value.to_string()),
                     "cover" => song.cover = Some(value.to_string()),
                     "video" => song.video = Some(value.to_string()),
                     "background" => song.background = Some(value.to_string()),
                     "relative" => song.relative = Some(parse_us_bool(value)),
-                    "videogap" => song.video_gap = parse_us_float(value)?,
+                    "videogap" => song.video_gap = parse_us_float(value, &property)?,
                     "author" | "creator" => song.creator = Some(value.to_string()),
                     "duetsingerp1" | "p1" => song.p1 = Some(value.to_string()),
                     "duetsingerp2" | "p2" => song.p2 = Some(value.to_string()),
-                    "preview" | "previewstart" => song.preview_start = Some(parse_us_float(value)?),
+                    "preview" | "previewstart" => {
+                        song.preview_start = Some(parse_us_float(value, &property)?)
+                    }
                     _ => {}
                 }
             }
@@ -118,9 +136,9 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
             let parts: Vec<&str> = line.splitn(5, ' ').collect();
             if parts.len() >= 5 {
                 let tag = parts[0];
-                let start_beat = parse_us_int(parts[1])?;
-                let length = parse_us_int(parts[2])?;
-                let txt_pitch = parse_us_int(parts[3])?;
+                let start_beat = parse_us_int(parts[1], "start_beat")?;
+                let length = parse_us_int(parts[2], "length")?;
+                let txt_pitch = parse_us_int(parts[3], "txt_pitch")?;
                 let text = parts[4..].join(" ");
 
                 let note = Note {
@@ -138,7 +156,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
         } else if line.starts_with('-') {
             // Line break
             if let Some(disappear_beat_str) = line[1..].trim().split_whitespace().next() {
-                let disappear_beat = parse_us_int(disappear_beat_str)?;
+                let disappear_beat = parse_us_int(disappear_beat_str, "disappear_beat")?;
                 let phrase = Phrase {
                     disappear_beat,
                     notes: std::mem::take(&mut notes),
