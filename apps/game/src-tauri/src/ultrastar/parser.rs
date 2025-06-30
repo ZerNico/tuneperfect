@@ -22,27 +22,18 @@ fn tag_to_note_type(tag: &str) -> NoteType {
 }
 
 fn parse_us_int(value: &str, property: &str) -> Result<i32, AppError> {
-    value
-        .replace(",", ".")
-        .parse::<i32>()
-        .map_err(|_| {
-            AppError::UltrastarError(format!(
-                "Failed to parse integer for {}: {}",
-                property, value
-            ))
-        })
+    value.replace(",", ".").parse::<i32>().map_err(|_| {
+        AppError::UltrastarError(format!(
+            "Failed to parse integer for {}: {}",
+            property, value
+        ))
+    })
 }
 
 fn parse_us_float(value: &str, property: &str) -> Result<f64, AppError> {
-    value
-        .replace(",", ".")
-        .parse::<f64>()
-        .map_err(|_| {
-            AppError::UltrastarError(format!(
-                "Failed to parse float for {}: {}",
-                property, value
-            ))
-        })
+    value.replace(",", ".").parse::<f64>().map_err(|_| {
+        AppError::UltrastarError(format!("Failed to parse float for {}: {}", property, value))
+    })
 }
 
 fn parse_us_bool(value: &str) -> bool {
@@ -235,42 +226,65 @@ pub fn parse_local_txt_file(
     let content = fs::read_to_string(txt)?;
     let song = parse_ultrastar_txt(&content)?;
 
-    let create_url =
-        |filename: &Option<String>, file_type: &str| -> Result<Option<String>, AppError> {
-            if let Some(filename) = filename {
-                let normalized_target = filename.nfc().collect::<String>().to_lowercase();
+    let find_file = |filename: &Option<String>| -> Option<&FileEntry> {
+        if let Some(filename) = filename {
+            let normalized_target = filename.nfc().collect::<String>().to_lowercase();
+            files.iter().find(|f| {
+                let normalized_file = f.filename.nfc().collect::<String>().to_lowercase();
+                normalized_file == normalized_target
+            })
+        } else {
+            None
+        }
+    };
 
-                if let Some(file_entry) = files.iter().find(|f| {
-                    let normalized_file = f.filename.nfc().collect::<String>().to_lowercase();
-                    normalized_file == normalized_target
-                }) {
-                    let path = dunce::canonicalize(&file_entry.path)?;
-                    let path_string = path.to_string_lossy();
-                    let encoded = urlencoding::encode(&path_string);
-                    return Ok(Some(format!("{}/{}", media_base_url, encoded)));
-                } else {
-                    // File was specified but not found
-                    if file_type == "audio" {
-                        return Err(AppError::UltrastarError(format!(
-                            "Audio file '{}' was specified but not found",
-                            filename
-                        )));
-                    } else {
-                        log::warn!(
-                            "{} file '{}' was specified but not found",
-                            file_type,
-                            filename
-                        );
-                    }
-                }
+    let create_url_from_file =
+        |file_entry: Option<&FileEntry>| -> Result<Option<String>, AppError> {
+            if let Some(file_entry) = file_entry {
+                let path = dunce::canonicalize(&file_entry.path)?;
+                let path_string = path.to_string_lossy();
+                let encoded = urlencoding::encode(&path_string);
+                Ok(Some(format!("{}/{}", media_base_url, encoded)))
+            } else {
+                Ok(None)
             }
-            Ok(None)
         };
 
-    let audio_url = create_url(&song.audio, "Audio")?;
-    let video_url = create_url(&song.video, "Video")?;
-    let cover_url = create_url(&song.cover, "Cover")?;
-    let background_url = create_url(&song.background, "Background")?;
+    let audio_file = find_file(&song.audio);
+    let video_file = find_file(&song.video);
+    let cover_file = find_file(&song.cover);
+    let background_file = find_file(&song.background);
+
+    if song.audio.is_some() && audio_file.is_none() {
+        return Err(AppError::UltrastarError(format!(
+            "Audio file '{}' was specified but not found",
+            song.audio.as_ref().unwrap()
+        )));
+    }
+
+    if song.video.is_some() && video_file.is_none() {
+        log::warn!(
+            "Video file '{}' was specified but not found",
+            song.video.as_ref().unwrap()
+        );
+    }
+    if song.cover.is_some() && cover_file.is_none() {
+        log::warn!(
+            "Cover file '{}' was specified but not found",
+            song.cover.as_ref().unwrap()
+        );
+    }
+    if song.background.is_some() && background_file.is_none() {
+        log::warn!(
+            "Background file '{}' was specified but not found",
+            song.background.as_ref().unwrap()
+        );
+    }
+
+    let audio_url = create_url_from_file(audio_file)?;
+    let video_url = create_url_from_file(video_file)?;
+    let cover_url = create_url_from_file(cover_file)?;
+    let background_url = create_url_from_file(background_file)?;
 
     if audio_url.is_none() && video_url.is_none() {
         return Err(AppError::UltrastarError(
@@ -278,7 +292,7 @@ pub fn parse_local_txt_file(
         ));
     }
 
-    let replay_gain = get_replay_gain(&txt).ok();
+    let replay_gain = audio_file.and_then(|file| get_replay_gain(&file.path).ok());
 
     Ok(LocalSong {
         song,

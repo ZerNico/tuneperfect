@@ -36,7 +36,6 @@ impl Default for AppState {
 pub fn run() {
     let builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
-            meta::get_replay_gain,
             microphones::get_microphones,
             pitch::start_recording,
             pitch::stop_recording,

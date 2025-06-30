@@ -5,14 +5,6 @@
 
 
 export const commands = {
-async getReplayGain(path: string) : Promise<Result<ReplayGainInfo, AppError>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_replay_gain", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async getMicrophones() : Promise<Result<Microphone[], AppError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_microphones") };
@@ -88,7 +80,6 @@ export type Note = { type: NoteType; startBeat: number; length: number; text: st
 export type NoteType = "Normal" | "Golden" | "Freestyle" | "Rap" | "RapGolden"
 export type Phrase = { disappearBeat: number; notes: Note[] }
 export type ProgressEvent = { song: string }
-export type ReplayGainInfo = { track_gain: number | null; track_peak: number | null; album_gain: number | null; album_peak: number | null }
 export type SongGroup = { path: string; songs: LocalSong[] }
 export type StartParsingEvent = { total_songs: number }
 export type Voice = { phrases: Phrase[] }

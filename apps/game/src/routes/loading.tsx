@@ -41,7 +41,6 @@ function LoadingComponent() {
   const onProgress = (event: Event<ProgressEvent>) => {
     setCurrentSongs((currentSongs) => currentSongs + 1);
     setCurrentSong(event.payload.song);
-    console.log(event.payload.song);
   };
 
   const onStartParsing = (event: Event<StartParsingEvent>) => {
