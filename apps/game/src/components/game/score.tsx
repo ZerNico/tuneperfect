@@ -18,6 +18,8 @@ export default function Score(props: ScoreProps) {
     const maxScoreTotal = maxScore.normal + maxScore.golden + maxScore.bonus;
     const currentScoreTotal = currentScore.normal + currentScore.golden + currentScore.bonus;
 
+    if (maxScoreTotal === 0) return "0";
+
     const score = (currentScoreTotal / maxScoreTotal) * 100000;
 
     return score.toLocaleString("en-US", {
