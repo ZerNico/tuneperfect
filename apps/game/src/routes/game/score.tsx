@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, onMount } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount } from "solid-js";
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -25,7 +25,6 @@ export const Route = createFileRoute("/game/score")({
 });
 
 type ScoreCategory = "normal" | "golden" | "bonus";
-type AnimatedState = Record<ScoreCategory, boolean>;
 
 const ANIMATION_DURATION = 2000;
 const ANIMATION_DELAY = 2000;
@@ -232,13 +231,13 @@ interface ScoreCardProps {
 function ScoreCard(props: ScoreCardProps) {
   const getPercentage = (value: number) => (value / MAX_POSSIBLE_SCORE) * 100;
 
-  const [animated, setAnimated] = createSignal<AnimatedState>({
-    normal: false,
-    golden: false,
-    bonus: false,
+  const [animatedScores, setAnimatedScores] = createSignal<Score>({
+    normal: 0,
+    golden: 0,
+    bonus: 0,
   });
 
-  const [animatedScores, setAnimatedScores] = createSignal<Score>({
+  const [animatedPercentages, setAnimatedPercentages] = createSignal<Score>({
     normal: 0,
     golden: 0,
     bonus: 0,
@@ -253,7 +252,7 @@ function ScoreCard(props: ScoreCardProps) {
     startValue: number,
     endValue: number,
     setValue: (value: number) => void,
-    duration: number,
+    duration: number
   ): ReturnType<typeof setInterval> => {
     const stepValue = (endValue - startValue) / ANIMATION_STEPS;
     const stepDuration = duration / ANIMATION_STEPS;
@@ -272,7 +271,33 @@ function ScoreCard(props: ScoreCardProps) {
     return interval;
   };
 
+  const animatePercentage = (startValue: number, endValue: number, setValue: (value: number) => void, duration: number): (() => void) => {
+    const startTime = performance.now();
+    let animationFrame: number;
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easeInOut curve for smoother animation
+      const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
+
+      const currentValue = startValue + (endValue - startValue) * easeProgress;
+      setValue(currentValue);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
+  };
+
   onMount(() => {
+    const cleanupFunctions: (() => void)[] = [];
+
     // If there are no animated stages, show the full score immediately
     if (props.animatedStages.length === 0) {
       setAnimatedScores({
@@ -280,23 +305,39 @@ function ScoreCard(props: ScoreCardProps) {
         golden: props.score.golden,
         bonus: props.score.bonus,
       });
+      setAnimatedPercentages({
+        normal: getPercentage(props.score.normal),
+        golden: getPercentage(props.score.golden),
+        bonus: getPercentage(props.score.bonus),
+      });
       return;
     }
 
     // Animate each score category, with sufficient delay to ensure previous animations finish
     for (const [index, category] of props.animatedStages.entries()) {
       setTimeout(() => {
-        setAnimated((prev) => ({ ...prev, [category]: true }));
-
         const scoreValue = props.score[category];
-        animateCounter(
+        const targetPercentage = getPercentage(scoreValue);
+
+        // Animate the score numbers (slower, stepped)
+        animateCounter(0, scoreValue, (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })), ANIMATION_DURATION);
+
+        // Animate the bar percentages (smooth, requestAnimationFrame)
+        const cleanup = animatePercentage(
           0,
-          scoreValue,
-          (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })),
-          ANIMATION_DURATION,
+          targetPercentage,
+          (value) => setAnimatedPercentages((prev) => ({ ...prev, [category]: value })),
+          ANIMATION_DURATION
         );
-      }, index * ANIMATION_DELAY); // Using the increased delay between animations
+
+        cleanupFunctions.push(cleanup);
+      }, index * ANIMATION_DELAY);
     }
+
+    // Register cleanup with SolidJS onCleanup
+    onCleanup(() => {
+      cleanupFunctions.forEach((cleanup) => cleanup());
+    });
   });
 
   return (
@@ -311,54 +352,31 @@ function ScoreCard(props: ScoreCardProps) {
           <Avatar user={props.player} />
           <div class="font-bold text-lg text-white">{props.player.username}</div>
         </div>
-        <div class="font-bold text-3xl text-white">
-          {animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}
-        </div>
+        <div class="font-bold text-3xl text-white">{animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
       </div>
 
       <div class="flex h-10 w-full overflow-hidden rounded-lg bg-black/20">
-        <ScoreBar
-          isAnimated={animated().normal}
-          percentage={getPercentage(props.score.normal)}
-          color={getColorVar(props.micColor, 400)}
-        />
-        <ScoreBar
-          isAnimated={animated().golden}
-          percentage={getPercentage(props.score.golden)}
-          color={getColorVar(props.micColor, 300)}
-        />
-        <ScoreBar
-          isAnimated={animated().bonus}
-          percentage={getPercentage(props.score.bonus)}
-          color={getColorVar(props.micColor, 50)}
-        />
+        <ScoreBar percentage={animatedPercentages().normal} color={getColorVar(props.micColor, 400)} />
+        <ScoreBar percentage={animatedPercentages().golden} color={getColorVar(props.micColor, 300)} />
+        <ScoreBar percentage={animatedPercentages().bonus} color={getColorVar(props.micColor, 50)} />
       </div>
 
       <div class="grid grid-cols-3 gap-3">
-        <ScoreDetail
-          label={t("score.normal")}
-          value={animatedScores().normal}
-          color={getColorVar(props.micColor, 400)}
-        />
-        <ScoreDetail
-          label={t("score.golden")}
-          value={animatedScores().golden}
-          color={getColorVar(props.micColor, 300)}
-        />
+        <ScoreDetail label={t("score.normal")} value={animatedScores().normal} color={getColorVar(props.micColor, 400)} />
+        <ScoreDetail label={t("score.golden")} value={animatedScores().golden} color={getColorVar(props.micColor, 300)} />
         <ScoreDetail label={t("score.bonus")} value={animatedScores().bonus} color={getColorVar(props.micColor, 50)} />
       </div>
     </div>
   );
 }
 
-function ScoreBar(props: { isAnimated: boolean; percentage: number; color: string }) {
+function ScoreBar(props: { percentage: number; color: string }) {
   return (
     <div
       class="flex h-full items-center justify-center font-medium text-white/90 text-xs"
       style={{
-        width: `${props.isAnimated ? props.percentage : 0}%`,
+        width: `${props.percentage}%`,
         "background-color": props.color,
-        transition: `width ${ANIMATION_DURATION}ms ease-in-out`,
       }}
     />
   );
@@ -370,9 +388,7 @@ function ScoreDetail(props: { label: string; value: number; color: string }) {
       <div class="h-4 w-4 rounded-sm" style={{ "background-color": props.color }} />
       <div class="flex flex-col">
         <span class="text-white/70 text-xs">{props.label}</span>
-        <span class="font-medium text-sm text-white">
-          {props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-        </span>
+        <span class="font-medium text-sm text-white">{props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
       </div>
     </div>
   );
