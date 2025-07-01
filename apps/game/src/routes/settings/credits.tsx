@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { openUrl } from '@tauri-apps/plugin-opener';
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -16,7 +17,7 @@ function CreditsComponent() {
     {
       type: "button",
       label: "UltraStar Play",
-      action: () => open("https://ultrastar-play.com"),
+      action: () => openUrl("https://ultrastar-play.com"),
     },
     {
       type: "button",
