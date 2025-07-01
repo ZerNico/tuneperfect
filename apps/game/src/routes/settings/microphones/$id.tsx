@@ -36,9 +36,7 @@ function MicrophoneComponent() {
   return (
     <Layout
       intent="secondary"
-      header={
-        <TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />
-      }
+      header={<TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Suspense
@@ -58,7 +56,7 @@ function MicrophoneComponent() {
                 delay: 200,
                 gain: 1,
                 threshold: 2,
-              },
+              }
             );
 
             const deleteMicrophone = () => {
@@ -92,7 +90,8 @@ function MicrophoneComponent() {
                 onChange: (channel: number) => {
                   setMicrophone((prev) => ({ ...prev, channel }));
                 },
-                options: [1, 2, 3, 4, 5, 6, 7, 8],
+                renderValue: (channel: number | null) => <span>{channel !== null ? `${channel + 1}` : "?"}</span>,
+                options: [0, 1, 2, 3, 4, 5, 6, 7],
               },
               {
                 type: "select-string",
