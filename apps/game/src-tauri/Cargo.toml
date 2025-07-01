@@ -19,12 +19,12 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset"] }
-tauri-plugin-opener = "2"
+tauri-plugin-opener = "2.4.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-persisted-scope = "2"
-tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2.3.0"
+tauri-plugin-fs = "2.4.0"
 specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
@@ -33,15 +33,15 @@ lofty = "0"
 cpal = { git = "https://github.com/RustAudio/cpal.git", rev = "df14a26a9a7c60b28826b921b3e7192f77ed3845" }
 ringbuf = "0"
 dywapitchtrack = "0.2.0"
-tauri-plugin-shell = "2"
-tauri-plugin-process = "2"
+tauri-plugin-shell = "2.3.0"
+tauri-plugin-process = "2.3.0"
 # Media server dependencies
 http = "1.0"
 http-range = "0.1"
 percent-encoding = "2.3"
-tauri-utils = "2"
-tauri-plugin-store = "2"
-tauri-plugin-log = "2"
+tauri-utils = "2.5.0"
+tauri-plugin-store = "2.3.0"
+tauri-plugin-log = "2.6.0"
 log = "0.4"
 tauri-plugin-os = "2"
 md5 = "0.7"
@@ -53,7 +53,7 @@ unicode-normalization = "0.1"
 num_cpus = "1.16"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-cli = "2"
-tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
-tauri-plugin-window-state = "2"
+tauri-plugin-cli = "2.4.0"
+tauri-plugin-single-instance = "2.3.0"
+tauri-plugin-updater = "2.9.0"
+tauri-plugin-window-state = "2.3.0"

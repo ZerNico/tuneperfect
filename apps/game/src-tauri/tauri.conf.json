@@ -4,9 +4,9 @@
   "mainBinaryName": "tuneperfect",
   "identifier": "localhost.tuneperfect.game",
   "build": {
-    "beforeDevCommand": "bun run dev:vite",
+    "beforeDevCommand": "bun run --bun dev:vite",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build:vite",
+    "beforeBuildCommand": "bun run --bun build:vite",
     "frontendDist": "../dist"
   },
   "app": {
