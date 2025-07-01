@@ -8,254 +8,337 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as NoAuthRouteImport } from './routes/_no-auth'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as NoAuthVerifyEmailRouteImport } from './routes/_no-auth/verify-email'
+import { Route as NoAuthSignUpRouteImport } from './routes/_no-auth/sign-up'
+import { Route as NoAuthSignInRouteImport } from './routes/_no-auth/sign-in'
+import { Route as NoAuthResetPasswordRouteImport } from './routes/_no-auth/reset-password'
+import { Route as NoAuthForgotPasswordRouteImport } from './routes/_no-auth/forgot-password'
+import { Route as AuthEditProfileRouteImport } from './routes/_auth/edit-profile'
+import { Route as AuthCompleteProfileRouteImport } from './routes/_auth/complete-profile'
+import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
+import { Route as AuthNoLobbyRouteImport } from './routes/_auth/_no-lobby'
+import { Route as AuthLobbyRouteImport } from './routes/_auth/_lobby'
+import { Route as AuthClubsIndexRouteImport } from './routes/_auth/clubs/index'
+import { Route as AuthLobbyIndexRouteImport } from './routes/_auth/_lobby/index'
+import { Route as AuthClubsIdRouteImport } from './routes/_auth/clubs/$id'
+import { Route as AuthNoLobbyJoinIndexRouteImport } from './routes/_auth/_no-lobby/join/index'
+import { Route as AuthNoLobbyJoinIdRouteImport } from './routes/_auth/_no-lobby/join/$id'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as NoAuthImport } from './routes/_no-auth'
-import { Route as AuthImport } from './routes/_auth'
-import { Route as NoAuthVerifyEmailImport } from './routes/_no-auth/verify-email'
-import { Route as NoAuthSignUpImport } from './routes/_no-auth/sign-up'
-import { Route as NoAuthSignInImport } from './routes/_no-auth/sign-in'
-import { Route as NoAuthResetPasswordImport } from './routes/_no-auth/reset-password'
-import { Route as NoAuthForgotPasswordImport } from './routes/_no-auth/forgot-password'
-import { Route as AuthEditProfileImport } from './routes/_auth/edit-profile'
-import { Route as AuthCompleteProfileImport } from './routes/_auth/complete-profile'
-import { Route as AuthChangePasswordImport } from './routes/_auth/change-password'
-import { Route as AuthNoLobbyImport } from './routes/_auth/_no-lobby'
-import { Route as AuthLobbyImport } from './routes/_auth/_lobby'
-import { Route as AuthClubsIndexImport } from './routes/_auth/clubs/index'
-import { Route as AuthLobbyIndexImport } from './routes/_auth/_lobby/index'
-import { Route as AuthClubsIdImport } from './routes/_auth/clubs/$id'
-import { Route as AuthNoLobbyJoinIndexImport } from './routes/_auth/_no-lobby/join/index'
-import { Route as AuthNoLobbyJoinIdImport } from './routes/_auth/_no-lobby/join/$id'
-
-// Create/Update Routes
-
-const NoAuthRoute = NoAuthImport.update({
+const NoAuthRoute = NoAuthRouteImport.update({
   id: '/_no-auth',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const AuthRoute = AuthImport.update({
+const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const NoAuthVerifyEmailRoute = NoAuthVerifyEmailImport.update({
+const NoAuthVerifyEmailRoute = NoAuthVerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
   getParentRoute: () => NoAuthRoute,
 } as any)
-
-const NoAuthSignUpRoute = NoAuthSignUpImport.update({
+const NoAuthSignUpRoute = NoAuthSignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
   getParentRoute: () => NoAuthRoute,
 } as any)
-
-const NoAuthSignInRoute = NoAuthSignInImport.update({
+const NoAuthSignInRoute = NoAuthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
   getParentRoute: () => NoAuthRoute,
 } as any)
-
-const NoAuthResetPasswordRoute = NoAuthResetPasswordImport.update({
+const NoAuthResetPasswordRoute = NoAuthResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => NoAuthRoute,
 } as any)
-
-const NoAuthForgotPasswordRoute = NoAuthForgotPasswordImport.update({
+const NoAuthForgotPasswordRoute = NoAuthForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
   getParentRoute: () => NoAuthRoute,
 } as any)
-
-const AuthEditProfileRoute = AuthEditProfileImport.update({
+const AuthEditProfileRoute = AuthEditProfileRouteImport.update({
   id: '/edit-profile',
   path: '/edit-profile',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthCompleteProfileRoute = AuthCompleteProfileImport.update({
+const AuthCompleteProfileRoute = AuthCompleteProfileRouteImport.update({
   id: '/complete-profile',
   path: '/complete-profile',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthChangePasswordRoute = AuthChangePasswordImport.update({
+const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
   id: '/change-password',
   path: '/change-password',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthNoLobbyRoute = AuthNoLobbyImport.update({
+const AuthNoLobbyRoute = AuthNoLobbyRouteImport.update({
   id: '/_no-lobby',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthLobbyRoute = AuthLobbyImport.update({
+const AuthLobbyRoute = AuthLobbyRouteImport.update({
   id: '/_lobby',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthClubsIndexRoute = AuthClubsIndexImport.update({
+const AuthClubsIndexRoute = AuthClubsIndexRouteImport.update({
   id: '/clubs/',
   path: '/clubs/',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthLobbyIndexRoute = AuthLobbyIndexImport.update({
+const AuthLobbyIndexRoute = AuthLobbyIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthLobbyRoute,
 } as any)
-
-const AuthClubsIdRoute = AuthClubsIdImport.update({
+const AuthClubsIdRoute = AuthClubsIdRouteImport.update({
   id: '/clubs/$id',
   path: '/clubs/$id',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthNoLobbyJoinIndexRoute = AuthNoLobbyJoinIndexImport.update({
+const AuthNoLobbyJoinIndexRoute = AuthNoLobbyJoinIndexRouteImport.update({
   id: '/join/',
   path: '/join/',
   getParentRoute: () => AuthNoLobbyRoute,
 } as any)
-
-const AuthNoLobbyJoinIdRoute = AuthNoLobbyJoinIdImport.update({
+const AuthNoLobbyJoinIdRoute = AuthNoLobbyJoinIdRouteImport.update({
   id: '/join/$id',
   path: '/join/$id',
   getParentRoute: () => AuthNoLobbyRoute,
 } as any)
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/change-password': typeof AuthChangePasswordRoute
+  '/complete-profile': typeof AuthCompleteProfileRoute
+  '/edit-profile': typeof AuthEditProfileRoute
+  '/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/reset-password': typeof NoAuthResetPasswordRoute
+  '/sign-in': typeof NoAuthSignInRoute
+  '/sign-up': typeof NoAuthSignUpRoute
+  '/verify-email': typeof NoAuthVerifyEmailRoute
+  '/clubs/$id': typeof AuthClubsIdRoute
+  '/': typeof AuthLobbyIndexRoute
+  '/clubs': typeof AuthClubsIndexRoute
+  '/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/join': typeof AuthNoLobbyJoinIndexRoute
+}
+export interface FileRoutesByTo {
+  '/change-password': typeof AuthChangePasswordRoute
+  '/complete-profile': typeof AuthCompleteProfileRoute
+  '/edit-profile': typeof AuthEditProfileRoute
+  '/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/reset-password': typeof NoAuthResetPasswordRoute
+  '/sign-in': typeof NoAuthSignInRoute
+  '/sign-up': typeof NoAuthSignUpRoute
+  '/verify-email': typeof NoAuthVerifyEmailRoute
+  '/clubs/$id': typeof AuthClubsIdRoute
+  '/': typeof AuthLobbyIndexRoute
+  '/clubs': typeof AuthClubsIndexRoute
+  '/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/join': typeof AuthNoLobbyJoinIndexRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/_auth': typeof AuthRouteWithChildren
+  '/_no-auth': typeof NoAuthRouteWithChildren
+  '/_auth/_lobby': typeof AuthLobbyRouteWithChildren
+  '/_auth/_no-lobby': typeof AuthNoLobbyRouteWithChildren
+  '/_auth/change-password': typeof AuthChangePasswordRoute
+  '/_auth/complete-profile': typeof AuthCompleteProfileRoute
+  '/_auth/edit-profile': typeof AuthEditProfileRoute
+  '/_no-auth/forgot-password': typeof NoAuthForgotPasswordRoute
+  '/_no-auth/reset-password': typeof NoAuthResetPasswordRoute
+  '/_no-auth/sign-in': typeof NoAuthSignInRoute
+  '/_no-auth/sign-up': typeof NoAuthSignUpRoute
+  '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
+  '/_auth/clubs/$id': typeof AuthClubsIdRoute
+  '/_auth/_lobby/': typeof AuthLobbyIndexRoute
+  '/_auth/clubs/': typeof AuthClubsIndexRoute
+  '/_auth/_no-lobby/join/$id': typeof AuthNoLobbyJoinIdRoute
+  '/_auth/_no-lobby/join/': typeof AuthNoLobbyJoinIndexRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/change-password'
+    | '/complete-profile'
+    | '/edit-profile'
+    | '/forgot-password'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/verify-email'
+    | '/clubs/$id'
+    | '/'
+    | '/clubs'
+    | '/join/$id'
+    | '/join'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/change-password'
+    | '/complete-profile'
+    | '/edit-profile'
+    | '/forgot-password'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/verify-email'
+    | '/clubs/$id'
+    | '/'
+    | '/clubs'
+    | '/join/$id'
+    | '/join'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/_no-auth'
+    | '/_auth/_lobby'
+    | '/_auth/_no-lobby'
+    | '/_auth/change-password'
+    | '/_auth/complete-profile'
+    | '/_auth/edit-profile'
+    | '/_no-auth/forgot-password'
+    | '/_no-auth/reset-password'
+    | '/_no-auth/sign-in'
+    | '/_no-auth/sign-up'
+    | '/_no-auth/verify-email'
+    | '/_auth/clubs/$id'
+    | '/_auth/_lobby/'
+    | '/_auth/clubs/'
+    | '/_auth/_no-lobby/join/$id'
+    | '/_auth/_no-lobby/join/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  AuthRoute: typeof AuthRouteWithChildren
+  NoAuthRoute: typeof NoAuthRouteWithChildren
+}
 
 declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthImport
-      parentRoute: typeof rootRoute
-    }
     '/_no-auth': {
       id: '/_no-auth'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof NoAuthImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof NoAuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_auth/_lobby': {
-      id: '/_auth/_lobby'
+    '/_auth': {
+      id: '/_auth'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof AuthLobbyImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/_no-lobby': {
-      id: '/_auth/_no-lobby'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthNoLobbyImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/change-password': {
-      id: '/_auth/change-password'
-      path: '/change-password'
-      fullPath: '/change-password'
-      preLoaderRoute: typeof AuthChangePasswordImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/complete-profile': {
-      id: '/_auth/complete-profile'
-      path: '/complete-profile'
-      fullPath: '/complete-profile'
-      preLoaderRoute: typeof AuthCompleteProfileImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/edit-profile': {
-      id: '/_auth/edit-profile'
-      path: '/edit-profile'
-      fullPath: '/edit-profile'
-      preLoaderRoute: typeof AuthEditProfileImport
-      parentRoute: typeof AuthImport
-    }
-    '/_no-auth/forgot-password': {
-      id: '/_no-auth/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof NoAuthForgotPasswordImport
-      parentRoute: typeof NoAuthImport
-    }
-    '/_no-auth/reset-password': {
-      id: '/_no-auth/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof NoAuthResetPasswordImport
-      parentRoute: typeof NoAuthImport
-    }
-    '/_no-auth/sign-in': {
-      id: '/_no-auth/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof NoAuthSignInImport
-      parentRoute: typeof NoAuthImport
-    }
-    '/_no-auth/sign-up': {
-      id: '/_no-auth/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof NoAuthSignUpImport
-      parentRoute: typeof NoAuthImport
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_no-auth/verify-email': {
       id: '/_no-auth/verify-email'
       path: '/verify-email'
       fullPath: '/verify-email'
-      preLoaderRoute: typeof NoAuthVerifyEmailImport
-      parentRoute: typeof NoAuthImport
+      preLoaderRoute: typeof NoAuthVerifyEmailRouteImport
+      parentRoute: typeof NoAuthRoute
     }
-    '/_auth/clubs/$id': {
-      id: '/_auth/clubs/$id'
-      path: '/clubs/$id'
-      fullPath: '/clubs/$id'
-      preLoaderRoute: typeof AuthClubsIdImport
-      parentRoute: typeof AuthImport
+    '/_no-auth/sign-up': {
+      id: '/_no-auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof NoAuthSignUpRouteImport
+      parentRoute: typeof NoAuthRoute
     }
-    '/_auth/_lobby/': {
-      id: '/_auth/_lobby/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthLobbyIndexImport
-      parentRoute: typeof AuthLobbyImport
+    '/_no-auth/sign-in': {
+      id: '/_no-auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof NoAuthSignInRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/reset-password': {
+      id: '/_no-auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof NoAuthResetPasswordRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/forgot-password': {
+      id: '/_no-auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof NoAuthForgotPasswordRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_auth/edit-profile': {
+      id: '/_auth/edit-profile'
+      path: '/edit-profile'
+      fullPath: '/edit-profile'
+      preLoaderRoute: typeof AuthEditProfileRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/complete-profile': {
+      id: '/_auth/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof AuthCompleteProfileRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/change-password': {
+      id: '/_auth/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AuthChangePasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/_no-lobby': {
+      id: '/_auth/_no-lobby'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthNoLobbyRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/_lobby': {
+      id: '/_auth/_lobby'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthLobbyRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/clubs/': {
       id: '/_auth/clubs/'
       path: '/clubs'
       fullPath: '/clubs'
-      preLoaderRoute: typeof AuthClubsIndexImport
-      parentRoute: typeof AuthImport
+      preLoaderRoute: typeof AuthClubsIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/_no-lobby/join/$id': {
-      id: '/_auth/_no-lobby/join/$id'
-      path: '/join/$id'
-      fullPath: '/join/$id'
-      preLoaderRoute: typeof AuthNoLobbyJoinIdImport
-      parentRoute: typeof AuthNoLobbyImport
+    '/_auth/_lobby/': {
+      id: '/_auth/_lobby/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthLobbyIndexRouteImport
+      parentRoute: typeof AuthLobbyRoute
+    }
+    '/_auth/clubs/$id': {
+      id: '/_auth/clubs/$id'
+      path: '/clubs/$id'
+      fullPath: '/clubs/$id'
+      preLoaderRoute: typeof AuthClubsIdRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/_no-lobby/join/': {
       id: '/_auth/_no-lobby/join/'
       path: '/join'
       fullPath: '/join'
-      preLoaderRoute: typeof AuthNoLobbyJoinIndexImport
-      parentRoute: typeof AuthNoLobbyImport
+      preLoaderRoute: typeof AuthNoLobbyJoinIndexRouteImport
+      parentRoute: typeof AuthNoLobbyRoute
+    }
+    '/_auth/_no-lobby/join/$id': {
+      id: '/_auth/_no-lobby/join/$id'
+      path: '/join/$id'
+      fullPath: '/join/$id'
+      preLoaderRoute: typeof AuthNoLobbyJoinIdRouteImport
+      parentRoute: typeof AuthNoLobbyRoute
     }
   }
 }
-
-// Create and export the route tree
 
 interface AuthLobbyRouteChildren {
   AuthLobbyIndexRoute: typeof AuthLobbyIndexRoute
@@ -324,229 +407,10 @@ const NoAuthRouteChildren: NoAuthRouteChildren = {
 const NoAuthRouteWithChildren =
   NoAuthRoute._addFileChildren(NoAuthRouteChildren)
 
-export interface FileRoutesByFullPath {
-  '': typeof AuthNoLobbyRouteWithChildren
-  '/change-password': typeof AuthChangePasswordRoute
-  '/complete-profile': typeof AuthCompleteProfileRoute
-  '/edit-profile': typeof AuthEditProfileRoute
-  '/forgot-password': typeof NoAuthForgotPasswordRoute
-  '/reset-password': typeof NoAuthResetPasswordRoute
-  '/sign-in': typeof NoAuthSignInRoute
-  '/sign-up': typeof NoAuthSignUpRoute
-  '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/clubs/$id': typeof AuthClubsIdRoute
-  '/': typeof AuthLobbyIndexRoute
-  '/clubs': typeof AuthClubsIndexRoute
-  '/join/$id': typeof AuthNoLobbyJoinIdRoute
-  '/join': typeof AuthNoLobbyJoinIndexRoute
-}
-
-export interface FileRoutesByTo {
-  '': typeof AuthNoLobbyRouteWithChildren
-  '/change-password': typeof AuthChangePasswordRoute
-  '/complete-profile': typeof AuthCompleteProfileRoute
-  '/edit-profile': typeof AuthEditProfileRoute
-  '/forgot-password': typeof NoAuthForgotPasswordRoute
-  '/reset-password': typeof NoAuthResetPasswordRoute
-  '/sign-in': typeof NoAuthSignInRoute
-  '/sign-up': typeof NoAuthSignUpRoute
-  '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/clubs/$id': typeof AuthClubsIdRoute
-  '/': typeof AuthLobbyIndexRoute
-  '/clubs': typeof AuthClubsIndexRoute
-  '/join/$id': typeof AuthNoLobbyJoinIdRoute
-  '/join': typeof AuthNoLobbyJoinIndexRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/_auth': typeof AuthRouteWithChildren
-  '/_no-auth': typeof NoAuthRouteWithChildren
-  '/_auth/_lobby': typeof AuthLobbyRouteWithChildren
-  '/_auth/_no-lobby': typeof AuthNoLobbyRouteWithChildren
-  '/_auth/change-password': typeof AuthChangePasswordRoute
-  '/_auth/complete-profile': typeof AuthCompleteProfileRoute
-  '/_auth/edit-profile': typeof AuthEditProfileRoute
-  '/_no-auth/forgot-password': typeof NoAuthForgotPasswordRoute
-  '/_no-auth/reset-password': typeof NoAuthResetPasswordRoute
-  '/_no-auth/sign-in': typeof NoAuthSignInRoute
-  '/_no-auth/sign-up': typeof NoAuthSignUpRoute
-  '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
-  '/_auth/clubs/$id': typeof AuthClubsIdRoute
-  '/_auth/_lobby/': typeof AuthLobbyIndexRoute
-  '/_auth/clubs/': typeof AuthClubsIndexRoute
-  '/_auth/_no-lobby/join/$id': typeof AuthNoLobbyJoinIdRoute
-  '/_auth/_no-lobby/join/': typeof AuthNoLobbyJoinIndexRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | ''
-    | '/change-password'
-    | '/complete-profile'
-    | '/edit-profile'
-    | '/forgot-password'
-    | '/reset-password'
-    | '/sign-in'
-    | '/sign-up'
-    | '/verify-email'
-    | '/clubs/$id'
-    | '/'
-    | '/clubs'
-    | '/join/$id'
-    | '/join'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | ''
-    | '/change-password'
-    | '/complete-profile'
-    | '/edit-profile'
-    | '/forgot-password'
-    | '/reset-password'
-    | '/sign-in'
-    | '/sign-up'
-    | '/verify-email'
-    | '/clubs/$id'
-    | '/'
-    | '/clubs'
-    | '/join/$id'
-    | '/join'
-  id:
-    | '__root__'
-    | '/_auth'
-    | '/_no-auth'
-    | '/_auth/_lobby'
-    | '/_auth/_no-lobby'
-    | '/_auth/change-password'
-    | '/_auth/complete-profile'
-    | '/_auth/edit-profile'
-    | '/_no-auth/forgot-password'
-    | '/_no-auth/reset-password'
-    | '/_no-auth/sign-in'
-    | '/_no-auth/sign-up'
-    | '/_no-auth/verify-email'
-    | '/_auth/clubs/$id'
-    | '/_auth/_lobby/'
-    | '/_auth/clubs/'
-    | '/_auth/_no-lobby/join/$id'
-    | '/_auth/_no-lobby/join/'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  AuthRoute: typeof AuthRouteWithChildren
-  NoAuthRoute: typeof NoAuthRouteWithChildren
-}
-
 const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   NoAuthRoute: NoAuthRouteWithChildren,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/_auth",
-        "/_no-auth"
-      ]
-    },
-    "/_auth": {
-      "filePath": "_auth.tsx",
-      "children": [
-        "/_auth/_lobby",
-        "/_auth/_no-lobby",
-        "/_auth/change-password",
-        "/_auth/complete-profile",
-        "/_auth/edit-profile",
-        "/_auth/clubs/$id",
-        "/_auth/clubs/"
-      ]
-    },
-    "/_no-auth": {
-      "filePath": "_no-auth.tsx",
-      "children": [
-        "/_no-auth/forgot-password",
-        "/_no-auth/reset-password",
-        "/_no-auth/sign-in",
-        "/_no-auth/sign-up",
-        "/_no-auth/verify-email"
-      ]
-    },
-    "/_auth/_lobby": {
-      "filePath": "_auth/_lobby.tsx",
-      "parent": "/_auth",
-      "children": [
-        "/_auth/_lobby/"
-      ]
-    },
-    "/_auth/_no-lobby": {
-      "filePath": "_auth/_no-lobby.tsx",
-      "parent": "/_auth",
-      "children": [
-        "/_auth/_no-lobby/join/$id",
-        "/_auth/_no-lobby/join/"
-      ]
-    },
-    "/_auth/change-password": {
-      "filePath": "_auth/change-password.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/complete-profile": {
-      "filePath": "_auth/complete-profile.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/edit-profile": {
-      "filePath": "_auth/edit-profile.tsx",
-      "parent": "/_auth"
-    },
-    "/_no-auth/forgot-password": {
-      "filePath": "_no-auth/forgot-password.tsx",
-      "parent": "/_no-auth"
-    },
-    "/_no-auth/reset-password": {
-      "filePath": "_no-auth/reset-password.tsx",
-      "parent": "/_no-auth"
-    },
-    "/_no-auth/sign-in": {
-      "filePath": "_no-auth/sign-in.tsx",
-      "parent": "/_no-auth"
-    },
-    "/_no-auth/sign-up": {
-      "filePath": "_no-auth/sign-up.tsx",
-      "parent": "/_no-auth"
-    },
-    "/_no-auth/verify-email": {
-      "filePath": "_no-auth/verify-email.tsx",
-      "parent": "/_no-auth"
-    },
-    "/_auth/clubs/$id": {
-      "filePath": "_auth/clubs/$id.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/_lobby/": {
-      "filePath": "_auth/_lobby/index.tsx",
-      "parent": "/_auth/_lobby"
-    },
-    "/_auth/clubs/": {
-      "filePath": "_auth/clubs/index.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/_no-lobby/join/$id": {
-      "filePath": "_auth/_no-lobby/join/$id.tsx",
-      "parent": "/_auth/_no-lobby"
-    },
-    "/_auth/_no-lobby/join/": {
-      "filePath": "_auth/_no-lobby/join/index.tsx",
-      "parent": "/_auth/_no-lobby"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

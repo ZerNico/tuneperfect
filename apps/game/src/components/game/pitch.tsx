@@ -55,6 +55,11 @@ export default function Pitch() {
   };
 
   const getProcessedBeatRow = (beat: ProcessedBeat) => {
+    // For rap notes, always display on the target note's row
+    if (beat.note.type === "Rap" || beat.note.type === "RapGolden") {
+      return getNoteRow(beat.note.midiNote);
+    }
+
     if (beat.midiNote === beat.note.midiNote) {
       return getNoteRow(beat.midiNote);
     }
@@ -257,8 +262,9 @@ function PitchNote(props: PitchNoteProps) {
       <div
         class="-translate-y-1/4 relative h-2/1 w-full transform overflow-hidden rounded-full border-[0.15cqw] shadow-md"
         classList={{
-          "border-yellow-400 bg-yellow-400/20": props.note.type === "Golden",
-          "border-white bg-black/20": props.note.type !== "Golden",
+          "border-yellow-400 bg-yellow-400/20": props.note.type.endsWith("Golden"),
+          "border-white bg-black/20": !props.note.type.endsWith("Golden"),
+          "border-dashed": props.note.type.startsWith("Rap"),
         }}
       >
         {props.note.type === "Golden" && <SparkleParticles length={props.note.length} />}

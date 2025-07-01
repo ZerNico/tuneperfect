@@ -15,8 +15,8 @@ fn tag_to_note_type(tag: &str) -> NoteType {
         ":" => NoteType::Normal,
         "*" => NoteType::Golden,
         "F" => NoteType::Freestyle,
-        //"R" => NoteType::Rap,
-        //"G" => NoteType::RapGolden,
+        "R" => NoteType::Rap,
+        "G" => NoteType::RapGolden,
         _ => NoteType::Freestyle,
     }
 }
