@@ -45,10 +45,10 @@ export function getMaxScore(voice: Voice) {
 
       if (note.type === "Normal" || note.type === "Rap") {
         score.normal += noteScore;
-        score.bonus += 1;
+        score.bonus += note.length;
       } else if (note.type === "Golden" || note.type === "RapGolden") {
         score.golden += noteScore;
-        score.bonus += 1;
+        score.bonus += note.length;
       }
     }
   }

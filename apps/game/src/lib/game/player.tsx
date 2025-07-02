@@ -80,13 +80,21 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   });
 
   const beats = createMemo(() => {
-    const beatMap = new Map<number, { note: Note; isFirstInPhrase: boolean; isFirstInNote: boolean }>();
+    const beatMap = new Map<
+      number,
+      { note: Note; isFirstInPhrase: boolean; isLastInPhrase: boolean; isFirstInNote: boolean }
+    >();
     for (const phrase of voice()?.phrases || []) {
       for (const [noteIndex, note] of phrase.notes.entries()) {
+        const isLastNoteInPhrase = noteIndex === phrase.notes.length - 1;
+
         for (let i = 0; i < note.length; i++) {
+          const isLastBeatInNote = i === note.length - 1;
+
           beatMap.set(note.startBeat + i, {
             note,
             isFirstInPhrase: noteIndex === 0 && i === 0,
+            isLastInPhrase: isLastNoteInPhrase && isLastBeatInNote,
             isFirstInNote: i === 0,
           });
         }
@@ -105,6 +113,15 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   let correctBeats = 0;
   let totalBeats = 0;
 
+  const awardBonus = () => {
+    if (totalBeats > 0 && correctBeats / totalBeats > 0.9) {
+      addScore("bonus", correctBeats);
+    }
+
+    correctBeats = 0;
+    totalBeats = 0;
+  };
+
   createEffect(async () => {
     const flooredBeat = delayedFlooredBeat();
 
@@ -114,61 +131,50 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       return;
     }
 
-    if (beatInfo.isFirstInPhrase) {
-      if (correctBeats / totalBeats > 0.9) {
-        addScore("bonus", correctBeats);
-      }
-
-      correctBeats = 0;
-      totalBeats = 0;
-    }
-
     const noteScore = getNoteScore(beatInfo.note);
 
-    if (noteScore === 0) {
-      return;
-    }
+    if (noteScore > 0) {
+      totalBeats++;
 
-    totalBeats++;
+      const result = await commands.getPitch(options().index);
 
-    const result = await commands.getPitch(options().index);
+      if (result.status !== "error") {
+        const midiNote = pitchProcessor.process(result.data, beatInfo.note);
 
-    if (result.status === "error") {
-      return;
-    }
+        // Determine if the note was sung correctly
+        let isCorrect = false;
+        if (beatInfo.note.type === "Rap" || beatInfo.note.type === "RapGolden") {
+          // For rap notes, just check that we have some pitch (not 0 or -1)
+          isCorrect = midiNote > 0 && midiNote !== -1;
+        } else {
+          // For normal/golden notes, check exact match
+          isCorrect = midiNote === beatInfo.note.midiNote;
+        }
 
-    const midiNote = pitchProcessor.process(result.data, beatInfo.note);
+        if (isCorrect) {
+          correctBeats++;
 
-    // Determine if the note was sung correctly
-    let isCorrect = false;
-    if (beatInfo.note.type === "Rap" || beatInfo.note.type === "RapGolden") {
-      // For rap notes, just check that we have some pitch (not 0 or -1)
-      isCorrect = midiNote > 0 && midiNote !== -1;
-    } else {
-      // For normal/golden notes, check exact match
-      isCorrect = midiNote === beatInfo.note.midiNote;
-    }
+          if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
+            addScore("golden", noteScore);
+          } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
+            addScore("normal", noteScore);
+          }
+        }
 
-    if (isCorrect) {
-      correctBeats++;
-
-      if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
-        addScore("golden", noteScore);
-      } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
-        addScore("normal", noteScore);
+        if (midiNote > 0) {
+          processedBeats.set(flooredBeat, {
+            note: beatInfo.note,
+            midiNote,
+            isFirstInPhrase: beatInfo.isFirstInPhrase,
+            isFirstInNote: beatInfo.isFirstInNote,
+          });
+        }
       }
     }
 
-    if (midiNote <= 0) {
-      return;
+    if (beatInfo.isLastInPhrase) {
+      awardBonus();
     }
-
-    processedBeats.set(flooredBeat, {
-      note: beatInfo.note,
-      midiNote,
-      isFirstInPhrase: beatInfo.isFirstInPhrase,
-      isFirstInNote: beatInfo.isFirstInNote,
-    });
   });
 
   const addScore = (type: "normal" | "golden" | "bonus", value: number) => {
