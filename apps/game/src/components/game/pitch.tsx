@@ -55,11 +55,6 @@ export default function Pitch() {
   };
 
   const getProcessedBeatRow = (beat: ProcessedBeat) => {
-    // For rap notes, always display on the target note's row
-    if (beat.note.type === "Rap" || beat.note.type === "RapGolden") {
-      return getNoteRow(beat.note.midiNote);
-    }
-
     if (beat.midiNote === beat.note.midiNote) {
       return getNoteRow(beat.midiNote);
     }
