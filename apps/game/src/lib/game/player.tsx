@@ -141,15 +141,10 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       if (result.status !== "error") {
         const midiNote = pitchProcessor.process(result.data, beatInfo.note);
 
+        const isRap = beatInfo.note.type.startsWith("Rap");
+
         // Determine if the note was sung correctly
-        let isCorrect = false;
-        if (beatInfo.note.type === "Rap" || beatInfo.note.type === "RapGolden") {
-          // For rap notes, just check that we have some pitch (not 0 or -1)
-          isCorrect = midiNote > 0 && midiNote !== -1;
-        } else {
-          // For normal/golden notes, check exact match
-          isCorrect = midiNote === beatInfo.note.midiNote;
-        }
+        const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
 
         if (isCorrect) {
           correctBeats++;
@@ -164,7 +159,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         if (midiNote > 0) {
           processedBeats.set(flooredBeat, {
             note: beatInfo.note,
-            midiNote,
+            midiNote: isRap ? beatInfo.note.midiNote : midiNote,
             isFirstInPhrase: beatInfo.isFirstInPhrase,
             isFirstInNote: beatInfo.isFirstInNote,
           });
