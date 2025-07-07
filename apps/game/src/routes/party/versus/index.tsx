@@ -107,6 +107,14 @@ export const Route = createFileRoute("/party/versus/")({
     const settings = roundStore.settings();
     if (roundStore.settings()?.returnTo !== "/party/versus") return;
 
+    const song = settings?.song;
+    if (!song) return;
+
+    versusStore.setState((state) => ({
+      ...state,
+      playedSongs: [...state.playedSongs, song],
+    }));
+
     const voice = settings?.song?.voices[0];
     const players = settings?.players ?? [];
     const scores = roundStore.scores();
