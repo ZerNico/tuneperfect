@@ -23,7 +23,7 @@ const ConfigSchema = v.object({
   DISCORD_CLIENT_ID: v.string(),
   DISCORD_CLIENT_SECRET: v.string(),
   REDIS_URL: v.string(),
-  UPLOADS_PATH: v.optional(v.string(), "./uploads"),
+  UPLOADS_PATH: v.fallback(v.pipe(v.string(), v.nonEmpty()), "./uploads"),
   VERSION: v.string(),
   GITHUB_REPO: v.optional(v.string()),
 });

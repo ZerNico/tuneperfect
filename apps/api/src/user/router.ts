@@ -37,7 +37,7 @@ export const userRouter = os.prefix("/users").router({
         imageFile: v.optional(
           v.pipe(
             v.instance(File),
-            v.mimeType(["image/png", "image/jpeg", "image/jpg"]),
+            v.mimeType(["image/png", "image/jpeg", "image/jpg", "image/webp"]),
             v.maxSize(1024 * 1024 * 5), // 5MB
           ),
         ),
