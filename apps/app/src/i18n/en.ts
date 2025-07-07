@@ -92,6 +92,13 @@ const en = {
     save: "Save Changes",
     changePassword: "Change Password",
     success: "Profile updated successfully",
+    invalidFileType: "Please select an image file",
+    cropImage: "Crop Profile Picture",
+  },
+  imageCrop: {
+    zoomOut: "Zoom Out",
+    zoomIn: "Zoom In",
+    confirm: "Confirm",
   },
   changePassword: {
     title: "Change Password",

@@ -94,6 +94,13 @@ const de: Dict = {
     save: "Änderungen speichern",
     changePassword: "Passwort ändern",
     success: "Profil erfolgreich aktualisiert",
+    invalidFileType: "Bitte wähle eine Bilddatei aus",
+    cropImage: "Profilbild zuschneiden",
+  },
+  imageCrop: {
+    zoomOut: "Verkleinern",
+    zoomIn: "Vergrößern",
+    confirm: "Bestätigen",
   },
   changePassword: {
     title: "Passwort ändern",

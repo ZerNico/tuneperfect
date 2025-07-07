@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "dev": "bun run --bun vite",
+    "build": "bun run --bun vite build"
   },
   "dependencies": {
     "@fontsource/lato": "^5.2.6",
