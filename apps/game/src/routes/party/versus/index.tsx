@@ -103,7 +103,7 @@ function calculatePlayerScores(players: User[], roundsData: Record<string, Round
 
 export const Route = createFileRoute("/party/versus/")({
   component: VersusComponent,
-  beforeLoad: async () => {
+  loader: async () => {
     const settings = roundStore.settings();
     if (roundStore.settings()?.returnTo !== "/party/versus") return;
 
@@ -437,7 +437,7 @@ function VersusComponent() {
                           <button
                             type="button"
                             onTransitionEnd={(event) => event.stopPropagation()}
-                            class="relative aspect-square flex-shrink-0 transform p-2 transition-transform duration-250"
+                            class="relative aspect-square w-full flex-shrink-0 transform p-2 transition-transform duration-250"
                             style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }}
                             classList={{
                               "pointer-events-auto scale-130 cursor-pointer active:scale-125":
@@ -551,7 +551,7 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
         background: `linear-gradient(90deg, ${getColorVar(props.colorName, 600)}, ${getColorVar(props.colorName, 500)})`,
       }}
     >
-      <div class="flex flex-grow flex-row items-center gap-4">
+      <div class="flex flex-grow flex-row items-center gap-4 overflow-hidden">
         <Avatar user={props.player} />
         <div class="truncate font-bold text-xl">{props.player.username}</div>
       </div>
