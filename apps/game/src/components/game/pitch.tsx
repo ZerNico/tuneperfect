@@ -55,23 +55,29 @@ export default function Pitch() {
   };
 
   const getProcessedBeatRow = (beat: ProcessedBeat) => {
-    if (beat.midiNote === beat.note.midiNote) {
-      return getNoteRow(beat.midiNote);
-    }
+    const correctNoteRow = getNoteRow(beat.note.midiNote);
+    const sungNoteRow = getNoteRow(beat.midiNote);
 
-    const noteRow = getNoteRow(beat.midiNote);
-    const alternativeNoteRow = noteRow - 12;
+    const possibleRows = [
+      sungNoteRow,
+      sungNoteRow - 12,
+      sungNoteRow + 12,
+    ];
 
-    if (alternativeNoteRow >= 0 && alternativeNoteRow < ROW_COUNT) {
-      const correctNoteRow = getNoteRow(beat.note.midiNote);
+    let closestRow = sungNoteRow;
+    let minDistance = Math.abs(correctNoteRow - sungNoteRow);
 
-      if (Math.abs(correctNoteRow - noteRow) < Math.abs(correctNoteRow - alternativeNoteRow)) {
-        return noteRow;
+    for (const row of possibleRows) {
+      if (row >= 0 && row < ROW_COUNT) {
+        const distance = Math.abs(correctNoteRow - row);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestRow = row;
+        }
       }
-      return alternativeNoteRow;
     }
 
-    return getNoteRow(beat.midiNote);
+    return closestRow;
   };
 
   const notes = createMemo(() => {
