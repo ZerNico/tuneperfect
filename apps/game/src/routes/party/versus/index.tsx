@@ -183,8 +183,9 @@ function VersusComponent() {
   };
 
   const getRandomSongWithoutDuplicates = (playedSongs: LocalSong[]) => {
-    const availableSongs = songsStore.songs().filter((song) => !playedSongs.includes(song));
-    return availableSongs[Math.floor(Math.random() * availableSongs.length)] ?? getRandomSong();
+    const filteredSongs = availableSongs().filter((song) => !playedSongs.includes(song));
+    // fallback to random song if no songs are left
+    return filteredSongs[Math.floor(Math.random() * filteredSongs.length)] ?? getRandomSong();
   };
 
   const generateUUID = () => {
