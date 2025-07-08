@@ -19,7 +19,6 @@ export const Route = createFileRoute("/_auth/_lobby/")({
 
 function LobbyComponent() {
   const queryClient = useQueryClient();
-  const [inviteDialog, setInviteDialog] = createSignal(false);
   const [selectedClubId, setSelectedClubId] = createSignal<string>("");
   const [selectedUser, setSelectedUser] = createSignal<string>("");
 
@@ -47,6 +46,8 @@ function LobbyComponent() {
     client.club.invite.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
+        setSelectedClubId("");
+        setSelectedUser("");
       },
       onError: (error) => {
         if (isDefinedError(error)) {
@@ -80,7 +81,6 @@ function LobbyComponent() {
     if (availableClubs.length === 1) {
       setSelectedClubId(availableClubs[0].id);
     }
-    setInviteDialog(true);
   };
 
   const handleInviteToClub = () => {
@@ -141,10 +141,9 @@ function LobbyComponent() {
         </div>
       </Show>
 
-      <Show when={inviteDialog()}>
+      <Show when={selectedUser()}>
         <Dialog
           onClose={() => {
-            setInviteDialog(false);
             setSelectedClubId("");
             setSelectedUser("");
           }}
