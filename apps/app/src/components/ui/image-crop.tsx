@@ -205,9 +205,11 @@ export default function ImageCrop(props: ImageCropProps) {
   };
 
   const handleZoomButtonClick = (direction: "in" | "out") => {
+    if (!canvasRef) return;
     const currentScale = cropState().scale;
     const newScale = direction === "in" ? currentScale * 1.25 : currentScale * 0.8;
-    applyZoom(newScale);
+    const rect = canvasRef.getBoundingClientRect();
+    applyZoom(newScale, rect.width / 2, rect.height / 2);
   };
 
   const drawImage = () => {
