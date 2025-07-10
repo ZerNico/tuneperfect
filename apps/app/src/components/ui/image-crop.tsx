@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import { createEffect, createSignal, on } from "solid-js";
 import { t } from "~/lib/i18n";
 import IconMinus from "~icons/lucide/minus";
 import IconPlus from "~icons/lucide/plus";
@@ -102,12 +102,10 @@ export default function ImageCrop(props: ImageCropProps) {
     drawImage();
   };
 
-  const getPointerPos = (event: MouseEvent | TouchEvent, touchIndex = 0) => {
+  const getPointerPos = (event: PointerEvent | MouseEvent) => {
     if (!canvasRef) return { x: 0, y: 0 };
     const rect = canvasRef.getBoundingClientRect();
-    const clientX = "touches" in event ? event.touches[touchIndex]?.clientX : event.clientX;
-    const clientY = "touches" in event ? event.touches[touchIndex]?.clientY : event.clientY;
-    return { x: (clientX || 0) - rect.left, y: (clientY || 0) - rect.top };
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
   const getPinchInfo = (touch1: Touch, touch2: Touch) => {
@@ -124,49 +122,92 @@ export default function ImageCrop(props: ImageCropProps) {
     };
   };
 
-  const handleGesture = (event: MouseEvent | TouchEvent) => {
+  // Pointer event handlers for drag operations
+  const handlePointerStart = (event: PointerEvent) => {
     event.preventDefault();
-    const isTouch = "touches" in event;
-    const touchCount = isTouch ? event.touches.length : 1;
+    if (!canvasRef) return;
+
+    canvasRef.setPointerCapture(event.pointerId);
+    setCropState((prev) => ({
+      ...prev,
+      gesture: "drag",
+      lastPointer: getPointerPos(event),
+      lastPinch: null,
+    }));
+  };
+
+  const handlePointerMove = (event: PointerEvent) => {
     const state = cropState();
+    if (state.gesture !== "drag" || !state.lastPointer) return;
 
-    if (event.type.includes("start") || event.type === "mousedown") {
-      if (touchCount === 1) {
-        setCropState((prev) => ({
-          ...prev,
-          gesture: "drag",
-          lastPointer: getPointerPos(event),
-          lastPinch: null,
-        }));
-      } else if (touchCount === 2 && isTouch) {
-        const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
-        setCropState((prev) => ({
-          ...prev,
-          gesture: "pinch",
-          lastPointer: null,
-          lastPinch: pinchInfo,
-        }));
-      }
-      return;
-    }
+    event.preventDefault();
+    const pointer = getPointerPos(event);
+    applyDrag(pointer.x - state.lastPointer.x, pointer.y - state.lastPointer.y);
+    setCropState((prev) => ({ ...prev, lastPointer: pointer }));
+  };
 
-    if (event.type.includes("end") || event.type === "mouseup") {
-      setCropState((prev) => ({ ...prev, gesture: "none", lastPointer: null, lastPinch: null }));
-      return;
-    }
+  const handlePointerEnd = (event: PointerEvent) => {
+    if (!canvasRef) return;
 
-    if (event.type.includes("move")) {
-      if (state.gesture === "drag" && state.lastPointer) {
-        const pointer = getPointerPos(event);
-        applyDrag(pointer.x - state.lastPointer.x, pointer.y - state.lastPointer.y);
-        setCropState((prev) => ({ ...prev, lastPointer: pointer }));
-      } else if (state.gesture === "pinch" && state.lastPinch && touchCount === 2 && isTouch) {
-        const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
-        const scaleChange = pinchInfo.distance / state.lastPinch.distance;
-        applyZoom(state.scale * scaleChange, pinchInfo.center.x, pinchInfo.center.y);
-        setCropState((prev) => ({ ...prev, lastPinch: pinchInfo }));
-      }
+    canvasRef.releasePointerCapture(event.pointerId);
+    setCropState((prev) => ({
+      ...prev,
+      gesture: "none",
+      lastPointer: null,
+      lastPinch: null,
+    }));
+  };
+
+  // Touch event handlers for pinch-to-zoom
+  const handleTouchStart = (event: TouchEvent) => {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
+      setCropState((prev) => ({
+        ...prev,
+        gesture: "pinch",
+        lastPointer: null,
+        lastPinch: pinchInfo,
+      }));
     }
+  };
+
+  const handleTouchMove = (event: TouchEvent) => {
+    const state = cropState();
+    if (state.gesture !== "pinch" || !state.lastPinch || event.touches.length !== 2) return;
+
+    event.preventDefault();
+    const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
+    const scaleChange = pinchInfo.distance / state.lastPinch.distance;
+    applyZoom(state.scale * scaleChange, pinchInfo.center.x, pinchInfo.center.y);
+    setCropState((prev) => ({ ...prev, lastPinch: pinchInfo }));
+  };
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    if (event.touches.length < 2) {
+      setCropState((prev) => ({
+        ...prev,
+        gesture: "none",
+        lastPointer: null,
+        lastPinch: null,
+      }));
+    }
+  };
+
+  const handleWheel = (event: WheelEvent) => {
+    event.preventDefault();
+    if (!canvasRef) return;
+
+    const rect = canvasRef.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    handleZoom(event.deltaY < 0 ? 1 : -1, mouseX, mouseY);
+  };
+
+  const handleZoomButtonClick = (direction: "in" | "out") => {
+    const currentScale = cropState().scale;
+    const newScale = direction === "in" ? currentScale * 1.25 : currentScale * 0.8;
+    applyZoom(newScale);
   };
 
   const drawImage = () => {
@@ -236,37 +277,6 @@ export default function ImageCrop(props: ImageCropProps) {
     cropCanvas.toBlob((blob) => blob && props.onCrop(blob), "image/webp", 1.0);
   };
 
-  onMount(() => {
-    if (!canvasRef) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const rect = canvasRef.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      handleZoom(e.deltaY < 0 ? 1 : -1, mouseX, mouseY);
-    };
-
-    canvasRef.addEventListener("mousedown", handleGesture);
-    canvasRef.addEventListener("touchstart", handleGesture, { passive: false });
-    canvasRef.addEventListener("wheel", handleWheel);
-
-    document.addEventListener("mousemove", handleGesture, { passive: false });
-    document.addEventListener("mouseup", handleGesture);
-    document.addEventListener("touchmove", handleGesture, { passive: false });
-    document.addEventListener("touchend", handleGesture);
-
-    onCleanup(() => {
-      canvasRef.removeEventListener("mousedown", handleGesture);
-      canvasRef.removeEventListener("touchstart", handleGesture);
-      canvasRef.removeEventListener("wheel", handleWheel);
-      document.removeEventListener("mousemove", handleGesture);
-      document.removeEventListener("mouseup", handleGesture);
-      document.removeEventListener("touchmove", handleGesture);
-      document.removeEventListener("touchend", handleGesture);
-    });
-  });
-
   createEffect(() => {
     if (props.imageUrl) {
       imageRef = new Image();
@@ -274,10 +284,11 @@ export default function ImageCrop(props: ImageCropProps) {
     }
   });
 
-  createEffect(() => {
-    cropState();
-    if (imageRef?.complete) drawImage();
-  });
+  createEffect(
+    on(cropState, () => {
+      if (imageRef?.complete) drawImage();
+    })
+  );
 
   const currentScale = cropState().scale;
   const minScale = getMinimumScale();
@@ -292,6 +303,13 @@ export default function ImageCrop(props: ImageCropProps) {
             height={canvasSize()}
             class="aspect-square w-full cursor-move select-none rounded-lg border-2 border-slate-200 shadow-md"
             style={{ "touch-action": "none" }}
+            onPointerDown={handlePointerStart}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
 
           <div
@@ -305,7 +323,7 @@ export default function ImageCrop(props: ImageCropProps) {
             <button
               type="button"
               class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
-              onClick={() => handleZoom("in")}
+              onClick={() => handleZoomButtonClick("in")}
               disabled={currentScale >= 5}
             >
               <IconPlus class="h-5 w-5 text-white" />
@@ -313,14 +331,12 @@ export default function ImageCrop(props: ImageCropProps) {
             <button
               type="button"
               class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
-              onClick={() => handleZoom("out")}
+              onClick={() => handleZoomButtonClick("out")}
               disabled={currentScale <= minScale}
             >
               <IconMinus class="h-5 w-5 text-white" />
             </button>
           </div>
-
-          <div class="absolute bottom-3 left-3 rounded bg-black/60 px-2 py-1 text-white text-xs backdrop-blur-sm">Drag to move</div>
         </div>
       </div>
 
