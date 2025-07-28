@@ -29,8 +29,12 @@ function MicrophoneComponent() {
 
   const params = Route.useParams();
   const id = () => {
-    const id = Number.parseInt(params().id, 10);
-    return Number.isNaN(id) ? -1 : id;
+    const parsedId = Number.parseInt(params().id, 10);
+    // Check for NaN, negative numbers, and ensure it's within reasonable bounds
+    if (Number.isNaN(parsedId) || parsedId < 0 || parsedId > 999) {
+      return -1;
+    }
+    return parsedId;
   };
 
   return (

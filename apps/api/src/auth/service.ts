@@ -114,7 +114,7 @@ class AuthService {
   }
 
   async generateAccessToken(user: User) {
-    const expires = addMinutes(new Date(), 5);
+    const expires = addMinutes(new Date(), 15);
 
     const token = jwt.sign(
       {
