@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
@@ -53,8 +53,9 @@ function RouteComponent() {
       await queryClient.invalidateQueries(sessionQueryOptions());
       navigate({ to: search().redirect ?? "/" });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         username: v.pipe(
           v.string(),
           v.minLength(3, t("completeProfile.usernameMinLength")),

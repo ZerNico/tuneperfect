@@ -1,4 +1,4 @@
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
@@ -63,8 +63,9 @@ function ClubsIndexComponent() {
     onSubmit: async ({ value }) => {
       createClubMutation.mutate(value);
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         name: v.pipe(
           v.string(),
           v.minLength(3, t("clubs.nameMinLength", { minLength: 3 })),

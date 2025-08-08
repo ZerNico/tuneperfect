@@ -1,4 +1,3 @@
-import { TextField } from "@kobalte/core/text-field";
 import { createSignal, type JSX, Show } from "solid-js";
 import Eye from "~icons/lucide/eye";
 import EyeOff from "~icons/lucide/eye-off";
@@ -27,12 +26,20 @@ export default function Input(props: InputProps) {
   const type = () => (props.type === "password" ? (showPassword() ? "text" : "password") : props.type);
 
   return (
-    <TextField validationState={props.errorMessage ? "invalid" : "valid"} class={props.class}>
+    <div class={props.class}>
       <Show when={props.label}>
-        {(label) => <TextField.Label class="block text-slate-800 text-sm">{label()}</TextField.Label>}
+        {(label) => (
+          <label 
+            for={props.name} 
+            class="block text-slate-800 text-sm"
+          >
+            {label()}
+          </label>
+        )}
       </Show>
       <div class="flex items-center gap-1 pb-1">
-        <TextField.Input
+        <input
+          id={props.name}
           value={props.value}
           disabled={props.disabled}
           name={props.name}
@@ -48,12 +55,15 @@ export default function Input(props: InputProps) {
           classList={{
             [props.inputClass || ""]: true,
           }}
+          aria-invalid={props.errorMessage ? "true" : "false"}
+          aria-describedby={props.errorMessage ? `${props.name}-error` : undefined}
         />
         <Show when={props.type === "password"}>
           <button
             class="cursor-pointer rounded-full p-1 transition-colors hover:bg-slate-200"
             type="button"
             onClick={() => setShowPassword(!showPassword())}
+            aria-label={showPassword() ? "Hide password" : "Show password"}
           >
             <Show when={showPassword()} fallback={<Eye />}>
               <EyeOff />
@@ -62,7 +72,15 @@ export default function Input(props: InputProps) {
         </Show>
       </div>
       <div class="h-0.5 rounded-full bg-slate-800" />
-      <TextField.ErrorMessage class="mt-1 text-red-600 text-sm">{props.errorMessage}</TextField.ErrorMessage>
-    </TextField>
+      <Show when={props.errorMessage}>
+        <div 
+          id={`${props.name}-error`}
+          class="mt-1 text-red-600 text-sm"
+          role="alert"
+        >
+          {props.errorMessage}
+        </div>
+      </Show>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
@@ -24,8 +24,7 @@ function SignInComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  const absoluteRedirect = () =>
-    search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
+  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
 
   const form = createForm(() => ({
     defaultValues: {
@@ -37,7 +36,7 @@ function SignInComponent() {
         client.auth.signIn.call({
           email: value.email,
           password: value.password,
-        }),
+        })
       );
 
       if (error) {
@@ -67,8 +66,9 @@ function SignInComponent() {
       await queryClient.resetQueries();
       navigate({ to: search().redirect ?? "/" });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         email: v.pipe(v.string(), v.email(t("signIn.emailInvalid"))),
         password: v.pipe(v.string(), v.minLength(6, t("signIn.passwordMinLength"))),
       }),

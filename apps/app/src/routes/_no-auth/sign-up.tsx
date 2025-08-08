@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
@@ -60,8 +60,9 @@ function SignUpComponent() {
 
       navigate({ to: "/verify-email" });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.pipe(
+      onDynamic: v.pipe(
         v.object({
           email: v.pipe(v.string(), v.email(t("signUp.emailInvalid"))),
           password: v.pipe(v.string(), v.minLength(8, t("signUp.passwordMinLength"))),

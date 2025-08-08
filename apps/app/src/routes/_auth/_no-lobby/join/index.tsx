@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
@@ -46,8 +46,9 @@ function JoinComponent() {
       await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
       await navigate({ to: "/" });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         lobbyCode: v.pipe(v.string(), v.minLength(6, t("join.codeMinLength")), v.maxLength(8, t("join.codeMaxLength"))),
       }),
     },

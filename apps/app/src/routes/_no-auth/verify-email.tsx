@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
@@ -48,8 +48,9 @@ function VerifyEmailComponent() {
         intent: "success",
       });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         email: v.pipe(v.string(), v.email(t("verifyEmail.emailInvalid"))),
       }),
     },

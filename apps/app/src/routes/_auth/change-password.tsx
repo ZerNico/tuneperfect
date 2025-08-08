@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
 import Button from "~/components/ui/button";
@@ -42,8 +42,9 @@ function ChangePasswordComponent() {
       });
       navigate({ to: "/edit-profile" });
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.pipe(
+      onDynamic: v.pipe(
         v.object({
           newPassword: v.pipe(v.string(), v.minLength(8, t("changePassword.passwordMinLength"))),
           confirmPassword: v.pipe(v.string()),

@@ -1,5 +1,5 @@
 import { safe } from "@orpc/client";
-import { createForm } from "@tanstack/solid-form";
+import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import * as v from "valibot";
@@ -36,8 +36,9 @@ function ForgotPasswordComponent() {
 
       setSent(true);
     },
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: v.object({
+      onDynamic: v.object({
         email: v.pipe(v.string(), v.email(t("signIn.emailInvalid"))),
       }),
     },
