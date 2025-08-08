@@ -10,25 +10,25 @@
   "dependencies": {
     "@fontsource/lato": "^5.2.6",
     "@iconify-json/circle-flags": "^1.2.6",
-    "@iconify-json/logos": "^1.2.4",
-    "@iconify-json/lucide": "^1.2.54",
-    "@kobalte/core": "^0.13.10",
+    "@iconify-json/logos": "^1.2.5",
+    "@iconify-json/lucide": "^1.2.61",
+    "@kobalte/core": "^0.13.11",
     "@tailwindcss/vite": "^4.1.11",
-    "@tanstack/router-core": "^1.123.2",
-    "@tanstack/solid-router": "^1.123.2",
-    "@tanstack/solid-start": "^1.123.2",
+    "@tanstack/router-core": "^1.130.12",
+    "@tanstack/solid-router": "^1.130.12",
+    "@tanstack/solid-start": "^1.130.16",
     "clsx": "^2.1.1",
     "cva": "^1.0.0-beta.4",
-    "posthog-js": "^1.256.0",
-    "solid-js": "^1.9.7",
+    "posthog-js": "^1.259.0",
+    "solid-js": "^1.9.8",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
-    "@tanstack/solid-router-devtools": "^1.123.2",
-    "typescript": "^5.8.3",
-    "unplugin-icons": "^22.1.0",
-    "vite": "^7.0.0",
+    "@tanstack/solid-router-devtools": "^1.130.13",
+    "typescript": "^5.9.2",
+    "unplugin-icons": "^22.2.0",
+    "vite": "^7.1.1",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }
