@@ -1,7 +1,9 @@
 import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
+import { sendWebsocketMessage } from "~/hooks/websocket";
 import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
 
 export interface RoundSettings {
   song: LocalSong;
@@ -47,6 +49,23 @@ export function useRoundActions() {
 
   const endRound = (scores: Score[]) => {
     roundStore.setScores(scores);
+
+    sendWebsocketMessage(
+      JSON.stringify({
+        type: "scores",
+        value: scores.map((absoluteScore, index) => {
+          const voice = roundStore.settings()?.song?.voices[index];
+          if (!voice) {
+            return 0;
+          }
+
+          const maxScore = getMaxScore(voice);
+          const relativeScore = getRelativeScore(absoluteScore, maxScore);
+          return Math.floor(relativeScore.normal + relativeScore.golden + relativeScore.bonus);
+        }),
+      }),
+    );
+
     navigate({ to: "/game/score" });
   };
 

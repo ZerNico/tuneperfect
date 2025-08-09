@@ -9,6 +9,7 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import { createMidiNoteListener } from "~/hooks/midi";
 import { t } from "~/lib/i18n";
 import { initializeLobbySettings } from "~/stores/lobby";
 import { initializeLocalSettings } from "~/stores/local";
@@ -44,6 +45,10 @@ function RouteComponent() {
       console.error("Failed to get microphone permissions on startup:", error);
     }
   };
+
+  createMidiNoteListener(1, 30, (event) => {
+    console.log(event);
+  });
 
   createEffect(async () => {
     if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data) {

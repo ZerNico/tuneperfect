@@ -1,3 +1,4 @@
+import { createMidiNoteListener } from "~/hooks/midi";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import Menu, { type MenuItem } from "../menu";
@@ -18,6 +19,14 @@ export default function PauseMenu(props: PauseMenuProps) {
         props.onClose?.();
       }
     },
+  });
+
+  createMidiNoteListener(1, 30, () => {
+    props.onRestart?.();
+  });
+
+  createMidiNoteListener(1, 31, () => {
+    props.onExit?.();
   });
 
   const menuItems: MenuItem[] = [

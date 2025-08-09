@@ -2,7 +2,7 @@ import type { Score } from "~/stores/round";
 import type { Note } from "../ultrastar/note";
 import type { Voice } from "../ultrastar/voice";
 
-export const MAX_POSSIBLE_SCORE = 100000;
+export const MAX_POSSIBLE_SCORE = 10000;
 
 export function getRelativeScore(score: Score, maxScore: Score) {
   const maxScoreTotal = maxScore.normal + maxScore.golden + maxScore.bonus;

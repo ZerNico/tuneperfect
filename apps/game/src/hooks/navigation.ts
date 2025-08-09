@@ -120,6 +120,19 @@ const pressedGamepadButtons = new Map<string, { holdTimeout: number; repeatInter
 const HOLD_DELAY = 400;
 const REPEAT_DELAY = 50;
 
+createEventListener(document, 'contextmenu', (event) => {
+  console.log('sup');
+
+  event.preventDefault();
+
+   emitter.emit("keydown", {
+        origin: "keyboard",
+        originalKey: 'mkjqsdf',
+        modifiers: undefined,
+        action: 'back',
+      });
+});
+
 createEventListener(document, "keydown", (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
     if (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)) {
@@ -178,6 +191,13 @@ createEventListener(document, "keydown", (event) => {
         modifiers: modifiers.length > 0 ? modifiers : undefined,
         action,
       });
+
+      console.log({
+        origin: "keyboard",
+        originalKey,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        action,
+      })
     }
   } else {
     emitter.emit("keydown", {

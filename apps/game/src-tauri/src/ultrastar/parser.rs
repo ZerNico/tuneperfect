@@ -67,6 +67,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
         p2: None,
         preview_start: None,
         voices: Vec::new(),
+        midi_note: None,
     };
 
     let mut notes: Vec<Note> = Vec::new();
@@ -116,7 +117,8 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "duetsingerp2" | "p2" => song.p2 = Some(value.to_string()),
                     "preview" | "previewstart" => {
                         song.preview_start = Some(parse_us_float(value, &property)?)
-                    }
+                    },
+                    "midinote" => song.midi_note = Some(parse_us_int(value, &property)?),
                     _ => {}
                 }
             }

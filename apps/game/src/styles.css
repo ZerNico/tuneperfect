@@ -269,12 +269,12 @@ body {
   }
 }
 
-@media (max-aspect-ratio: 1/1) {
+/* @media (max-aspect-ratio: 1/1) {
   .layout {
     aspect-ratio: 1 / 1;
     height: auto;
   }
-}
+} */
 
 .reset-range {
   -webkit-appearance: none;

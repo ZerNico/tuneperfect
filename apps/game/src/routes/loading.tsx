@@ -27,6 +27,8 @@ function LoadingComponent() {
   onMount(async () => {
     const [_error, matches] = await tryCatch(getMatches());
 
+    console.log('jep');
+
     if (matches?.args.songpath && Array.isArray(matches.args.songpath.value)) {
       await songsStore.updateLocalSongs(matches.args.songpath.value);
     } else {

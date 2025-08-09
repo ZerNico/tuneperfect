@@ -24,7 +24,7 @@ const en = {
     party: "Party",
     singDescription: "Sing your favorite songs, alone or with your friends!",
     partyDescription: "Battle it out with your friends in one of the different party game modes!",
-    lobbyDescription: "Manage the party you are in and invite your friends.",
+    lobbyDescription: "Manage the party you are in and invite your friends!",
     settingsDescription: "Change your settings or add your songs and microphones.",
     microphoneRequired: "You have no microphones configured. Go to settings to add one.",
   },

@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createSignal, onCleanup, Show } from "solid-js";
 import GameLayout from "~/components/game/game-layout";
 import Half from "~/components/game/half";
 import PauseMenu from "~/components/game/pause-menu";
 import Progress from "~/components/game/progress";
 import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
+import { createMidiNoteListener, sendMidiNote } from "~/hooks/midi";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
 import { roundStore, useRoundActions } from "~/stores/round";
@@ -18,8 +19,8 @@ export const Route = createFileRoute("/game/")({
 function GameComponent() {
   const navigate = useNavigate();
   const [songPlayerRef, setSongPlayerRef] = createSignal<SongPlayerRef>();
-  const [ready, setReady] = createSignal(false);
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
+  const [hideIntro, setHideIntro] = createSignal(false);
   const roundActions = useRoundActions();
 
   const { GameProvider, start, stop, pause, resume, playing, started, scores, skip } = createGame(() => ({
@@ -28,6 +29,12 @@ function GameComponent() {
   }));
 
   const paused = () => !playing() && started();
+
+  createMidiNoteListener(1, 31, () => {
+    pause();
+  });
+
+  sendMidiNote(1, 2);
 
   useNavigation(() => ({
     layer: 0,
@@ -45,15 +52,17 @@ function GameComponent() {
   }));
 
   createEffect(() => {
-    if (ready() && canPlayThrough()) {
+    if (canPlayThrough()) {
       start();
     }
   });
 
-  onMount(() => {
-    setTimeout(() => {
-      setReady(true);
-    }, 3000);
+  createEffect(() => {
+    if (started()) {
+      setTimeout(() => {
+        setHideIntro(true);
+      }, 3000);
+    }
   });
 
   onCleanup(async () => {
@@ -132,7 +141,7 @@ function GameComponent() {
           <div
             class="absolute inset-0 z-2 bg-black transition-opacity duration-1000"
             classList={{
-              "pointer-events-none opacity-0": started(),
+              "pointer-events-none opacity-0": hideIntro(),
             }}
           >
             <img
@@ -141,10 +150,10 @@ function GameComponent() {
               alt=""
             />
             <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">
-              <p class="text-3xl">{roundStore.settings()?.song.artist}</p>
+              <p class="text-6xl">{roundStore.settings()?.song.artist}</p>
               <div class="max-w-200">
                 <span
-                  class={`${gradient()} bg-gradient-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}
+                  class="text-center font-bold text-8xl"
                 >
                   {roundStore.settings()?.song.title}
                 </span>

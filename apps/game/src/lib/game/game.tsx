@@ -2,6 +2,7 @@ import createRAF from "@solid-primitives/raf";
 import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
+import { sendMidiNote } from "~/hooks/midi";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { roundStore, type Score } from "~/stores/round";
@@ -42,10 +43,12 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const stop = async () => {
     await commands.stopRecording();
+    sendMidiNote(1, 3);
   };
 
   const pause = () => {
     setPlaying(false);
+    sendMidiNote(1, 4);
   };
 
   const resume = () => {

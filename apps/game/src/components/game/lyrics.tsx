@@ -53,7 +53,7 @@ export default function Lyrics() {
                     percentage().end
                   }%, transparent ${percentage().start}%`,
                 }}
-                class="h-full w-full"
+                class="h-[50%] w-full"
               />
             )}
           </Show>
@@ -69,7 +69,7 @@ export default function Lyrics() {
         </div>
         <div />
       </div>
-      <div class="text-center text-3xl text-white/50">
+      <div class="text-center text-[40px] text-white/50">
         <For fallback={<span class="text-transparent">{"\u00A0"}</span>} each={player.nextPhrase()?.notes}>
           {(note) => (
             <span
@@ -109,7 +109,7 @@ function LyricsNote(props: LyricsNoteProps) {
       style={{
         "background-image": `linear-gradient(to right, ${props.micColor} ${percentage()}%, white ${percentage()}%)`,
       }}
-      class="inline-block whitespace-pre bg-clip-text text-4xl text-transparent leading-relaxed"
+      class="inline-block whitespace-pre bg-clip-text text-[80px] text-transparent leading-relaxed"
       classList={{
         "m-[-0.15cqw] p-[0.15cqw] italic": props.note.type === "Freestyle",
       }}

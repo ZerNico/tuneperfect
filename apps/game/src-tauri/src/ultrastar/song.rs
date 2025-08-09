@@ -63,6 +63,8 @@ pub struct Song {
     #[serde(rename = "previewStart")]
     pub preview_start: Option<f64>,
     pub voices: Vec<Voice>,
+    #[serde(rename = "midiNote")]
+    pub midi_note: Option<i32>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Accessor, createEffect, createSignal } from "solid-js";
+import { type Accessor, createEffect, createSignal, Show } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
+import { createMidiNoteListener } from "~/hooks/midi";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
 import { guestUser, lobbyStore } from "~/stores/lobby";
@@ -38,6 +39,10 @@ function PlayerSelectionComponent() {
       .map((_, i) => i % voiceCount()),
   );
 
+  createMidiNoteListener(1, 30, () => {
+    startGame();
+  });
+
   const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || []), guestUser];
 
   createEffect(() => {
@@ -67,6 +72,8 @@ function PlayerSelectionComponent() {
       }
     }
   });
+
+  // Add useMidi here!
 
   const startGame = () => {
     const players = selectedPlayers()
@@ -140,7 +147,11 @@ function PlayerSelectionComponent() {
               return <span>{duetSinger}</span>;
             }
 
-            return <span>{t("sing.voice")} {value + 1}</span>;
+            return (
+              <span>
+                {t("sing.voice")} {value + 1}
+              </span>
+            );
           },
         });
       }
@@ -161,6 +172,10 @@ function PlayerSelectionComponent() {
       header={<TitleBar title={t("sing.players")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
+      <Show when={song()}>
+        <h1 class="height-full text-center font-bold text-8xl">{`${song()?.artist} - ${song()?.title}`}</h1>
+      </Show>
+
       <Menu items={menuItems()} onBack={onBack} gradient="gradient-sing" />
     </Layout>
   );
