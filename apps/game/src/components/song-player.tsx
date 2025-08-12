@@ -221,6 +221,34 @@ export default function SongPlayer(props: SongPlayerProps) {
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
         const videoGap = props.song.videoGap ?? 0;
+
+        // Directly start audio
+        if (videoGap < 0) {
+          const initialAudioTime = audio.currentTime;
+          const targetVideoTime = Math.max(0, initialAudioTime + videoGap);
+          if (!Number.isNaN(targetVideoTime)) {
+            video.currentTime = targetVideoTime;
+          }
+
+          await audio.play();
+          const delaySeconds = Math.max(0, -videoGap - initialAudioTime);
+
+          syncTimeout = setTimeout(async () => {
+            try {
+              const currentAudioTime = audio.currentTime;
+              const startVideoTime = Math.max(0, currentAudioTime + videoGap);
+              if (!Number.isNaN(startVideoTime)) {
+                video.currentTime = startVideoTime;
+              }
+              await video.play();
+            } catch (error) {
+              console.warn("Failed to start delayed video playback:", error);
+            }
+          }, delaySeconds * 1000);
+
+          return;
+        }
+
         const gap = video.currentTime - audio.currentTime - videoGap;
 
         if (Math.abs(gap) > 0.01) {
