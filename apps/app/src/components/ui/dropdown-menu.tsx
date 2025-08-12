@@ -8,10 +8,10 @@ interface DropdownMenuProps {
 
 function DropdownMenuRoot(props: DropdownMenuProps) {
   return (
-    <KDropdownMenu gutter={8} placement="bottom-end">
+    <KDropdownMenu gutter={8} placement="bottom-end" modal={false}>
       {props.trigger}
       <KDropdownMenu.Portal>
-        <KDropdownMenu.Content class="z-20 min-w-36 rounded-md bg-white p-1 shadow-lg focus:outline-slate-800">
+        <KDropdownMenu.Content class="z-20 min-w-36 rounded-md bg-white p-1 shadow-lg focus:outline-none">
           {props.children}
         </KDropdownMenu.Content>
       </KDropdownMenu.Portal>
@@ -28,7 +28,7 @@ interface DropdownMenuItemProps {
 function DropdownMenuItem(props: DropdownMenuItemProps) {
   return (
     <KDropdownMenu.Item
-      class="flex w-full cursor-pointer items-center gap-2 rounded px-4 py-2 text-sm transition-colors hover:bg-black/10 focus:outline-slate-800"
+      class="flex w-full cursor-pointer items-center gap-2 rounded px-4 py-2 text-sm transition-colors hover:bg-black/10 focus:outline-none"
       classList={{
         [props.class ?? ""]: true,
       }}

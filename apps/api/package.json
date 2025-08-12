@@ -13,10 +13,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@orpc/client": "^1.7.10",
-    "@orpc/openapi": "^1.7.10",
-    "@orpc/server": "^1.7.10",
-    "@orpc/valibot": "^1.7.10",
+    "@orpc/client": "^1.8.0",
+    "@orpc/openapi": "^1.8.0",
+    "@orpc/server": "^1.8.0",
+    "@orpc/valibot": "^1.8.0",
     "@tuneperfect/email": "*",
     "arctic": "^3.7.0",
     "croner": "^9.1.0",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
-    "@types/bun": "^1.2.19",
+    "@types/bun": "^1.2.20",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
     "@types/semver": "^7.7.0",
