@@ -14,6 +14,7 @@
     "@iconify-json/circle-flags": "^1.2.8",
     "@iconify-json/lucide": "^1.2.62",
     "@kobalte/core": "^0.13.11",
+    "@solid-primitives/event-listener": "^2.4.3",
     "@solid-primitives/i18n": "^2.2.1",
     "@solid-primitives/keyed": "^1.5.2",
     "@solid-primitives/map": "^0.7.2",

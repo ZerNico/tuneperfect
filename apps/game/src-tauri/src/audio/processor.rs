@@ -35,6 +35,11 @@ impl Processor {
     pub fn get_pitch(&mut self) -> f32 {
         let slices = self.audio_buffer.as_slices();
         let samples = [slices.0, slices.1].concat();
+        
+        if samples.len() < self.samples_per_beat {
+            return -1.0;
+        }
+        
         let start_sample = samples.len() - self.samples_per_beat;
 
         let mut pitch = -1.0;
@@ -59,6 +64,10 @@ impl Processor {
     fn above_noise_threshold(&self, data: &[f32], start_sample: usize) -> bool {
         let min_threshold = self.options.threshold / 100.0;
         let end_sample = start_sample + self.samples_per_beat;
+
+        if end_sample > data.len() {
+            return false;
+        }
 
         data[start_sample..end_sample]
             .iter()
