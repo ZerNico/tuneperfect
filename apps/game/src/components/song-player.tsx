@@ -1,3 +1,5 @@
+import { createEventListener } from "@solid-primitives/event-listener";
+import { platform } from "@tauri-apps/plugin-os";
 import { createEffect, createSignal, type JSX, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
@@ -25,11 +27,11 @@ interface SongPlayerProps {
 // Utility function to get detailed media error message
 const getMediaErrorMessage = (element: HTMLMediaElement): string => {
   const mediaError = element.error;
-  
+
   if (!mediaError) {
     return "Unknown media error";
   }
-  
+
   let errorMessage = "";
   switch (mediaError.code) {
     case MediaError.MEDIA_ERR_ABORTED:
@@ -47,11 +49,11 @@ const getMediaErrorMessage = (element: HTMLMediaElement): string => {
     default:
       errorMessage = "Unknown media error";
   }
-  
+
   if (mediaError.message) {
     errorMessage += ` (${mediaError.message})`;
   }
-  
+
   return errorMessage;
 };
 
@@ -220,61 +222,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
-        const videoGap = props.song.videoGap ?? 0;
-        const gap = video.currentTime - audio.currentTime - videoGap;
-
-        if (Math.abs(gap) > 0.01) {
-          if (gap > 0) {
-            // Video is ahead
-            const newAudioTime = audio.currentTime + gap;
-            if (videoGap >= 0 && newAudioTime >= 0 && newAudioTime <= audio.duration) {
-              // For positive videoGap, try to advance audio to sync
-              audio.currentTime = newAudioTime;
-              await Promise.all([audio.play(), video.play()]);
-            } else {
-              // For negative videoGap or when can't adjust audio time, start audio immediately and delay video
-              await audio.play();
-              syncTimeout = setTimeout(async () => {
-                try {
-                  if (videoGap < 0) {
-                    // For negative videoGap, set video time based on current audio position
-                    const currentAudioTime = audio.currentTime;
-                    const startVideoTime = Math.max(0, currentAudioTime + videoGap);
-                    if (!Number.isNaN(startVideoTime)) {
-                      video.currentTime = startVideoTime;
-                    }
-                  }
-                  await video.play();
-                } catch (error) {
-                  console.warn("Failed to start video playback:", error);
-                }
-              }, gap * 1000);
-            }
-          } else {
-            // Audio is ahead, try to advance video
-            const newVideoTime = video.currentTime + Math.abs(gap);
-            if (newVideoTime >= 0 && newVideoTime <= video.duration) {
-              video.currentTime = newVideoTime;
-              await Promise.all([audio.play(), video.play()]);
-            } else {
-              // Can't sync by adjusting video time, use timeout
-              await video.play();
-              syncTimeout = setTimeout(
-                async () => {
-                  try {
-                    await audio.play();
-                  } catch (error) {
-                    console.warn("Failed to start audio playback:", error);
-                  }
-                },
-                Math.abs(gap) * 1000
-              );
-            }
-          }
-        } else {
-          // Elements are already in sync
-          await Promise.all([audio.play(), video.play()]);
-        }
+        await syncVideoToAudio(audio, video, true);
       } else if (audio) {
         await audio.play();
       } else if (video) {
@@ -358,6 +306,107 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
   });
 
+  // Shared function to sync video to audio position
+  const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement, shouldPlay = false) => {
+    const videoGap = props.song.videoGap ?? 0;
+    const gap = video.currentTime - audio.currentTime - videoGap;
+
+    if (Math.abs(gap) > 0.01) {
+      if (gap > 0) {
+        // Video is ahead (or audio should start before video for negative videoGap)
+        const newAudioTime = audio.currentTime + gap;
+        if (shouldPlay && videoGap >= 0 && newAudioTime >= 0 && newAudioTime <= audio.duration) {
+          // For positive videoGap during initial play, try to advance audio to sync
+          audio.currentTime = newAudioTime;
+          await Promise.all([audio.play(), video.play()]);
+        } else {
+          // For resync, negative videoGap, or when can't adjust audio time
+          if (shouldPlay) {
+            await audio.play();
+            syncTimeout = setTimeout(async () => {
+              try {
+                if (videoGap < 0) {
+                  // For negative videoGap, set video time based on current audio position
+                  const currentAudioTime = audio.currentTime;
+                  const startVideoTime = Math.max(0, currentAudioTime + videoGap);
+                  if (!Number.isNaN(startVideoTime)) {
+                    video.currentTime = startVideoTime;
+                  }
+                }
+                await video.play();
+              } catch (error) {
+                console.warn("Failed to start video playback:", error);
+              }
+            }, gap * 1000);
+          } else {
+            // For resync, just adjust video position
+            const expectedVideoTime = audio.currentTime + videoGap;
+            const targetVideoTime = Math.max(0, expectedVideoTime);
+            if (!Number.isNaN(targetVideoTime) && targetVideoTime <= video.duration) {
+              video.currentTime = targetVideoTime;
+            }
+          }
+        }
+      } else {
+        // Audio is ahead, try to advance video
+        const newVideoTime = video.currentTime + Math.abs(gap);
+        if (newVideoTime >= 0 && newVideoTime <= video.duration) {
+          video.currentTime = newVideoTime;
+          if (shouldPlay) {
+            await Promise.all([audio.play(), video.play()]);
+          }
+        } else if (shouldPlay) {
+          // Can't sync by adjusting video time, use timeout
+          await video.play();
+          syncTimeout = setTimeout(
+            async () => {
+              try {
+                await audio.play();
+              } catch (error) {
+                console.warn("Failed to start audio playback:", error);
+              }
+            },
+            Math.abs(gap) * 1000
+          );
+        }
+      }
+    } else if (shouldPlay) {
+      // Elements are already in sync
+      await Promise.all([audio.play(), video.play()]);
+    }
+  };
+
+  // Resync video to audio when window regains focus 
+  const resyncOnFocus = () => {
+    const audio = audioElement();
+    const video = videoElement();
+
+    // Only resync if we have both elements and are currently playing
+    if (!audio || !video || !isCurrentlyPlaying()) return;
+
+    try {
+      const videoGap = props.song.videoGap ?? 0;
+      const expectedVideoTime = audio.currentTime + videoGap;
+      const timeDifference = Math.abs(expectedVideoTime - video.currentTime);
+
+      if (timeDifference > 0.01) {
+        syncVideoToAudio(audio, video, false);
+      }
+    } catch (error) {
+      console.warn("Failed to resync video on focus:", error);
+    }
+  };
+
+  if (platform() === "macos") {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        resyncOnFocus();
+      }
+    };
+
+    createEventListener(document, "visibilitychange", handleVisibilityChange);
+  }
+
   const handleEnded = () => {
     props.onEnded?.();
   };
@@ -373,10 +422,10 @@ export default function SongPlayer(props: SongPlayerProps) {
   const handleVideoError: JSX.EventHandler<HTMLVideoElement, Event> = (error) => {
     const videoEl = error.currentTarget;
     const errorMessage = getMediaErrorMessage(videoEl);
-    
+
     setVideoError(true);
     setVideoElement(undefined);
-    
+
     if (!props.song.audioUrl) {
       console.error("Failed to play video:", errorMessage);
       props.onError?.();
@@ -388,7 +437,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   const handleAudioError: JSX.EventHandler<HTMLAudioElement, Event> = (error) => {
     const audioEl = error.currentTarget;
     const errorMessage = getMediaErrorMessage(audioEl);
-    
+
     console.error("Failed to play audio:", errorMessage);
     props.onError?.();
   };
@@ -487,7 +536,7 @@ const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
   }
 
   const smartPreviewTime = findSmartPreviewPosition(song);
-  
+
   if (smartPreviewTime !== null) {
     const previewGap = videoGap < 0 ? videoGap : 0;
     return Math.max(0, smartPreviewTime + previewGap);
