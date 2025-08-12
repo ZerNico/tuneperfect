@@ -77,8 +77,15 @@ impl Recorder {
                     .collect();
 
                 let state = app_handle.state::<AppState>();
-                let mut processors_state = state.processors.write().unwrap();
-                processors_state.extend(processors.clone());
+                match state.processors.write() {
+                    Ok(mut processors_state) => {
+                        processors_state.extend(processors.clone());
+                    }
+                    Err(poisoned) => {
+                        let mut processors_state = poisoned.into_inner();
+                        processors_state.extend(processors.clone());
+                    }
+                }
 
                 let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
                     for (&index, option) in &options_for_device {
@@ -89,9 +96,17 @@ impl Recorder {
                             .copied()
                             .collect();
 
-                        let processor = processors.get(&index).unwrap();
-                        let mut processor = processor.lock().unwrap();
-                        processor.push_audio_data(&buffer);
+                        if let Some(processor) = processors.get(&index) {
+                            match processor.lock() {
+                                Ok(mut processor) => {
+                                    processor.push_audio_data(&buffer);
+                                }
+                                Err(poisoned) => {
+                                    let mut processor = poisoned.into_inner();
+                                    processor.push_audio_data(&buffer);
+                                }
+                            }
+                        }
                     }
                 };
 

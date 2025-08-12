@@ -54,8 +54,16 @@ pub async fn get_pitch(state: State<'_, AppState>, index: i32) -> Result<f32, Ap
     let processor = processors
         .get(&(index as usize))
         .ok_or(AppError::ProcessorError("processor not found".to_string()))?;
-    let mut processor = processor.lock().unwrap();
-    let pitch = processor.get_pitch();
+    
+    let pitch = match processor.lock() {
+        Ok(mut processor) => processor.get_pitch(),
+        Err(poisoned) => {
+            // Handle poisoned mutex by recovering the data
+            eprintln!("Mutex poisoned for processor {}, attempting recovery during pitch read", index);
+            let mut processor = poisoned.into_inner();
+            processor.get_pitch()
+        }
+    };
 
     Ok(pitch)
 }
