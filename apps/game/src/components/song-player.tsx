@@ -221,48 +221,29 @@ export default function SongPlayer(props: SongPlayerProps) {
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
         const videoGap = props.song.videoGap ?? 0;
-
-        // Directly start audio
-        if (videoGap < 0) {
-          const initialAudioTime = audio.currentTime;
-          const targetVideoTime = Math.max(0, initialAudioTime + videoGap);
-          if (!Number.isNaN(targetVideoTime)) {
-            video.currentTime = targetVideoTime;
-          }
-
-          await audio.play();
-          const delaySeconds = Math.max(0, -videoGap - initialAudioTime);
-
-          syncTimeout = setTimeout(async () => {
-            try {
-              const currentAudioTime = audio.currentTime;
-              const startVideoTime = Math.max(0, currentAudioTime + videoGap);
-              if (!Number.isNaN(startVideoTime)) {
-                video.currentTime = startVideoTime;
-              }
-              await video.play();
-            } catch (error) {
-              console.warn("Failed to start delayed video playback:", error);
-            }
-          }, delaySeconds * 1000);
-
-          return;
-        }
-
         const gap = video.currentTime - audio.currentTime - videoGap;
 
         if (Math.abs(gap) > 0.01) {
           if (gap > 0) {
-            // Video is ahead, try to advance audio
+            // Video is ahead
             const newAudioTime = audio.currentTime + gap;
-            if (newAudioTime >= 0 && newAudioTime <= audio.duration) {
+            if (videoGap >= 0 && newAudioTime >= 0 && newAudioTime <= audio.duration) {
+              // For positive videoGap, try to advance audio to sync
               audio.currentTime = newAudioTime;
               await Promise.all([audio.play(), video.play()]);
             } else {
-              // Can't sync by adjusting audio time, use timeout
+              // For negative videoGap or when can't adjust audio time, start audio immediately and delay video
               await audio.play();
               syncTimeout = setTimeout(async () => {
                 try {
+                  if (videoGap < 0) {
+                    // For negative videoGap, set video time based on current audio position
+                    const currentAudioTime = audio.currentTime;
+                    const startVideoTime = Math.max(0, currentAudioTime + videoGap);
+                    if (!Number.isNaN(startVideoTime)) {
+                      video.currentTime = startVideoTime;
+                    }
+                  }
                   await video.play();
                 } catch (error) {
                   console.warn("Failed to start video playback:", error);
