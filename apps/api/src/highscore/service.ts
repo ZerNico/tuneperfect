@@ -54,7 +54,7 @@ export class HighscoreService {
 
     const whereConditions = [
       eq(highscores.hash, hash),
-      inArray(schema.users.id, userIdArray)
+      inArray(highscores.userId, userIdArray)
     ];
 
     if (difficulty) {
