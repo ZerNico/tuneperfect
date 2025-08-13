@@ -141,41 +141,25 @@ function ScoreComponent() {
     const songHash = roundStore.settings()?.song?.hash;
     if (!songHash) return [];
 
-    const highscores: { user: User; score: number }[] = [...(highscoresQuery.data || [])];
+    const allScores: { user: User; score: number }[] = [];
 
-    // Add local scores
+    allScores.push(...(highscoresQuery.data || []));
+
     const localScores = localStore.getScoresForSong(songHash, settingsStore.general().difficulty);
-    for (const localScore of localScores) {
-      highscores.push(localScore);
-    }
+    allScores.push(...localScores);
 
-    // Add current session scores
     const scores = scoreData();
-
     for (const score of scores) {
       if (isGuestUser(score.player)) continue;
       if (score.totalScore <= 0) continue;
 
-      const existingHighscoreIndex = highscores.findIndex((highscore) => highscore.user.id === score.player.id);
-      const existingHighscore = highscores[existingHighscoreIndex];
-
-      if (!existingHighscore) {
-        highscores.push({
-          user: score.player,
-          score: score.totalScore,
-        });
-        continue;
-      }
-
-      if (score.totalScore > existingHighscore.score) {
-        highscores[existingHighscoreIndex] = {
-          user: score.player,
-          score: score.totalScore,
-        };
-      }
+      allScores.push({
+        user: score.player,
+        score: score.totalScore,
+      });
     }
 
-    return highscores.toSorted((a, b) => b.score - a.score);
+    return allScores;
   };
 
   return (

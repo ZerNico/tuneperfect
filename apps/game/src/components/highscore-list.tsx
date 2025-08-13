@@ -1,4 +1,4 @@
-import { For, onCleanup, onMount } from "solid-js";
+import { createMemo, For, onCleanup, onMount } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import type { User } from "~/lib/types";
 import IconHash from "~icons/lucide/hash";
@@ -7,6 +7,10 @@ import Avatar from "./ui/avatar";
 export interface Highscore {
   score: number;
   user: User;
+}
+
+interface RankedHighscore extends Highscore {
+  rank: number;
 }
 
 interface HighscoreListProps {
@@ -18,6 +22,47 @@ interface HighscoreListProps {
 export default function HighscoreList(props: HighscoreListProps) {
   let containerRef: HTMLDivElement | undefined;
   let scrollTimeout: ReturnType<typeof setTimeout>;
+
+  const rankedScores = createMemo((): RankedHighscore[] => {
+    // First, deduplicate by user ID, keeping only the highest score for each user
+    const deduplicatedScores = new Map<string, Highscore>();
+    
+    for (const score of props.scores) {
+      if (!score || !score.user) continue;
+      
+      const userId = score.user.id;
+      const existingScore = deduplicatedScores.get(userId);
+      
+      if (!existingScore || score.score > existingScore.score) {
+        deduplicatedScores.set(userId, score);
+      }
+    }
+    
+    const sortedScores = Array.from(deduplicatedScores.values()).sort((a, b) => b.score - a.score);
+    
+    // Calculate ranks with gaps for ties
+    const ranked: RankedHighscore[] = [];
+    let currentRank = 1;
+    
+    for (let i = 0; i < sortedScores.length; i++) {
+      const score = sortedScores[i];
+      const previousScore = sortedScores[i - 1];
+      
+      if (!score) continue;
+      
+      if (i > 0 && previousScore && score.score !== previousScore.score) {
+        currentRank = i + 1;
+      }
+      
+      ranked.push({
+        score: score.score,
+        user: score.user,
+        rank: currentRank
+      });
+    }
+    
+    return ranked;
+  });
 
   const startScrolling = () => {
     if (!containerRef) return;
@@ -61,17 +106,17 @@ export default function HighscoreList(props: HighscoreListProps) {
     <div class={twMerge("relative h-full w-100", props.class)}>
       <div ref={containerRef} class="styled-scrollbars absolute flex h-full w-full flex-col overflow-y-auto">
         <div class="justify-center-safe flex min-h-full flex-col gap-2">
-          <For each={props.scores}>
-            {(score, index) => (
+          <For each={rankedScores()}>
+            {(score) => (
               <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4">
                 <div
                   class="flex h-full w-10 flex-shrink-0 items-center justify-center text-center"
                   classList={{
-                    "bg-yellow-500": index() === 0,
-                    "bg-white text-black": index() !== 0,
+                    "bg-yellow-500": score.rank === 1,
+                    "bg-white text-black": score.rank !== 1,
                   }}
                 >
-                  {index() + 1}.
+                  {score.rank}.
                 </div>
 
                 <div class="flex flex-grow items-center gap-2 overflow-hidden">
