@@ -222,7 +222,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
-        await syncVideoToAudio(audio, video, true);
+        await syncVideoToAudio(audio, video);
       } else if (audio) {
         await audio.play();
       } else if (video) {
@@ -306,77 +306,41 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
   });
 
-  // Shared function to sync video to audio position
-  const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement, shouldPlay = false) => {
-    const videoGap = props.song.videoGap ?? 0;
-    const gap = video.currentTime - audio.currentTime - videoGap;
+  const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement) => {
+    console.log("syncVideoToAudio", audio.currentTime, video.currentTime);
 
-    if (Math.abs(gap) > 0.01) {
-      if (gap > 0) {
-        // Video is ahead (or audio should start before video for negative videoGap)
-        const newAudioTime = audio.currentTime + gap;
-        if (shouldPlay && videoGap >= 0 && newAudioTime >= 0 && newAudioTime <= audio.duration) {
-          // For positive videoGap during initial play, try to advance audio to sync
-          audio.currentTime = newAudioTime;
-          await Promise.all([audio.play(), video.play()]);
-        } else {
-          // For resync, negative videoGap, or when can't adjust audio time
-          if (shouldPlay) {
-            await audio.play();
-            syncTimeout = setTimeout(async () => {
-              try {
-                if (videoGap < 0) {
-                  // For negative videoGap, set video time based on current audio position
-                  const currentAudioTime = audio.currentTime;
-                  const startVideoTime = Math.max(0, currentAudioTime + videoGap);
-                  if (!Number.isNaN(startVideoTime)) {
-                    video.currentTime = startVideoTime;
-                  }
-                }
-                await video.play();
-              } catch (error) {
-                console.warn("Failed to start video playback:", error);
-              }
-            }, gap * 1000);
-          } else {
-            // For resync, just adjust video position
-            const expectedVideoTime = audio.currentTime + videoGap;
-            const targetVideoTime = Math.max(0, expectedVideoTime);
-            if (!Number.isNaN(targetVideoTime) && targetVideoTime <= video.duration) {
-              video.currentTime = targetVideoTime;
-            }
-          }
-        }
-      } else {
-        // Audio is ahead, try to advance video
-        const newVideoTime = video.currentTime + Math.abs(gap);
-        if (newVideoTime >= 0 && newVideoTime <= video.duration) {
-          video.currentTime = newVideoTime;
-          if (shouldPlay) {
-            await Promise.all([audio.play(), video.play()]);
-          }
-        } else if (shouldPlay) {
-          // Can't sync by adjusting video time, use timeout
-          await video.play();
-          syncTimeout = setTimeout(
-            async () => {
-              try {
-                await audio.play();
-              } catch (error) {
-                console.warn("Failed to start audio playback:", error);
-              }
-            },
-            Math.abs(gap) * 1000
-          );
-        }
+    const videoGap = props.song.videoGap ?? 0;
+    const expectedVideoTime = audio.currentTime + videoGap;
+    const gap = video.currentTime - expectedVideoTime;
+
+    // Check if we can start both elements immediately
+    if (Math.abs(gap) <= 0.01 || expectedVideoTime >= 0) {
+      // Either already in sync or video can start from a valid position
+      if (expectedVideoTime >= 0) {
+        video.currentTime = expectedVideoTime;
       }
-    } else if (shouldPlay) {
-      // Elements are already in sync
       await Promise.all([audio.play(), video.play()]);
+      return;
     }
+
+    await audio.play();
+    const delaySeconds = -expectedVideoTime;
+
+    syncTimeout = setTimeout(async () => {
+      try {
+        const currentAudioTime = audio.currentTime;
+        const startVideoTime = Math.max(0, currentAudioTime + videoGap);
+        if (!Number.isNaN(startVideoTime)) {
+          video.currentTime = startVideoTime;
+        }
+        await video.play();
+      } catch (error) {
+        console.warn("Failed to start delayed video playback:", error);
+      }
+    }, delaySeconds * 1000);
   };
 
-  // Resync video to audio when window regains focus 
+  // Resync video to audio when window regains focus
   const resyncOnFocus = () => {
     const audio = audioElement();
     const video = videoElement();
@@ -390,7 +354,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       const timeDifference = Math.abs(expectedVideoTime - video.currentTime);
 
       if (timeDifference > 0.01) {
-        syncVideoToAudio(audio, video, false);
+        syncVideoToAudio(audio, video);
       }
     } catch (error) {
       console.warn("Failed to resync video on focus:", error);
