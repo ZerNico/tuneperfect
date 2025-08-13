@@ -39,7 +39,7 @@ interface PlayerScoreData {
 }
 
 function ScoreComponent() {
-  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? ""));
+  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? "", settingsStore.general().difficulty));
   const [showHighscores, setShowHighscores] = createSignal(false);
   const roundActions = useRoundActions();
 
@@ -88,7 +88,7 @@ function ScoreComponent() {
         if (score.totalScore <= 0) continue;
 
         if (isLocalUser(score.player)) {
-          localStore.addScore(score.player.id, songHash, score.totalScore);
+          localStore.addScore(score.player.id, songHash, settingsStore.general().difficulty, score.totalScore);
           continue;
         }
 
@@ -99,6 +99,7 @@ function ScoreComponent() {
           hash: songHash,
           userId: score.player.id.toString(),
           score: score.totalScore,
+          difficulty: settingsStore.general().difficulty,
         });
       }
     },
@@ -143,7 +144,7 @@ function ScoreComponent() {
     const highscores: { user: User; score: number }[] = [...(highscoresQuery.data || [])];
 
     // Add local scores
-    const localScores = localStore.getScoresForSong(songHash);
+    const localScores = localStore.getScoresForSong(songHash, settingsStore.general().difficulty);
     for (const localScore of localScores) {
       highscores.push(localScore);
     }

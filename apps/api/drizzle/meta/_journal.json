@@ -43,6 +43,13 @@
       "when": 1749152460215,
       "tag": "0005_chief_puff_adder",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1755013229673,
+      "tag": "0006_mute_venom",
+      "breakpoints": true
     }
   ]
 }

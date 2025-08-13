@@ -4,12 +4,12 @@ import * as schema from "../lib/db/schema";
 import { highscores } from "../lib/db/schema";
 
 export class HighscoreService {
-  async setHighscore(hash: string, userId: string, score: number) {
+  async setHighscore(hash: string, userId: string, score: number, difficulty: "easy" | "medium" | "hard" = "easy") {
     const [highscore] = await db
       .insert(schema.highscores)
-      .values({ hash, userId, score })
+      .values({ hash, userId, score, difficulty })
       .onConflictDoUpdate({
-        target: [schema.highscores.hash, schema.highscores.userId],
+        target: [schema.highscores.hash, schema.highscores.userId, schema.highscores.difficulty],
         set: { score },
         setWhere: sql`${score} > ${schema.highscores.score}`,
       })
@@ -18,7 +18,7 @@ export class HighscoreService {
     return highscore;
   }
 
-  async getHighscoresForLobby(lobbyId: string, hash: string) {
+  async getHighscoresForLobby(lobbyId: string, hash: string, difficulty?: "easy" | "medium" | "hard") {
     const lobby = await db.query.lobbies.findFirst({
       where: {
         id: lobbyId,
@@ -52,6 +52,15 @@ export class HighscoreService {
 
     const userIdArray = Array.from(userIds);
 
+    const whereConditions = [
+      eq(highscores.hash, hash),
+      inArray(schema.users.id, userIdArray)
+    ];
+
+    if (difficulty) {
+      whereConditions.push(eq(highscores.difficulty, difficulty));
+    }
+
     const scores = await db
       .select({
         ...getTableColumns(schema.highscores),
@@ -59,7 +68,7 @@ export class HighscoreService {
       })
       .from(highscores)
       .innerJoin(schema.users, eq(highscores.userId, schema.users.id))
-      .where(and(eq(highscores.hash, hash), inArray(schema.users.id, userIdArray)))
+      .where(and(...whereConditions))
       .orderBy(highscores.score);
 
     return scores;

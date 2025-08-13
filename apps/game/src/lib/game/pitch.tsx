@@ -1,8 +1,28 @@
 import type { Note } from "../ultrastar/note";
 import { frequencyToMidi } from "../utils/midi";
 
+export type Difficulty = "easy" | "medium" | "hard";
+
 export class PitchProcessor {
   private hasJoker = false;
+  private gapTolerance: number;
+
+  constructor(difficulty: Difficulty = "easy") {
+    this.gapTolerance = this.getGapTolerance(difficulty);
+  }
+
+  private getGapTolerance(difficulty: Difficulty): number {
+    switch (difficulty) {
+      case "easy":
+        return 2;
+      case "medium":
+        return 1;
+      case "hard":
+        return 0.5;
+      default:
+        return 2;
+    }
+  }
 
   public process(frequency: number, note: Note) {
     let midiNote = frequencyToMidi(frequency);
@@ -25,7 +45,7 @@ export class PitchProcessor {
     const diff = Math.abs(detectedMidiNote - targetNote.midiNote) % 12;
     const distance = diff > 6 ? 12 - diff : diff;
 
-    return distance <= 2 ? targetNote.midiNote : Math.round(detectedMidiNote);
+    return distance <= this.gapTolerance ? targetNote.midiNote : Math.round(detectedMidiNote);
   }
 
   private applyJoker(detectedMidiNote: number, targetNote: Note) {

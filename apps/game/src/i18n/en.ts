@@ -116,6 +116,12 @@ const en = {
         language: "Language",
         forceOfflineMode: "Force Offline Mode",
         showNoteSegments: "Show Note Segments",
+        difficulty: "Difficulty",
+        difficultyOptions: {
+          easy: "Easy",
+          medium: "Medium",
+          hard: "Hard",
+        },
       },
       songs: {
         title: "Songs",

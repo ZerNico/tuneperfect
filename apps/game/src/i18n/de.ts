@@ -117,6 +117,12 @@ const de = {
         language: "Sprache",
         forceOfflineMode: "Offline-Modus erzwingen",
         showNoteSegments: "Notenabschnitte anzeigen",
+        difficulty: "Schwierigkeit",
+        difficultyOptions: {
+          easy: "Einfach",
+          medium: "Mittel",
+          hard: "Schwer",
+        },
       },
       songs: {
         title: "Lieder",
