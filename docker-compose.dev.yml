@@ -1,4 +1,29 @@
 services:
+  traefik:
+    image: traefik:v3.5
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/dynamic/traefik.yml:ro
+      - ./.tmp/certs:/etc/certs:ro
+    networks:
+      - default
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   db:
     image: postgres:17-alpine
     environment:
@@ -19,6 +44,7 @@ services:
       - 8025:8025
     volumes:
       - .tmp/mailpit:/data
+      
   redis:
     image: redis:latest
     ports:

@@ -28,29 +28,29 @@ Download the game from [tuneperfect.org](https://tuneperfect.org).
 
 ### Prerequisites
 
-- [caddy](https://caddyserver.com/docs/install) - For local development routing
+- [mkcert](https://github.com/FiloSottile/mkcert#installation) - For local certificates
 - [docker](https://docs.docker.com/get-docker/) - For running development services
 - [bun](https://bun.sh/docs/installation) - JavaScript runtime and package manager
 
 ### Setup
 
 1. Add the following entries to your `/etc/hosts` file (required for local development):
-```bash
+```
 127.0.0.1 tuneperfect.localhost api.tuneperfect.localhost app.tuneperfect.localhost
 ```
-
 2. Install dependencies:
 ```bash
 bun install
 ```
-
-3. Start development services:
+3. Generate certificates:
+```bash
+bun run tuneperfect generate-certs
+```
+4. Start development services:
 ```bash
 docker compose -f docker-compose.dev.yml up -d
-caddy start
 ```
-
-4. Start the development server:
+5. Start the development server:
 ```bash
 bun run dev
 ```
@@ -58,7 +58,6 @@ To run only specific apps, use the following commands:
 ```bash
 bun run dev --filter @tuneperfect/web --filter @tuneperfect/api # run only web and api
 ```
-
 
 
 ## Contributing
