@@ -1,0 +1,1 @@
+ALTER TABLE "highscores" ALTER COLUMN "user_id" SET NOT NULL;

@@ -8,6 +8,7 @@ const settingsStoreSchema = v.object({
     language: v.string(),
     forceOfflineMode: v.boolean(),
     showNoteSegments: v.fallback(v.boolean(), false),
+    difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
   }),
   volume: v.object({
     master: v.number(),
@@ -38,6 +39,7 @@ const defaultSettings: SettingsStore = {
     language: "en",
     forceOfflineMode: false,
     showNoteSegments: false,
+    difficulty: "easy",
   },
   volume: {
     master: 1,

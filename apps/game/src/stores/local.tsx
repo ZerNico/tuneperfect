@@ -1,10 +1,11 @@
-
 import * as v from "valibot";
 import type { LocalUser } from "~/lib/types";
 import { createPersistentStore } from "../lib/utils/store";
 
-const localStoreSchema = v.object({
-  version: v.literal("1.0.0"),
+const difficultySchema = v.picklist(["easy", "medium", "hard"]);
+
+const localStoreSchema1_1_0 = v.object({
+  version: v.literal("1.1.0"),
   players: v.array(
     v.object({
       id: v.string(),
@@ -12,13 +13,53 @@ const localStoreSchema = v.object({
       type: v.literal("local"),
     })
   ),
-  scores: v.record(v.string(), v.record(v.string(), v.number())),
+  scores: v.record(
+    v.string(), // userId
+    v.record(
+      v.string(), // songHash
+      v.record(difficultySchema, v.optional(v.number())) // difficulty -> score
+    )
+  ),
 });
 
+// Migration schema from v1.0.0 to v1.1.0
+const localStoreSchema1_0_0 = v.pipe(
+  v.object({
+    version: v.literal("1.0.0"),
+    players: v.array(
+      v.object({
+        id: v.string(),
+        username: v.string(),
+        type: v.literal("local"),
+      })
+    ),
+    scores: v.record(v.string(), v.record(v.string(), v.number())),
+  }),
+  v.transform((data): v.InferInput<typeof localStoreSchema1_1_0> => ({
+    version: "1.1.0",
+    players: data.players,
+    scores: Object.fromEntries(
+      Object.entries(data.scores).map(([userId, userScores]) => [
+        userId,
+        Object.fromEntries(
+          Object.entries(userScores).map(([songHash, score]) => [
+            songHash,
+            { easy: score }
+          ])
+        ),
+      ])
+    ),
+  })),
+  localStoreSchema1_1_0
+);
+
+const localStoreSchema = v.union([localStoreSchema1_0_0, localStoreSchema1_1_0]);
+
 export type LocalStore = v.InferOutput<typeof localStoreSchema>;
+export type Difficulty = v.InferOutput<typeof difficultySchema>;
 
 const defaultLocalSettings: LocalStore = {
-  version: "1.0.0",
+  version: "1.1.0",
   players: [],
   scores: {},
 };
@@ -26,7 +67,7 @@ const defaultLocalSettings: LocalStore = {
 const localStoreInstance = createPersistentStore({
   filename: "local.json",
   schema: localStoreSchema,
-  defaults: defaultLocalSettings, 
+  defaults: defaultLocalSettings,
 });
 
 export const localSettings = localStoreInstance.settings;
@@ -67,16 +108,22 @@ function createLocalStore() {
     return localSettings().players.find((player) => player.id === id) || null;
   };
 
-  const addScore = (userId: string, songHash: string, score: number) => {
+  const addScore = (userId: string, songHash: string, difficulty: Difficulty, score: number) => {
     updateLocalSettings("scores", (prev) => {
-      const existingScore = prev[userId]?.[songHash] || 0;
+      const userScores = prev[userId] || {};
+      const songScores = userScores[songHash] || {};
+      
+      const existingScore = songScores[difficulty] || 0;
 
       if (score > existingScore) {
         return {
           ...prev,
           [userId]: {
-            ...prev[userId],
-            [songHash]: score,
+            ...userScores,
+            [songHash]: {
+              ...songScores,
+              [difficulty]: score,
+            },
           },
         };
       }
@@ -85,16 +132,17 @@ function createLocalStore() {
     });
   };
 
-  const getScore = (userId: string, songHash: string) => {
-    return localSettings().scores[userId]?.[songHash] || 0;
+  const getScore = (userId: string, songHash: string, difficulty: Difficulty) => {
+    return localSettings().scores[userId]?.[songHash]?.[difficulty];
   };
 
-  const getScoresForSong = (songHash: string) => {
+  const getScoresForSong = (songHash: string, difficulty: Difficulty) => {
     const currentScores = localSettings().scores;
     const result: { user: LocalUser; score: number }[] = [];
 
     for (const [userId, userScores] of Object.entries(currentScores)) {
-      const score = userScores[songHash];
+      const scoreData = userScores[songHash];
+      const score = scoreData?.[difficulty];
       if (score !== undefined) {
         const user = getPlayer(userId);
         if (user) {

@@ -17,6 +17,7 @@ import { client } from "~/lib/orpc";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { lobbyStore } from "~/stores/lobby";
+import { localStore } from "~/stores/local";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
@@ -311,13 +312,13 @@ function SongScroller(props: SongScrollerProps) {
   const [pendingDirection, setPendingDirection] = createSignal<null | "left" | "right">(null);
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
-  
+
   const shouldDebounce = () => props.songs.length > 1000;
-  
+
   const debouncedSetQuery = debounce((query: string) => {
     setDebouncedSearchQuery(query);
   }, 500);
-  
+
   createEffect(() => {
     if (shouldDebounce()) {
       debouncedSetQuery(props.searchQuery);
@@ -325,7 +326,7 @@ function SongScroller(props: SongScrollerProps) {
       setDebouncedSearchQuery(props.searchQuery);
     }
   });
-  
+
   const fuseInstance = createMemo(() => {
     const keys =
       props.searchFilter === "all" ? ["title", "artist", "year", "genre", "language", "edition", "creator"] : [props.searchFilter];
@@ -909,16 +910,31 @@ function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
       () => props.songHash,
       () => {
         setHighscores([]);
-
         const timeout = setTimeout(async () => {
-          if (!lobbyStore.lobby()) return;
-
           const hash = props.songHash;
           if (!hash) return;
-          const [error, data] = await safe(client.highscore.getHighscores.call({ hash }));
-          if (error) return;
 
-          setHighscores(data);
+          const difficulty = settingsStore.general().difficulty;
+
+          let onlineScores: Highscore[] = [];
+
+          if (lobbyStore.lobby()) {
+            const [error, data] = await safe(
+              client.highscore.getHighscores.call({
+                hash,
+                difficulty,
+              })
+            );
+
+            if (!error) {
+              onlineScores = data;
+            }
+          }
+
+          const localScores = localStore.getScoresForSong(hash, difficulty);
+          const highscores = [...onlineScores, ...localScores];
+
+          setHighscores(highscores);
         }, 1000);
 
         onCleanup(() => {

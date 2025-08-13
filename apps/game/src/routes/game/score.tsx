@@ -39,7 +39,7 @@ interface PlayerScoreData {
 }
 
 function ScoreComponent() {
-  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? ""));
+  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? "", settingsStore.general().difficulty));
   const [showHighscores, setShowHighscores] = createSignal(false);
   const roundActions = useRoundActions();
 
@@ -88,7 +88,7 @@ function ScoreComponent() {
         if (score.totalScore <= 0) continue;
 
         if (isLocalUser(score.player)) {
-          localStore.addScore(score.player.id, songHash, score.totalScore);
+          localStore.addScore(score.player.id, songHash, settingsStore.general().difficulty, score.totalScore);
           continue;
         }
 
@@ -99,6 +99,7 @@ function ScoreComponent() {
           hash: songHash,
           userId: score.player.id.toString(),
           score: score.totalScore,
+          difficulty: settingsStore.general().difficulty,
         });
       }
     },
@@ -140,41 +141,25 @@ function ScoreComponent() {
     const songHash = roundStore.settings()?.song?.hash;
     if (!songHash) return [];
 
-    const highscores: { user: User; score: number }[] = [...(highscoresQuery.data || [])];
+    const allScores: { user: User; score: number }[] = [];
 
-    // Add local scores
-    const localScores = localStore.getScoresForSong(songHash);
-    for (const localScore of localScores) {
-      highscores.push(localScore);
-    }
+    allScores.push(...(highscoresQuery.data || []));
 
-    // Add current session scores
+    const localScores = localStore.getScoresForSong(songHash, settingsStore.general().difficulty);
+    allScores.push(...localScores);
+
     const scores = scoreData();
-
     for (const score of scores) {
       if (isGuestUser(score.player)) continue;
       if (score.totalScore <= 0) continue;
 
-      const existingHighscoreIndex = highscores.findIndex((highscore) => highscore.user.id === score.player.id);
-      const existingHighscore = highscores[existingHighscoreIndex];
-
-      if (!existingHighscore) {
-        highscores.push({
-          user: score.player,
-          score: score.totalScore,
-        });
-        continue;
-      }
-
-      if (score.totalScore > existingHighscore.score) {
-        highscores[existingHighscoreIndex] = {
-          user: score.player,
-          score: score.totalScore,
-        };
-      }
+      allScores.push({
+        user: score.player,
+        score: score.totalScore,
+      });
     }
 
-    return highscores.toSorted((a, b) => b.score - a.score);
+    return allScores;
   };
 
   return (

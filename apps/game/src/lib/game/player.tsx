@@ -17,7 +17,7 @@ interface CreatePlayerOptions {
 export { usePlayer } from "./player-context";
 
 export function createPlayer(options: Accessor<CreatePlayerOptions>) {
-  const pitchProcessor = new PitchProcessor();
+  const pitchProcessor = new PitchProcessor(settingsStore.general().difficulty);
   const game = useGame();
 
   const voice = createMemo(() => {

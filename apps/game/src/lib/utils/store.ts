@@ -5,7 +5,7 @@ import { makeNested } from "./setter";
 
 export interface PersistentStoreOptions<T> {
   filename: string;
-  schema: v.GenericSchema<T>;
+  schema: v.GenericSchema<unknown, T>;
   defaults: T;
 }
 

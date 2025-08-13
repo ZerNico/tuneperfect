@@ -13,6 +13,7 @@ export const highscoreRouter = os.prefix("/highscores").router({
         hash: v.string(),
         userId: v.string(),
         score: v.number(),
+        difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
       }),
     )
     .errors({
@@ -40,7 +41,7 @@ export const highscoreRouter = os.prefix("/highscores").router({
         });
       }
 
-      await highscoreService.setHighscore(input.hash, user.id, input.score);
+      await highscoreService.setHighscore(input.hash, user.id, input.score, input.difficulty);
     }),
 
   getHighscores: base
@@ -51,8 +52,11 @@ export const highscoreRouter = os.prefix("/highscores").router({
         limit: 5000,
       },
     })
-    .input(v.object({ hash: v.string() }))
+    .input(v.object({ 
+      hash: v.string(),
+      difficulty: v.optional(v.picklist(["easy", "medium", "hard"]))
+    }))
     .handler(async ({ context, input }) => {
-      return await highscoreService.getHighscoresForLobby(context.payload.sub, input.hash);
+      return await highscoreService.getHighscoresForLobby(context.payload.sub, input.hash, input.difficulty);
     }),
 });

@@ -89,14 +89,21 @@ export const highscores = p.pgTable(
   "highscores",
   {
     hash: p.varchar("hash").notNull(),
-    userId: p.uuid("user_id").references(() => users.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    }),
+    userId: p
+      .uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
+      .notNull(),
     score: p.integer("score").notNull(),
+    difficulty: p
+      .text("difficulty", { enum: ["easy", "medium", "hard"] })
+      .notNull()
+      .default("easy"),
     ...timestampColumns,
   },
-  (table) => [p.primaryKey({ columns: [table.hash, table.userId] })],
+  (table) => [p.primaryKey({ columns: [table.hash, table.userId, table.difficulty] })],
 );
 
 export const clubs = p.pgTable("clubs", {

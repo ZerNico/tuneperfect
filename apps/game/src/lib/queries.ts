@@ -20,13 +20,13 @@ export const lobbyQueryOptions = () =>
     },
   });
 
-export const highscoreQueryOptions = (hash: string, options?: { enabled: boolean }) =>
+export const highscoreQueryOptions = (hash: string, difficulty?: "easy" | "medium" | "hard", options?: { enabled: boolean }) =>
   queryOptions({
-    queryKey: ["highscore", hash],
+    queryKey: ["highscore", hash, difficulty],
     queryFn: async () => {
       if (!lobbyStore.lobby()) return null;
 
-      const [error, data] = await safe(client.highscore.getHighscores.call({ hash }));
+      const [error, data] = await safe(client.highscore.getHighscores.call({ hash, difficulty }));
 
       if (error) return null;
 
