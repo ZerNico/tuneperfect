@@ -68,6 +68,14 @@ function GeneralSettingsComponent() {
       renderValue: (value) => t(`settings.sections.general.difficultyOptions.${value as "easy" | "medium" | "hard"}`),
     },
     {
+      type: "select-string",
+      label: t("settings.sections.general.audioMode"),
+      value: () => general().audioMode,
+      options: ["normal", "preferInstrumental"],
+      onChange: (value) => setGeneral({ ...general(), audioMode: value as "normal" | "preferInstrumental" }),
+      renderValue: (value) => t(`settings.sections.general.audioModeOptions.${value as "normal" | "preferInstrumental"}`),
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveGeneral,

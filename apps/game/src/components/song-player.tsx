@@ -22,6 +22,7 @@ interface SongPlayerProps {
   onEnded?: () => void;
   onError?: () => void;
   isPreview?: boolean;
+  preferInstrumental?: boolean;
 }
 
 // Utility function to get detailed media error message
@@ -65,6 +66,8 @@ export default function SongPlayer(props: SongPlayerProps) {
   const [videoError, setVideoError] = createSignal(false);
   const [hasInitialized, setHasInitialized] = createSignal(false);
   const [isCurrentlyPlaying, setIsCurrentlyPlaying] = createSignal(false);
+  const [currentAudioUrl, setCurrentAudioUrl] = createSignal<string | undefined>();
+  const [preservedTime, setPreservedTime] = createSignal<number | undefined>();
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined;
   let endCheckInterval: ReturnType<typeof setInterval> | undefined;
@@ -142,13 +145,48 @@ export default function SongPlayer(props: SongPlayerProps) {
     })
   );
 
+  // Handle track switching
+  createEffect(() => {
+    const { audioUrl, instrumentalUrl } = props.song;
+    const newUrl = (props.preferInstrumental && instrumentalUrl) || audioUrl || undefined;
+    const currentUrl = currentAudioUrl();
+    const audio = audioElement();
+
+    if (newUrl === currentUrl) return;
+
+    // Store state before switching
+    const wasPlaying = audio && !audio.paused;
+    const currentTime = audio?.currentTime ?? 0;
+
+    setCurrentAudioUrl(newUrl);
+
+    if (audio && currentUrl && newUrl) {
+      setAudioReady(false);
+      setPreservedTime(currentTime);
+      
+      const restorePlayback = () => {
+        audio.currentTime = currentTime;
+        if (wasPlaying) {
+          audio.play().catch(error => 
+            console.warn("Failed to resume playback after track switch:", error)
+          );
+        }
+        audio.removeEventListener('canplaythrough', restorePlayback);
+        setAudioReady(true);
+        setPreservedTime(undefined);
+      };
+      
+      audio.addEventListener('canplaythrough', restorePlayback, { once: true });
+    }
+  });
+
   // Setup volume control for video element
   createEffect(
     on(videoElement, (video) => {
       if (!video) return;
 
       // Only control volume for video if there's no separate audio element
-      if (!props.song.audioUrl) {
+      if (!currentAudioUrl()) {
         const updateVolume = () => {
           video.volume = props.volume ?? 1;
         };
@@ -244,9 +282,9 @@ export default function SongPlayer(props: SongPlayerProps) {
   const checkForSongEnd = () => {
     if (!props.song.end) return;
 
-    const audio = audioElement();
-    const video = videoElement();
-    const rawCurrentTime = audio?.currentTime ?? video?.currentTime ?? 0;
+    // Use preserved time during track switching to prevent premature end detection
+    const preserved = preservedTime();
+    const rawCurrentTime = preserved ?? (audioElement()?.currentTime ?? videoElement()?.currentTime ?? 0);
     const endTimeInSeconds = props.song.end / 1000; // Convert milliseconds to seconds
 
     if (rawCurrentTime >= endTimeInSeconds) {
@@ -390,7 +428,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     setVideoError(true);
     setVideoElement(undefined);
 
-    if (!props.song.audioUrl) {
+    if (!currentAudioUrl()) {
       console.error("Failed to play video:", errorMessage);
       props.onError?.();
     } else {
@@ -410,6 +448,10 @@ export default function SongPlayer(props: SongPlayerProps) {
     () => props.ref,
     () => ({
       getCurrentTime: () => {
+        // Return preserved time during track switching to prevent visual jumps
+        const preserved = preservedTime();
+        if (preserved !== undefined) return preserved;
+        
         const audio = audioElement();
         const video = videoElement();
         return audio?.currentTime ?? video?.currentTime ?? 0;
@@ -420,6 +462,11 @@ export default function SongPlayer(props: SongPlayerProps) {
         return audio?.duration ?? video?.duration ?? 0;
       },
       setCurrentTime: (time: number) => {
+        // If we're switching tracks, update preserved time too
+        if (preservedTime() !== undefined) {
+          setPreservedTime(time);
+        }
+        
         const audio = audioElement();
         const video = videoElement();
 
@@ -452,13 +499,13 @@ export default function SongPlayer(props: SongPlayerProps) {
         <Match when={!videoError() && props.song.videoUrl}>
           {(videoUrl) => (
             <video
-              muted={!!props.song.audioUrl}
+              muted={!!currentAudioUrl()}
               class="h-full w-full object-cover"
               ref={setVideoElement}
               preload="auto"
               crossorigin="anonymous"
               onCanPlayThrough={handleVideoCanPlayThrough}
-              onEnded={!props.song.audioUrl ? handleEnded : undefined}
+              onEnded={!currentAudioUrl() ? handleEnded : undefined}
               src={videoUrl()}
               onError={handleVideoError}
             />
@@ -477,7 +524,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         </Match>
       </Switch>
 
-      <Show when={props.song.audioUrl}>
+      <Show when={currentAudioUrl()}>
         {(audioUrl) => (
           <audio
             ref={setAudioElement}

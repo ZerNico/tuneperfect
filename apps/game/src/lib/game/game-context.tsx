@@ -1,4 +1,4 @@
-import { type Accessor, createContext, type JSX, useContext } from "solid-js";
+import { type Accessor, createContext, type JSX, type Setter, useContext } from "solid-js";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import type { Score } from "~/stores/round";
 
@@ -17,6 +17,8 @@ export interface GameContextValue {
   duration: Accessor<number>;
   scores: Accessor<Score[]>;
   addScore: (index: number, type: "normal" | "golden" | "bonus", value: number) => void;
+  preferInstrumental: Accessor<boolean>;
+  setPreferInstrumental: Setter<boolean>;
 }
 
 export const GameContext = createContext<GameContextValue>();

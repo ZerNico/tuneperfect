@@ -123,6 +123,11 @@ const de = {
           medium: "Mittel",
           hard: "Schwer",
         },
+        audioMode: "Audiomodus",
+        audioModeOptions: {
+          normal: "Normal",
+          preferInstrumental: "Instrumental bevorzugen",
+        },
       },
       songs: {
         title: "Lieder",

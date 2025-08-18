@@ -9,6 +9,7 @@ const settingsStoreSchema = v.object({
     forceOfflineMode: v.boolean(),
     showNoteSegments: v.fallback(v.boolean(), false),
     difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
+    audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
   }),
   volume: v.object({
     master: v.number(),
@@ -40,6 +41,7 @@ const defaultSettings: SettingsStore = {
     forceOfflineMode: false,
     showNoteSegments: false,
     difficulty: "easy",
+    audioMode: "normal",
   },
   volume: {
     master: 1,

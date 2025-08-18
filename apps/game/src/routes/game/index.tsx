@@ -22,7 +22,7 @@ function GameComponent() {
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
   const roundActions = useRoundActions();
 
-  const { GameProvider, start, stop, pause, resume, playing, started, scores, skip } = createGame(() => ({
+  const { GameProvider, start, stop, pause, resume, playing, started, scores, skip, setPreferInstrumental, preferInstrumental } = createGame(() => ({
     songPlayerRef: songPlayerRef(),
     song: roundStore.settings()?.song,
   }));
@@ -40,6 +40,8 @@ function GameComponent() {
         pause();
       } else if (event.action === "skip") {
         skip();
+      } else if (event.action === "instrumental") {
+        setPreferInstrumental((value) => !value);
       }
     },
   }));
@@ -102,6 +104,7 @@ function GameComponent() {
                     song={settings().song}
                     onEnded={handleEnded}
                     onError={handleError}
+                    preferInstrumental={preferInstrumental()}
                   />
                 )}
               </Show>

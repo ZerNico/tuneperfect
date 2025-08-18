@@ -23,6 +23,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
   const [scores, setScores] = createSignal<Score[]>([]);
+  const [preferInstrumental, setPreferInstrumental] = createSignal(settingsStore.general().audioMode === "preferInstrumental");
 
   const start = async () => {
     const opts = options();
@@ -172,6 +173,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     duration,
     scores,
     addScore,
+    preferInstrumental,
+    setPreferInstrumental,
   };
 
   const Provider = (props: { children: JSX.Element }) => <GameProvider value={values}>{props.children}</GameProvider>;

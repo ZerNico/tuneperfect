@@ -39,6 +39,7 @@ type NavigationEvent = {
     | "skip"
     | "clear"
     | "fullscreen"
+    | "instrumental"
     | "unknown";
 };
 
@@ -61,6 +62,7 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["Meta+Enter", ["fullscreen"]],
   ["Alt+Enter", ["fullscreen"]],
   ["F11", ["fullscreen"]],
+  ["k", ["instrumental"]],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -75,6 +77,7 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["LB", ["sort-left", "filter-left", "joker-1"]],
   ["RB", ["sort-right", "filter-right", "joker-2"]],
   ["X", ["skip", "clear"]],
+  ["LB", ["instrumental"]],
 ]);
 
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {

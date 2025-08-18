@@ -122,6 +122,11 @@ const en = {
           medium: "Medium",
           hard: "Hard",
         },
+        audioMode: "Audio Mode",
+        audioModeOptions: {
+          normal: "Normal",
+          preferInstrumental: "Prefer Instrumental",
+        },
       },
       songs: {
         title: "Songs",

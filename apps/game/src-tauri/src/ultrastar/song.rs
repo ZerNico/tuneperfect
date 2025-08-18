@@ -55,6 +55,7 @@ pub struct Song {
     pub creator: Option<String>,
     pub relative: Option<bool>,
     pub audio: Option<String>,
+    pub instrumental: Option<String>,
     pub cover: Option<String>,
     pub video: Option<String>,
     pub background: Option<String>,
@@ -71,6 +72,8 @@ pub struct LocalSong {
     pub song: Song,
     #[serde(rename = "audioUrl")]
     pub audio_url: Option<String>,
+    #[serde(rename = "instrumentalUrl")]
+    pub instrumental_url: Option<String>,
     #[serde(rename = "videoUrl")]
     pub video_url: Option<String>,
     #[serde(rename = "coverUrl")]

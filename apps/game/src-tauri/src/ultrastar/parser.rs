@@ -60,6 +60,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
         creator: None,
         relative: Some(false),
         audio: None,
+        instrumental: None,
         cover: None,
         video: None,
         background: None,
@@ -106,6 +107,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "start" => song.start = Some(parse_us_float(value, &property)?),
                     "end" => song.end = Some(parse_us_int(value, &property)?),
                     "mp3" | "audio" => song.audio = Some(value.to_string()),
+                    "instrumental" => song.instrumental = Some(value.to_string()),
                     "cover" => song.cover = Some(value.to_string()),
                     "video" => song.video = Some(value.to_string()),
                     "background" => song.background = Some(value.to_string()),
@@ -251,6 +253,7 @@ pub fn parse_local_txt_file(
         };
 
     let audio_file = find_file(&song.audio);
+    let instrumental_file = find_file(&song.instrumental);
     let video_file = find_file(&song.video);
     let cover_file = find_file(&song.cover);
     let background_file = find_file(&song.background);
@@ -262,6 +265,12 @@ pub fn parse_local_txt_file(
         )));
     }
 
+    if song.instrumental.is_some() && instrumental_file.is_none() {
+        log::warn!(
+            "Instrumental file '{}' was specified but not found",
+            song.instrumental.as_ref().unwrap()
+        );
+    }
     if song.video.is_some() && video_file.is_none() {
         log::warn!(
             "Video file '{}' was specified but not found",
@@ -282,6 +291,7 @@ pub fn parse_local_txt_file(
     }
 
     let audio_url = create_url_from_file(audio_file)?;
+    let instrumental_url = create_url_from_file(instrumental_file)?;
     let video_url = create_url_from_file(video_file)?;
     let cover_url = create_url_from_file(cover_file)?;
     let background_url = create_url_from_file(background_file)?;
@@ -297,6 +307,7 @@ pub fn parse_local_txt_file(
     Ok(LocalSong {
         song,
         audio_url,
+        instrumental_url,
         video_url,
         cover_url,
         background_url,
