@@ -58,6 +58,21 @@ const getMediaErrorMessage = (element: HTMLMediaElement): string => {
   return errorMessage;
 };
 
+const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | null): number => {
+  if (!gainDb) return 1;
+  
+  // Convert dB gain to linear multiplier
+  const gainMultiplier = 10 ** (gainDb / 20);
+  
+  // If we have peak information, prevent clipping
+  if (peak && peak > 0) {
+    const maxAllowedGain = 1.0 / peak;    
+    return Math.min(gainMultiplier, maxAllowedGain);
+  }
+  
+  return gainMultiplier;
+};
+
 export default function SongPlayer(props: SongPlayerProps) {
   const [audioElement, setAudioElement] = createSignal<HTMLAudioElement | undefined>();
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
@@ -100,14 +115,15 @@ export default function SongPlayer(props: SongPlayerProps) {
 
         audioSource = currentAudioSource;
 
-        const replayGainAdjustment = props.song.replayGainTrackGain ? 10 ** (props.song.replayGainTrackGain / 20) : 1;
+        const replayGainAdjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
         currentGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
         // Update volume when it changes
         createEffect(() => {
           if (currentGainNode) {
             const volume = props.volume ?? 1;
-            currentGainNode.gain.setValueAtTime(volume * replayGainAdjustment, audioContext.currentTime);
+            const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+            currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
           }
         });
 
@@ -345,8 +361,6 @@ export default function SongPlayer(props: SongPlayerProps) {
   });
 
   const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement) => {
-    console.log("syncVideoToAudio", audio.currentTime, video.currentTime);
-
     const videoGap = props.song.videoGap ?? 0;
     const expectedVideoTime = audio.currentTime + videoGap;
     const gap = video.currentTime - expectedVideoTime;
