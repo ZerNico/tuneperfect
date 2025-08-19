@@ -1,5 +1,4 @@
-use lofty::file::FileType;
-use lofty::{file::TaggedFileExt, probe::Probe, tag::ItemKey};
+use lofty::{file::FileType, file::TaggedFileExt, probe::Probe, tag::ItemKey};
 use serde::Serialize;
 
 use crate::error::AppError;
