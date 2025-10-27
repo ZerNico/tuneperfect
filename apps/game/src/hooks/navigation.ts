@@ -74,10 +74,9 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["A", ["confirm"]],
   ["START", ["search"]],
   ["Y", ["random"]],
-  ["LB", ["sort-left", "filter-left", "joker-1"]],
+  ["LB", ["sort-left", "filter-left", "joker-1", "instrumental"]],
   ["RB", ["sort-right", "filter-right", "joker-2"]],
   ["X", ["skip", "clear"]],
-  ["LB", ["instrumental"]],
 ]);
 
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
@@ -259,6 +258,7 @@ createEventListener(document, "keyup", (event) => {
 createGamepad({
   onButtonDown: (event) => {
     setKeyMode("gamepad");
+    console.log("button down", event.button);
     const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
 
     if (actionsArray && actionsArray.length > 0 && actionsArray[0] !== "unknown") {
