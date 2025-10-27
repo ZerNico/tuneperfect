@@ -5,7 +5,7 @@ import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-ro
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal, Suspense } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
-import { useWakeLock } from "~/hooks/useWakeLock";
+import { useWakeLock } from "~/hooks/use-wake-lock";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -88,8 +88,7 @@ function RootComponent() {
   }
 
   return (
-    <>
-      <div
+    <div
         class="font-primary text-base text-white"
         classList={{
           "cursor-none": mouseHidden(),
@@ -99,6 +98,5 @@ function RootComponent() {
           <Outlet />
         </Suspense>
       </div>
-    </>
   );
 }
