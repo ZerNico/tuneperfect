@@ -1,6 +1,6 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/solid-router";
 import { onMount } from "solid-js";
-import { isServer } from "solid-js/web";
+import { HydrationScript, isServer } from "solid-js/web";
 import Footer from "~/components/footer";
 import Header from "~/components/header";
 import { config } from "~/lib/config";
@@ -63,16 +63,21 @@ function RootComponent() {
   });
 
   return (
-    <>
-      <HeadContent />
-      <div class="min-h-screen bg-[#101024] font-primary text-white">
-        <Header appUrl={context().config.VITE_APP_URL ?? ""} />
-        <main>
-          <Outlet />
-        </main>
-        <Footer />
-        <Scripts />
-      </div>
-    </>
+    <html>
+      <head>
+        <HydrationScript />
+      </head>
+      <body>
+        <HeadContent />
+        <div class="min-h-screen bg-[#101024] font-primary text-white">
+          <Header appUrl={context().config.VITE_APP_URL ?? ""} />
+          <main>
+            <Outlet />
+          </main>
+          <Footer />
+          <Scripts />
+        </div>
+      </body>
+    </html>
   );
 }
