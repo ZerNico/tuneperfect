@@ -1,0 +1,18 @@
+{
+  "name": "@tuneperfect/cli",
+  "module": "src/index.ts",
+  "bin": {
+    "tuneperfect": "src/index.ts"
+  },
+  "type": "module",
+  "private": true,
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@clerc/plugin-completions": "^0.44.0",
+    "@clerc/plugin-help": "^0.44.0",
+    "clerc": "^0.44.0"
+  },
+  "devDependencies": {}
+}

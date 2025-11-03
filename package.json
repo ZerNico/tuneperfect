@@ -2,13 +2,15 @@
   "name": "tuneperfect",
   "scripts": {
     "dev": "turbo run dev --parallel --force",
-    "build": "turbo run build"
+    "build": "turbo run build",
+    "tuneperfect": "bun run ./node_modules/@tuneperfect/cli/src/index.ts"
   },
   "devDependencies": {
     "turbo": "^2.5.8"
   },
   "dependencies": {
-    "@biomejs/biome": "2.0.6"
+    "@biomejs/biome": "2.0.6",
+    "@tuneperfect/cli": "workspace:*"
   },
   "workspaces": [
     "packages/*",

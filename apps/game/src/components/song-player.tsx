@@ -59,7 +59,7 @@ const getMediaErrorMessage = (element: HTMLMediaElement): string => {
 };
 
 const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | null): number => {
-  if (!gainDb) return 1;
+  if (gainDb == null) return 1;
   
   // Convert dB gain to linear multiplier
   const gainMultiplier = 10 ** (gainDb / 20);
