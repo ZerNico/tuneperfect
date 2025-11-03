@@ -75,6 +75,12 @@ fn parse_multi_value_field(value: &str, supports_multi_value: bool) -> Option<Ve
     }
 }
 
+fn parse_time_value(value: &str, property: &str, uses_milliseconds: bool) -> Result<f64, AppError> {
+    let parsed = parse_us_float(value, property)?;
+    // Convert seconds to milliseconds for versions < 2.0.0
+    Ok(if uses_milliseconds { parsed } else { parsed * 1000.0 })
+}
+
 pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     let content = content.strip_prefix('\u{FEFF}').unwrap_or(content);
 
@@ -136,6 +142,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     let version = Version::parse(version_str)
         .map_err(|_| AppError::UltrastarError(format!("Invalid version: {}", version_str)))?;
     let supports_multi_value = version >= Version::parse("1.1.0").unwrap();
+    let uses_milliseconds = version >= Version::parse("2.0.0").unwrap();
 
     for (_index, line) in lines.iter().enumerate() {
         let line = line.trim_start();
@@ -158,7 +165,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "year" => song.year = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
                     "bpm" => song.bpm = parse_us_float(value, &property)?,
                     "gap" => song.gap = parse_us_float(value, &property)?,
-                    "start" => song.start = Some(parse_us_float(value, &property)?),
+                    "start" => song.start = Some(parse_time_value(value, &property, uses_milliseconds)?),
                     "end" => song.end = Some(parse_us_int(value, &property)?),
                     "mp3" | "audio" => song.audio = Some(value.to_string()),
                     "instrumental" => song.instrumental = Some(value.to_string()),
@@ -166,11 +173,11 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "video" => song.video = Some(value.to_string()),
                     "background" => song.background = Some(value.to_string()),
                     "relative" => song.relative = Some(parse_us_bool(value)),
-                    "videogap" => song.video_gap = parse_us_float(value, &property)?,
+                    "videogap" => song.video_gap = parse_time_value(value, &property, uses_milliseconds)?,
                     "author" | "creator" => song.creator = parse_multi_value_field(value, supports_multi_value),
                     "duetsingerp1" | "p1" => song.p1 = Some(value.to_string()),
                     "duetsingerp2" | "p2" => song.p2 = Some(value.to_string()),
-                    "preview" | "previewstart" => song.preview_start = Some(parse_us_float(value, &property)?),
+                    "preview" | "previewstart" => song.preview_start = Some(parse_time_value(value, &property, uses_milliseconds)?),
                     "tags" => song.tags = parse_multi_value_field(value, supports_multi_value),
                     "version" => song.version = Some(parse_version(value)?),
                     _ => (),

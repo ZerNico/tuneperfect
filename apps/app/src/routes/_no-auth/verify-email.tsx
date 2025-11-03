@@ -41,6 +41,8 @@ function VerifyEmailComponent() {
           message: t("error.unknown"),
           intent: "error",
         });
+
+        return;
       }
 
       notify({
