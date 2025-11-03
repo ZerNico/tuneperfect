@@ -39,7 +39,7 @@ export default function Header() {
   };
 
   const leaveLobby = async () => {
-    const [_data, error] = await tryCatch(client.lobby.leaveLobby.call());
+    const [error, _data] = await tryCatch(client.lobby.leaveLobby.call());
 
     if (error) {
       notify({
