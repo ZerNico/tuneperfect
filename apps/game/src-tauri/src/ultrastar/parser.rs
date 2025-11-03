@@ -1,5 +1,6 @@
 use std::fs;
 use unicode_normalization::UnicodeNormalization;
+use semver::Version;
 
 use crate::{
     error::AppError,
@@ -40,6 +41,40 @@ fn parse_us_bool(value: &str) -> bool {
     matches!(value.to_lowercase().as_str(), "yes" | "true" | "1")
 }
 
+fn parse_version(value: &str) -> Result<String, AppError> {
+    let version_str = value.trim().trim_start_matches('v').trim_start_matches('V');
+    // Validate it's a valid semver version
+    Version::parse(version_str).map_err(|_| {
+        AppError::UltrastarError(format!("Invalid version format: {}", value))
+    })?;
+    Ok(version_str.to_string())
+}
+
+fn parse_comma_separated_values(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+fn parse_multi_value_field(value: &str, supports_multi_value: bool) -> Option<Vec<String>> {
+    if value.is_empty() {
+        return None;
+    }
+    
+    if supports_multi_value {
+        let values = parse_comma_separated_values(value);
+        if values.is_empty() {
+            None
+        } else {
+            Some(values)
+        }
+    } else {
+        Some(vec![value.to_string()])
+    }
+}
+
 pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     let content = content.strip_prefix('\u{FEFF}').unwrap_or(content);
 
@@ -67,6 +102,8 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
         p1: None,
         p2: None,
         preview_start: None,
+        version: None,
+        tags: None,
         voices: Vec::new(),
     };
 
@@ -76,6 +113,29 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     let mut md5_context = md5::Context::new();
 
     let lines: Vec<&str> = content.lines().collect();
+
+    // First pass: find version to determine parsing behavior
+    let mut file_version: Option<String> = None;
+    for line in lines.iter() {
+        let line = line.trim_start();
+        if line.starts_with('#') {
+            let line = line.trim();
+            if let Some((property, value)) = line[1..].split_once(':') {
+                let property = property.trim().to_lowercase();
+                if property == "version" {
+                    file_version = Some(parse_version(value.trim())?);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Default to 1.0.0 if no version specified
+    let version_str = file_version.as_deref().unwrap_or("1.0.0");
+    song.version = Some(version_str.to_string());
+    let version = Version::parse(version_str)
+        .map_err(|_| AppError::UltrastarError(format!("Invalid version: {}", version_str)))?;
+    let supports_multi_value = version >= Version::parse("1.1.0").unwrap();
 
     for (_index, line) in lines.iter().enumerate() {
         let line = line.trim_start();
@@ -92,16 +152,10 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                 match property.as_str() {
                     "title" => song.title = value.to_string(),
                     "artist" => song.artist = value.to_string(),
-                    "language" => song.language = Some(value.to_string()),
-                    "edition" => song.edition = Some(value.to_string()),
-                    "genre" => song.genre = Some(value.to_string()),
-                    "year" => {
-                        if value.is_empty() {
-                            song.year = None;
-                        } else {
-                            song.year = Some(parse_us_int(value, &property)?);
-                        }
-                    }
+                    "language" => song.language = parse_multi_value_field(value, supports_multi_value),
+                    "edition" => song.edition = parse_multi_value_field(value, supports_multi_value),
+                    "genre" => song.genre = parse_multi_value_field(value, supports_multi_value),
+                    "year" => song.year = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
                     "bpm" => song.bpm = parse_us_float(value, &property)?,
                     "gap" => song.gap = parse_us_float(value, &property)?,
                     "start" => song.start = Some(parse_us_float(value, &property)?),
@@ -113,13 +167,13 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "background" => song.background = Some(value.to_string()),
                     "relative" => song.relative = Some(parse_us_bool(value)),
                     "videogap" => song.video_gap = parse_us_float(value, &property)?,
-                    "author" | "creator" => song.creator = Some(value.to_string()),
+                    "author" | "creator" => song.creator = parse_multi_value_field(value, supports_multi_value),
                     "duetsingerp1" | "p1" => song.p1 = Some(value.to_string()),
                     "duetsingerp2" | "p2" => song.p2 = Some(value.to_string()),
-                    "preview" | "previewstart" => {
-                        song.preview_start = Some(parse_us_float(value, &property)?)
-                    }
-                    _ => {}
+                    "preview" | "previewstart" => song.preview_start = Some(parse_us_float(value, &property)?),
+                    "tags" => song.tags = parse_multi_value_field(value, supports_multi_value),
+                    "version" => song.version = Some(parse_version(value)?),
+                    _ => (),
                 }
             }
         } else if [":", "*", "F", "R", "G"]
