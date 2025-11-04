@@ -5376,6 +5376,7 @@ dependencies = [
  "num_cpus",
  "percent-encoding",
  "ringbuf",
+ "semver",
  "serde",
  "serde_json",
  "specta",

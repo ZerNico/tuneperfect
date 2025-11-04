@@ -48,11 +48,11 @@ pub struct Song {
     pub end: Option<i32>,
     pub hash: String,
     pub album: Option<String>,
-    pub language: Option<String>,
-    pub edition: Option<String>,
-    pub genre: Option<String>,
+    pub language: Option<Vec<String>>,
+    pub edition: Option<Vec<String>>,
+    pub genre: Option<Vec<String>>,
     pub year: Option<i32>,
-    pub creator: Option<String>,
+    pub creator: Option<Vec<String>>,
     pub relative: Option<bool>,
     pub audio: Option<String>,
     pub instrumental: Option<String>,
@@ -63,6 +63,8 @@ pub struct Song {
     pub p2: Option<String>,
     #[serde(rename = "previewStart")]
     pub preview_start: Option<f64>,
+    pub version: Option<String>,
+    pub tags: Option<Vec<String>>,
     pub voices: Vec<Voice>,
 }
 

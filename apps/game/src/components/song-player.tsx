@@ -235,10 +235,10 @@ export default function SongPlayer(props: SongPlayerProps) {
     const previewStart = getPreviewStartTime(props.song, props.song.videoGap ?? 0);
 
     if (audio && audio.currentTime === 0) {
-      audio.currentTime = previewStart;
+      audio.currentTime = previewStart / 1000; // Convert milliseconds to seconds
     }
     if (video && video.currentTime === 0) {
-      video.currentTime = previewStart;
+      video.currentTime = previewStart / 1000; // Convert milliseconds to seconds
     }
   };
 
@@ -267,10 +267,10 @@ export default function SongPlayer(props: SongPlayerProps) {
         setPreviewTime();
       } else if (props.song.start) {
         if (audio && audio.currentTime === 0) {
-          audio.currentTime = props.song.start;
+          audio.currentTime = props.song.start / 1000; // Convert milliseconds to seconds
         }
         if (video && video.currentTime === 0) {
-          video.currentTime = props.song.start;
+          video.currentTime = props.song.start / 1000; // Convert milliseconds to seconds
         }
       }
 
@@ -361,7 +361,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   });
 
   const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement) => {
-    const videoGap = props.song.videoGap ?? 0;
+    const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
     const expectedVideoTime = audio.currentTime + videoGap;
     const gap = video.currentTime - expectedVideoTime;
 
@@ -401,7 +401,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     if (!audio || !video || !isCurrentlyPlaying()) return;
 
     try {
-      const videoGap = props.song.videoGap ?? 0;
+      const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
       const expectedVideoTime = audio.currentTime + videoGap;
       const timeDifference = Math.abs(expectedVideoTime - video.currentTime);
 
@@ -485,7 +485,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         const video = videoElement();
 
         if (audio && video) {
-          const videoGap = props.song.videoGap ?? 0;
+          const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
           audio.currentTime = time;
           video.currentTime = time + videoGap;
         } else if (audio) {
@@ -556,6 +556,8 @@ export default function SongPlayer(props: SongPlayerProps) {
 }
 
 const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
+  const videoGapSeconds = videoGap / 1000;
+  
   if (song.previewStart !== null) {
     return Math.max(0, song.previewStart);
   }
@@ -563,8 +565,8 @@ const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
   const smartPreviewTime = findSmartPreviewPosition(song);
 
   if (smartPreviewTime !== null) {
-    const previewGap = videoGap < 0 ? videoGap : 0;
-    return Math.max(0, smartPreviewTime + previewGap);
+    const previewGap = videoGapSeconds < 0 ? videoGapSeconds : 0;
+    return Math.max(0, (smartPreviewTime + previewGap) * 1000);
   }
 
   const firstNote = song.voices[0]?.phrases[0]?.notes[0];
@@ -572,6 +574,6 @@ const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
     return 0;
   }
 
-  const previewGap = videoGap < 0 ? videoGap : 0;
-  return Math.max(0, beatToMs(song, firstNote.startBeat) / 1000 - 2 + previewGap);
+  const previewGap = videoGapSeconds < 0 ? videoGapSeconds : 0;
+  return Math.max(0, (beatToMs(song, firstNote.startBeat) / 1000 - 2 + previewGap) * 1000);
 };
