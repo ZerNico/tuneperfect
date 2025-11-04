@@ -34,6 +34,9 @@ secrets:
 # PostgreSQL configuration
 postgresql:
   enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: "17.6.0-debian-12-r4"
   auth:
     username: tuneperfect
     database: tuneperfect
@@ -47,6 +50,9 @@ postgresql:
 # Redis configuration
 redis:
   enabled: true
+  image:
+    repository: bitnamilegacy/redis
+    tag: "8.2.1-debian-12-r0"
   auth:
     enabled: true
     existingSecret: redis-credentials
