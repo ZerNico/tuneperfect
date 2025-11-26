@@ -11,24 +11,24 @@
     "@fontsource/lato": "^5.2.7",
     "@iconify-json/circle-flags": "^1.2.10",
     "@iconify-json/logos": "^1.2.10",
-    "@iconify-json/lucide": "^1.2.71",
+    "@iconify-json/lucide": "^1.2.75",
     "@kobalte/core": "^0.13.11",
-    "@tailwindcss/vite": "^4.1.16",
-    "@tanstack/router-core": "^1.133.36",
-    "@tanstack/solid-router": "^1.133.36",
-    "@tanstack/solid-start": "^1.133.37",
+    "@tailwindcss/vite": "^4.1.17",
+    "@tanstack/router-core": "^1.139.7",
+    "@tanstack/solid-router": "^1.139.7",
+    "@tanstack/solid-start": "^1.139.8",
     "clsx": "^2.1.1",
     "cva": "^1.0.0-beta.4",
-    "posthog-js": "^1.281.0",
+    "posthog-js": "^1.298.1",
     "solid-js": "^1.9.10",
-    "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.16"
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
-    "@tanstack/solid-router-devtools": "^1.133.36",
+    "@tanstack/solid-router-devtools": "^1.139.7",
     "typescript": "^5.9.3",
     "unplugin-icons": "^22.5.0",
-    "vite": "^7.1.12",
+    "vite": "^7.2.4",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }
