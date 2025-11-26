@@ -4,7 +4,7 @@ import type { Score } from "~/stores/round";
 
 export interface GameContextValue {
   resetScores: () => void;
-  start: () => void;
+  start: () => Promise<boolean>;
   stop: () => void;
   pause: () => void;
   resume: () => void;

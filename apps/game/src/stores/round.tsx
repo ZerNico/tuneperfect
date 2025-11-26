@@ -78,10 +78,14 @@ export function useRoundActions() {
         songs: prev.songs.slice(1),
       };
     });
+    
     const nextSong = roundStore.settings()?.songs[0];
 
     if (nextSong) {
-      navigate({ to: "/game/restart" });
+      // Use setTimeout to allow cleanup to complete before navigation (TODO: find the reason for the lockup)
+      setTimeout(async () => {
+        await navigate({ to: "/game/restart" });
+      }, 100);
       return;
     }
 

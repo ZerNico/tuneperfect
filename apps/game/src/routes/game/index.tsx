@@ -66,7 +66,9 @@ function GameComponent() {
   });
 
   const handleEnded = () => {
-    roundActions.endRound(scores());
+    queueMicrotask(() => {
+      roundActions.endRound(scores());
+    });
   };
 
   const gradient = () => {

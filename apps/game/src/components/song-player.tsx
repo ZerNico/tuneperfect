@@ -89,6 +89,10 @@ export default function SongPlayer(props: SongPlayerProps) {
   const audioContext = new AudioContext();
   let audioSource: MediaElementAudioSourceNode | undefined;
 
+  onCleanup(() => {
+    audioContext.close();
+  });
+
   // Setup audio context for audio element
   createEffect(
     on(audioElement, (audio, prevAudio) => {
@@ -303,7 +307,10 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     if (rawCurrentTime >= endTimeInSeconds) {
       pause();
-      handleEnded();
+      // Use queueMicrotask to defer callback
+      queueMicrotask(() => {
+        handleEnded();
+      });
     }
   };
 
