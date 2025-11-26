@@ -956,7 +956,7 @@ function SearchPopup(props: SearchPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-lg bg-slate-900 p-4 text-white shadow-xl"
+        class="w-96 rounded-lg bg-black/30 p-4 text-white shadow-xl backdrop-blur-md"
       >
         <div class="space-y-3">
           <div class="flex items-center justify-between">
@@ -966,7 +966,7 @@ function SearchPopup(props: SearchPopupProps) {
               </Show>
               <button
                 type="button"
-                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-slate-800 transition-transform hover:opacity-75 active:scale-95"
+                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                 onClick={() => moveFilter("left")}
               >
                 <IconTriangleLeft class="text-xs" />
@@ -974,7 +974,7 @@ function SearchPopup(props: SearchPopupProps) {
             </div>
 
             <div class="flex justify-center">
-              <div class="rounded-md bg-slate-800 px-3 py-1">
+              <div class="rounded-md bg-white/10 px-3 py-1">
                 <span class="font-medium text-sm text-white">
                   {filterOptions.find((option) => option.value === props.searchFilter)?.label || t("sing.filter.all")}
                 </span>
@@ -984,7 +984,7 @@ function SearchPopup(props: SearchPopupProps) {
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-slate-800 transition-transform hover:opacity-75 active:scale-95"
+                class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                 onClick={() => moveFilter("right")}
               >
                 <IconTriangleRight class="text-xs" />
@@ -1001,7 +1001,7 @@ function SearchPopup(props: SearchPopupProps) {
             ref={searchRef}
             type="text"
             placeholder={t("sing.search")}
-            class="focus:gradient-sing w-full rounded-md bg-slate-800 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-linear-to-r focus:outline-none"
+            class="focus:gradient-sing w-full rounded-md bg-white/10 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>
 
@@ -1104,7 +1104,7 @@ function MenuPopup(props: MenuPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-70 rounded-lg bg-black/20 p-2 shadow-xl backdrop-blur-md"
+        class="w-70 rounded-lg bg-black/30 p-2 shadow-xl backdrop-blur-md"
       >
         <div class="flex flex-col gap-1">
           <For each={options}>
@@ -1264,7 +1264,7 @@ function MedleyList(props: MedleyListProps) {
 
   return (
     <div class="h-full w-80">
-      <div class="flex h-full flex-col rounded-lg bg-black/20 p-4 backdrop-blur-md">
+      <div class="flex h-full flex-col rounded-lg bg-black/30 p-4 backdrop-blur-md">
         <h2 class="mb-4 font-bold text-2xl">Medley</h2>
         <div class="relative min-h-0 flex-1">
           <div ref={scrollContainer} class="styled-scrollbars absolute h-full w-full space-y-2 overflow-y-auto">
