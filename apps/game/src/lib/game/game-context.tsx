@@ -3,6 +3,7 @@ import type { LocalSong } from "~/lib/ultrastar/song";
 import type { Score } from "~/stores/round";
 
 export interface GameContextValue {
+  resetScores: () => void;
   start: () => void;
   stop: () => void;
   pause: () => void;

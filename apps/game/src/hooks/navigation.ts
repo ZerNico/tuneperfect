@@ -34,12 +34,16 @@ type NavigationEvent = {
     | "sort-right"
     | "filter-left"
     | "filter-right"
+    | "add-to-medley"
+    | "remove-from-medley"
     | "joker-1"
     | "joker-2"
     | "skip"
     | "clear"
     | "fullscreen"
     | "instrumental"
+    | "menu"
+    | "start-random-medley"
     | "unknown";
 };
 
@@ -55,14 +59,16 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["F4", ["random"]],
   ["F5", ["sort-left", "filter-left"]],
   ["F6", ["sort-right", "filter-right"]],
-  ["F1", ["joker-1"]],
-  ["F2", ["joker-2"]],
+  ["F1", ["add-to-medley", "joker-1"]],
+  ["F2", ["remove-from-medley", "joker-2"]],
   ["s", ["skip"]],
   ["Backspace", ["clear"]],
   ["Meta+Enter", ["fullscreen"]],
   ["Alt+Enter", ["fullscreen"]],
   ["F11", ["fullscreen"]],
   ["k", ["instrumental"]],
+  ["Tab", ["menu"]],
+  ["Shift+d", ["start-random-medley"]],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -76,7 +82,9 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["Y", ["random"]],
   ["LB", ["sort-left", "filter-left", "joker-1", "instrumental"]],
   ["RB", ["sort-right", "filter-right", "joker-2"]],
-  ["X", ["skip", "clear"]],
+  ["X", ["menu", "skip", "clear"]],
+  ["LT", ["remove-from-medley"]],
+  ["RT", ["add-to-medley"]],
 ]);
 
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
@@ -258,7 +266,6 @@ createEventListener(document, "keyup", (event) => {
 createGamepad({
   onButtonDown: (event) => {
     setKeyMode("gamepad");
-    console.log("button down", event.button);
     const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
 
     if (actionsArray && actionsArray.length > 0 && actionsArray[0] !== "unknown") {

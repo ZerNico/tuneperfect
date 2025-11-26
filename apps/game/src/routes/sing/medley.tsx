@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { type Accessor, createEffect, createSignal } from "solid-js";
+import * as v from "valibot";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -13,30 +14,31 @@ import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
-export const Route = createFileRoute("/sing/$hash")({
-  component: PlayerSelectionComponent,
+export const Route = createFileRoute("/sing/medley")({
+  component: RouteComponent,
+  validateSearch: v.object({
+    songs: v.array(v.string()),
+  }),
 });
 
 const [selectedPlayers, setSelectedPlayers] = createSignal<(number | string)[]>(
   Array(settingsStore.microphones().length).fill("guest"),
 );
 
-function PlayerSelectionComponent() {
-  const params = Route.useParams();
+function RouteComponent() {
+  const search = Route.useSearch();
   const roundActions = useRoundActions();
 
-  const song = () => songsStore.songs().find((song) => song.hash === params().hash);
-  const voiceCount = () => song()?.voices.length || 0;
+  const medleySongs = () => {
+    const songHashes = search().songs;
+    return songHashes
+      .map((hash) => songsStore.songs().find((song) => song.hash === hash))
+      .filter((song): song is NonNullable<typeof song> => song !== undefined);
+  };
 
   const navigate = useNavigate();
   const onBack = () => navigate({ to: "/sing" });
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
-  const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
-  const [selectedVoices, setSelectedVoices] = createSignal<number[]>(
-    Array(settingsStore.microphones().length)
-      .fill(0)
-      .map((_, i) => i % voiceCount()),
-  );
 
   const users = () => [...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || []), guestUser];
 
@@ -68,43 +70,38 @@ function PlayerSelectionComponent() {
     }
   });
 
-  const startGame = () => {
-    const players = selectedPlayers()
-      .slice(0, playerCount())
-      .map((player) => users().find((user) => user.id === player) || undefined);
-
-    const voices = selectedVoices()
-      .slice(0, playerCount())
-      .map((voice) => voice % voiceCount());
-
-    const s = song();
-    if (!s) {
+  const startMedley = () => {
+    const songs = medleySongs();
+    if (songs.length === 0) {
       return;
     }
 
-    roundActions.startRound({ songs: [{ song: s, voice: voices, players, mode: "regular" }] });
+    const players = selectedPlayers()
+      .slice(0, settingsStore.microphones().length)
+      .map((player) => users().find((user) => user.id === player) || undefined);
+
+    const roundSongs = songs.map((song) => {
+      const voiceCount = song.voices.length;
+
+      const voices = players.map((_, playerIndex) => playerIndex % voiceCount);
+      return {
+        song,
+        voice: voices,
+        players,
+      };
+    });
+
+    roundActions.startRound({ songs: roundSongs.map((song) => ({ ...song, mode: "medley" })) });
   };
 
   const setPlayer = (playerNumber: number, value: number | string) => {
     setSelectedPlayers((prev) => [...prev.slice(0, playerNumber), value, ...prev.slice(playerNumber + 1)]);
   };
 
-  const setVoice = (playerNumber: number, value: number) => {
-    setSelectedVoices((prev) => [...prev.slice(0, playerNumber), value, ...prev.slice(playerNumber + 1)]);
-  };
-
   const menuItems: Accessor<MenuItem[]> = () => {
-    const inputs: MenuItem[] = [
-      {
-        type: "select-number",
-        label: t("sing.players"),
-        value: playerCount,
-        onChange: setPlayerCount,
-        options: Array.from({ length: settingsStore.microphones().length }, (_, i) => i + 1),
-      },
-    ];
+    const inputs: MenuItem[] = [];
 
-    for (const playerIndex of Array.from({ length: playerCount() }, (_, i) => i)) {
+    for (const playerIndex of Array.from({ length: settingsStore.microphones().length }, (_, i) => i)) {
       inputs.push({
         type: "select-string-number",
         label: `${t("sing.player")} ${playerIndex + 1}`,
@@ -121,35 +118,12 @@ function PlayerSelectionComponent() {
           );
         },
       });
-
-      if (voiceCount() > 1) {
-        inputs.push({
-          type: "select-number",
-          label: `${t("sing.voice")} ${playerIndex + 1}`,
-          value: () => selectedVoices()[playerIndex] || 0,
-          options: Array.from({ length: voiceCount() }, (_, i) => i),
-          onChange: (value) => setVoice(playerIndex, value),
-          renderValue: (value) => {
-            const s = song();
-            if (!s || value === null) {
-              return value;
-            }
-            const duetSingerKey = `p${value + 1}` as "p1" | "p2";
-            if (duetSingerKey in s) {
-              const duetSinger = s[duetSingerKey];
-              return <span>{duetSinger}</span>;
-            }
-
-            return <span>{t("sing.voice")} {value + 1}</span>;
-          },
-        });
-      }
     }
 
     inputs.push({
       type: "button",
       label: t("sing.start"),
-      action: startGame,
+      action: startMedley,
     });
 
     return inputs;

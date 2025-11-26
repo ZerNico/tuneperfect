@@ -90,6 +90,10 @@ const de = {
       other: "{{count}} Lieder",
       filtered: "{{filtered}} / {{total}} Lieder",
     },
+    menu: {
+      addToMedley: "Zu Medley hinzufügen",
+      startRandomMedley: "Zufälliges Medley starten",
+    },
   },
   score: {
     title: "Punktzahl",

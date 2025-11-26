@@ -21,7 +21,7 @@ interface SongPlayerProps {
   onCanPlayThrough?: () => void;
   onEnded?: () => void;
   onError?: () => void;
-  isPreview?: boolean;
+  mode?: "regular" | "medley" | "preview";
   preferInstrumental?: boolean;
 }
 
@@ -60,16 +60,16 @@ const getMediaErrorMessage = (element: HTMLMediaElement): string => {
 
 const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | null): number => {
   if (gainDb == null) return 1;
-  
+
   // Convert dB gain to linear multiplier
   const gainMultiplier = 10 ** (gainDb / 20);
-  
+
   // If we have peak information, prevent clipping
   if (peak && peak > 0) {
-    const maxAllowedGain = 1.0 / peak;    
+    const maxAllowedGain = 1.0 / peak;
     return Math.min(gainMultiplier, maxAllowedGain);
   }
-  
+
   return gainMultiplier;
 };
 
@@ -179,20 +179,18 @@ export default function SongPlayer(props: SongPlayerProps) {
     if (audio && currentUrl && newUrl) {
       setAudioReady(false);
       setPreservedTime(currentTime);
-      
+
       const restorePlayback = () => {
         audio.currentTime = currentTime;
         if (wasPlaying) {
-          audio.play().catch(error => 
-            console.warn("Failed to resume playback after track switch:", error)
-          );
+          audio.play().catch((error) => console.warn("Failed to resume playback after track switch:", error));
         }
-        audio.removeEventListener('canplaythrough', restorePlayback);
+        audio.removeEventListener("canplaythrough", restorePlayback);
         setAudioReady(true);
         setPreservedTime(undefined);
       };
-      
-      audio.addEventListener('canplaythrough', restorePlayback, { once: true });
+
+      audio.addEventListener("canplaythrough", restorePlayback, { once: true });
     }
   });
 
@@ -263,7 +261,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     try {
       // Set initial times
-      if (props.isPreview) {
+      if (props.mode === "preview") {
         setPreviewTime();
       } else if (props.song.start) {
         if (audio && audio.currentTime === 0) {
@@ -300,7 +298,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     // Use preserved time during track switching to prevent premature end detection
     const preserved = preservedTime();
-    const rawCurrentTime = preserved ?? (audioElement()?.currentTime ?? videoElement()?.currentTime ?? 0);
+    const rawCurrentTime = preserved ?? audioElement()?.currentTime ?? videoElement()?.currentTime ?? 0;
     const endTimeInSeconds = props.song.end / 1000; // Convert milliseconds to seconds
 
     if (rawCurrentTime >= endTimeInSeconds) {
@@ -465,9 +463,10 @@ export default function SongPlayer(props: SongPlayerProps) {
         // Return preserved time during track switching to prevent visual jumps
         const preserved = preservedTime();
         if (preserved !== undefined) return preserved;
-        
+
         const audio = audioElement();
         const video = videoElement();
+
         return audio?.currentTime ?? video?.currentTime ?? 0;
       },
       getDuration: () => {
@@ -480,7 +479,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         if (preservedTime() !== undefined) {
           setPreservedTime(time);
         }
-        
+
         const audio = audioElement();
         const video = videoElement();
 
@@ -557,7 +556,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
 const getPreviewStartTime = (song: LocalSong, videoGap: number): number => {
   const videoGapSeconds = videoGap / 1000;
-  
+
   if (song.previewStart !== null) {
     return Math.max(0, song.previewStart);
   }

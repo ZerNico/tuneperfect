@@ -12,7 +12,7 @@ import IconLeftArrowKey from "~icons/sing/left-arrow-key";
 import IconRightArrowKey from "~icons/sing/right-arrow-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
-type HintType = "navigate" | "confirm" | "back";
+type HintType = "navigate" | "confirm" | "back" | "add-to-medley";
 
 interface KeyHintsProps {
   hints: HintType[];
@@ -26,6 +26,8 @@ export default function KeyHints(props: KeyHintsProps) {
       case "back":
         return isGamepad ? <IconGamepadB /> : <IconEscKey />;
       case "confirm":
+        return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
+      case "add-to-medley":
         return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
       case "navigate":
         return isGamepad ? (

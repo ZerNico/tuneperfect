@@ -64,7 +64,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTimeMs = playerRef.getCurrentTime() * 1000;
 
-    const usedVoices = roundStore.settings()?.voices || [];
+    const usedVoices = roundStore.settings()?.songs[0]?.voice ?? [];
 
     for (const voiceIndex of usedVoices) {
       const voice = currentSong.voices[voiceIndex];
@@ -173,6 +173,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     duration,
     scores,
     addScore,
+    resetScores: () => setScores([]),
     preferInstrumental,
     setPreferInstrumental,
   };

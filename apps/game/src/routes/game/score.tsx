@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, onCleanup, onMount } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -39,34 +39,63 @@ interface PlayerScoreData {
 }
 
 function ScoreComponent() {
-  const highscoresQuery = useQuery(() => highscoreQueryOptions(roundStore.settings()?.song?.hash ?? "", settingsStore.general().difficulty));
+  const results = () => roundStore.results();
+  const shouldTrackHighscore = () => {
+    const res = results();
+    return res.length === 1 && res[0]?.song.mode !== "medley";
+  };
+
+  const maxPossibleScore = () => results().length * MAX_POSSIBLE_SCORE;
+
+  const highscoresQuery = useQuery(() => {
+    const hash = shouldTrackHighscore() ? results()[0]?.song.song.hash : undefined;
+    const options = highscoreQueryOptions(hash ?? "", settingsStore.general().difficulty);
+    return {
+      ...options,
+      enabled: !!hash,
+    };
+  });
+
   const [showHighscores, setShowHighscores] = createSignal(false);
   const roundActions = useRoundActions();
 
   const scoreData = createMemo<PlayerScoreData[]>(() => {
-    const players = roundStore.settings()?.players || [];
+    const currentResults = results();
+    const firstResult = currentResults[0];
+    if (!firstResult) return [];
+
+    // We assume the players from the first song are the players for the session
+    const players = firstResult.song.players;
     const result: PlayerScoreData[] = [];
 
     for (const [index, player] of players.entries()) {
-      const voiceIndex = roundStore.settings()?.voices[index];
-      if (voiceIndex === undefined) continue;
+      if (!player) continue;
 
-      const voice = roundStore.settings()?.song?.voices[voiceIndex];
+      const totalScore: Score = { normal: 0, golden: 0, bonus: 0 };
 
-      if (!voice || !player) continue;
+      for (const res of currentResults) {
+        const voiceIndex = res.song.voice[index];
+        if (voiceIndex === undefined) continue;
 
-      const maxScore = getMaxScore(voice);
-      const absoluteScore = roundStore.scores()[index] ?? { normal: 0, golden: 0, bonus: 0 };
+        const voice = res.song.song.voices[voiceIndex];
+        if (!voice) continue;
 
-      const relativeScore = getRelativeScore(absoluteScore, maxScore);
+        const maxScore = getMaxScore(voice);
+        const absoluteScore = res.scores[index] ?? { normal: 0, golden: 0, bonus: 0 };
+        const relativeScore = getRelativeScore(absoluteScore, maxScore);
+
+        totalScore.normal += relativeScore.normal;
+        totalScore.golden += relativeScore.golden;
+        totalScore.bonus += relativeScore.bonus;
+      }
 
       const micColor = settingsStore.microphones()[index]?.color;
       if (!micColor) continue;
 
       result.push({
         player,
-        score: relativeScore,
-        totalScore: Math.floor(relativeScore.normal + relativeScore.golden + relativeScore.bonus),
+        score: totalScore,
+        totalScore: Math.floor(totalScore.normal + totalScore.golden + totalScore.bonus),
         micColor,
         position: index + 1,
       });
@@ -77,8 +106,10 @@ function ScoreComponent() {
 
   const updateHighscoresMutation = useMutation(() => ({
     mutationFn: async () => {
+      if (!shouldTrackHighscore()) return;
+
       const scores = scoreData();
-      const songHash = roundStore.settings()?.song?.hash;
+      const songHash = results()[0]?.song.song.hash;
 
       if (!songHash) return;
 
@@ -138,7 +169,8 @@ function ScoreComponent() {
   });
 
   const highscores = () => {
-    const songHash = roundStore.settings()?.song?.hash;
+    if (!shouldTrackHighscore()) return [];
+    const songHash = results()[0]?.song.song.hash;
     if (!songHash) return [];
 
     const allScores: { user: User; score: number }[] = [];
@@ -165,15 +197,23 @@ function ScoreComponent() {
   return (
     <Layout intent="secondary" header={<TitleBar title={t("score.title")} />} footer={<KeyHints hints={["confirm"]} />}>
       <div class="flex h-full flex-col gap-6">
-        <div class="flex min-h-0 flex-grow">
-          <div class="grid h-full w-full grid-cols-[2fr_3fr]">
-            <div
-              class="flex h-full min-h-0 items-center justify-center transition-opacity duration-500"
-              classList={{ "opacity-0": !showHighscores() }}
-            >
-              <HighscoreList scores={highscores()} class="h-full w-100 max-w-full" />
-            </div>
-            <div class="flex flex-grow flex-col items-center justify-center gap-4">
+        <div class="flex min-h-0 grow">
+          <div
+            class="grid h-full w-full"
+            classList={{
+              "grid-cols-[2fr_3fr]": shouldTrackHighscore(),
+              "grid-cols-1": !shouldTrackHighscore(),
+            }}
+          >
+            <Show when={shouldTrackHighscore()}>
+              <div
+                class="flex h-full min-h-0 items-center justify-center transition-opacity duration-500"
+                classList={{ "opacity-0": !showHighscores() }}
+              >
+                <HighscoreList scores={highscores()} class="h-full w-100 max-w-full" />
+              </div>
+            </Show>
+            <div class="flex grow flex-col items-center justify-center gap-4">
               <For each={scoreData()}>
                 {(data) => (
                   <ScoreCard
@@ -182,6 +222,7 @@ function ScoreComponent() {
                     player={data.player}
                     micColor={data.micColor}
                     position={data.position}
+                    maxPossibleScore={maxPossibleScore()}
                   />
                 )}
               </For>
@@ -189,7 +230,7 @@ function ScoreComponent() {
           </div>
         </div>
 
-        <div class="flex flex-shrink-0">
+        <div class="flex shrink-0">
           <Button
             loading={updateHighscoresMutation.isPending}
             selected
@@ -211,10 +252,11 @@ interface ScoreCardProps {
   micColor: string;
   position: number;
   animatedStages: ScoreCategory[];
+  maxPossibleScore: number;
 }
 
 function ScoreCard(props: ScoreCardProps) {
-  const getPercentage = (value: number) => (value / MAX_POSSIBLE_SCORE) * 100;
+  const getPercentage = (value: number) => (value / props.maxPossibleScore) * 100;
 
   const [animatedScores, setAnimatedScores] = createSignal<Score>({
     normal: 0,

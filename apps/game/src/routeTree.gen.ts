@@ -19,6 +19,7 @@ import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as PartyIndexRouteImport } from './routes/party/index'
 import { Route as LobbyIndexRouteImport } from './routes/lobby/index'
 import { Route as GameIndexRouteImport } from './routes/game/index'
+import { Route as SingMedleyRouteImport } from './routes/sing/medley'
 import { Route as SingHashRouteImport } from './routes/sing/$hash'
 import { Route as SettingsCreditsRouteImport } from './routes/settings/credits'
 import { Route as LobbySelectClubRouteImport } from './routes/lobby/select-club'
@@ -86,6 +87,11 @@ const LobbyIndexRoute = LobbyIndexRouteImport.update({
 const GameIndexRoute = GameIndexRouteImport.update({
   id: '/game/',
   path: '/game/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingMedleyRoute = SingMedleyRouteImport.update({
+  id: '/sing/medley',
+  path: '/sing/medley',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SingHashRoute = SingHashRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
+  '/sing/medley': typeof SingMedleyRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
   '/party': typeof PartyIndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
+  '/sing/medley': typeof SingMedleyRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
   '/party': typeof PartyIndexRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
   '/sing/$hash': typeof SingHashRoute
+  '/sing/medley': typeof SingMedleyRoute
   '/game/': typeof GameIndexRoute
   '/lobby/': typeof LobbyIndexRoute
   '/party/': typeof PartyIndexRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
+    | '/sing/medley'
     | '/game'
     | '/lobby'
     | '/party'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
+    | '/sing/medley'
     | '/game'
     | '/lobby'
     | '/party'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/lobby/select-club'
     | '/settings/credits'
     | '/sing/$hash'
+    | '/sing/medley'
     | '/game/'
     | '/lobby/'
     | '/party/'
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   LobbySelectClubRoute: typeof LobbySelectClubRoute
   SettingsCreditsRoute: typeof SettingsCreditsRoute
   SingHashRoute: typeof SingHashRoute
+  SingMedleyRoute: typeof SingMedleyRoute
   GameIndexRoute: typeof GameIndexRoute
   LobbyIndexRoute: typeof LobbyIndexRoute
   PartyIndexRoute: typeof PartyIndexRoute
@@ -466,6 +479,13 @@ declare module '@tanstack/solid-router' {
       path: '/game'
       fullPath: '/game'
       preLoaderRoute: typeof GameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/medley': {
+      id: '/sing/medley'
+      path: '/sing/medley'
+      fullPath: '/sing/medley'
+      preLoaderRoute: typeof SingMedleyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sing/$hash': {
@@ -610,6 +630,7 @@ const rootRouteChildren: RootRouteChildren = {
   LobbySelectClubRoute: LobbySelectClubRoute,
   SettingsCreditsRoute: SettingsCreditsRoute,
   SingHashRoute: SingHashRoute,
+  SingMedleyRoute: SingMedleyRoute,
   GameIndexRoute: GameIndexRoute,
   LobbyIndexRoute: LobbyIndexRoute,
   PartyIndexRoute: PartyIndexRoute,

@@ -108,9 +108,9 @@ export default function HighscoreList(props: HighscoreListProps) {
         <div class="justify-center-safe flex min-h-full flex-col gap-2">
           <For each={rankedScores()}>
             {(score) => (
-              <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4">
+              <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4 backdrop-blur-md">
                 <div
-                  class="flex h-full w-10 flex-shrink-0 items-center justify-center text-center"
+                  class="flex h-full w-10 shrink-0 items-center justify-center text-center"
                   classList={{
                     "bg-yellow-500": score.rank === 1,
                     "bg-white text-black": score.rank !== 1,
@@ -119,13 +119,13 @@ export default function HighscoreList(props: HighscoreListProps) {
                   {score.rank}.
                 </div>
 
-                <div class="flex flex-grow items-center gap-2 overflow-hidden">
-                  <Avatar user={score.user} class="h-6 w-6 flex-shrink-0" />
+                <div class="flex grow items-center gap-2 overflow-hidden">
+                  <Avatar user={score.user} class="h-6 w-6 shrink-0" />
                   <span class="truncate">{score.user.username || "?"}</span>
                 </div>
 
-                <div class="flex flex-shrink-0 flex-row items-center gap-4">
-                  <span class="flex flex-shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
+                <div class="flex shrink-0 flex-row items-center gap-4">
+                  <span class="flex shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
                     <IconHash />
                     {score.score.toLocaleString("en-US", { maximumFractionDigits: 0 })}
                   </span>

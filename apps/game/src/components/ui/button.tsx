@@ -69,7 +69,7 @@ export default function Button(props: ButtonProps) {
       </div>
 
       <div
-        class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-all"
+        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-all"
         classList={{
           [props.gradient || "gradient-settings"]: true,
           "opacity-0": !props.selected,

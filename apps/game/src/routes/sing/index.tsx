@@ -11,6 +11,7 @@ import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import TitleBar from "~/components/title-bar";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
+import { createLoop } from "~/hooks/loop";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -21,17 +22,26 @@ import { localStore } from "~/stores/local";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
+import IconMenu from "~icons/lucide/menu";
 import IconMusic from "~icons/lucide/music";
 import IconSearch from "~icons/lucide/search";
+import IconX from "~icons/lucide/x";
 import IconDuet from "~icons/sing/duet";
+import IconF1Key from "~icons/sing/f1-key";
+import IconF2Key from "~icons/sing/f2-key";
 import IconF3Key from "~icons/sing/f3-key";
 import IconF4Key from "~icons/sing/f4-key";
 import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
+import IconGamepadLT from "~icons/sing/gamepad-lt";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
+import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconGamepadStart from "~icons/sing/gamepad-start";
+import IconGamepadX from "~icons/sing/gamepad-x";
 import IconGamepadY from "~icons/sing/gamepad-y";
+import IconShiftKey from "~icons/sing/shift-key";
+import IconTabKey from "~icons/sing/tab-key";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
 
@@ -50,6 +60,7 @@ const [searchFilter, setSearchFilter] = createSignal<"all" | "artist" | "title" 
   "all"
 );
 const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
+const [menuOpen, setMenuOpen] = createSignal(false);
 const [sort, setSort] = createSignal<"artist" | "title" | "year">("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(songsStore.songs().length);
 
@@ -71,12 +82,21 @@ function SingComponent() {
     playSound("confirm");
     navigate({ to: "/home" });
   };
+
+  const [medleySongs, setMedleySongs] = createSignal<LocalSong[]>([]);
+  const isMedley = createMemo(() => medleySongs().length > 0);
+
   const [animationsDisabled, setAnimationsDisabled] = createSignal(false);
   const [isFastScrolling, setIsFastScrolling] = createSignal(false);
 
-  const startGame = (song: LocalSong) => {
+  const startRegular = (song: LocalSong) => {
     playSound("confirm");
     navigate({ to: "/sing/$hash", params: { hash: song.hash } });
+  };
+
+  const startMedley = () => {
+    playSound("confirm");
+    navigate({ to: "/sing/medley", search: { songs: medleySongs().map((song) => song.hash) } });
   };
 
   const selectRandomSong = () => {
@@ -107,6 +127,10 @@ function SingComponent() {
       } else if (event.action === "search") {
         setSearchPopupOpen(!searchPopupOpen());
         playSound("select");
+      } else if (event.action === "menu") {
+        setMenuOpen(!menuOpen());
+        setSearchPopupOpen(false);
+        playSound("select");
       } else if (event.action === "random") {
         selectRandomSong();
         playSound("select");
@@ -116,18 +140,68 @@ function SingComponent() {
       } else if (event.action === "sort-right") {
         moveSorting("right");
         playSound("select");
+      } else if (event.action === "add-to-medley") {
+        const song = currentSong();
+        if (song) {
+          setMedleySongs((prev) => [...prev, song]);
+          playSound("select");
+        }
+      } else if (event.action === "start-random-medley") {
+        startRandomMedley();
       }
     },
     onKeyup(event) {
       if (event.action === "confirm") {
+        if (isMedley()) {
+          startMedley();
+          return;
+        }
+
         const song = currentSong();
         if (song) {
-          startGame(song);
+          startRegular(song);
           playSound("confirm");
         }
       }
     },
   }));
+
+  const startRandomMedley = () => {
+    const songs = songsStore.songs();
+    const nonDuetSongs = songs.filter((song) => song.voices.length < 2);
+
+    if (nonDuetSongs.length === 0) {
+      return;
+    }
+
+    const selectedSongs: LocalSong[] = [];
+    const targetCount = 5;
+
+    // Try to dedup if we have enough songs
+    if (nonDuetSongs.length >= targetCount) {
+      const available = [...nonDuetSongs];
+      for (let i = 0; i < targetCount; i++) {
+        const randomIndex = Math.floor(Math.random() * available.length);
+        const song = available[randomIndex];
+        if (song) {
+          selectedSongs.push(song);
+          available.splice(randomIndex, 1);
+        }
+      }
+    } else {
+      // Not enough songs to dedup, pick random ones allowing duplicates
+      for (let i = 0; i < targetCount; i++) {
+        const randomIndex = Math.floor(Math.random() * nonDuetSongs.length);
+        const song = nonDuetSongs[randomIndex];
+        if (song) {
+          selectedSongs.push(song);
+        }
+      }
+    }
+
+    playSound("confirm");
+    navigate({ to: "/sing/medley", search: { songs: selectedSongs.map((song) => song.hash) } });
+  };
 
   return (
     <Layout
@@ -166,7 +240,7 @@ function SingComponent() {
                       type="button"
                       class="gradient-sing cursor-pointer rounded-full px-2 text-md text-white capitalize transition-all hover:opacity-75 active:scale-95"
                       classList={{
-                        "gradient-sing bg-gradient-to-b shadow-xl": sortKey.toLowerCase() === sort(),
+                        "gradient-sing bg-linear-to-b shadow-xl": sortKey.toLowerCase() === sort(),
                       }}
                       onClick={() => setSort(sortKey)}
                     >
@@ -191,36 +265,69 @@ function SingComponent() {
         </div>
       }
       header={
-        <div class="flex items-center gap-20">
-          <TitleBar title={t("sing.songs")} onBack={onBack} />
-          <div class="relative flex items-center gap-4">
-            <SearchButton searchQuery={searchQuery()} searchFilter={searchFilter()} onClick={() => setSearchPopupOpen(true)} />
+        <div class="flex items-center justify-between gap-20">
+          <div class="flex items-center gap-20">
+            <TitleBar title={t("sing.songs")} onBack={onBack} />
+            <div class="relative flex items-center gap-4">
+              <SearchButton searchQuery={searchQuery()} searchFilter={searchFilter()} onClick={() => setSearchPopupOpen(true)} />
 
-            <Show when={searchPopupOpen()}>
-              <SearchPopup
-                searchQuery={searchQuery()}
-                searchFilter={searchFilter()}
-                onSearchQuery={setSearchQuery}
-                onSearchFilter={setSearchFilter}
-                onClose={() => setSearchPopupOpen(false)}
+              <Show when={searchPopupOpen()}>
+                <SearchPopup
+                  searchQuery={searchQuery()}
+                  searchFilter={searchFilter()}
+                  onSearchQuery={setSearchQuery}
+                  onSearchFilter={setSearchFilter}
+                  onClose={() => setSearchPopupOpen(false)}
+                />
+              </Show>
+
+              <div class="flex items-center gap-2 text-sm opacity-80">
+                <IconMusic />
+                <Show
+                  when={filteredSongCount() !== songsStore.songs().length}
+                  fallback={
+                    <span>
+                      {songsStore.songs().length === 1
+                        ? t("sing.songCount.one", { count: songsStore.songs().length })
+                        : t("sing.songCount.other", { count: songsStore.songs().length })}
+                    </span>
+                  }
+                >
+                  <span>{t("sing.songCount.filtered", { filtered: filteredSongCount(), total: songsStore.songs().length })}</span>
+                </Show>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative">
+            <button
+              type="button"
+              class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadX class="text-sm" />}>
+                <IconTabKey class="text-sm" />
+              </Show>
+              <IconMenu class="text-2xl" />
+            </button>
+
+            <Show when={menuOpen()}>
+              <MenuPopup
+                onClose={() => setMenuOpen(false)}
+                onStartRandomMedley={() => {
+                  startRandomMedley();
+                  setMenuOpen(false);
+                }}
+                onAddToMedley={() => {
+                  const song = currentSong();
+                  if (song) {
+                    setMedleySongs((prev) => [...prev, song]);
+                    playSound("select");
+                  }
+                  setMenuOpen(false);
+                }}
               />
             </Show>
-
-            <div class="flex items-center gap-2 text-sm opacity-80">
-              <IconMusic />
-              <Show
-                when={filteredSongCount() !== songsStore.songs().length}
-                fallback={
-                  <span>
-                    {songsStore.songs().length === 1
-                      ? t("sing.songCount.one", { count: songsStore.songs().length })
-                      : t("sing.songCount.other", { count: songsStore.songs().length })}
-                  </span>
-                }
-              >
-                <span>{t("sing.songCount.filtered", { filtered: filteredSongCount(), total: songsStore.songs().length })}</span>
-              </Show>
-            </div>
           </div>
         </div>
       }
@@ -238,7 +345,7 @@ function SingComponent() {
                     class="absolute inset-0 z-1"
                   >
                     <SongPlayer
-                      isPreview
+                      mode="preview"
                       volume={settingsStore.getVolume("preview")}
                       class="h-full w-full opacity-60"
                       playing
@@ -253,11 +360,11 @@ function SingComponent() {
       }
     >
       <div class="relative grid h-full grid-rows-[1fr_auto]">
-        <div class="flex flex-grow items-center">
-          <div class="relative flex flex-grow flex-col">
+        <div class="flex grow items-center">
+          <div class="relative flex grow flex-col">
             <p class="text-xl">{currentSong()?.artist}</p>
             <div class="max-w-200">
-              <span class="gradient-sing bg-gradient-to-b bg-clip-text font-bold text-6xl text-transparent ">{currentSong()?.title}</span>
+              <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent ">{currentSong()?.title}</span>
             </div>
             <div class="absolute top-full">
               <Show when={(currentSong()?.voices.length || 0) > 1}>
@@ -265,14 +372,24 @@ function SingComponent() {
               </Show>
             </div>
           </div>
-          <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+          <div class="flex h-full gap-2">
+            <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+            <Show when={isMedley()}>
+              <MedleyList
+                songs={medleySongs()}
+                onRemove={(index) => {
+                  setMedleySongs((prev) => prev.filter((_, i) => i !== index));
+                  playSound("select");
+                }}
+              />
+            </Show>
+          </div>
         </div>
-        <div>
+        <div class="h-[calc((100vw-4rem)/7+1rem)]">
           <SongScroller
             searchQuery={searchQuery()}
             searchFilter={searchFilter()}
             onSongChange={setCurrentSong}
-            onSelect={startGame}
             songs={songsStore.songs()}
             sort={sort()}
             currentSong={currentSong() || null}
@@ -744,15 +861,15 @@ function SearchButton(props: SearchButtonProps) {
       class="flex w-40 items-center gap-1 rounded-full border-[0.12cqw] border-white px-1 py-0.5 text-sm transition-all hover:opacity-75 active:scale-95"
       onClick={props.onClick}
     >
-      <IconSearch class="flex-shrink-0" />
+      <IconSearch class="shrink-0" />
       <div class="flex w-full min-w-0 items-center gap-2">
-        <span class="flex-grow truncate text-start">{props.searchQuery || t("sing.search")}</span>
+        <span class="grow truncate text-start">{props.searchQuery || t("sing.search")}</span>
         <Show when={props.searchQuery}>
-          <span class="flex-shrink-0 rounded-full bg-white/20 px-1.5 py-0.4 text-xs">{filterLabel()}</span>
+          <span class="shrink-0 rounded-full bg-white/20 px-1.5 py-0.4 text-xs">{filterLabel()}</span>
         </Show>
       </div>
-      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="flex-shrink-0 text-xs" />}>
-        <IconF3Key class="flex-shrink-0 text-xs" />
+      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="shrink-0 text-xs" />}>
+        <IconF3Key class="shrink-0 text-xs" />
       </Show>
     </button>
   );
@@ -884,7 +1001,7 @@ function SearchPopup(props: SearchPopupProps) {
             ref={searchRef}
             type="text"
             placeholder={t("sing.search")}
-            class="focus:gradient-sing w-full rounded-md bg-slate-800 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-gradient-to-r focus:outline-none"
+            class="focus:gradient-sing w-full rounded-md bg-slate-800 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>
 
@@ -893,6 +1010,138 @@ function SearchPopup(props: SearchPopupProps) {
             <VirtualKeyboard inputRef={searchRef} layer={1} onClose={props.onClose} />
           </div>
         </Show>
+      </Motion.div>
+    </div>
+  );
+}
+
+interface MenuPopupProps {
+  onClose: () => void;
+  onStartRandomMedley: () => void;
+  onAddToMedley: () => void;
+}
+
+function MenuPopup(props: MenuPopupProps) {
+  const options = [
+    {
+      type: "button",
+      label: (
+        <div class="flex w-full items-center justify-between">
+          <span>{t("sing.menu.addToMedley")}</span>
+          <div class="flex items-center gap-1">
+            <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRT class="text-sm" />}>
+              <IconF1Key class="text-sm" />
+            </Show>
+          </div>
+        </div>
+      ),
+      action: props.onAddToMedley,
+    },
+    {
+      label: (
+        <div class="flex w-full items-center justify-between">
+          <span>{t("sing.menu.startRandomMedley")}</span>
+          <div class="flex items-center gap-1">
+            <Show when={keyMode() === "keyboard"}>
+              <IconShiftKey class="text-sm" />
+              <span class="font-bold text-xs">+</span>
+              <span class="font-bold text-sm">D</span>
+            </Show>
+          </div>
+        </div>
+      ),
+      action: props.onStartRandomMedley,
+    },
+  ];
+
+  const { position, increment, decrement, set } = createLoop(() => options.length);
+  let popupRef!: HTMLDivElement;
+
+  createEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef && !popupRef.contains(event.target as Node)) {
+        props.onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    onCleanup(() => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    });
+  });
+
+  const [pressed, setPressed] = createSignal(false);
+
+  useNavigation(() => ({
+    layer: 2,
+    onKeydown(event) {
+      if (event.action === "back" || event.action === "menu") {
+        props.onClose();
+        playSound("confirm");
+      } else if (event.action === "up") {
+        decrement();
+        playSound("select");
+      } else if (event.action === "down") {
+        increment();
+        playSound("select");
+      } else if (event.action === "confirm") {
+        setPressed(true);
+      }
+    },
+    onKeyup(event) {
+      if (event.action === "confirm") {
+        setPressed(false);
+        options[position()]?.action();
+        props.onClose();
+        playSound("confirm");
+      }
+    },
+  }));
+
+  return (
+    <div class="absolute top-full right-0 z-20 mt-2" ref={popupRef}>
+      <Motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        class="w-70 rounded-lg bg-black/20 p-2 shadow-xl backdrop-blur-md"
+      >
+        <div class="flex flex-col gap-1">
+          <For each={options}>
+            {(option, index) => {
+              const isSelected = () => position() === index();
+              const isActive = () => isSelected() && pressed();
+              return (
+                <button
+                  type="button"
+                  class="group relative grid w-full overflow-hidden rounded-lg text-left transition-all duration-250 active:scale-95"
+                  classList={{
+                    "bg-white/10": !isSelected(),
+                    "shadow-lg": isSelected(),
+                    "scale-95": isActive(),
+                  }}
+                  onClick={() => {
+                    set(index());
+                    option.action();
+                    props.onClose();
+                    playSound("confirm");
+                  }}
+                  onMouseEnter={() => set(index())}
+                >
+                  <div
+                    class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-250"
+                    classList={{
+                      "gradient-sing": true,
+                      "opacity-0": !isSelected(),
+                      "opacity-90": isSelected(),
+                    }}
+                  />
+                  <div class="z-2 col-start-1 row-start-1 p-3 font-medium">{option.label}</div>
+                </button>
+              );
+            }}
+          </For>
+        </div>
       </Motion.div>
     </div>
   );
@@ -947,6 +1196,130 @@ function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
   return (
     <div class="h-full transition-opacity duration-250" classList={{ "opacity-0": highscores().length === 0 }}>
       <HighscoreList scores={highscores()} />
+    </div>
+  );
+}
+
+interface MedleyListProps {
+  songs: LocalSong[];
+  onRemove: (index: number) => void;
+}
+
+function MedleyList(props: MedleyListProps) {
+  const { position, increment, decrement, set } = createLoop(() => props.songs.length);
+  let scrollContainer: HTMLDivElement | undefined;
+  const itemRefs: (HTMLDivElement | undefined)[] = [];
+
+  const setItemRef = (index: number) => (el: HTMLDivElement) => {
+    itemRefs[index] = el;
+  };
+
+  useNavigation(() => ({
+    onKeydown(event) {
+      if (event.action === "up") {
+        decrement();
+      }
+      if (event.action === "down") {
+        increment();
+      } else if (event.action === "remove-from-medley") {
+        props.onRemove(position());
+      }
+    },
+  }));
+
+  createEffect(
+    on(
+      position,
+      () => {
+        const selectedItem = itemRefs[position()];
+        if (selectedItem && scrollContainer) {
+          selectedItem.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "nearest",
+          });
+        }
+      },
+      { defer: true }
+    )
+  );
+
+  createEffect(
+    on(
+      () => props.songs.length,
+      (newLength, oldLength) => {
+        if (oldLength === undefined) return;
+
+        if (newLength > oldLength) {
+          set(newLength - 1);
+        } else if (newLength < oldLength) {
+          const currentPos = position();
+          if (currentPos >= newLength) {
+            set(Math.max(0, newLength - 1));
+          }
+        }
+      }
+    )
+  );
+
+  return (
+    <div class="h-full w-80">
+      <div class="flex h-full flex-col rounded-lg bg-black/20 p-4 backdrop-blur-md">
+        <h2 class="mb-4 font-bold text-2xl">Medley</h2>
+        <div class="relative min-h-0 flex-1">
+          <div ref={scrollContainer} class="styled-scrollbars absolute h-full w-full space-y-2 overflow-y-auto">
+            <For each={props.songs}>
+              {(song, index) => {
+                const isSelected = () => position() === index();
+                return (
+                  <div
+                    ref={setItemRef(index())}
+                    class="group relative grid overflow-hidden rounded-lg transition-all duration-250"
+                    classList={{
+                      "bg-white/10": !isSelected(),
+                      "shadow-lg": isSelected(),
+                    }}
+                  >
+                    <div
+                      class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-250"
+                      classList={{
+                        "gradient-sing": true,
+                        "opacity-0": !isSelected(),
+                        "opacity-90": isSelected(),
+                      }}
+                    />
+                    <div class="z-2 col-start-1 row-start-1 flex items-center justify-between p-3">
+                      <div>
+                        <div class="font-medium text-sm">{song.title}</div>
+                        <div class="text-xs opacity-80">{song.artist}</div>
+                      </div>
+
+                      <div class="flex items-center gap-1">
+                        <div class="opacity-0 transition-opacity duration-250" classList={{ "opacity-100": isSelected() }}>
+                          <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLT class="text-xs" />}>
+                            <IconF2Key class="text-xs" />
+                          </Show>
+                        </div>
+                        <button
+                          type="button"
+                          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-black/40 opacity-0 transition-all duration-250 hover:bg-black/60 active:scale-95 group-hover:opacity-100"
+                          classList={{ "opacity-100": isSelected() }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onRemove(index());
+                          }}
+                        >
+                          <IconX class="text-sm" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

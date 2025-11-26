@@ -1,13 +1,14 @@
 import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import type { User } from "~/lib/types";
+import { getMedleySong } from "~/lib/ultrastar/medley";
 import type { LocalSong } from "~/lib/ultrastar/song";
 
-export interface RoundSettings {
+interface QueuedSong {
   song: LocalSong;
+  voice: number[];
   players: (User | undefined)[];
-  voices: number[];
-  returnTo?: LinkProps["to"];
+  mode: "regular" | "medley";
 }
 
 export interface Score {
@@ -16,20 +17,30 @@ export interface Score {
   bonus: number;
 }
 
+interface Result {
+  scores: Score[];
+  song: QueuedSong;
+}
+
+export interface RoundSettings {
+  songs: QueuedSong[];
+  returnTo?: LinkProps["to"];
+}
+
 function createRoundStore() {
   const [settings, setSettings] = createSignal<RoundSettings>();
-  const [scores, setScores] = createSignal<Score[]>([]);
+  const [results, setResults] = createSignal<Result[]>([]);
 
   const reset = () => {
     setSettings(undefined);
-    setScores([]);
+    setResults([]);
   };
 
   return {
     settings,
-    scores,
+    results,
     setSettings,
-    setScores,
+    setResults,
     reset,
   };
 }
@@ -40,13 +51,40 @@ export function useRoundActions() {
   const navigate = useNavigate();
 
   const startRound = (settings: RoundSettings) => {
-    roundStore.setSettings(settings);
-    roundStore.setScores([]);
+    const songs = settings.songs.map((song) => {
+      if (song.mode === "medley") {
+        return {
+          ...song,
+          song: getMedleySong(song.song),
+        };
+      }
+      return song;
+    });
+    roundStore.setSettings({ ...settings, songs });
+    roundStore.setResults([]);
     navigate({ to: "/game" });
   };
 
   const endRound = (scores: Score[]) => {
-    roundStore.setScores(scores);
+    const song = roundStore.settings()?.songs[0];
+    if (!song) return;
+
+    roundStore.setResults((prev) => [...prev, { scores, song }]);
+
+    roundStore.setSettings((prev) => {
+      if (!prev) return undefined;
+      return {
+        ...prev,
+        songs: prev.songs.slice(1),
+      };
+    });
+    const nextSong = roundStore.settings()?.songs[0];
+
+    if (nextSong) {
+      navigate({ to: "/game/restart" });
+      return;
+    }
+
     navigate({ to: "/game/score" });
   };
 
