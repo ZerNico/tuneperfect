@@ -56,9 +56,10 @@ function GameComponent() {
   });
 
   onMount(() => {
+    const startTimeout = roundSong()?.mode === "medley" ? 1000 : 3000;
     setTimeout(() => {
       setReady(true);
-    }, 3000);
+    }, startTimeout);
   });
 
   onCleanup(async () => {

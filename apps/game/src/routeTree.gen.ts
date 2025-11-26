@@ -27,6 +27,7 @@ import { Route as LobbyAddLocalPlayerRouteImport } from './routes/lobby/add-loca
 import { Route as LobbyIdRouteImport } from './routes/lobby/$id'
 import { Route as GameScoreRouteImport } from './routes/game/score'
 import { Route as GameRestartRouteImport } from './routes/game/restart'
+import { Route as GameNextRouteImport } from './routes/game/next'
 import { Route as SettingsVolumeIndexRouteImport } from './routes/settings/volume/index'
 import { Route as SettingsSongsIndexRouteImport } from './routes/settings/songs/index'
 import { Route as SettingsMicrophonesIndexRouteImport } from './routes/settings/microphones/index'
@@ -129,6 +130,11 @@ const GameRestartRoute = GameRestartRouteImport.update({
   path: '/game/restart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameNextRoute = GameNextRouteImport.update({
+  id: '/game/next',
+  path: '/game/next',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsVolumeIndexRoute = SettingsVolumeIndexRouteImport.update({
   id: '/settings/volume/',
   path: '/settings/volume/',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/quit': typeof QuitRoute
+  '/game/next': typeof GameNextRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/quit': typeof QuitRoute
+  '/game/next': typeof GameNextRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/loading': typeof LoadingRoute
   '/quit': typeof QuitRoute
+  '/game/next': typeof GameNextRoute
   '/game/restart': typeof GameRestartRoute
   '/game/score': typeof GameScoreRoute
   '/lobby/$id': typeof LobbyIdRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/loading'
     | '/quit'
+    | '/game/next'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/loading'
     | '/quit'
+    | '/game/next'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/loading'
     | '/quit'
+    | '/game/next'
     | '/game/restart'
     | '/game/score'
     | '/lobby/$id'
@@ -383,6 +395,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   LoadingRoute: typeof LoadingRoute
   QuitRoute: typeof QuitRoute
+  GameNextRoute: typeof GameNextRoute
   GameRestartRoute: typeof GameRestartRoute
   GameScoreRoute: typeof GameScoreRoute
   LobbyIdRoute: typeof LobbyIdRoute
@@ -537,6 +550,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof GameRestartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/game/next': {
+      id: '/game/next'
+      path: '/game/next'
+      fullPath: '/game/next'
+      preLoaderRoute: typeof GameNextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/volume/': {
       id: '/settings/volume/'
       path: '/settings/volume'
@@ -623,6 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LoadingRoute: LoadingRoute,
   QuitRoute: QuitRoute,
+  GameNextRoute: GameNextRoute,
   GameRestartRoute: GameRestartRoute,
   GameScoreRoute: GameScoreRoute,
   LobbyIdRoute: LobbyIdRoute,

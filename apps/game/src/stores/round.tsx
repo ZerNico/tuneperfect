@@ -71,21 +71,11 @@ export function useRoundActions() {
 
     roundStore.setResults((prev) => [...prev, { scores, song }]);
 
-    roundStore.setSettings((prev) => {
-      if (!prev) return undefined;
-      return {
-        ...prev,
-        songs: prev.songs.slice(1),
-      };
-    });
-    
-    const nextSong = roundStore.settings()?.songs[0];
+    const nextSong = roundStore.settings()?.songs[1];
 
     if (nextSong) {
-      // Use setTimeout to allow cleanup to complete before navigation (TODO: find the reason for the lockup)
-      setTimeout(async () => {
-        await navigate({ to: "/game/restart" });
-      }, 100);
+      navigate({ to: "/game/next" });
+
       return;
     }
 
