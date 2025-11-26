@@ -86,12 +86,10 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined;
   let endCheckInterval: ReturnType<typeof setInterval> | undefined;
+  let fadeOutTimeout: ReturnType<typeof setTimeout> | undefined;
   const audioContext = new AudioContext();
   let audioSource: MediaElementAudioSourceNode | undefined;
-
-  onCleanup(() => {
-    audioContext.close();
-  });
+  let currentGainNode: GainNode | undefined;
 
   // Setup audio context for audio element
   createEffect(
@@ -108,59 +106,64 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       if (!audio) return;
 
-      let currentAudioSource: MediaElementAudioSourceNode | undefined;
-      let currentGainNode: GainNode | undefined;
+      let localAudioSource: MediaElementAudioSourceNode | undefined;
+      let localGainNode: GainNode | undefined;
 
       try {
-        currentAudioSource = audioContext.createMediaElementSource(audio);
-        currentGainNode = audioContext.createGain();
-        currentAudioSource.connect(currentGainNode);
-        currentGainNode.connect(audioContext.destination);
+        localAudioSource = audioContext.createMediaElementSource(audio);
+        localGainNode = audioContext.createGain();
+        localAudioSource.connect(localGainNode);
+        localGainNode.connect(audioContext.destination);
 
-        audioSource = currentAudioSource;
+        audioSource = localAudioSource;
+        currentGainNode = localGainNode;
 
         const replayGainAdjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
-        currentGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+        localGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
         // Update volume when it changes
         createEffect(() => {
-          if (currentGainNode) {
+          if (localGainNode) {
             const volume = props.volume ?? 1;
             const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
-            currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
+            localGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
           }
         });
 
         onCleanup(() => {
           try {
-            if (currentGainNode) {
-              currentGainNode.disconnect();
+            if (localGainNode) {
+              localGainNode.disconnect();
             }
-            if (currentAudioSource) {
-              currentAudioSource.disconnect();
+            if (localAudioSource) {
+              localAudioSource.disconnect();
             }
           } catch {
             // Ignore disconnection errors during cleanup
           }
           // Clear the global reference if it matches our current source
-          if (audioSource === currentAudioSource) {
+          if (audioSource === localAudioSource) {
             audioSource = undefined;
+          }
+          if (currentGainNode === localGainNode) {
+            currentGainNode = undefined;
           }
         });
       } catch (error) {
         console.warn("Failed to create audio source:", error);
         // Clean up any partially created nodes if error occurred
         try {
-          if (currentGainNode) {
-            currentGainNode.disconnect();
+          if (localGainNode) {
+            localGainNode.disconnect();
           }
-          if (currentAudioSource) {
-            currentAudioSource.disconnect();
+          if (localAudioSource) {
+            localAudioSource.disconnect();
           }
         } catch {
           // Ignore cleanup errors
         }
         audioSource = undefined;
+        currentGainNode = undefined;
       }
     })
   );
@@ -244,6 +247,61 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
   };
 
+  // Apply fade-in effect for medley mode
+  const applyFadeIn = () => {
+    if (props.mode !== "medley" || !currentGainNode) return;
+
+    const volume = props.volume ?? 1;
+    const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+    const targetVolume = volume * adjustment;
+    const fadeInDuration = 3; // seconds
+
+    // Start from 0 and fade to target volume over 3 seconds
+    currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
+    currentGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    currentGainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + fadeInDuration);
+  };
+
+  // Apply fade-out effect for medley mode
+  const applyFadeOut = () => {
+    if (props.mode !== "medley" || !currentGainNode) return;
+
+    const fadeOutDuration = 3; // seconds
+    const currentVolume = currentGainNode.gain.value;
+
+    // Fade from current volume to 0 over 3 seconds
+    currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
+    currentGainNode.gain.setValueAtTime(currentVolume, audioContext.currentTime);
+    currentGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeOutDuration);
+  };
+
+  // Schedule fade-out for medley mode
+  const scheduleFadeOut = () => {
+    clearTimeout(fadeOutTimeout);
+    
+    if (props.mode !== "medley" || !props.song.end) return;
+
+    const audio = audioElement();
+    const video = videoElement();
+    const mediaElement = audio || video;
+    
+    if (!mediaElement) return;
+
+    const currentTime = mediaElement.currentTime * 1000; // Convert to milliseconds
+    const endTime = props.song.end;
+    const fadeOutDuration = 3000; // 3 seconds in milliseconds
+    const timeUntilFadeOut = endTime - currentTime - fadeOutDuration;
+
+    if (timeUntilFadeOut > 0) {
+      fadeOutTimeout = setTimeout(() => {
+        applyFadeOut();
+      }, timeUntilFadeOut);
+    } else if (timeUntilFadeOut > -fadeOutDuration) {
+      // We're already in the fade-out window, apply it immediately
+      applyFadeOut();
+    }
+  };
+
   // Sync and start playback
   const play = async () => {
     const audio = audioElement();
@@ -276,6 +334,9 @@ export default function SongPlayer(props: SongPlayerProps) {
         }
       }
 
+      // Apply fade-in for medley mode
+      applyFadeIn();
+
       if (audio && video) {
         // Sync both audio and video with proper videoGap handling
         await syncVideoToAudio(audio, video);
@@ -284,6 +345,9 @@ export default function SongPlayer(props: SongPlayerProps) {
       } else if (video) {
         await video.play();
       }
+
+      // Schedule fade-out for medley mode
+      scheduleFadeOut();
     } catch (error) {
       console.warn("Failed to start playback:", error);
     }
@@ -294,6 +358,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     audioElement()?.pause();
     videoElement()?.pause();
     clearTimeout(syncTimeout);
+    clearTimeout(fadeOutTimeout);
     clearInterval(endCheckInterval);
   };
 
@@ -353,6 +418,15 @@ export default function SongPlayer(props: SongPlayerProps) {
         setVideoError(false);
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
+        clearTimeout(fadeOutTimeout);
+        
+        // Reset gain node to normal volume
+        if (currentGainNode) {
+          const volume = props.volume ?? 1;
+          const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+          currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
+          currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
+        }
       }
     )
   );
@@ -506,6 +580,8 @@ export default function SongPlayer(props: SongPlayerProps) {
   onCleanup(() => {
     pause();
     stopEndTimeMonitoring();
+    clearTimeout(fadeOutTimeout);
+    audioContext.close();
   });
 
   return (
