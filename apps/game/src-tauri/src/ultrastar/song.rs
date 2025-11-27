@@ -65,6 +65,14 @@ pub struct Song {
     pub preview_start: Option<f64>,
     pub version: Option<String>,
     pub tags: Option<Vec<String>>,
+    #[serde(rename = "medleyStartBeat")]
+    pub medley_start_beat: Option<i32>,
+    #[serde(rename = "medleyEndBeat")]
+    pub medley_end_beat: Option<i32>,
+    #[serde(rename = "medleyStart")]
+    pub medley_start: Option<f64>,
+    #[serde(rename = "medleyEnd")]
+    pub medley_end: Option<f64>,
     pub voices: Vec<Voice>,
 }
 

@@ -106,18 +106,20 @@ export const Route = createFileRoute("/party/versus/")({
   loader: async () => {
     const settings = roundStore.settings();
     if (roundStore.settings()?.returnTo !== "/party/versus") return;
+    const lastResult = roundStore.results().at(-1);
 
-    const song = settings?.song;
-    if (!song) return;
+    if (!lastResult) return;
+
+    const song = lastResult.song.song;
+    const voice = song.voices[0];
+    const players = lastResult.song.players;
+    const scores = lastResult.scores;
 
     versusStore.setState((state) => ({
       ...state,
-      playedSongs: [...state.playedSongs, song],
+      playedSongs: [...state.playedSongs, lastResult.song.song],
     }));
 
-    const voice = settings?.song?.voices[0];
-    const players = settings?.players ?? [];
-    const scores = roundStore.scores();
 
     if (scores.length !== 2 || !voice || players.length !== 2) {
       console.warn("Conditions not met for processing round results:", { settings, voice, players, scores });
@@ -289,10 +291,7 @@ function VersusComponent() {
 
   const currentMatchup = createMemo(() => versusStore.state().matchups[0] ?? null);
 
-  const [jokers, setJokers] = createSignal<[number, number]>([
-    versusStore.settings()?.jokers ?? 0,
-    versusStore.settings()?.jokers ?? 0,
-  ]);
+  const [jokers, setJokers] = createSignal<[number, number]>([versusStore.settings()?.jokers ?? 0, versusStore.settings()?.jokers ?? 0]);
 
   const winners = createMemo(() => {
     const players = versusStore.state().players;
@@ -339,7 +338,7 @@ function VersusComponent() {
     const players = versusStore.state().matchups[0];
     if (!players) return;
 
-    roundActions.startRound({ song, players, voices: [0, 0], returnTo: "/party/versus" });
+    roundActions.startRound({ songs: [{ song, voice: [0, 0], players, mode: "regular" }], returnTo: "/party/versus" });
   };
 
   const menuItems: MenuItem[] = [
@@ -394,7 +393,7 @@ function VersusComponent() {
               {(currentSong) => (
                 <div class="h-full w-full">
                   <SongPlayer
-                    isPreview
+                    mode="preview"
                     volume={settingsStore.getVolume("preview")}
                     class="h-full w-full opacity-60"
                     playing
@@ -411,10 +410,7 @@ function VersusComponent() {
         <div>
           <VersusHighscoreList />
         </div>
-        <Show
-          when={currentMatchup()}
-          fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}
-        >
+        <Show when={currentMatchup()} fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}>
           {(matchup) => (
             <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center gap-14 py-4">
               <MatchupPlayerDisplay
@@ -428,8 +424,7 @@ function VersusComponent() {
               <div
                 class="pointer-events-none flex transform-gpu justify-center will-change-transform"
                 style={{
-                  transform:
-                    state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
+                  transform: state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
                   transition: state() === "animating" ? "transform 3s cubic-bezier(0.42, 0, 0.4, 1)" : "",
                   width: `${(TOTAL_SONG_ITEMS / SONGS_ON_SCREEN) * 100}%`,
                 }}
@@ -438,9 +433,7 @@ function VersusComponent() {
                 <Show when={displayedSongs()}>
                   {(data) => (
                     <>
-                      <For each={times(PADDING)}>
-                        {() => <div class="flex-shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}
-                      </For>
+                      <For each={times(PADDING)}>{() => <div class="flex-shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}</For>
                       <Key each={data()} by={(item) => item.id}>
                         {(songItem, index) => (
                           <button
@@ -575,11 +568,7 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
             <IconGamepadRB class="text-base" />
           </Show>
         </Show>
-        <button
-          type="button"
-          class="cursor-pointer transition-all hover:opacity-75 active:scale-95 "
-          onClick={props.onReroll}
-        >
+        <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95 " onClick={props.onReroll}>
           <IconDices class="text-xl" />
         </button>
         <p class="">{props.jokers}</p>

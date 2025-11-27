@@ -99,7 +99,7 @@ export default function Progress() {
       };
     }
 
-    const startOffset = song.start ?? 0;
+    const startOffset = song.start ? song.start / 1000 : 0;
     const endOffset = song.end ? song.end / 1000 : rawDuration;
 
     const effectiveCurrentTime = Math.max(0, rawCurrentTime - startOffset);

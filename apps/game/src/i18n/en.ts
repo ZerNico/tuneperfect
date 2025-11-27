@@ -89,6 +89,10 @@ const en = {
       other: "{{count}} songs",
       filtered: "{{filtered}} / {{total}} songs",
     },
+    menu: {
+      addToMedley: "Add to Medley",
+      startRandomMedley: "Start Random Medley",
+    },
   },
   score: {
     title: "Score",

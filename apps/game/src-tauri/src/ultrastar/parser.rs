@@ -110,6 +110,10 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
         preview_start: None,
         version: None,
         tags: None,
+        medley_start_beat: None,
+        medley_end_beat: None,
+        medley_start: None,
+        medley_end: None,
         voices: Vec::new(),
     };
 
@@ -180,6 +184,10 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "preview" | "previewstart" => song.preview_start = Some(parse_time_value(value, &property, uses_milliseconds)?),
                     "tags" => song.tags = parse_multi_value_field(value, supports_multi_value),
                     "version" => song.version = Some(parse_version(value)?),
+                    "medleystartbeat" => song.medley_start_beat = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
+                    "medleyendbeat" => song.medley_end_beat = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
+                    "medleystart" => song.medley_start = if value.is_empty() { None } else { Some(parse_time_value(value, &property, uses_milliseconds)?) },
+                    "medleyend" => song.medley_end = if value.is_empty() { None } else { Some(parse_time_value(value, &property, uses_milliseconds)?) },
                     _ => (),
                 }
             }

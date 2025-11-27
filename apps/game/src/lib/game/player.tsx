@@ -19,14 +19,15 @@ export { usePlayer } from "./player-context";
 export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const pitchProcessor = new PitchProcessor(settingsStore.general().difficulty);
   const game = useGame();
+  const roundSong = () => roundStore.settings()?.songs[0];
 
   const voice = createMemo(() => {
-    const voiceIndex = roundStore.settings()?.voices[options().index];
+    const voiceIndex = roundSong()?.voice[options().index];
     if (voiceIndex === undefined) {
       return undefined;
     }
 
-    return game.song()?.voices[voiceIndex];
+    return roundSong()?.song.voices[voiceIndex];
   });
 
   const maxScore = createMemo(() => {
@@ -177,7 +178,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   };
 
   const score = () => game.scores()[options().index] ?? { normal: 0, golden: 0, bonus: 0 };
-  const player = () => roundStore.settings()?.players[options().index] || null;
+  const player = () => roundSong()?.players[options().index] ?? null;
 
   const values: PlayerContextValue = {
     index: () => options().index,
