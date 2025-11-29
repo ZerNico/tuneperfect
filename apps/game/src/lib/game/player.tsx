@@ -105,7 +105,10 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return beatMap;
   });
 
-  const processedBeats = new ReactiveMap<number, { note: Note; midiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }>();
+  const processedBeats = new ReactiveMap<
+    number,
+    { note: Note; midiNote: number; rawMidiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }
+  >();
 
   const delayedFlooredBeat = createMemo(() => {
     return Math.floor(delayedBeat());
@@ -140,7 +143,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       const result = await commands.getPitch(options().index);
 
       if (result.status !== "error") {
-        const midiNote = pitchProcessor.process(result.data, beatInfo.note);
+        const { midiNote, rawMidiNote } = pitchProcessor.process(result.data, beatInfo.note);
 
         const isRap = beatInfo.note.type.startsWith("Rap");
 
@@ -161,6 +164,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
           processedBeats.set(flooredBeat, {
             note: beatInfo.note,
             midiNote: isRap ? beatInfo.note.midiNote : midiNote,
+            rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
             isFirstInPhrase: beatInfo.isFirstInPhrase,
             isFirstInNote: beatInfo.isFirstInNote,
           });

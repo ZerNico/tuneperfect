@@ -12,7 +12,10 @@ export interface PlayerContextValue {
   nextPhrase: Accessor<Phrase | undefined>;
   microphone: Accessor<Microphone>;
   delayedBeat: Accessor<number>;
-  processedBeats: ReactiveMap<number, { note: Note; midiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }>;
+  processedBeats: ReactiveMap<
+    number,
+    { note: Note; midiNote: number; rawMidiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }
+  >;
   addScore: (type: "normal" | "golden" | "bonus", value: number) => void;
   score: Accessor<Score>;
   maxScore: Accessor<{ normal: number; golden: number; bonus: number }>;

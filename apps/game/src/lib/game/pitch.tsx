@@ -3,33 +3,33 @@ import { frequencyToMidi } from "../utils/midi";
 
 export type Difficulty = "easy" | "medium" | "hard";
 
+export function getGapTolerance(difficulty: Difficulty): number {
+  switch (difficulty) {
+    case "easy":
+      return 2;
+    case "medium":
+      return 1;
+    case "hard":
+      return 0.5;
+    default:
+      return 2;
+  }
+}
+
 export class PitchProcessor {
   private hasJoker = false;
   private gapTolerance: number;
 
   constructor(difficulty: Difficulty = "easy") {
-    this.gapTolerance = this.getGapTolerance(difficulty);
-  }
-
-  private getGapTolerance(difficulty: Difficulty): number {
-    switch (difficulty) {
-      case "easy":
-        return 2;
-      case "medium":
-        return 1;
-      case "hard":
-        return 0.5;
-      default:
-        return 2;
-    }
+    this.gapTolerance = getGapTolerance(difficulty);
   }
 
   public process(frequency: number, note: Note) {
-    let midiNote = frequencyToMidi(frequency);
-    midiNote = this.applyCorrection(midiNote, note);
+    const rawMidiNote = frequencyToMidi(frequency);
+    let midiNote = this.applyCorrection(rawMidiNote, note);
     midiNote = this.applyJoker(midiNote, note);
 
-    return midiNote;
+    return { midiNote, rawMidiNote };
   }
 
   private applyCorrection(detectedMidiNote: number, targetNote: Note) {

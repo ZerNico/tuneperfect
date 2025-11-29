@@ -1,8 +1,10 @@
 import { Key } from "@solid-primitives/keyed";
-import { createMemo, createSignal, For } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
+import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
+import { settingsStore } from "~/stores/settings";
 
 const ROW_COUNT = 16;
 
@@ -58,11 +60,7 @@ export default function Pitch() {
     const correctNoteRow = getNoteRow(beat.note.midiNote);
     const sungNoteRow = getNoteRow(beat.midiNote);
 
-    const possibleRows = [
-      sungNoteRow,
-      sungNoteRow - 12,
-      sungNoteRow + 12,
-    ];
+    const possibleRows = [sungNoteRow, sungNoteRow - 12, sungNoteRow + 12];
 
     let closestRow = sungNoteRow;
     let minDistance = Math.abs(correctNoteRow - sungNoteRow);
@@ -122,7 +120,13 @@ export default function Pitch() {
     for (let i = startBeat; i < endBeat; i++) {
       const beat = player.processedBeats.get(i);
       if (beat) {
-        currentProcessedBeats.push({ beat: i, note: beat.note, midiNote: beat.midiNote, isFirstInNote: beat.isFirstInNote });
+        currentProcessedBeats.push({
+          beat: i,
+          note: beat.note,
+          midiNote: beat.midiNote,
+          rawMidiNote: beat.rawMidiNote,
+          isFirstInNote: beat.isFirstInNote,
+        });
       }
     }
 
@@ -156,9 +160,11 @@ export default function Pitch() {
           length: 1,
           row: getProcessedBeatRow(beat),
           column: beat.beat - startBeat + 1,
+          rawMidiNotes: [beat.rawMidiNote],
         });
       } else {
         lastGroup.length++;
+        lastGroup.rawMidiNotes.push(beat.rawMidiNote);
       }
 
       return grouped;
@@ -169,7 +175,7 @@ export default function Pitch() {
 
   return (
     <div
-      class="grid flex-grow px-48"
+      class="grid grow px-48"
       classList={{
         "pt-[2cqh] pb-[8cqh]": player.index() === 0,
         "pt-[8cqh] pb-[2cqh]": player.index() === 1,
@@ -201,6 +207,8 @@ export default function Pitch() {
               column={groupedBeat().column}
               delayedBeat={player.delayedBeat()}
               micColor={micColor()}
+              rawMidiNotes={groupedBeat().rawMidiNotes}
+              sungMidiNote={groupedBeat().midiNote}
             />
           )}
         </Key>
@@ -282,6 +290,8 @@ interface ProcessedNoteProps {
   column: number;
   delayedBeat: number;
   micColor: string;
+  rawMidiNotes: number[];
+  sungMidiNote: number;
 }
 
 function ProcessedNote(props: ProcessedNoteProps) {
@@ -294,15 +304,80 @@ function ProcessedNote(props: ProcessedNoteProps) {
 
     if (delayedBeat - firstBeat() <= 1) {
       return {
-        "clip-percentage": fillPercentage,
-        "width-percentage": 100 / props.length,
+        clipPercentage: fillPercentage,
+        widthPercentage: 100 / props.length,
       };
     }
 
     return {
-      "clip-percentage": 100,
-      "width-percentage": fillPercentage,
+      clipPercentage: 100,
+      widthPercentage: fillPercentage,
     };
+  });
+
+  const calculateAccuracyPosition = (rawMidi: number, targetMidi: number): number => {
+    const tolerance = getGapTolerance(settingsStore.general().difficulty);
+
+    let adjustedRawMidi = rawMidi;
+
+    while (adjustedRawMidi > targetMidi + 6) {
+      adjustedRawMidi -= 12;
+    }
+    while (adjustedRawMidi < targetMidi - 6) {
+      adjustedRawMidi += 12;
+    }
+
+    const diff = adjustedRawMidi - targetMidi;
+
+    const normalized = clamp(diff / tolerance, -1, 1);
+
+    return 50 - normalized * 50;
+  };
+
+  const points = createMemo(() => {
+    const isRap = props.note.type.startsWith("Rap");
+    if (!isRap && props.sungMidiNote !== props.note.midiNote) {
+      return [];
+    }
+
+    const targetMidi = props.note.midiNote;
+
+    return props.rawMidiNotes.map((rawMidi, i) => ({
+      x: i + 0.5,
+      y: calculateAccuracyPosition(rawMidi, targetMidi),
+    }));
+  });
+
+  const accuracyLine = createMemo(() => {
+    const currentPoints = points();
+    if (currentPoints.length === 0) return null;
+
+    const first = currentPoints[0];
+    if (!first) return null;
+
+    let d = `M 0 ${first.y} L ${first.x} ${first.y}`;
+
+    for (let i = 1; i < currentPoints.length; i++) {
+      const p0 = currentPoints[i - 1];
+      const p1 = currentPoints[i];
+      
+      if (!p0 || !p1) continue;
+
+      const midX = (p0.x + p1.x) / 2;
+      const cp1x = midX;
+      const cp1y = p0.y;
+      const cp2x = midX;
+      const cp2y = p1.y;
+
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+    }
+
+    const last = currentPoints.at(-1);
+    if (last) {
+      d += ` L ${props.rawMidiNotes.length} ${last.y}`;
+    }
+
+    return d;
   });
 
   return (
@@ -314,14 +389,40 @@ function ProcessedNote(props: ProcessedNoteProps) {
       }}
     >
       <div class="-translate-y-1/4 absolute h-2/1 w-full transform p-[0.35cqw]">
-        <div
-          style={{
-            "clip-path": `polygon(0% 0%, ${fill()["clip-percentage"]}% 0%, ${fill()["clip-percentage"]}% 100%, 0% 100%)`,
-            width: `${fill()["width-percentage"]}%`,
-            "background-color": props.micColor,
-          }}
-          class="h-full w-full rounded-full"
-        />
+        <div class="relative h-full w-full">
+          <div
+            style={{
+              "clip-path": `polygon(0% 0%, ${fill().clipPercentage}% 0%, ${fill().clipPercentage}% 100%, 0% 100%)`,
+              width: `${fill().widthPercentage}%`,
+              "background-color": props.micColor,
+            }}
+            class="relative h-full w-full overflow-hidden rounded-full"
+          >
+            <Show when={accuracyLine()}>
+              {(accuracyLine) => (
+                <svg
+                  class="absolute top-0 left-0 h-full overflow-visible"
+                  style={{
+                    width: `${clamp((100 / fill().widthPercentage) * 100, 100, 200)}%`,
+                  }}
+                  viewBox={`0 0 ${props.length} 100`}
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <title>Pitch accuracy indicator</title>
+                  <path
+                    d={accuracyLine()}
+                    stroke="white"
+                    stroke-width="2"
+                    fill="none"
+                    opacity="0.4"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+              )}
+            </Show>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -331,6 +432,7 @@ interface ProcessedBeat {
   beat: number;
   note: Note;
   midiNote: number;
+  rawMidiNote: number;
   isFirstInNote: boolean;
 }
 
@@ -338,4 +440,5 @@ interface DisplayedProcessedBeat extends ProcessedBeat {
   length: number;
   row: number;
   column: number;
+  rawMidiNotes: number[];
 }
