@@ -76,6 +76,14 @@ function GeneralSettingsComponent() {
       renderValue: (value) => t(`settings.sections.general.audioModeOptions.${value as "normal" | "preferInstrumental"}`),
     },
     {
+      type: "select-string",
+      label: t("settings.sections.volume.micPlayback"),
+      value: () => (general().micPlaybackEnabled ? "yes" : "no"),
+      options: ["yes", "no"],
+      onChange: (value) => setGeneral({ ...general(), micPlaybackEnabled: value === "yes" }),
+      renderValue: (value) => t(`common.${value as "yes" | "no"}`),
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveGeneral,

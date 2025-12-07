@@ -160,6 +160,8 @@ const en = {
         game: "Game Volume",
         preview: "Preview Volume",
         menu: "Menu Volume",
+        micPlayback: "Microphone Playback",
+        micPlaybackVolume: "Microphone Playback Volume",
       },
       credits: {
         title: "Credits",

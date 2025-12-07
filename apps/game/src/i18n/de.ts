@@ -161,6 +161,8 @@ const de = {
         game: "Spiellautstärke",
         preview: "Vorschaulautstärke",
         menu: "Menülautstärke",
+        micPlayback: "Mikrofon-Wiedergabe",
+        micPlaybackVolume: "Mikrofon-Wiedergabelautstärke",
       },
       credits: {
         title: "Credits",

@@ -70,6 +70,17 @@ function VolumeComponent() {
       },
     },
     {
+      type: "slider",
+      label: t("settings.sections.volume.micPlaybackVolume"),
+      value: () => Math.round(volume().micPlayback * 100),
+      min: 0,
+      max: 100,
+      step: 1,
+      onInput: (value: number) => {
+        setVolume((prev) => ({ ...prev, micPlayback: Math.round(value) / 100 }));
+      },
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveVolume,

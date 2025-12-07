@@ -1,37 +1,39 @@
-use super::processor::Processor;
-use crate::{error::AppError, AppState};
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use serde::{Deserialize, Serialize};
+use super::{device::DeviceManager, input::InputStreamManager, output::OutputMixer, types::MicrophoneOptions};
+use crate::error::AppError;
+use cpal::Stream;
 use std::{
     collections::HashMap,
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc},
     thread,
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
-#[derive(Debug, Serialize, Deserialize, specta::Type, Clone)]
-pub struct MicrophoneOptions {
-    pub name: String,
-    pub channel: i32,
-    pub gain: f32,
-    pub threshold: f32,
-}
-
+/// Manages audio recording and playback
 pub struct Recorder {
     stop_tx: mpsc::Sender<()>,
     thread_handle: Option<thread::JoinHandle<Result<(), AppError>>>,
 }
 
 impl Recorder {
+    /// Create a new recorder and start the recording loop
     pub fn new(
         app_handle: AppHandle,
         options: Vec<MicrophoneOptions>,
         samples_per_beat: usize,
+        playback_enabled: bool,
+        playback_volume: f32,
     ) -> Result<Self, AppError> {
         let (stop_tx, stop_rx) = mpsc::channel();
 
         let thread_handle = thread::spawn(move || {
-            Self::run_recording_loop(app_handle, options, stop_rx, samples_per_beat)
+            Self::run_recording_loop(
+                app_handle,
+                options,
+                stop_rx,
+                samples_per_beat,
+                playback_enabled,
+                playback_volume,
+            )
         });
 
         Ok(Self {
@@ -40,89 +42,75 @@ impl Recorder {
         })
     }
 
+    /// Main recording loop that sets up and manages all audio streams
     fn run_recording_loop(
         app_handle: AppHandle,
         options: Vec<MicrophoneOptions>,
         stop_rx: mpsc::Receiver<()>,
         samples_per_beat: usize,
+        playback_enabled: bool,
+        playback_volume: f32,
     ) -> Result<(), AppError> {
-        let host = cpal::default_host();
-        let devices = host.devices()?;
-        let mut streams = Vec::new();
+        let device_manager = DeviceManager::new()?;
+        let mic_names: Vec<String> = options.iter().map(|opt| opt.name.clone()).collect();
+        let input_devices = device_manager.find_input_devices(&mic_names)?;
 
-        for device in devices {
-            let device_name = device.name()?;
-            let options_for_device: HashMap<_, _> = options
-                .clone()
-                .into_iter()
-                .enumerate()
-                .filter(|(_, mic)| mic.name == device_name)
-                .collect();
-
-            if options_for_device.is_empty() {
-                continue;
-            }
-
-            if let Ok(config) = device.default_input_config() {
-                let channels = config.channels() as usize;
-
-                let processors: HashMap<_, _> = options_for_device
-                    .clone()
-                    .into_iter()
-                    .map(|(index, o)| {
-                        let sample_rate = config.sample_rate().0;
-                        let processor = Processor::new(o.clone(), sample_rate, samples_per_beat);
-                        (index, Arc::new(Mutex::new(processor)))
-                    })
-                    .collect();
-
-                let state = app_handle.state::<AppState>();
-                match state.processors.write() {
-                    Ok(mut processors_state) => {
-                        processors_state.extend(processors.clone());
-                    }
-                    Err(poisoned) => {
-                        let mut processors_state = poisoned.into_inner();
-                        processors_state.extend(processors.clone());
+        let input_sample_rates: Vec<u32> = if playback_enabled {
+            let mut rates = vec![0u32; options.len()];
+            for (_, config, mic_indices) in &input_devices {
+                let sample_rate = config.sample_rate.0;
+                for &index in mic_indices {
+                    if index < rates.len() {
+                        rates[index] = sample_rate;
                     }
                 }
-
-                let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                    for (&index, option) in &options_for_device {
-                        let buffer: Vec<f32> = data
-                            .iter()
-                            .skip(option.channel as usize)
-                            .step_by(channels)
-                            .copied()
-                            .collect();
-
-                        if let Some(processor) = processors.get(&index) {
-                            match processor.lock() {
-                                Ok(mut processor) => {
-                                    processor.push_audio_data(&buffer);
-                                }
-                                Err(poisoned) => {
-                                    let mut processor = poisoned.into_inner();
-                                    processor.push_audio_data(&buffer);
-                                }
-                            }
-                        }
-                    }
-                };
-
-                let stream = device.build_input_stream(
-                    &config.into(),
-                    input_data_fn,
-                    |err| eprintln!("Stream error: {}", err),
-                    None,
-                )?;
-
-                stream.play()?;
-                streams.push(stream);
             }
+            rates
+        } else {
+            Vec::new()
+        };
+
+        let output_mixer: Option<OutputMixer> = if playback_enabled {
+            let (_, output_config) = device_manager.get_output_config()?;
+            let output_sample_rate = output_config.sample_rate.0;
+            let mixer = OutputMixer::new(options.len(), &input_sample_rates, output_sample_rate)?;
+            Some(mixer)
+        } else {
+            None
+        };
+
+        let output_producers: HashMap<usize, _> = if let Some(mixer) = &output_mixer {
+            (0..options.len())
+                .filter_map(|index| {
+                    mixer.get_producer(index).map(|producer| (index, producer))
+                })
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
+        let playback_enabled_atomic = if playback_enabled {
+            Arc::new(std::sync::atomic::AtomicBool::new(true))
+        } else {
+            Arc::new(std::sync::atomic::AtomicBool::new(false))
+        };
+
+        let mut streams: Vec<Stream> = InputStreamManager::setup_input_streams(
+            input_devices,
+            &options,
+            samples_per_beat,
+            app_handle,
+            &output_producers,
+            playback_enabled_atomic,
+        )?;
+
+        if let Some(mixer) = output_mixer {
+            let (output_device, output_config) = device_manager.get_output_config()?;
+            let output_stream = mixer.create_output_stream(output_device, output_config, playback_volume)?;
+            streams.push(output_stream);
         }
 
-        stop_rx.recv().unwrap();
+        stop_rx.recv().map_err(|_| AppError::RecorderError("Stop channel closed".to_string()))?;
 
         Ok(())
     }
@@ -130,7 +118,9 @@ impl Recorder {
 
 impl Drop for Recorder {
     fn drop(&mut self) {
-        self.stop_tx.send(()).unwrap();
-        self.thread_handle.take().unwrap().join().unwrap().unwrap();
+        let _ = self.stop_tx.send(());
+        if let Some(handle) = self.thread_handle.take() {
+            let _ = handle.join();
+        }
     }
 }

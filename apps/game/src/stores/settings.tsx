@@ -10,12 +10,14 @@ const settingsStoreSchema = v.object({
     showNoteSegments: v.fallback(v.boolean(), false),
     difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
+    micPlaybackEnabled: v.fallback(v.boolean(), false),
   }),
   volume: v.object({
     master: v.number(),
     game: v.number(),
     preview: v.number(),
     menu: v.number(),
+    micPlayback: v.fallback(v.number(), 0.5),
   }),
   microphones: v.array(
     v.object({
@@ -42,12 +44,14 @@ const defaultSettings: SettingsStore = {
     showNoteSegments: false,
     difficulty: "easy",
     audioMode: "normal",
+    micPlaybackEnabled: false,
   },
   volume: {
     master: 1,
     game: 1,
     preview: 0.5,
     menu: 0.5,
+    micPlayback: 1,
   },
   microphones: [],
   songs: {
