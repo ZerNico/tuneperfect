@@ -33,7 +33,12 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     }
 
     const samplesPerBeat = Math.floor((48000 * beatToMsWithoutGap(opts.song, 1)) / 1000);
-    await commands.startRecording(settingsStore.microphones(), samplesPerBeat);
+    await commands.startRecording(
+      settingsStore.microphones(),
+      samplesPerBeat,
+      settingsStore.general().micPlaybackEnabled,
+      settingsStore.volume().micPlayback,
+    );
 
     setStarted(true);
     setPlaying(true);

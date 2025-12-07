@@ -4,8 +4,9 @@ use ringbuf::{
     HeapRb,
 };
 
-use super::recorder::MicrophoneOptions;
+use super::types::MicrophoneOptions;
 
+/// Processes audio data for pitch detection
 pub struct Processor {
     audio_buffer: HeapRb<f32>,
     pitchtracker: DywaPitchTracker,
@@ -27,6 +28,7 @@ impl Processor {
         }
     }
 
+    /// Push audio data into the buffer for processing
     pub fn push_audio_data(&mut self, data: &[f32]) {
         let gained_data: Vec<f32> = data.iter().map(|&sample| self.apply_gain(sample)).collect();
         self.audio_buffer.push_slice_overwrite(&gained_data);
@@ -35,13 +37,12 @@ impl Processor {
     pub fn get_pitch(&mut self) -> f32 {
         let slices = self.audio_buffer.as_slices();
         let samples = [slices.0, slices.1].concat();
-        
+
         if samples.len() < self.samples_per_beat {
             return -1.0;
         }
-        
-        let start_sample = samples.len() - self.samples_per_beat;
 
+        let start_sample = samples.len() - self.samples_per_beat;
         let mut pitch = -1.0;
 
         if self.above_noise_threshold(&samples, start_sample) {

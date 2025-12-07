@@ -13,9 +13,9 @@ async getMicrophones() : Promise<Result<Microphone[], AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
-async startRecording(options: MicrophoneOptions[], samplesPerBeat: number) : Promise<Result<null, AppError>> {
+async startRecording(options: MicrophoneOptions[], samplesPerBeat: number, playbackEnabled: boolean, playbackVolume: number) : Promise<Result<null, AppError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("start_recording", { options, samplesPerBeat }) };
+    return { status: "ok", data: await TAURI_INVOKE("start_recording", { options, samplesPerBeat, playbackEnabled, playbackVolume }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -75,6 +75,9 @@ startParsingEvent: "start-parsing-event"
 export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string }
 export type LocalSong = ({ title: string; artist: string; bpm: number; gap: number; videoGap: number; start: number | null; end: number | null; hash: string; album: string | null; language: string[] | null; edition: string[] | null; genre: string[] | null; year: number | null; creator: string[] | null; relative: boolean | null; audio: string | null; instrumental: string | null; cover: string | null; video: string | null; background: string | null; p1: string | null; p2: string | null; previewStart: number | null; version: string | null; tags: string[] | null; medleyStartBeat: number | null; medleyEndBeat: number | null; medleyStart: number | null; medleyEnd: number | null; voices: Voice[] }) & { audioUrl: string | null; instrumentalUrl: string | null; videoUrl: string | null; coverUrl: string | null; backgroundUrl: string | null; replayGainTrackGain: number | null; replayGainTrackPeak: number | null }
 export type Microphone = { name: string; channels: number }
+/**
+ * Configuration options for a microphone input
+ */
 export type MicrophoneOptions = { name: string; channel: number; gain: number; threshold: number }
 export type Note = { type: NoteType; startBeat: number; length: number; text: string; txtPitch: number; midiNote: number }
 export type NoteType = "Normal" | "Golden" | "Freestyle" | "Rap" | "RapGolden"
