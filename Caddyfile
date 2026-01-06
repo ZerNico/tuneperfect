@@ -1,0 +1,21 @@
+# Caddy configuration for local development
+# Run with: caddy run --config Caddyfile
+
+# Web app (port 3000)
+tuneperfect.localhost {
+	reverse_proxy localhost:3000
+	tls .tmp/certs/tuneperfect.localhost.pem .tmp/certs/tuneperfect.localhost-key.pem
+}
+
+# App (port 3001)
+app.tuneperfect.localhost {
+	reverse_proxy localhost:3001
+	tls .tmp/certs/tuneperfect.localhost.pem .tmp/certs/tuneperfect.localhost-key.pem
+}
+
+# API (port 3002)
+api.tuneperfect.localhost {
+	reverse_proxy localhost:3002
+	tls .tmp/certs/tuneperfect.localhost.pem .tmp/certs/tuneperfect.localhost-key.pem
+}
+

@@ -29,6 +29,7 @@ Download the game from [tuneperfect.org](https://tuneperfect.org).
 ### Prerequisites
 
 - [mkcert](https://github.com/FiloSottile/mkcert#installation) - For local certificates
+- [Caddy](https://caddyserver.com/docs/install) - Reverse proxy for local development
 - [docker](https://docs.docker.com/get-docker/) - For running development services
 - [bun](https://bun.sh/docs/installation) - JavaScript runtime and package manager
 
@@ -42,23 +43,21 @@ Download the game from [tuneperfect.org](https://tuneperfect.org).
 ```bash
 bun install
 ```
-3. Generate certificates:
-```bash
-bun run tuneperfect generate-certs
-```
-4. Start development services:
+3. Start development services:
 ```bash
 docker compose -f docker-compose.dev.yml up -d
 ```
-5. Start the development server:
+4. Start the development environment (this will automatically):
+   - Generate certificates if they don't exist
+   - Start the Caddy reverse proxy
+   - Start all apps in development mode
 ```bash
-bun run dev
+bun run tuneperfect dev --filter @tuneperfect/web --filter @tuneperfect/api
 ```
-To run only specific apps, use the following commands:
+To run only specific apps:
 ```bash
-bun run dev --filter @tuneperfect/web --filter @tuneperfect/api # run only web and api
+bun run tuneperfect dev --filter @tuneperfect/game
 ```
-
 
 ## Contributing
 
