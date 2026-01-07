@@ -5,11 +5,13 @@ import icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 import viteSolid from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { nitro } from 'nitro/vite'
 
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
     tanstackStart(),
+    nitro({ preset: "bun" }),
     viteSolid({ ssr: true }),
     icons({
       customCollections: {
