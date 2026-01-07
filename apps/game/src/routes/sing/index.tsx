@@ -396,6 +396,7 @@ function SingComponent() {
             animationsDisabled={animationsDisabled()}
             onIsFastScrolling={setIsFastScrolling}
             onFilteredSongsChange={setFilteredSongCount}
+            onSelect={(song) => (isMedley() ? startMedley() : startRegular(song))}
           />
         </div>
       </div>
