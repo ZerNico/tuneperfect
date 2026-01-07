@@ -51,7 +51,7 @@ function MicrophoneComponent() {
             const [microphone, setMicrophone] = createSignal(
               settingsStore.microphones()[id()] || {
                 name: microphones()[0]?.name || null,
-                channel: 1,
+                channel: 0,
                 color: "sky",
                 delay: 200,
                 gain: 1,
