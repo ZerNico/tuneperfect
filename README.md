@@ -52,7 +52,7 @@ docker compose -f docker-compose.dev.yml up -d
    - Start the Caddy reverse proxy
    - Start all apps in development mode
 ```bash
-bun run tuneperfect dev --filter @tuneperfect/web --filter @tuneperfect/api
+bun run tuneperfect dev
 ```
 To run only specific apps:
 ```bash

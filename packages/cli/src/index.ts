@@ -28,7 +28,6 @@ Clerc.create()
   .command("dev", "Start development environment", {
     flags: {
       filter: {
-        short: "f",
         type: [String],
         description: "Filter the apps to start",
       },
