@@ -70,6 +70,8 @@ function RouteComponent() {
     }
   });
 
+  const [playerCount, setPlayerCount] = createSignal(settingsStore.microphones().length);
+
   const startMedley = () => {
     const songs = medleySongs();
     if (songs.length === 0) {
@@ -77,7 +79,7 @@ function RouteComponent() {
     }
 
     const players = selectedPlayers()
-      .slice(0, settingsStore.microphones().length)
+      .slice(0, playerCount())
       .map((player) => users().find((user) => user.id === player) || undefined);
 
     const roundSongs = songs.map((song) => {
@@ -99,9 +101,17 @@ function RouteComponent() {
   };
 
   const menuItems: Accessor<MenuItem[]> = () => {
-    const inputs: MenuItem[] = [];
+    const inputs: MenuItem[] = [
+      {
+        type: "select-number",
+        label: t("sing.players"),
+        value: playerCount,
+        onChange: setPlayerCount,
+        options: Array.from({ length: settingsStore.microphones().length }, (_, i) => i + 1),
+      },
+    ];
 
-    for (const playerIndex of Array.from({ length: settingsStore.microphones().length }, (_, i) => i)) {
+    for (const playerIndex of Array.from({ length: playerCount() }, (_, i) => i)) {
       inputs.push({
         type: "select-string-number",
         label: `${t("sing.player")} ${playerIndex + 1}`,
