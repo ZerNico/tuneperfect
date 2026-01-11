@@ -58,7 +58,7 @@ impl Recorder {
         let input_sample_rates: Vec<u32> = if playback_enabled {
             let mut rates = vec![0u32; options.len()];
             for (_, config, mic_indices) in &input_devices {
-                let sample_rate = config.sample_rate.0;
+                let sample_rate = config.sample_rate;
                 for &index in mic_indices {
                     if index < rates.len() {
                         rates[index] = sample_rate;
@@ -72,7 +72,7 @@ impl Recorder {
 
         let output_mixer: Option<OutputMixer> = if playback_enabled {
             let (_, output_config) = device_manager.get_output_config()?;
-            let output_sample_rate = output_config.sample_rate.0;
+            let output_sample_rate = output_config.sample_rate;
             let mixer = OutputMixer::new(options.len(), &input_sample_rates, output_sample_rate)?;
             Some(mixer)
         } else {
