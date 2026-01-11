@@ -503,6 +503,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   }
 
   const handleEnded = () => {
+    console.log("ended song");
     props.onEnded?.();
   };
 
@@ -601,7 +602,11 @@ export default function SongPlayer(props: SongPlayerProps) {
               preload="auto"
               crossorigin="anonymous"
               onCanPlayThrough={handleVideoCanPlayThrough}
-              onEnded={!currentAudioUrl() ? handleEnded : undefined}
+              onEnded={() => {
+                if (!currentAudioUrl()) {
+                  handleEnded();
+                }
+              }}
               src={videoUrl()}
               onError={handleVideoError}
             />
