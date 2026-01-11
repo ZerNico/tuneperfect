@@ -1,4 +1,5 @@
 use std::fs;
+use chardetng::EncodingDetector;
 use unicode_normalization::UnicodeNormalization;
 use semver::Version;
 
@@ -294,7 +295,12 @@ pub fn parse_local_txt_file(
     files: &Vec<FileEntry>,
     media_base_url: &str,
 ) -> Result<LocalSong, AppError> {
-    let content = fs::read_to_string(txt)?;
+    let bytes = fs::read(txt)?;
+    let mut detector = EncodingDetector::new();
+    detector.feed(&bytes, true);
+    let encoding = detector.guess(None, true);
+    let (content, _, _) = encoding.decode(&bytes);
+
     let song = parse_ultrastar_txt(&content)?;
 
     let find_file = |filename: &Option<String>| -> Option<&FileEntry> {
