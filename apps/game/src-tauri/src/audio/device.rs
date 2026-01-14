@@ -23,15 +23,11 @@ impl DeviceManager {
         let mut found_devices = Vec::new();
 
         for device in devices {
-            let Ok(description) = device.description() else {
-                continue;
-            };
-
-            let device_name = description.name();
+            let device_name = device.name()?;
             let mic_indices: Vec<usize> = mic_names
                 .iter()
                 .enumerate()
-                .filter(|(_, name)| name.as_str() == device_name)
+                .filter(|(_, name)| name.as_str() == device_name.as_str())
                 .map(|(idx, _)| idx)
                 .collect();
 

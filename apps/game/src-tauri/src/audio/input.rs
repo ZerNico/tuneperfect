@@ -30,7 +30,7 @@ impl InputStreamManager {
 
         for (device, config, mic_indices) in devices {
             let channels = config.channels as usize;
-            let sample_rate = config.sample_rate;
+            let sample_rate = config.sample_rate.0;
 
             let processors: HashMap<_, _> = mic_indices
                 .iter()
