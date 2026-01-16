@@ -66,6 +66,9 @@
           "level": "warn",
           "fix": "none"
         }
+      },
+      "suspicious": {
+        "noReactSpecificProps": "off"
       }
     }
   }

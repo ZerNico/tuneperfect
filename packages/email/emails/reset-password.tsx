@@ -81,19 +81,19 @@ export function ResetPassword(props: ResetPasswordProps): ReactNode {
       <Head />
       <Preview>Reset your Password</Preview>
       <Tailwind config={tailwindConfig}>
-        <Body class="mx-auto my-auto bg-[#203141] px-2 py-10 font-sans text-slate-800">
-          <Container class="mx-auto max-w-[465px] py-5 text-center">
-            <Heading class="m-0 font-semibold text-[30px] text-white">Tune Perfect</Heading>
+        <Body className="mx-auto my-auto bg-[#203141] px-2 py-10 font-sans text-slate-800">
+          <Container className="mx-auto max-w-[465px] py-5 text-center">
+            <Heading className="m-0 font-semibold text-[30px] text-white">Tune Perfect</Heading>
           </Container>
-          <Container class="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
-            <Heading class="m-0 font-semibold text-[20px]">Reset your Password</Heading>
-            <Text class="m-0 text-slate-500">Click the button below to reset your password.</Text>
+          <Container className="mx-auto w-full max-w-[465px] rounded-lg bg-white p-[32px]">
+            <Heading className="m-0 font-semibold text-[20px]">Reset your Password</Heading>
+            <Text className="m-0 text-slate-500">Click the button below to reset your password.</Text>
 
-            <Text class="m-0 py-12 text-center">
+            <Text className="m-0 py-12 text-center">
               <a
                 href={props.resetUrl}
                 target="_blank"
-                class="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
+                className="box-border inline-block w-full rounded-lg px-4 py-2 font-semibold text-[14px] text-white no-underline shadow-md"
                 rel="noreferrer"
                 style={{
                   background: "linear-gradient(to right, #36d1dc, #5b86e5)",
@@ -103,16 +103,16 @@ export function ResetPassword(props: ResetPasswordProps): ReactNode {
               </a>
             </Text>
 
-            <Text class="m-0">If you didn't request this, you can safely ignore this email.</Text>
+            <Text className="m-0">If you didn't request this, you can safely ignore this email.</Text>
           </Container>
-          <Container class="mx-auto max-w-[465px] py-5 text-center text-white">
-            <Text class="m-0">
+          <Container className="mx-auto max-w-[465px] py-5 text-center text-white">
+            <Text className="m-0">
               Need help?{" "}
-              <a href={`mailto:${props.supportEmail}`} target="_blank" class="text-white no-underline" rel="noreferrer">
+              <a href={`mailto:${props.supportEmail}`} target="_blank" className="text-white no-underline" rel="noreferrer">
                 Contact Support
               </a>
             </Text>
-            <Text class="m-0">© {currentYear} Tune Perfect.</Text>
+            <Text className="m-0">© {currentYear} Tune Perfect.</Text>
           </Container>
         </Body>
       </Tailwind>
