@@ -6,7 +6,7 @@
     "tuneperfect": "bun run ./node_modules/@tuneperfect/cli/src/index.ts"
   },
   "devDependencies": {
-    "turbo": "^2.7.2"
+    "turbo": "^2.7.4"
   },
   "dependencies": {
     "@biomejs/biome": "2.0.6",
@@ -16,5 +16,5 @@
     "packages/*",
     "apps/*"
   ],
-  "packageManager": "bun@1.3.5"
+  "packageManager": "bun@1.3.6"
 }

@@ -13,32 +13,32 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@orpc/client": "^1.13.2",
-    "@orpc/openapi": "^1.13.2",
-    "@orpc/server": "^1.13.2",
-    "@orpc/valibot": "^1.13.2",
+    "@orpc/client": "^1.13.4",
+    "@orpc/openapi": "^1.13.4",
+    "@orpc/server": "^1.13.4",
+    "@orpc/valibot": "^1.13.4",
     "@tuneperfect/email": "*",
     "arctic": "^3.7.0",
     "croner": "^9.1.0",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^1.0.0-beta.8-c55bf0f",
+    "drizzle-orm": "^1.0.0-beta.9-e89174b",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^7.0.12",
-    "pino": "^10.1.0",
+    "pino": "^10.2.0",
     "pino-pretty": "^13.1.3",
     "redis": "^5.10.0",
     "semver": "^7.7.3",
     "sharp": "^0.34.5",
-    "ufo": "^1.6.1",
+    "ufo": "^1.6.3",
     "valibot": "^1.2.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.5",
-    "@types/bun": "^1.3.5",
+    "@babel/core": "^7.28.6",
+    "@types/bun": "^1.3.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.21",
     "@types/semver": "^7.7.1",
-    "drizzle-kit": "^1.0.0-beta.8-c55bf0f",
-    "pg": "^8.16.3"
+    "drizzle-kit": "^1.0.0-beta.9-e89174b",
+    "pg": "^8.17.1"
   }
 }
