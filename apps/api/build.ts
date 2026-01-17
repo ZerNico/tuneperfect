@@ -4,5 +4,5 @@ await Bun.build({
   target: "bun",
   format: "esm",
   env: "disable",
-  external: ["sharp"],
+  external: ["sharp", "react", "react-dom", "react-dom/server"],
 });

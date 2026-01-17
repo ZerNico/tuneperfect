@@ -35,7 +35,7 @@ USER bun
 
 COPY --from=installer --chown=bun:bun /usr/src/app/apps/api/dist ./dist
 COPY --from=installer --chown=bun:bun /usr/src/app/apps/api/drizzle ./drizzle
-RUN bun add sharp
+RUN bun add sharp react@^19.2.3 react-dom@^19.2.3
 
 EXPOSE 3000
 
