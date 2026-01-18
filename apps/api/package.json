@@ -10,7 +10,8 @@
     "dev": "bun --watch src/index.ts",
     "build": "bun build.ts",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:up": "drizzle-kit up"
   },
   "dependencies": {
     "@orpc/client": "^1.13.4",
@@ -21,7 +22,7 @@
     "arctic": "^3.7.0",
     "croner": "^9.1.0",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^1.0.0-beta.9-e89174b",
+    "drizzle-orm": "^1.0.0-beta.11-05230d9",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^7.0.12",
     "pino": "^10.2.0",
@@ -38,7 +39,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.21",
     "@types/semver": "^7.7.1",
-    "drizzle-kit": "^1.0.0-beta.9-e89174b",
+    "drizzle-kit": "^1.0.0-beta.11-05230d9",
     "pg": "^8.17.1"
   }
 }
