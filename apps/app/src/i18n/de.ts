@@ -10,6 +10,7 @@ const de: Dict = {
     emailInvalid: "Ungültige E-Mail",
     passwordMinLength: "Passwort muss mindestens 6 Zeichen lang sein",
     invalidEmailOrPassword: "Ungültige E-Mail oder Passwort",
+    oauthUnverifiedEmailExists: "Ein unbestätigtes Konto mit dieser E-Mail existiert bereits. Bitte überprüfe dein Postfach, um deine E-Mail zu bestätigen, oder nutze die Passwort-Zurücksetzen-Funktion, falls du keinen Zugriff mehr hast.",
     or: "Oder",
     noAccount: "Noch kein Konto?",
     signUp: "Registrieren",

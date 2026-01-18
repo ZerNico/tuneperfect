@@ -8,6 +8,7 @@ const en = {
     emailInvalid: "Invalid email",
     passwordMinLength: "Password must be at least 6 characters",
     invalidEmailOrPassword: "Invalid email or password",
+    oauthUnverifiedEmailExists: "An unverified account exists with this email. Please check your inbox to verify your email, or use password reset if you've lost access.",
     or: "Or",
     noAccount: "Don't have an account?",
     signUp: "Sign up",

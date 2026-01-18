@@ -1,4 +1,5 @@
 import { os } from "@orpc/server";
+import { joinURL, withQuery } from "ufo";
 import * as v from "valibot";
 import { base } from "../../base";
 import { env } from "../../config/env";
@@ -7,6 +8,7 @@ import { defaultCookieOptions } from "../../utils/cookie";
 import { isValidRedirectUrl } from "../../utils/security";
 import { tryCatch } from "../../utils/try-catch";
 import { authService } from "../service";
+import { UnverifiedEmailExistsError } from "./google";
 import { oauthService } from "./service";
 
 export const oauthRouter = os.prefix("/providers").router({
@@ -102,6 +104,15 @@ export const oauthRouter = os.prefix("/providers").router({
       const [userError, user] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
 
       if (userError || !user) {
+        // Check if the error is because an unverified account with password exists
+        if (userError instanceof UnverifiedEmailExistsError) {
+          logger.info("Unverified account with password exists, redirecting to sign-in");
+          const signInUrl = withQuery(joinURL(env.APP_URL, "/sign-in"), {
+            error: "unverified_email_exists",
+          });
+          context.resHeaders?.append("location", signInUrl);
+          return;
+        }
         logger.error(userError, "Failed to get or create user");
         throw errors.BAD_REQUEST();
       }

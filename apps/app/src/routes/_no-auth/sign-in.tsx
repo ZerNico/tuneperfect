@@ -1,6 +1,7 @@
 import { safe } from "@orpc/client";
 import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
+import { onMount } from "solid-js";
 import { joinURL } from "ufo";
 import * as v from "valibot";
 import DiscordLogin from "~/components/discord-login";
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_no-auth/sign-in")({
   component: SignInComponent,
   validateSearch: v.object({
     redirect: v.optional(v.string()),
+    error: v.optional(v.string()),
   }),
 });
 
@@ -25,6 +27,22 @@ function SignInComponent() {
   const search = Route.useSearch();
 
   const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
+
+  // Check for OAuth error on mount
+  onMount(() => {
+    if (search().error === "unverified_email_exists") {
+      notify({
+        message: t("signIn.oauthUnverifiedEmailExists"),
+        intent: "error",
+      });
+      // Clear the error from URL
+      navigate({
+        to: "/sign-in",
+        search: { redirect: search().redirect },
+        replace: true,
+      });
+    }
+  });
 
   const form = createForm(() => ({
     defaultValues: {
