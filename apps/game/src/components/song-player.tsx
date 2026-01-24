@@ -79,6 +79,10 @@ const getAudioContext = () => {
   if (!sharedAudioContext || sharedAudioContext.state === "closed") {
     sharedAudioContext = new AudioContext();
   }
+  // Resume suspended AudioContext (common on mobile or after tab switching)
+  if (sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume().catch((err) => console.warn("Failed to resume AudioContext:", err));
+  }
   return sharedAudioContext;
 };
 

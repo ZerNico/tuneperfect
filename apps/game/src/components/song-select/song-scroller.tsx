@@ -219,6 +219,7 @@ export function SongScroller(props: SongScrollerProps) {
   let snapTarget: number | null = null;
   let holdDirection = 0;
   let isScrolling = false;
+  let mounted = true;
 
   const setScrolling = (scrolling: boolean) => {
     if (scrolling !== isScrolling) {
@@ -228,6 +229,12 @@ export function SongScroller(props: SongScrollerProps) {
   };
 
   const animate = () => {
+    // Stop animation if component is unmounted
+    if (!mounted) {
+      animationFrame = undefined;
+      return;
+    }
+
     const width = itemWidth();
     if (width === 0) {
       animationFrame = undefined;
@@ -359,6 +366,7 @@ export function SongScroller(props: SongScrollerProps) {
     containerRef.addEventListener("wheel", handleWheel, { passive: false });
 
     onCleanup(() => {
+      mounted = false;
       resizeObserver.disconnect();
       containerRef.removeEventListener("wheel", handleWheel);
       if (animationFrame) cancelAnimationFrame(animationFrame);

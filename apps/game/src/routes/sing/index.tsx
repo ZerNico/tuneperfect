@@ -66,6 +66,8 @@ function SingComponent() {
   const [isScrolling, setIsScrolling] = createSignal(false);
 
   const debouncedSetPreviewSong = debounce((song: LocalSong | null) => {
+    // Verify the song is still the current song to avoid race conditions
+    if (song && song.hash !== currentSong()?.hash) return;
     setPreviewSong(song);
   }, 500);
 
