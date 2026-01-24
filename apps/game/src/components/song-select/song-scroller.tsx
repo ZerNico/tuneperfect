@@ -1,3 +1,5 @@
+import { debounce } from "@solid-primitives/scheduled";
+import MiniSearch from "minisearch";
 import { type Accessor, createEffect, createMemo, createSignal, For, type JSX, on, onCleanup, onMount } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -12,15 +14,23 @@ const MAX_SCALE = 1.3;
 const OVERSCAN = 3;
 
 export type SortOption = "artist" | "title" | "year";
+export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
 
 // Helper for positive modulo (handles negative numbers correctly)
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+// Fields configuration for MiniSearch
+const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
+
 interface SongScrollerProps {
   items: LocalSong[];
   sort: SortOption;
+  searchQuery: string;
+  searchFilter: SearchFilter;
+  initialSong?: LocalSong;
   children: (item: LocalSong, index: number, scale: Accessor<number>) => JSX.Element;
   onCenteredItemChange?: (item: LocalSong, index: number) => void;
+  onFilteredCountChange?: (count: number) => void;
   class?: string;
 }
 
@@ -30,28 +40,104 @@ export function SongScroller(props: SongScrollerProps) {
   const [offset, setOffset] = createSignal(0);
   const [containerWidth, setContainerWidth] = createSignal(0);
   const [currentItemId, setCurrentItemId] = createSignal<string | null>(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
+  const [hasInitialized, setHasInitialized] = createSignal(false);
 
   const itemWidth = () => containerWidth() * ITEM_WIDTH_CQW;
 
-  // Sort items based on sort option
+  // Debounce search for large lists
+  const shouldDebounce = () => props.items.length > 1000;
+
+  const debouncedSetQuery = debounce((query: string) => {
+    setDebouncedSearchQuery(query);
+  }, 500);
+
+  createEffect(() => {
+    if (shouldDebounce()) {
+      debouncedSetQuery(props.searchQuery);
+    } else {
+      setDebouncedSearchQuery(props.searchQuery);
+    }
+  });
+
+  // Create MiniSearch instance - recreated when filter or items change
+  const miniSearchInstance = createMemo(() => {
+    const filter = props.searchFilter;
+
+    // Determine which fields to index based on filter
+    // Note: year is handled separately with exact match
+    const fields = filter === "all" || filter === "year" ? [...ALL_SEARCH_FIELDS] : [filter];
+
+    const miniSearch = new MiniSearch<LocalSong>({
+      fields,
+      idField: "hash",
+      storeFields: ["hash"],
+      extractField: (document, fieldName) => {
+        const value = document[fieldName as keyof LocalSong];
+        // Handle array fields (genre, language, edition, creator)
+        if (Array.isArray(value)) {
+          return value.join(" ");
+        }
+        return value as string | undefined;
+      },
+      searchOptions: {
+        fuzzy: 0.2,
+        prefix: true,
+      },
+    });
+
+    miniSearch.addAll(props.items);
+    return miniSearch;
+  });
+
+  // Filter and sort items
   const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" });
 
-  const sortedItems = createMemo(() => {
-    const items = props.items;
-    const sortBy = props.sort;
+  const filteredAndSortedItems = createMemo(() => {
+    let songs = props.items;
+    const query = debouncedSearchQuery().trim();
 
-    return [...items].sort((a, b) => {
-      if (sortBy === "artist") {
+    if (query) {
+      const filter = props.searchFilter;
+
+      // Special handling for year filter - exact match only
+      if (filter === "year") {
+        const yearQuery = Number.parseInt(query, 10);
+        if (!Number.isNaN(yearQuery)) {
+          songs = songs.filter((song) => song.year === yearQuery);
+        } else {
+          songs = []; // Invalid year query returns no results
+        }
+      } else {
+        // Use MiniSearch for text fields
+        const searchResults = miniSearchInstance().search(query);
+        const hashSet = new Set(searchResults.map((r) => r.id));
+        songs = songs.filter((song) => hashSet.has(song.hash));
+      }
+    }
+
+    if (songs.length === 0) {
+      return [];
+    }
+
+    // Sort the filtered results
+    return [...songs].sort((a, b) => {
+      if (props.sort === "artist") {
         return compare(a.artist, b.artist) || compare(a.title, b.title);
       }
-      if (sortBy === "title") {
+      if (props.sort === "title") {
         return compare(a.title, b.title);
       }
-      if (sortBy === "year") {
+      if (props.sort === "year") {
         return (a.year ?? 0) - (b.year ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
       }
       return 0;
     });
+  });
+
+  // Notify parent of filtered count changes
+  createEffect(() => {
+    props.onFilteredCountChange?.(filteredAndSortedItems().length);
   });
 
   // Current position (can be any integer, not bounded)
@@ -62,19 +148,45 @@ export function SongScroller(props: SongScrollerProps) {
 
   // Centered song index (0 to length-1, wraps around)
   const centeredIndex = createMemo(() => {
-    const length = sortedItems().length;
+    const length = filteredAndSortedItems().length;
     if (length === 0) return 0;
     return mod(currentPosition(), length);
   });
 
-  // When sorted items change, find the current item's new index and jump to it
+  // Handle initial song positioning
   createEffect(
-    on(sortedItems, (items) => {
+    on(
+      () => [props.initialSong, filteredAndSortedItems()] as const,
+      ([initialSong, items]) => {
+        if (hasInitialized() || !initialSong || items.length === 0) return;
+
+        const index = items.findIndex((item) => item.hash === initialSong.hash);
+        if (index !== -1) {
+          setOffset(index * itemWidth());
+          setCurrentItemId(initialSong.hash);
+          setHasInitialized(true);
+        }
+      },
+    ),
+  );
+
+  // When sorted/filtered items change, find the current item's new index and jump to it
+  createEffect(
+    on(filteredAndSortedItems, (items) => {
       const id = currentItemId();
       if (!id || items.length === 0) return;
 
       const newSongIndex = items.findIndex((item) => item.hash === id);
-      if (newSongIndex === -1) return;
+      if (newSongIndex === -1) {
+        // Current song is no longer in the filtered list, reset to first
+        const firstSong = items[0];
+        if (firstSong) {
+          setCurrentItemId(firstSong.hash);
+          setOffset(0);
+          props.onCenteredItemChange?.(firstSong, 0);
+        }
+        return;
+      }
 
       // Preserve the current "cycle" we're in
       const pos = currentPosition();
@@ -91,7 +203,8 @@ export function SongScroller(props: SongScrollerProps) {
   // Notify when centered item changes and track current item
   createEffect(
     on(centeredIndex, (index) => {
-      const item = sortedItems()[index];
+      const items = filteredAndSortedItems();
+      const item = items[index];
       if (item) {
         setCurrentItemId(item.hash);
         props.onCenteredItemChange?.(item, index);
@@ -102,7 +215,7 @@ export function SongScroller(props: SongScrollerProps) {
   // Virtualization: only render visible items (with wrapping)
   const visibleItems = createMemo(() => {
     const width = itemWidth();
-    const items = sortedItems();
+    const items = filteredAndSortedItems();
     const length = items.length;
     if (width === 0 || length === 0) return [];
 
@@ -303,21 +416,5 @@ export function SongScroller(props: SongScrollerProps) {
         }}
       </For>
     </div>
-  );
-}
-
-interface SongCardProps {
-  song: LocalSong;
-}
-
-export function SongCard(props: SongCardProps) {
-  return (
-    <button
-      type="button"
-      class="relative mx-4 aspect-square w-40 cursor-pointer overflow-hidden rounded-lg shadow-md transition-transform duration-250 active:scale-95"
-    >
-      <img class="relative z-1 h-full w-full object-cover" src={props.song.coverUrl ?? ""} alt={props.song.title} />
-      <div class="absolute inset-0 bg-black" />
-    </button>
   );
 }
