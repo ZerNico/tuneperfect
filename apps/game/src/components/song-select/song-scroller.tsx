@@ -262,11 +262,20 @@ export function SongScroller(props: SongScrollerProps) {
     } else {
       if (Math.abs(velocity) < 2) {
         const baseIndex = offset() / width;
-        const bias = velocity > 0.5 ? 0.3 : velocity < -0.5 ? -0.3 : 0;
-        snapTarget = Math.round(baseIndex + bias);
+        const fractional = baseIndex - Math.floor(baseIndex);
+        const velocityBias = Math.abs(velocity) > 1 ? Math.sign(velocity) * 0.15 : 0;
+
+        if (fractional < 0.4 - velocityBias) {
+          snapTarget = Math.floor(baseIndex);
+        } else if (fractional > 0.6 + velocityBias) {
+          snapTarget = Math.ceil(baseIndex);
+        } else {
+          snapTarget = Math.round(baseIndex + velocityBias);
+        }
         setScrolling(false);
       } else {
-        velocity *= 0.92;
+        const dampingFactor = Math.abs(velocity) < 5 ? 0.88 : 0.92;
+        velocity *= dampingFactor;
         setScrolling(true);
       }
     }
