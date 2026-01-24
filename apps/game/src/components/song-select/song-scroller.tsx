@@ -1,32 +1,45 @@
 import { debounce } from "@solid-primitives/scheduled";
 import MiniSearch from "minisearch";
-import { type Accessor, createEffect, createMemo, createSignal, For, type JSX, on, onCleanup, onMount } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  on,
+  onCleanup,
+  onMount,
+  type Ref,
+} from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { createRefContent } from "~/lib/utils/ref";
+
+export interface SongScrollerRef {
+  goToRandomSong: () => LocalSong | null;
+}
 
 interface VisibleItem {
   item: LocalSong;
   position: number;
 }
 
-const ITEM_WIDTH_CQW = 0.12; // w-40 (10cqw) + mx-4 (2cqw) = 12cqw
+const ITEM_WIDTH_CQW = 0.12;
 const MAX_SCALE = 1.3;
 const OVERSCAN = 3;
 
 export type SortOption = "artist" | "title" | "year";
 export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
 
-// Helper for positive modulo (handles negative numbers correctly)
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-// Fields configuration for MiniSearch
 const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
-// Cached collator for sorting performance
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 const compare = (a: string, b: string) => collator.compare(a, b);
 
-// Normalize text for search: remove diacritics (é -> e, ö -> o, etc.)
+// Remove diacritics for accent-insensitive search (é -> e, ö -> o)
 const normalizeText = (text: string) =>
   text
     .normalize("NFD")
@@ -34,13 +47,14 @@ const normalizeText = (text: string) =>
     .toLowerCase();
 
 interface SongScrollerProps {
+  ref?: Ref<SongScrollerRef>;
   items: LocalSong[];
   sort: SortOption;
   searchQuery: string;
   searchFilter: SearchFilter;
   initialSong?: LocalSong;
   children: (item: LocalSong, index: number, scale: Accessor<number>) => JSX.Element;
-  onCenteredItemChange?: (item: LocalSong, index: number) => void;
+  onCenteredItemChange?: (item: LocalSong | null, index: number) => void;
   onFilteredCountChange?: (count: number) => void;
   onScrollingChange?: (isScrolling: boolean) => void;
   class?: string;
@@ -57,7 +71,6 @@ export function SongScroller(props: SongScrollerProps) {
 
   const itemWidth = () => containerWidth() * ITEM_WIDTH_CQW;
 
-  // Debounce search for large lists
   const shouldDebounce = () => props.items.length > 1000;
 
   const debouncedSetQuery = debounce((query: string) => {
@@ -72,8 +85,7 @@ export function SongScroller(props: SongScrollerProps) {
     }
   });
 
-  // Create MiniSearch instance - only recreated when items change
-  // We index ALL fields and filter at search time for better performance
+  // Index all fields, filter at search time for better performance
   const miniSearchInstance = createMemo(() => {
     const miniSearch = new MiniSearch<LocalSong>({
       fields: [...ALL_SEARCH_FIELDS],
@@ -81,21 +93,17 @@ export function SongScroller(props: SongScrollerProps) {
       storeFields: [],
       extractField: (document, fieldName) => {
         const value = document[fieldName as keyof LocalSong];
-        // Handle array fields (genre, language, edition, creator)
         if (Array.isArray(value)) {
           return value.join(" ");
         }
         return value as string | undefined;
       },
-      // Normalize terms to match accented characters (é -> e, ö -> o, etc.)
       processTerm: (term) => normalizeText(term),
     });
 
     miniSearch.addAll(props.items);
     return miniSearch;
   });
-
-  // Filter and sort items
 
   const filteredAndSortedItems = createMemo(() => {
     let songs = props.items;
@@ -104,16 +112,14 @@ export function SongScroller(props: SongScrollerProps) {
     if (query) {
       const filter = props.searchFilter;
 
-      // Special handling for year filter - exact match only
       if (filter === "year") {
         const yearQuery = Number.parseInt(query, 10);
         if (!Number.isNaN(yearQuery)) {
           songs = songs.filter((song) => song.year === yearQuery);
         } else {
-          songs = []; // Invalid year query returns no results
+          songs = [];
         }
       } else {
-        // Use MiniSearch for text fields
         const fields = filter === "all" ? undefined : [filter];
         const searchResults = miniSearchInstance().search(query, {
           fields,
@@ -129,7 +135,6 @@ export function SongScroller(props: SongScrollerProps) {
       return [];
     }
 
-    // Sort the filtered results
     return [...songs].sort((a, b) => {
       if (props.sort === "artist") {
         return compare(a.artist, b.artist) || compare(a.title, b.title);
@@ -144,25 +149,21 @@ export function SongScroller(props: SongScrollerProps) {
     });
   });
 
-  // Notify parent of filtered count changes
   createEffect(() => {
     props.onFilteredCountChange?.(filteredAndSortedItems().length);
   });
 
-  // Current position (can be any integer, not bounded)
-  const currentPosition = () => {
+  const currentPosition = createMemo(() => {
     const width = itemWidth();
     return width === 0 ? 0 : Math.round(offset() / width);
-  };
+  });
 
-  // Centered song index (0 to length-1, wraps around)
   const centeredIndex = createMemo(() => {
     const length = filteredAndSortedItems().length;
     if (length === 0) return 0;
     return mod(currentPosition(), length);
   });
 
-  // Handle initial song positioning
   createEffect(
     on(
       () => [props.initialSong, filteredAndSortedItems()] as const,
@@ -179,15 +180,19 @@ export function SongScroller(props: SongScrollerProps) {
     ),
   );
 
-  // When sorted/filtered items change, find the current item's new index and jump to it
   createEffect(
     on(filteredAndSortedItems, (items) => {
       const id = currentItemId();
-      if (!id || items.length === 0) return;
 
-      const newSongIndex = items.findIndex((item) => item.hash === id);
-      if (newSongIndex === -1) {
-        // Current song is no longer in the filtered list, reset to first
+      if (items.length === 0) {
+        if (id) {
+          setCurrentItemId(null);
+          props.onCenteredItemChange?.(null, -1);
+        }
+        return;
+      }
+
+      if (!id) {
         const firstSong = items[0];
         if (firstSong) {
           setCurrentItemId(firstSong.hash);
@@ -197,7 +202,18 @@ export function SongScroller(props: SongScrollerProps) {
         return;
       }
 
-      // Preserve the current "cycle" we're in
+      const newSongIndex = items.findIndex((item) => item.hash === id);
+      if (newSongIndex === -1) {
+        const firstSong = items[0];
+        if (firstSong) {
+          setCurrentItemId(firstSong.hash);
+          setOffset(0);
+          props.onCenteredItemChange?.(firstSong, 0);
+        }
+        return;
+      }
+
+      // Preserve the current "cycle" in infinite scroll
       const pos = currentPosition();
       const length = items.length;
       const cycle = Math.floor(pos / length);
@@ -209,7 +225,6 @@ export function SongScroller(props: SongScrollerProps) {
     }),
   );
 
-  // Notify when centered item changes and track current item
   createEffect(
     on(centeredIndex, (index) => {
       const items = filteredAndSortedItems();
@@ -221,19 +236,23 @@ export function SongScroller(props: SongScrollerProps) {
     }),
   );
 
-  // Virtualization: only render visible items (with wrapping)
-  const visibleItems = createMemo(() => {
+  const visibleRange = createMemo(() => {
     const width = itemWidth();
-    const items = filteredAndSortedItems();
-    const length = items.length;
-    if (width === 0 || length === 0) return [];
+    if (width === 0) return { start: 0, end: 0 };
 
     const centerPos = currentPosition();
     const range = Math.ceil(containerWidth() / 2 / width) + OVERSCAN;
+    return { start: centerPos - range, end: centerPos + range };
+  });
 
+  const visibleItems = createMemo(() => {
+    const items = filteredAndSortedItems();
+    const length = items.length;
+    if (length === 0) return [];
+
+    const { start, end } = visibleRange();
     const result: VisibleItem[] = [];
-    for (let i = -range; i <= range; i++) {
-      const position = centerPos + i;
+    for (let position = start; position <= end; position++) {
       const songIndex = mod(position, length);
       // biome-ignore lint/style/noNonNullAssertion: songIndex is always valid due to mod
       result.push({ item: items[songIndex]!, position });
@@ -241,7 +260,6 @@ export function SongScroller(props: SongScrollerProps) {
     return result;
   });
 
-  // Pre-computed transforms for all visible items (computed once per offset change)
   const itemTransforms = createMemo(() => {
     const width = itemWidth();
     const containerW = containerWidth();
@@ -250,27 +268,28 @@ export function SongScroller(props: SongScrollerProps) {
 
     if (width === 0 || visible.length === 0) return new Map<number, { x: number; scale: number }>();
 
-    // First pass: compute distances and scales
     const itemData: { position: number; distance: number; scale: number }[] = [];
+    const scaledItems: { distance: number; extra: number }[] = [];
+
     for (const { position } of visible) {
       const distance = position * width - currentOffset;
       const t = Math.min(Math.abs(distance) / width, 1);
       const scale = MAX_SCALE - t * (MAX_SCALE - 1);
       itemData.push({ position, distance, scale });
+
+      if (scale > 1) {
+        scaledItems.push({ distance, extra: ((scale - 1) * width) / 2 });
+      }
     }
 
-    // Second pass: compute neighbor offsets and final x positions
     const result = new Map<number, { x: number; scale: number }>();
     for (const { position, distance, scale } of itemData) {
       let neighborOffset = 0;
 
-      // Only items with scale > 1 affect neighbors
-      for (const other of itemData) {
-        if (other.position === position || other.scale <= 1) continue;
-
-        const extra = ((other.scale - 1) * width) / 2;
-        if (distance > 0 && other.distance < distance) neighborOffset += extra;
-        else if (distance < 0 && other.distance > distance) neighborOffset -= extra;
+      for (const scaled of scaledItems) {
+        if (scaled.distance === distance) continue;
+        if (distance > 0 && scaled.distance < distance) neighborOffset += scaled.extra;
+        else if (distance < 0 && scaled.distance > distance) neighborOffset -= scaled.extra;
       }
 
       const x = containerW / 2 - width / 2 + distance + neighborOffset;
@@ -280,12 +299,11 @@ export function SongScroller(props: SongScrollerProps) {
     return result;
   });
 
-  // Animation
   let velocity = 0;
   let lastWheelTime = 0;
   let animationFrame: number | undefined;
   let snapTarget: number | null = null;
-  let holdDirection = 0; // -1 = left, 0 = none, 1 = right
+  let holdDirection = 0;
   let isScrolling = false;
 
   const setScrolling = (scrolling: boolean) => {
@@ -307,7 +325,6 @@ export function SongScroller(props: SongScrollerProps) {
     const distance = target - offset();
 
     if (snapTarget !== null) {
-      // Snapping: ease toward target
       if (Math.abs(distance) < 0.5) {
         setOffset(target);
         velocity = 0;
@@ -318,12 +335,10 @@ export function SongScroller(props: SongScrollerProps) {
       }
       velocity = distance * 0.15;
     } else if (holdDirection !== 0) {
-      // Holding: continuous scroll in direction
       const holdSpeed = itemWidth() * 0.13;
       velocity = holdDirection * holdSpeed;
       setScrolling(true);
     } else {
-      // Free scroll: apply friction, then snap when slow
       if (Math.abs(velocity) < 2) {
         const baseIndex = offset() / width;
         const bias = velocity > 0.5 ? 0.3 : velocity < -0.5 ? -0.3 : 0;
@@ -358,19 +373,36 @@ export function SongScroller(props: SongScrollerProps) {
     const timeDelta = now - lastWheelTime;
     lastWheelTime = now;
 
-    // New gesture: snap to next/prev
     if (timeDelta > 150) {
       goToPosition(currentPosition() + (delta > 0 ? 1 : -1));
       velocity = delta > 0 ? 5 : -5;
       return;
     }
 
-    // Continuous scroll: build velocity
     snapTarget = null;
     velocity = timeDelta < 50 ? velocity + delta * 0.5 : delta;
     velocity = Math.max(-50, Math.min(50, velocity));
     startAnimation();
   };
+
+  const goToRandomSong = (): LocalSong | null => {
+    const items = filteredAndSortedItems();
+    if (items.length === 0) return null;
+
+    const randomIndex = Math.floor(Math.random() * items.length);
+    const randomSong = items[randomIndex];
+    if (!randomSong) return null;
+
+    setOffset(randomIndex * itemWidth());
+    setCurrentItemId(randomSong.hash);
+
+    return randomSong;
+  };
+
+  createRefContent(
+    () => props.ref,
+    () => ({ goToRandomSong }),
+  );
 
   useNavigation({
     onKeydown(event) {
@@ -396,14 +428,11 @@ export function SongScroller(props: SongScrollerProps) {
     const updateSize = () => {
       const prevWidth = containerWidth();
       const newWidth = containerRef.clientWidth;
-
-      // Calculate current position BEFORE updating width
       const prevItemWidth = prevWidth * ITEM_WIDTH_CQW;
       const pos = prevItemWidth > 0 ? Math.round(offset() / prevItemWidth) : 0;
 
       setContainerWidth(newWidth);
 
-      // Adjust offset to keep the same position after resize
       if (prevWidth > 0 && newWidth !== prevWidth) {
         const newItemWidth = newWidth * ITEM_WIDTH_CQW;
         setOffset(pos * newItemWidth);

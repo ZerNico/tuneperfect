@@ -5,18 +5,19 @@ import { Motion, Presence } from "solid-motionone";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
+import { DebouncedHighscoreList } from "~/components/song-select/debounced-highscore-list";
+import { MedleyList } from "~/components/song-select/medley-list";
+import { MenuPopup } from "~/components/song-select/menu-popup";
+import { SearchButton } from "~/components/song-select/search-button";
+import { SearchPopup } from "~/components/song-select/search-popup";
+import { SongCard } from "~/components/song-select/song-card";
 import {
-  DebouncedHighscoreList,
-  MedleyList,
-  MenuPopup,
-  SearchButton,
   type SearchFilter,
-  SearchPopup,
-  SongCard,
   SongScroller,
+  type SongScrollerRef,
   type SortOption,
-  SortSelect,
-} from "~/components/song-select";
+} from "~/components/song-select/song-scroller";
+import { SortSelect } from "~/components/song-select/sort-select";
 import TitleBar from "~/components/title-bar";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
@@ -83,6 +84,9 @@ function SingComponent() {
 
   const isMedley = createMemo(() => medleySongs().length > 0);
 
+  // Ref to control the song scroller
+  let scrollerRef: SongScrollerRef | undefined;
+
   const onBack = () => {
     if (searchQuery().trim()) {
       setSearchQuery("");
@@ -105,9 +109,7 @@ function SingComponent() {
   };
 
   const selectRandomSong = () => {
-    const songsList = songs();
-    const randomIndex = Math.floor(Math.random() * songsList.length);
-    const randomSong = songsList[randomIndex];
+    const randomSong = scrollerRef?.goToRandomSong();
     if (randomSong) {
       setCurrentSong(randomSong);
     }
@@ -202,7 +204,7 @@ function SingComponent() {
     },
   });
 
-  const handleCenteredItemChange = (song: LocalSong) => {
+  const handleCenteredItemChange = (song: LocalSong | null) => {
     setCurrentSong(song);
   };
 
@@ -355,6 +357,7 @@ function SingComponent() {
           </div>
         </div>
         <SongScroller
+          ref={scrollerRef}
           items={songs()}
           sort={sort()}
           searchQuery={searchQuery()}
