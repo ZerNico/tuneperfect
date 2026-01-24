@@ -25,6 +25,7 @@
     "@solid-primitives/storage": "^4.3.3",
     "@solid-primitives/timer": "^1.4.3",
     "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-virtual": "^3.13.18",
     "@tanstack/router-plugin": "^1.150.0",
     "@tanstack/solid-form": "^1.27.7",
     "@tanstack/solid-query": "^5.90.21",
