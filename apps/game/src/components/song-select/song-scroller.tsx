@@ -22,6 +22,17 @@ const mod = (n: number, m: number) => ((n % m) + m) % m;
 // Fields configuration for MiniSearch
 const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
+// Cached collator for sorting performance
+const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+const compare = (a: string, b: string) => collator.compare(a, b);
+
+// Normalize text for search: remove diacritics (é -> e, ö -> o, etc.)
+const normalizeText = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
 interface SongScrollerProps {
   items: LocalSong[];
   sort: SortOption;
@@ -61,18 +72,13 @@ export function SongScroller(props: SongScrollerProps) {
     }
   });
 
-  // Create MiniSearch instance - recreated when filter or items change
+  // Create MiniSearch instance - only recreated when items change
+  // We index ALL fields and filter at search time for better performance
   const miniSearchInstance = createMemo(() => {
-    const filter = props.searchFilter;
-
-    // Determine which fields to index based on filter
-    // Note: year is handled separately with exact match
-    const fields = filter === "all" || filter === "year" ? [...ALL_SEARCH_FIELDS] : [filter];
-
     const miniSearch = new MiniSearch<LocalSong>({
-      fields,
+      fields: [...ALL_SEARCH_FIELDS],
       idField: "hash",
-      storeFields: ["hash"],
+      storeFields: [],
       extractField: (document, fieldName) => {
         const value = document[fieldName as keyof LocalSong];
         // Handle array fields (genre, language, edition, creator)
@@ -81,10 +87,8 @@ export function SongScroller(props: SongScrollerProps) {
         }
         return value as string | undefined;
       },
-      searchOptions: {
-        fuzzy: 0.2,
-        prefix: true,
-      },
+      // Normalize terms to match accented characters (é -> e, ö -> o, etc.)
+      processTerm: (term) => normalizeText(term),
     });
 
     miniSearch.addAll(props.items);
@@ -92,7 +96,6 @@ export function SongScroller(props: SongScrollerProps) {
   });
 
   // Filter and sort items
-  const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: "base" });
 
   const filteredAndSortedItems = createMemo(() => {
     let songs = props.items;
@@ -111,7 +114,12 @@ export function SongScroller(props: SongScrollerProps) {
         }
       } else {
         // Use MiniSearch for text fields
-        const searchResults = miniSearchInstance().search(query);
+        const fields = filter === "all" ? undefined : [filter];
+        const searchResults = miniSearchInstance().search(query, {
+          fields,
+          fuzzy: 0.1,
+          prefix: true,
+        });
         const hashSet = new Set(searchResults.map((r) => r.id));
         songs = songs.filter((song) => hashSet.has(song.hash));
       }
@@ -233,38 +241,44 @@ export function SongScroller(props: SongScrollerProps) {
     return result;
   });
 
-  // Get distance from center for a position
-  const getDistanceFromCenter = (position: number) => position * itemWidth() - offset();
-
-  // Scale: 1.0 at edges, MAX_SCALE at center
-  const getScale = (distance: number) => {
+  // Pre-computed transforms for all visible items (computed once per offset change)
+  const itemTransforms = createMemo(() => {
     const width = itemWidth();
-    const t = Math.min(Math.abs(distance) / width, 1);
-    return MAX_SCALE - t * (MAX_SCALE - 1);
-  };
+    const containerW = containerWidth();
+    const currentOffset = offset();
+    const visible = visibleItems();
 
-  // Calculate item transform (position + scale + neighbor compensation)
-  const getTransform = (position: number) => {
-    const width = itemWidth();
-    const distance = getDistanceFromCenter(position);
-    const scale = getScale(distance);
+    if (width === 0 || visible.length === 0) return new Map<number, { x: number; scale: number }>();
 
-    // Compensate for scaled neighbors pushing this item
-    let neighborOffset = 0;
-    for (const { position: otherPos } of visibleItems()) {
-      if (otherPos === position) continue;
-      const otherDistance = getDistanceFromCenter(otherPos);
-      const otherScale = getScale(otherDistance);
-      if (otherScale <= 1) continue;
-
-      const extra = ((otherScale - 1) * width) / 2;
-      if (distance > 0 && otherDistance < distance) neighborOffset += extra;
-      else if (distance < 0 && otherDistance > distance) neighborOffset -= extra;
+    // First pass: compute distances and scales
+    const itemData: { position: number; distance: number; scale: number }[] = [];
+    for (const { position } of visible) {
+      const distance = position * width - currentOffset;
+      const t = Math.min(Math.abs(distance) / width, 1);
+      const scale = MAX_SCALE - t * (MAX_SCALE - 1);
+      itemData.push({ position, distance, scale });
     }
 
-    const x = containerWidth() / 2 - width / 2 + distance + neighborOffset;
-    return { x, scale };
-  };
+    // Second pass: compute neighbor offsets and final x positions
+    const result = new Map<number, { x: number; scale: number }>();
+    for (const { position, distance, scale } of itemData) {
+      let neighborOffset = 0;
+
+      // Only items with scale > 1 affect neighbors
+      for (const other of itemData) {
+        if (other.position === position || other.scale <= 1) continue;
+
+        const extra = ((other.scale - 1) * width) / 2;
+        if (distance > 0 && other.distance < distance) neighborOffset += extra;
+        else if (distance < 0 && other.distance > distance) neighborOffset -= extra;
+      }
+
+      const x = containerW / 2 - width / 2 + distance + neighborOffset;
+      result.set(position, { x, scale });
+    }
+
+    return result;
+  });
 
   // Animation
   let velocity = 0;
@@ -412,7 +426,7 @@ export function SongScroller(props: SongScrollerProps) {
     <div ref={containerRef} class={`relative overflow-hidden ${props.class ?? ""}`}>
       <For each={visibleItems()}>
         {({ item, position }) => {
-          const t = () => getTransform(position);
+          const t = () => itemTransforms().get(position) ?? { x: 0, scale: 1 };
           return (
             <div
               class="absolute top-0 flex h-full items-center"
