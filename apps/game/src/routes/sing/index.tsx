@@ -1,5 +1,6 @@
+import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, on, Show } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -57,6 +58,28 @@ function SingComponent() {
       setCurrentSong(firstSong);
     }
   }
+
+  // Debounced song for preview player - only updates after scrolling stops
+  const [previewSong, setPreviewSong] = createSignal<LocalSong | null>(currentSong());
+  const [isScrolling, setIsScrolling] = createSignal(false);
+
+  const debouncedSetPreviewSong = debounce((song: LocalSong | null) => {
+    setPreviewSong(song);
+  }, 500);
+
+  createEffect(
+    on(currentSong, (song) => {
+      if (isScrolling()) {
+        // When scrolling fast, clear preview and debounce the new one
+        setPreviewSong(null);
+        debouncedSetPreviewSong(song);
+      } else {
+        // Single navigation - update immediately
+        debouncedSetPreviewSong.clear();
+        setPreviewSong(song);
+      }
+    }),
+  );
 
   const isMedley = createMemo(() => medleySongs().length > 0);
 
@@ -280,7 +303,7 @@ function SingComponent() {
       background={
         <div class="relative h-full w-full">
           <Presence>
-            <Show when={currentSong()} keyed>
+            <Show when={previewSong()} keyed>
               {(song) => (
                 <Motion.div
                   initial={{ opacity: 0 }}
@@ -340,6 +363,7 @@ function SingComponent() {
           class="-mx-16 h-60 w-[calc(100%+8cqw)]"
           onCenteredItemChange={handleCenteredItemChange}
           onFilteredCountChange={setFilteredSongCount}
+          onScrollingChange={setIsScrolling}
         >
           {(song) => <SongCard song={song} />}
         </SongScroller>

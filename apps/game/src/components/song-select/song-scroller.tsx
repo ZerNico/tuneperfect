@@ -31,6 +31,7 @@ interface SongScrollerProps {
   children: (item: LocalSong, index: number, scale: Accessor<number>) => JSX.Element;
   onCenteredItemChange?: (item: LocalSong, index: number) => void;
   onFilteredCountChange?: (count: number) => void;
+  onScrollingChange?: (isScrolling: boolean) => void;
   class?: string;
 }
 
@@ -271,6 +272,14 @@ export function SongScroller(props: SongScrollerProps) {
   let animationFrame: number | undefined;
   let snapTarget: number | null = null;
   let holdDirection = 0; // -1 = left, 0 = none, 1 = right
+  let isScrolling = false;
+
+  const setScrolling = (scrolling: boolean) => {
+    if (scrolling !== isScrolling) {
+      isScrolling = scrolling;
+      props.onScrollingChange?.(scrolling);
+    }
+  };
 
   const animate = () => {
     const width = itemWidth();
@@ -290,6 +299,7 @@ export function SongScroller(props: SongScrollerProps) {
         velocity = 0;
         snapTarget = null;
         animationFrame = undefined;
+        setScrolling(false);
         return;
       }
       velocity = distance * 0.15;
@@ -297,14 +307,17 @@ export function SongScroller(props: SongScrollerProps) {
       // Holding: continuous scroll in direction
       const holdSpeed = itemWidth() * 0.13;
       velocity = holdDirection * holdSpeed;
+      setScrolling(true);
     } else {
       // Free scroll: apply friction, then snap when slow
       if (Math.abs(velocity) < 2) {
         const baseIndex = offset() / width;
         const bias = velocity > 0.5 ? 0.3 : velocity < -0.5 ? -0.3 : 0;
         snapTarget = Math.round(baseIndex + bias);
+        setScrolling(false);
       } else {
         velocity *= 0.92;
+        setScrolling(true);
       }
     }
 
