@@ -31,7 +31,6 @@ const de = {
   quit: {
     title: "Spiel beenden",
     message: "Möchtest du das Spiel wirklich beenden?",
-    
   },
   update: {
     checking: "Suche nach Updates...",
@@ -93,6 +92,7 @@ const de = {
     menu: {
       addToMedley: "Zu Medley hinzufügen",
       startRandomMedley: "Zufälliges Medley starten",
+      startMedley: "Medley starten",
     },
   },
   score: {
@@ -131,6 +131,11 @@ const de = {
         audioModeOptions: {
           normal: "Normal",
           preferInstrumental: "Instrumental bevorzugen",
+        },
+        songSelectStyle: "Songauswahl-Stil",
+        songSelectStyleOptions: {
+          coverflow: "Coverflow",
+          grid: "Raster",
         },
       },
       songs: {

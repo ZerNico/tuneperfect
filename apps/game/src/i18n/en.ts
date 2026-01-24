@@ -92,6 +92,7 @@ const en = {
     menu: {
       addToMedley: "Add to Medley",
       startRandomMedley: "Start Random Medley",
+      startMedley: "Start Medley",
     },
   },
   score: {
@@ -130,6 +131,11 @@ const en = {
         audioModeOptions: {
           normal: "Normal",
           preferInstrumental: "Prefer Instrumental",
+        },
+        songSelectStyle: "Song Select Style",
+        songSelectStyleOptions: {
+          coverflow: "Coverflow",
+          grid: "Grid",
         },
       },
       songs: {

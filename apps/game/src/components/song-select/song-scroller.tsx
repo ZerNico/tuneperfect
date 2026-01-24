@@ -1,5 +1,3 @@
-import { debounce } from "@solid-primitives/scheduled";
-import MiniSearch from "minisearch";
 import {
   type Accessor,
   createEffect,
@@ -13,8 +11,11 @@ import {
   type Ref,
 } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
+import { type SearchFilter, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
+
+export type { SortOption, SearchFilter };
 
 export interface SongScrollerRef {
   goToRandomSong: () => LocalSong | null;
@@ -29,22 +30,7 @@ const ITEM_WIDTH_CQW = 0.12;
 const MAX_SCALE = 1.3;
 const OVERSCAN = 3;
 
-export type SortOption = "artist" | "title" | "year";
-export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
-
 const mod = (n: number, m: number) => ((n % m) + m) % m;
-
-const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
-
-const collator = new Intl.Collator(undefined, { sensitivity: "base" });
-const compare = (a: string, b: string) => collator.compare(a, b);
-
-// Remove diacritics for accent-insensitive search (é -> e, ö -> o)
-const normalizeText = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
 
 interface SongScrollerProps {
   ref?: Ref<SongScrollerRef>;
@@ -66,87 +52,15 @@ export function SongScroller(props: SongScrollerProps) {
   const [offset, setOffset] = createSignal(0);
   const [containerWidth, setContainerWidth] = createSignal(0);
   const [currentItemId, setCurrentItemId] = createSignal<string | null>(null);
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
   const [hasInitialized, setHasInitialized] = createSignal(false);
 
   const itemWidth = () => containerWidth() * ITEM_WIDTH_CQW;
 
-  const shouldDebounce = () => props.items.length > 1000;
-
-  const debouncedSetQuery = debounce((query: string) => {
-    setDebouncedSearchQuery(query);
-  }, 500);
-
-  createEffect(() => {
-    if (shouldDebounce()) {
-      debouncedSetQuery(props.searchQuery);
-    } else {
-      setDebouncedSearchQuery(props.searchQuery);
-    }
-  });
-
-  // Index all fields, filter at search time for better performance
-  const miniSearchInstance = createMemo(() => {
-    const miniSearch = new MiniSearch<LocalSong>({
-      fields: [...ALL_SEARCH_FIELDS],
-      idField: "hash",
-      storeFields: [],
-      extractField: (document, fieldName) => {
-        const value = document[fieldName as keyof LocalSong];
-        if (Array.isArray(value)) {
-          return value.join(" ");
-        }
-        return value as string | undefined;
-      },
-      processTerm: (term) => normalizeText(term),
-    });
-
-    miniSearch.addAll(props.items);
-    return miniSearch;
-  });
-
-  const filteredAndSortedItems = createMemo(() => {
-    let songs = props.items;
-    const query = debouncedSearchQuery().trim();
-
-    if (query) {
-      const filter = props.searchFilter;
-
-      if (filter === "year") {
-        const yearQuery = Number.parseInt(query, 10);
-        if (!Number.isNaN(yearQuery)) {
-          songs = songs.filter((song) => song.year === yearQuery);
-        } else {
-          songs = [];
-        }
-      } else {
-        const fields = filter === "all" ? undefined : [filter];
-        const searchResults = miniSearchInstance().search(query, {
-          fields,
-          fuzzy: 0.1,
-          prefix: true,
-        });
-        const hashSet = new Set(searchResults.map((r) => r.id));
-        songs = songs.filter((song) => hashSet.has(song.hash));
-      }
-    }
-
-    if (songs.length === 0) {
-      return [];
-    }
-
-    return [...songs].sort((a, b) => {
-      if (props.sort === "artist") {
-        return compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      if (props.sort === "title") {
-        return compare(a.title, b.title);
-      }
-      if (props.sort === "year") {
-        return (a.year ?? 0) - (b.year ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      return 0;
-    });
+  const { filteredItems: filteredAndSortedItems } = useSongFilter({
+    items: () => props.items,
+    sort: () => props.sort,
+    searchQuery: () => props.searchQuery,
+    searchFilter: () => props.searchFilter,
   });
 
   createEffect(() => {

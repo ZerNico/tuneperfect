@@ -73,7 +73,8 @@ function GeneralSettingsComponent() {
       value: () => general().audioMode,
       options: ["normal", "preferInstrumental"],
       onChange: (value) => setGeneral({ ...general(), audioMode: value as "normal" | "preferInstrumental" }),
-      renderValue: (value) => t(`settings.sections.general.audioModeOptions.${value as "normal" | "preferInstrumental"}`),
+      renderValue: (value) =>
+        t(`settings.sections.general.audioModeOptions.${value as "normal" | "preferInstrumental"}`),
     },
     {
       type: "select-string",
@@ -82,6 +83,14 @@ function GeneralSettingsComponent() {
       options: ["yes", "no"],
       onChange: (value) => setGeneral({ ...general(), micPlaybackEnabled: value === "yes" }),
       renderValue: (value) => t(`common.${value as "yes" | "no"}`),
+    },
+    {
+      type: "select-string",
+      label: t("settings.sections.general.songSelectStyle"),
+      value: () => general().songSelectStyle,
+      options: ["coverflow", "grid"],
+      onChange: (value) => setGeneral({ ...general(), songSelectStyle: value as "coverflow" | "grid" }),
+      renderValue: (value) => t(`settings.sections.general.songSelectStyleOptions.${value as "coverflow" | "grid"}`),
     },
     {
       type: "button",
@@ -93,7 +102,9 @@ function GeneralSettingsComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Menu items={menuItems} onBack={onBack} />

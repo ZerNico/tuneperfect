@@ -1,6 +1,6 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, on, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, Match, on, Show, Switch } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -11,6 +11,7 @@ import { MenuPopup } from "~/components/song-select/menu-popup";
 import { SearchButton } from "~/components/song-select/search-button";
 import { SearchPopup } from "~/components/song-select/search-popup";
 import { SongCard } from "~/components/song-select/song-card";
+import { SongGrid, type SongGridRef } from "~/components/song-select/song-grid";
 import {
   type SearchFilter,
   SongScroller,
@@ -84,8 +85,11 @@ function SingComponent() {
 
   const isMedley = createMemo(() => medleySongs().length > 0);
 
-  // Ref to control the song scroller
+  // Ref to control the song scroller/grid
   let scrollerRef: SongScrollerRef | undefined;
+  let gridRef: SongGridRef | undefined;
+
+  const songSelectStyle = () => settingsStore.general().songSelectStyle;
 
   const onBack = () => {
     if (searchQuery().trim()) {
@@ -109,7 +113,7 @@ function SingComponent() {
   };
 
   const selectRandomSong = () => {
-    const randomSong = scrollerRef?.goToRandomSong();
+    const randomSong = songSelectStyle() === "grid" ? gridRef?.goToRandomSong() : scrollerRef?.goToRandomSong();
     if (randomSong) {
       setCurrentSong(randomSong);
     }
@@ -328,49 +332,103 @@ function SingComponent() {
         </div>
       }
     >
-      <div class="relative grid h-full grid-rows-[1fr_auto]">
-        <div class="flex grow items-center">
-          <div class="relative flex grow flex-col">
-            <p class="text-xl">{currentSong()?.artist}</p>
-            <div class="max-w-200">
-              <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent">
-                {currentSong()?.title}
-              </span>
-            </div>
-            <div class="absolute top-full">
-              <Show when={(currentSong()?.voices.length || 0) > 1}>
-                <IconDuet />
-              </Show>
-            </div>
-          </div>
-          <div class="flex h-full gap-2">
-            <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
-            <Show when={isMedley()}>
-              <MedleyList
-                songs={medleySongs()}
-                onRemove={(index) => {
-                  setMedleySongs((prev) => prev.filter((_, i) => i !== index));
-                  playSound("select");
-                }}
+      <Switch>
+        <Match when={songSelectStyle() === "grid"}>
+          <div class="relative flex h-full min-h-0 gap-8">
+            <div class="relative w-1/2 -ml-8">
+              <SongGrid
+                ref={gridRef}
+                items={songs()}
+                sort={sort()}
+                searchQuery={searchQuery()}
+                searchFilter={searchFilter()}
+                initialSong={currentSong() ?? undefined}
+                class="absolute inset-0"
+                onSelectedItemChange={handleCenteredItemChange}
+                onFilteredCountChange={setFilteredSongCount}
+                onScrollingChange={setIsScrolling}
+                onConfirm={startRegular}
               />
-            </Show>
+            </div>
+            <div class="flex w-1/2 flex-col">
+              <div class="flex h-1/3 items-center">
+                <div class="relative flex flex-col">
+                  <p class="text-xl">{currentSong()?.artist}</p>
+                  <div class="max-w-full">
+                    <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent">
+                      {currentSong()?.title}
+                    </span>
+                  </div>
+                  <div class="absolute top-full">
+                    <Show when={(currentSong()?.voices.length || 0) > 1}>
+                      <IconDuet />
+                    </Show>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-8 flex min-h-0 flex-1 gap-2">
+                <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+                <Show when={isMedley()}>
+                  <MedleyList
+                    songs={medleySongs()}
+                    onRemove={(index) => {
+                      setMedleySongs((prev) => prev.filter((_, i) => i !== index));
+                      playSound("select");
+                    }}
+                    onStart={startMedley}
+                    useAlternativeNavigation
+                  />
+                </Show>
+              </div>
+            </div>
           </div>
-        </div>
-        <SongScroller
-          ref={scrollerRef}
-          items={songs()}
-          sort={sort()}
-          searchQuery={searchQuery()}
-          searchFilter={searchFilter()}
-          initialSong={currentSong() ?? undefined}
-          class="-mx-16 h-60 w-[calc(100%+8cqw)]"
-          onCenteredItemChange={handleCenteredItemChange}
-          onFilteredCountChange={setFilteredSongCount}
-          onScrollingChange={setIsScrolling}
-        >
-          {(song) => <SongCard song={song} />}
-        </SongScroller>
-      </div>
+        </Match>
+        <Match when={songSelectStyle() === "coverflow"}>
+          <div class="relative grid h-full grid-rows-[1fr_auto]">
+            <div class="flex grow items-center">
+              <div class="relative flex grow flex-col">
+                <p class="text-xl">{currentSong()?.artist}</p>
+                <div class="max-w-200">
+                  <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent">
+                    {currentSong()?.title}
+                  </span>
+                </div>
+                <div class="absolute top-full">
+                  <Show when={(currentSong()?.voices.length || 0) > 1}>
+                    <IconDuet />
+                  </Show>
+                </div>
+              </div>
+              <div class="flex h-full gap-2">
+                <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+                <Show when={isMedley()}>
+                  <MedleyList
+                    songs={medleySongs()}
+                    onRemove={(index) => {
+                      setMedleySongs((prev) => prev.filter((_, i) => i !== index));
+                      playSound("select");
+                    }}
+                  />
+                </Show>
+              </div>
+            </div>
+            <SongScroller
+              ref={scrollerRef}
+              items={songs()}
+              sort={sort()}
+              searchQuery={searchQuery()}
+              searchFilter={searchFilter()}
+              initialSong={currentSong() ?? undefined}
+              class="-mx-16 h-60 w-[calc(100%+8cqw)]"
+              onCenteredItemChange={handleCenteredItemChange}
+              onFilteredCountChange={setFilteredSongCount}
+              onScrollingChange={setIsScrolling}
+            >
+              {(song) => <SongCard song={song} />}
+            </SongScroller>
+          </div>
+        </Match>
+      </Switch>
     </Layout>
   );
 }

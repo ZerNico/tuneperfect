@@ -1,14 +1,24 @@
 import { createEffect, For, on, Show } from "solid-js";
 import { createLoop } from "~/hooks/loop";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import IconX from "~icons/lucide/x";
+import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconF2Key from "~icons/sing/f2-key";
 import IconGamepadLT from "~icons/sing/gamepad-lt";
+import IconGamepadRStick from "~icons/sing/gamepad-rstick";
+import IconPageDownKey from "~icons/sing/page-down-key";
+import IconPageUpKey from "~icons/sing/page-up-key";
+import IconTriangleDown from "~icons/sing/triangle-down";
+import IconTriangleUp from "~icons/sing/triangle-up";
+import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
 interface MedleyListProps {
   songs: LocalSong[];
   onRemove: (index: number) => void;
+  onStart?: () => void;
+  useAlternativeNavigation?: boolean;
 }
 
 export function MedleyList(props: MedleyListProps) {
@@ -22,10 +32,12 @@ export function MedleyList(props: MedleyListProps) {
 
   useNavigation({
     onKeydown(event) {
-      if (event.action === "up") {
+      const upAction = props.useAlternativeNavigation ? "medley-up" : "up";
+      const downAction = props.useAlternativeNavigation ? "medley-down" : "down";
+
+      if (event.action === upAction) {
         decrement();
-      }
-      if (event.action === "down") {
+      } else if (event.action === downAction) {
         increment();
       } else if (event.action === "remove-from-medley") {
         props.onRemove(position());
@@ -68,10 +80,45 @@ export function MedleyList(props: MedleyListProps) {
     ),
   );
 
+  const UpKeyIcon = () => (
+    <Show
+      when={keyMode() === "keyboard"}
+      fallback={props.useAlternativeNavigation ? <IconGamepadRStick class="text-sm" /> : null}
+    >
+      <Show when={props.useAlternativeNavigation} fallback={<IconUpArrowKey class="text-sm" />}>
+        <IconPageUpKey class="text-sm" />
+      </Show>
+    </Show>
+  );
+
+  const DownKeyIcon = () => (
+    <Show
+      when={keyMode() === "keyboard"}
+      fallback={props.useAlternativeNavigation ? <IconGamepadRStick class="text-sm" /> : null}
+    >
+      <Show when={props.useAlternativeNavigation} fallback={<IconDownArrowKey class="text-sm" />}>
+        <IconPageDownKey class="text-sm" />
+      </Show>
+    </Show>
+  );
+
   return (
     <div class="h-full w-80">
       <div class="flex h-full flex-col rounded-lg bg-black/30 p-4 backdrop-blur-md">
-        <h2 class="mb-4 font-bold text-2xl">Medley</h2>
+        <div class="mb-2 flex items-center justify-between">
+          <h2 class="font-bold text-2xl">Medley</h2>
+          <div class="flex items-center gap-2">
+            <UpKeyIcon />
+            <button
+              type="button"
+              class="cursor-pointer transition-all hover:opacity-75 active:scale-95"
+              onClick={() => decrement()}
+            >
+              <IconTriangleUp class="text-lg" />
+            </button>
+          </div>
+        </div>
+
         <div class="relative min-h-0 flex-1">
           <div ref={scrollContainer} class="styled-scrollbars absolute h-full w-full space-y-2 overflow-y-auto">
             <For each={props.songs}>
@@ -126,6 +173,28 @@ export function MedleyList(props: MedleyListProps) {
                 );
               }}
             </For>
+          </div>
+        </div>
+
+        <div class="mt-2 flex items-center justify-between">
+          <Show when={props.useAlternativeNavigation && props.onStart}>
+            <button
+              type="button"
+              class="cursor-pointer rounded-lg bg-gradient-to-r from-green-400 to-teal-600 px-4 py-2 font-semibold text-sm transition-all hover:opacity-75 active:scale-95"
+              onClick={() => props.onStart?.()}
+            >
+              {t("sing.menu.startMedley")}
+            </button>
+          </Show>
+          <div class="ml-auto flex items-center gap-2">
+            <DownKeyIcon />
+            <button
+              type="button"
+              class="cursor-pointer transition-all hover:opacity-75 active:scale-95"
+              onClick={() => increment()}
+            >
+              <IconTriangleDown class="text-lg" />
+            </button>
           </div>
         </div>
       </div>
