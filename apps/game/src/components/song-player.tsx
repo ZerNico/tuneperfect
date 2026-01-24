@@ -601,21 +601,6 @@ export default function SongPlayer(props: SongPlayerProps) {
     stopEndTimeMonitoring();
     clearTimeout(fadeOutTimeout);
 
-    // Explicitly release media resources to prevent memory leaks
-    const audio = audioElement();
-    const video = videoElement();
-
-    if (audio) {
-      audio.pause();
-      audio.src = "";
-      audio.load(); // Forces browser to release resources
-    }
-    if (video) {
-      video.pause();
-      video.src = "";
-      video.load(); // Forces browser to release resources
-    }
-
     // Disconnect audio nodes (but don't close shared AudioContext)
     try {
       if (audioSource) {
