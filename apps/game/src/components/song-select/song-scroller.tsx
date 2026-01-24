@@ -1,13 +1,20 @@
 import { type Accessor, createEffect, createMemo, createSignal, For, type JSX, on, onCleanup, onMount } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
 import type { LocalSong } from "~/lib/ultrastar/song";
-import { clamp } from "~/lib/utils/math";
+
+interface VisibleItem {
+  item: LocalSong;
+  position: number;
+}
 
 const ITEM_WIDTH_CQW = 0.12; // w-40 (10cqw) + mx-4 (2cqw) = 12cqw
 const MAX_SCALE = 1.3;
 const OVERSCAN = 3;
 
 export type SortOption = "artist" | "title" | "year";
+
+// Helper for positive modulo (handles negative numbers correctly)
+const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 interface SongScrollerProps {
   items: LocalSong[];
@@ -47,12 +54,17 @@ export function SongScroller(props: SongScrollerProps) {
     });
   });
 
-  const maxOffset = () => Math.max(0, (sortedItems().length - 1) * itemWidth());
-  const clampOffset = (value: number) => clamp(value, 0, maxOffset());
-
-  const centeredIndex = createMemo(() => {
+  // Current position (can be any integer, not bounded)
+  const currentPosition = () => {
     const width = itemWidth();
     return width === 0 ? 0 : Math.round(offset() / width);
+  };
+
+  // Centered song index (0 to length-1, wraps around)
+  const centeredIndex = createMemo(() => {
+    const length = sortedItems().length;
+    if (length === 0) return 0;
+    return mod(currentPosition(), length);
   });
 
   // When sorted items change, find the current item's new index and jump to it
@@ -61,10 +73,17 @@ export function SongScroller(props: SongScrollerProps) {
       const id = currentItemId();
       if (!id || items.length === 0) return;
 
-      const newIndex = items.findIndex((item) => item.hash === id);
-      if (newIndex !== -1 && newIndex !== centeredIndex()) {
-        // Immediately jump to the new index (no animation)
-        setOffset(newIndex * itemWidth());
+      const newSongIndex = items.findIndex((item) => item.hash === id);
+      if (newSongIndex === -1) return;
+
+      // Preserve the current "cycle" we're in
+      const pos = currentPosition();
+      const length = items.length;
+      const cycle = Math.floor(pos / length);
+      const newPosition = cycle * length + newSongIndex;
+
+      if (newPosition !== pos) {
+        setOffset(newPosition * itemWidth());
       }
     }),
   );
@@ -80,20 +99,28 @@ export function SongScroller(props: SongScrollerProps) {
     }),
   );
 
-  // Virtualization: only render visible items
+  // Virtualization: only render visible items (with wrapping)
   const visibleItems = createMemo(() => {
     const width = itemWidth();
-    const center = centeredIndex();
     const items = sortedItems();
-    const range = width === 0 ? 10 : Math.ceil(containerWidth() / 2 / width) + OVERSCAN;
-    const start = Math.max(0, center - range);
-    const end = Math.min(items.length - 1, center + range);
+    const length = items.length;
+    if (width === 0 || length === 0) return [];
 
-    return items.slice(start, end + 1).map((item, i) => ({ item, index: start + i }));
+    const centerPos = currentPosition();
+    const range = Math.ceil(containerWidth() / 2 / width) + OVERSCAN;
+
+    const result: VisibleItem[] = [];
+    for (let i = -range; i <= range; i++) {
+      const position = centerPos + i;
+      const songIndex = mod(position, length);
+      // biome-ignore lint/style/noNonNullAssertion: songIndex is always valid due to mod
+      result.push({ item: items[songIndex]!, position });
+    }
+    return result;
   });
 
-  // Get distance from center for an item (negative = left of center)
-  const getDistanceFromCenter = (index: number) => index * itemWidth() - offset();
+  // Get distance from center for a position
+  const getDistanceFromCenter = (position: number) => position * itemWidth() - offset();
 
   // Scale: 1.0 at edges, MAX_SCALE at center
   const getScale = (distance: number) => {
@@ -103,16 +130,16 @@ export function SongScroller(props: SongScrollerProps) {
   };
 
   // Calculate item transform (position + scale + neighbor compensation)
-  const getTransform = (index: number) => {
+  const getTransform = (position: number) => {
     const width = itemWidth();
-    const distance = getDistanceFromCenter(index);
+    const distance = getDistanceFromCenter(position);
     const scale = getScale(distance);
 
     // Compensate for scaled neighbors pushing this item
     let neighborOffset = 0;
-    for (const { index: i } of visibleItems()) {
-      if (i === index) continue;
-      const otherDistance = getDistanceFromCenter(i);
+    for (const { position: otherPos } of visibleItems()) {
+      if (otherPos === position) continue;
+      const otherDistance = getDistanceFromCenter(otherPos);
       const otherScale = getScale(otherDistance);
       if (otherScale <= 1) continue;
 
@@ -139,7 +166,8 @@ export function SongScroller(props: SongScrollerProps) {
       return;
     }
 
-    const target = clampOffset((snapTarget ?? centeredIndex()) * width);
+    const targetPos = snapTarget ?? currentPosition();
+    const target = targetPos * width;
     const distance = target - offset();
 
     if (snapTarget !== null) {
@@ -159,18 +187,15 @@ export function SongScroller(props: SongScrollerProps) {
     } else {
       // Free scroll: apply friction, then snap when slow
       if (Math.abs(velocity) < 2) {
-        // Consider velocity direction when choosing snap target
-        const currentOffset = offset();
-        const baseIndex = currentOffset / width;
-        // If moving right (positive velocity), round up more easily; if left, round down
+        const baseIndex = offset() / width;
         const bias = velocity > 0.5 ? 0.3 : velocity < -0.5 ? -0.3 : 0;
-        snapTarget = clamp(Math.round(baseIndex + bias), 0, sortedItems().length - 1);
+        snapTarget = Math.round(baseIndex + bias);
       } else {
         velocity *= 0.92;
       }
     }
 
-    setOffset((o) => clampOffset(o + velocity));
+    setOffset((o) => o + velocity);
     animationFrame = requestAnimationFrame(animate);
   };
 
@@ -178,8 +203,8 @@ export function SongScroller(props: SongScrollerProps) {
     if (!animationFrame) animationFrame = requestAnimationFrame(animate);
   };
 
-  const goToIndex = (index: number) => {
-    snapTarget = Math.max(0, Math.min(sortedItems().length - 1, index));
+  const goToPosition = (position: number) => {
+    snapTarget = position;
     velocity = 0;
     startAnimation();
   };
@@ -195,7 +220,7 @@ export function SongScroller(props: SongScrollerProps) {
 
     // New gesture: snap to next/prev
     if (timeDelta > 150) {
-      goToIndex(centeredIndex() + (delta > 0 ? 1 : -1));
+      goToPosition(currentPosition() + (delta > 0 ? 1 : -1));
       velocity = delta > 0 ? 5 : -5;
       return;
     }
@@ -209,8 +234,8 @@ export function SongScroller(props: SongScrollerProps) {
 
   useNavigation({
     onKeydown(event) {
-      if (event.action === "left") goToIndex(centeredIndex() - 1);
-      else if (event.action === "right") goToIndex(centeredIndex() + 1);
+      if (event.action === "left") goToPosition(currentPosition() - 1);
+      else if (event.action === "right") goToPosition(currentPosition() + 1);
     },
     onHold(event) {
       if (event.action === "left" || event.action === "right") {
@@ -232,16 +257,16 @@ export function SongScroller(props: SongScrollerProps) {
       const prevWidth = containerWidth();
       const newWidth = containerRef.clientWidth;
 
-      // Calculate centered index BEFORE updating width
+      // Calculate current position BEFORE updating width
       const prevItemWidth = prevWidth * ITEM_WIDTH_CQW;
-      const currentIndex = prevItemWidth > 0 ? Math.round(offset() / prevItemWidth) : 0;
+      const pos = prevItemWidth > 0 ? Math.round(offset() / prevItemWidth) : 0;
 
       setContainerWidth(newWidth);
 
-      // Adjust offset to keep the same item centered after resize
+      // Adjust offset to keep the same position after resize
       if (prevWidth > 0 && newWidth !== prevWidth) {
         const newItemWidth = newWidth * ITEM_WIDTH_CQW;
-        setOffset(currentIndex * newItemWidth);
+        setOffset(pos * newItemWidth);
       }
     };
     updateSize();
@@ -260,15 +285,18 @@ export function SongScroller(props: SongScrollerProps) {
   return (
     <div ref={containerRef} class={`relative overflow-hidden ${props.class ?? ""}`}>
       <For each={visibleItems()}>
-        {({ item, index }) => {
-          const t = () => getTransform(index);
+        {({ item, position }) => {
+          const t = () => getTransform(position);
           return (
             <div
               class="absolute top-0 flex h-full items-center"
               style={{ transform: `translateX(${t().x}px) scale(${t().scale})` }}
             >
-              <div onClick={() => goToIndex(index)} onKeyDown={(e) => e.key === "Enter" && goToIndex(index)}>
-                {props.children(item, index, () => t().scale)}
+              <div
+                onClick={() => goToPosition(position)}
+                onKeyDown={(e) => e.key === "Enter" && goToPosition(position)}
+              >
+                {props.children(item, position, () => t().scale)}
               </div>
             </div>
           );
