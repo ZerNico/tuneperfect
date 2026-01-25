@@ -410,6 +410,7 @@ function SingComponent() {
                       setMedleySongs((prev) => prev.filter((_, i) => i !== index));
                       playSound("select");
                     }}
+                    onStart={startMedley}
                   />
                 </Show>
               </div>
@@ -425,6 +426,7 @@ function SingComponent() {
               onCenteredItemChange={handleCenteredItemChange}
               onFilteredCountChange={setFilteredSongCount}
               onScrollingChange={setIsScrolling}
+              onConfirm={startRegular}
             >
               {(song) => <SongCard song={song} />}
             </SongScroller>

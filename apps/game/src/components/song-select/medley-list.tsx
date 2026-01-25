@@ -177,7 +177,7 @@ export function MedleyList(props: MedleyListProps) {
         </div>
 
         <div class="mt-2 flex items-center justify-between">
-          <Show when={props.useAlternativeNavigation && props.onStart}>
+          <Show when={props.onStart}>
             <button
               type="button"
               class="cursor-pointer rounded-lg bg-gradient-to-r from-green-400 to-teal-600 px-4 py-2 font-semibold text-sm transition-all hover:opacity-75 active:scale-95"

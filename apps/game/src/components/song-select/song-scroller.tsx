@@ -43,6 +43,7 @@ interface SongScrollerProps {
   onCenteredItemChange?: (item: LocalSong | null, index: number) => void;
   onFilteredCountChange?: (count: number) => void;
   onScrollingChange?: (isScrolling: boolean) => void;
+  onConfirm?: (item: LocalSong) => void;
   class?: string;
 }
 
@@ -430,6 +431,15 @@ export function SongScroller(props: SongScrollerProps) {
     });
   });
 
+  const handleItemClick = (item: LocalSong, position: number) => {
+    const isCentered = position === currentPosition();
+    if (isCentered) {
+      props.onConfirm?.(item);
+    } else {
+      goToPosition(position);
+    }
+  };
+
   return (
     <div ref={containerRef} class={`relative overflow-hidden ${props.class ?? ""}`}>
       <For each={visibleItems()}>
@@ -441,8 +451,8 @@ export function SongScroller(props: SongScrollerProps) {
               style={{ transform: `translateX(${t().x}px) scale(${t().scale})` }}
             >
               <div
-                onClick={() => goToPosition(position)}
-                onKeyDown={(e) => e.key === "Enter" && goToPosition(position)}
+                onClick={() => handleItemClick(item, position)}
+                onKeyDown={(e) => e.key === "Enter" && handleItemClick(item, position)}
               >
                 {props.children(item, position, () => t().scale)}
               </div>
