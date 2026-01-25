@@ -92,15 +92,29 @@ export function SongGrid(props: SongGridProps) {
     on(
       () => [props.initialSong, filteredItems()] as const,
       ([initialSong, items]) => {
-        if (hasInitialized() || !initialSong || items.length === 0) return;
+        if (hasInitialized() || items.length === 0) return;
 
-        const index = items.findIndex((item) => item.hash === initialSong.hash);
-        if (index !== -1) {
-          setSelectedIndex(index);
-          setSelectedHash(initialSong.hash);
+        // If we have an initial song, find it and scroll to it
+        if (initialSong) {
+          const index = items.findIndex((item) => item.hash === initialSong.hash);
+          if (index !== -1) {
+            setSelectedIndex(index);
+            setSelectedHash(initialSong.hash);
+            setHasInitialized(true);
+            props.onSelectedItemChange?.(initialSong, index);
+            const rowIndex = Math.floor(index / COLUMNS);
+            virtualizer.scrollToIndex(rowIndex, { align: "center" });
+            return;
+          }
+        }
+
+        // No initial song or not found - default to first item
+        const firstSong = items[0];
+        if (firstSong) {
+          setSelectedIndex(0);
+          setSelectedHash(firstSong.hash);
           setHasInitialized(true);
-          const rowIndex = Math.floor(index / COLUMNS);
-          virtualizer.scrollToIndex(rowIndex, { align: "center" });
+          props.onSelectedItemChange?.(firstSong, 0);
         }
       },
     ),
@@ -108,6 +122,9 @@ export function SongGrid(props: SongGridProps) {
 
   createEffect(
     on(filteredItems, (items) => {
+      // Skip if not initialized yet - let the initialization effect handle it
+      if (!hasInitialized()) return;
+
       if (items.length === 0) {
         props.onSelectedItemChange?.(null, -1);
         return;
@@ -136,6 +153,9 @@ export function SongGrid(props: SongGridProps) {
 
   createEffect(
     on(selectedIndex, (index) => {
+      // Skip if not initialized yet - let the initialization effect handle first selection
+      if (!hasInitialized()) return;
+
       const items = filteredItems();
       const item = items[index];
       if (item) {

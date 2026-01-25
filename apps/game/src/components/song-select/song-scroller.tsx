@@ -80,15 +80,30 @@ export function SongScroller(props: SongScrollerProps) {
 
   createEffect(
     on(
-      () => [props.initialSong, filteredAndSortedItems()] as const,
-      ([initialSong, items]) => {
-        if (hasInitialized() || !initialSong || items.length === 0) return;
+      () => [props.initialSong, filteredAndSortedItems(), containerWidth()] as const,
+      ([initialSong, items, width]) => {
+        if (hasInitialized() || items.length === 0 || width === 0) return;
 
-        const index = items.findIndex((item) => item.hash === initialSong.hash);
-        if (index !== -1) {
-          setOffset(index * itemWidth());
-          setCurrentItemId(initialSong.hash);
+        // If we have an initial song, find it and scroll to it
+        if (initialSong) {
+          const index = items.findIndex((item) => item.hash === initialSong.hash);
+          if (index !== -1) {
+            const calculatedItemWidth = width * ITEM_WIDTH_CQW;
+            setOffset(index * calculatedItemWidth);
+            setCurrentItemId(initialSong.hash);
+            setHasInitialized(true);
+            props.onCenteredItemChange?.(initialSong, index);
+            return;
+          }
+        }
+
+        // No initial song or not found - default to first item
+        const firstSong = items[0];
+        if (firstSong) {
+          setCurrentItemId(firstSong.hash);
+          setOffset(0);
           setHasInitialized(true);
+          props.onCenteredItemChange?.(firstSong, 0);
         }
       },
     ),
@@ -96,6 +111,9 @@ export function SongScroller(props: SongScrollerProps) {
 
   createEffect(
     on(filteredAndSortedItems, (items) => {
+      // Skip if not initialized yet - let the initialization effect handle it
+      if (!hasInitialized()) return;
+
       const id = currentItemId();
 
       if (items.length === 0) {
@@ -141,6 +159,9 @@ export function SongScroller(props: SongScrollerProps) {
 
   createEffect(
     on(centeredIndex, (index) => {
+      // Skip if not initialized yet - let the initialization effect handle first selection
+      if (!hasInitialized()) return;
+
       const items = filteredAndSortedItems();
       const item = items[index];
       if (item) {
