@@ -220,6 +220,10 @@ export function SongScroller(props: SongScrollerProps) {
   let holdDirection = 0;
   let isScrolling = false;
   let mounted = true;
+  let lastFrameTime = 0;
+
+  // Target frame time (60fps baseline for consistent behavior across refresh rates)
+  const TARGET_FRAME_MS = 1000 / 60;
 
   const setScrolling = (scrolling: boolean) => {
     if (scrolling !== isScrolling) {
@@ -228,7 +232,7 @@ export function SongScroller(props: SongScrollerProps) {
     }
   };
 
-  const animate = () => {
+  const animate = (currentTime: number) => {
     // Stop animation if component is unmounted
     if (!mounted) {
       animationFrame = undefined;
@@ -241,9 +245,16 @@ export function SongScroller(props: SongScrollerProps) {
       return;
     }
 
+    // Calculate delta time for frame-rate independent animation
+    const deltaTime = lastFrameTime === 0 ? TARGET_FRAME_MS : currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+    const deltaFactor = deltaTime / TARGET_FRAME_MS;
+
     const targetPos = snapTarget ?? currentPosition();
     const target = targetPos * width;
     const distance = target - offset();
+
+    let frameVelocity = 0;
 
     if (snapTarget !== null) {
       if (Math.abs(distance) < 0.5) {
@@ -252,12 +263,17 @@ export function SongScroller(props: SongScrollerProps) {
         snapTarget = null;
         animationFrame = undefined;
         setScrolling(false);
+        lastFrameTime = 0;
         return;
       }
-      velocity = distance * 0.15;
+      // Lerp factor adjusted for delta time: 1 - (1 - 0.15)^deltaFactor
+      const lerpFactor = 1 - 0.85 ** deltaFactor;
+      frameVelocity = distance * lerpFactor;
+      velocity = 0;
     } else if (holdDirection !== 0) {
-      const holdSpeed = itemWidth() * 0.13;
-      velocity = holdDirection * holdSpeed;
+      // Hold speed scaled by delta time
+      const holdSpeed = itemWidth() * 0.13 * deltaFactor;
+      frameVelocity = holdDirection * holdSpeed;
       setScrolling(true);
     } else {
       if (Math.abs(velocity) < 2) {
@@ -274,18 +290,25 @@ export function SongScroller(props: SongScrollerProps) {
         }
         setScrolling(false);
       } else {
-        const dampingFactor = Math.abs(velocity) < 5 ? 0.88 : 0.92;
+        // Damping adjusted for delta time: factor^deltaFactor
+        const baseDamping = Math.abs(velocity) < 5 ? 0.88 : 0.92;
+        const dampingFactor = baseDamping ** deltaFactor;
+        // Apply velocity scaled by deltaFactor, then damp the base velocity
+        frameVelocity = velocity * deltaFactor;
         velocity *= dampingFactor;
         setScrolling(true);
       }
     }
 
-    setOffset((o) => o + velocity);
+    setOffset((o) => o + frameVelocity);
     animationFrame = requestAnimationFrame(animate);
   };
 
   const startAnimation = () => {
-    if (!animationFrame) animationFrame = requestAnimationFrame(animate);
+    if (!animationFrame) {
+      lastFrameTime = 0; // Reset so first frame calculates correct delta
+      animationFrame = requestAnimationFrame(animate);
+    }
   };
 
   const goToPosition = (position: number) => {
@@ -303,14 +326,18 @@ export function SongScroller(props: SongScrollerProps) {
     const timeDelta = now - lastWheelTime;
     lastWheelTime = now;
 
+    // Fresh scroll after pause - just move one item
     if (timeDelta > 150) {
       goToPosition(currentPosition() + (delta > 0 ? 1 : -1));
-      velocity = delta > 0 ? 5 : -5;
       return;
     }
 
+    // Continuous scrolling - accumulate velocity based on time between events
+    // Normalize by timeDelta to make accumulation rate frame-rate independent
     snapTarget = null;
-    velocity = timeDelta < 50 ? velocity + delta * 0.5 : delta;
+    const deltaFactor = timeDelta / TARGET_FRAME_MS;
+    const scaledDelta = delta * 0.5 * deltaFactor;
+    velocity = velocity + scaledDelta;
     velocity = Math.max(-50, Math.min(50, velocity));
     startAnimation();
   };
