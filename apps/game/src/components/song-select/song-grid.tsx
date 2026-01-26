@@ -238,28 +238,24 @@ export function SongGrid(props: SongGridProps) {
     () => ({ goToRandomSong }),
   );
 
-  const handleNavigation = (event: { action: string }) => {
-    if (event.action === "left") navigate("left");
-    else if (event.action === "right") navigate("right");
-    else if (event.action === "up") navigate("up");
-    else if (event.action === "down") navigate("down");
-  };
-
-  const throttledNavigation = throttle(handleNavigation, 100);
-
-  const setScrollingFalse = debounce(() => {
-    props.onScrollingChange?.(false);
-  }, 200);
-
-  const handleRepeatNavigation = (event: { action: string }) => {
-    props.onScrollingChange?.(true);
-    setScrollingFalse();
-    throttledNavigation(event);
-  };
+  const setScrollingFalse = debounce(() => props.onScrollingChange?.(false), 200);
+  const throttledNavigate = throttle(navigate, 100);
 
   useNavigation({
-    onKeydown: handleNavigation,
-    onRepeat: handleRepeatNavigation,
+    onKeydown: (event) => {
+      if (event.action === "left") navigate("left");
+      else if (event.action === "right") navigate("right");
+      else if (event.action === "up") navigate("up");
+      else if (event.action === "down") navigate("down");
+    },
+    onRepeat: (event) => {
+      props.onScrollingChange?.(true);
+      setScrollingFalse();
+      if (event.action === "left") throttledNavigate("left");
+      else if (event.action === "right") throttledNavigate("right");
+      else if (event.action === "up") throttledNavigate("up");
+      else if (event.action === "down") throttledNavigate("down");
+    },
   });
 
   const handleMouseEnter = (index: number) => setSelectedIndex(index);
