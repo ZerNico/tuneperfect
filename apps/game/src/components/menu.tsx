@@ -102,30 +102,26 @@ export default function Menu(props: MenuProps) {
         playSound("confirm");
       } else if (event.action === "up") {
         decrement();
+        scrollToSelected();
       } else if (event.action === "down") {
         increment();
+        scrollToSelected();
       }
     },
   }));
 
   createEffect(on(position, () => playSound("select"), { defer: true }));
 
-  createEffect(
-    on(
-      actualIndex,
-      () => {
-        const selectedItem = itemRefs[actualIndex()];
-        if (selectedItem && scrollContainer) {
-          selectedItem.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "nearest",
-          });
-        }
-      },
-      { defer: true },
-    ),
-  );
+  const scrollToSelected = () => {
+    const selectedItem = itemRefs[actualIndex()];
+    if (selectedItem && scrollContainer) {
+      selectedItem.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  };
 
   return (
     <div class={twMerge("flex h-full max-h-full w-full flex-grow flex-col justify-center", props.class)}>
