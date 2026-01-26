@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal, Suspense } from "solid-js";
+import PopupContainer from "~/components/popup-container";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 
@@ -66,7 +67,7 @@ function RootComponent() {
 
         event.preventDefault();
       },
-      { capture: true }
+      { capture: true },
     );
   }
 
@@ -83,20 +84,21 @@ function RootComponent() {
 
         event.preventDefault();
       },
-      { capture: true }
+      { capture: true },
     );
   }
 
   return (
     <div
-        class="font-primary text-base text-white"
-        classList={{
-          "cursor-none": mouseHidden(),
-        }}
-      >
-        <Suspense>
-          <Outlet />
-        </Suspense>
-      </div>
+      class="font-primary text-base text-white"
+      classList={{
+        "cursor-none": mouseHidden(),
+      }}
+    >
+      <Suspense>
+        <Outlet />
+      </Suspense>
+      <PopupContainer />
+    </div>
   );
 }

@@ -10,15 +10,16 @@ const localStoreSchema1_1_0 = v.object({
     v.object({
       id: v.string(),
       username: v.string(),
+      image: v.optional(v.string()),
       type: v.literal("local"),
-    })
+    }),
   ),
   scores: v.record(
     v.string(), // userId
     v.record(
       v.string(), // songHash
-      v.record(difficultySchema, v.optional(v.number())) // difficulty -> score
-    )
+      v.record(difficultySchema, v.optional(v.number())), // difficulty -> score
+    ),
   ),
 });
 
@@ -31,26 +32,23 @@ const localStoreSchema1_0_0 = v.pipe(
         id: v.string(),
         username: v.string(),
         type: v.literal("local"),
-      })
+      }),
     ),
     scores: v.record(v.string(), v.record(v.string(), v.number())),
   }),
-  v.transform((data): v.InferInput<typeof localStoreSchema1_1_0> => ({
-    version: "1.1.0",
-    players: data.players,
-    scores: Object.fromEntries(
-      Object.entries(data.scores).map(([userId, userScores]) => [
-        userId,
-        Object.fromEntries(
-          Object.entries(userScores).map(([songHash, score]) => [
-            songHash,
-            { easy: score }
-          ])
-        ),
-      ])
-    ),
-  })),
-  localStoreSchema1_1_0
+  v.transform(
+    (data): v.InferInput<typeof localStoreSchema1_1_0> => ({
+      version: "1.1.0",
+      players: data.players,
+      scores: Object.fromEntries(
+        Object.entries(data.scores).map(([userId, userScores]) => [
+          userId,
+          Object.fromEntries(Object.entries(userScores).map(([songHash, score]) => [songHash, { easy: score }])),
+        ]),
+      ),
+    }),
+  ),
+  localStoreSchema1_1_0,
 );
 
 const localStoreSchema = v.union([localStoreSchema1_0_0, localStoreSchema1_1_0]);
@@ -91,8 +89,10 @@ function createLocalStore() {
     return newPlayer;
   };
 
-  const updatePlayer = (id: string, updates: Partial<Pick<LocalUser, "username">>) => {
-    updateLocalSettings("players", (prev) => prev.map((player) => (player.id === id ? { ...player, ...updates } : player)));
+  const updatePlayer = (id: string, updates: Partial<Pick<LocalUser, "username" | "image">>) => {
+    updateLocalSettings("players", (prev) =>
+      prev.map((player) => (player.id === id ? { ...player, ...updates } : player)),
+    );
   };
 
   const deletePlayer = (id: string) => {
@@ -112,7 +112,7 @@ function createLocalStore() {
     updateLocalSettings("scores", (prev) => {
       const userScores = prev[userId] || {};
       const songScores = userScores[songHash] || {};
-      
+
       const existingScore = songScores[difficulty] || 0;
 
       if (score > existingScore) {

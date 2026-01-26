@@ -15,5 +15,6 @@ export interface GuestUser {
 export interface LocalUser {
   id: string;
   username: string;
+  image?: string;
   type: "local";
 }

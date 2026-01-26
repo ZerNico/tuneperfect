@@ -54,6 +54,11 @@ export type MenuItem =
       onInput: (value: string) => void;
       placeholder?: string;
       maxLength?: number;
+    }
+  | {
+      type: "custom";
+      interactive?: boolean;
+      render: () => JSX.Element;
     };
 
 export interface MenuProps {
@@ -65,9 +70,25 @@ export interface MenuProps {
 }
 
 export default function Menu(props: MenuProps) {
-  const { position, increment, decrement, set } = createLoop(() => props.items.length);
+  // Filter to only interactive items for navigation
+  const interactiveIndices = () =>
+    props.items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.type !== "custom" || item.interactive !== false)
+      .map(({ index }) => index);
+
+  const { position, increment, decrement, set } = createLoop(() => interactiveIndices().length);
   let scrollContainer: HTMLDivElement | undefined;
   const itemRefs: (HTMLElement | undefined)[] = [];
+
+  // Convert interactive position to actual item index
+  const actualIndex = () => interactiveIndices()[position()] ?? 0;
+
+  // Convert actual item index to interactive position
+  const toInteractivePosition = (index: number) => {
+    const pos = interactiveIndices().indexOf(index);
+    return pos >= 0 ? pos : 0;
+  };
 
   const setItemRef = (index: number) => (el: HTMLElement) => {
     itemRefs[index] = el;
@@ -91,9 +112,9 @@ export default function Menu(props: MenuProps) {
 
   createEffect(
     on(
-      position,
+      actualIndex,
       () => {
-        const selectedItem = itemRefs[position()];
+        const selectedItem = itemRefs[actualIndex()];
         if (selectedItem && scrollContainer) {
           selectedItem.scrollIntoView({
             behavior: "smooth",
@@ -123,12 +144,12 @@ export default function Menu(props: MenuProps) {
                     class="flex-shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
-                    selected={position() === index()}
+                    selected={actualIndex() === index()}
                     onClick={() => {
                       item().action?.();
                       playSound("confirm");
                     }}
-                    onMouseEnter={() => set(index())}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                   >
                     {item().label}
                   </Button>
@@ -145,8 +166,8 @@ export default function Menu(props: MenuProps) {
                     value={item().value()}
                     placeholder={item().placeholder}
                     onInput={(e) => item().onInput(e.currentTarget.value)}
-                    selected={position() === index()}
-                    onMouseEnter={() => set(index())}
+                    selected={actualIndex() === index()}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                     maxLength={item().maxLength}
                   />
                 )}
@@ -165,8 +186,8 @@ export default function Menu(props: MenuProps) {
                       playSound("select");
                     }}
                     options={item().options}
-                    selected={position() === index()}
-                    onMouseEnter={() => set(index())}
+                    selected={actualIndex() === index()}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                     renderValue={item().renderValue}
                   />
                 )}
@@ -185,8 +206,8 @@ export default function Menu(props: MenuProps) {
                       playSound("select");
                     }}
                     options={item().options}
-                    selected={position() === index()}
-                    onMouseEnter={() => set(index())}
+                    selected={actualIndex() === index()}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                     renderValue={item().renderValue}
                   />
                 )}
@@ -205,8 +226,8 @@ export default function Menu(props: MenuProps) {
                       playSound("select");
                     }}
                     options={item().options}
-                    selected={position() === index()}
-                    onMouseEnter={() => set(index())}
+                    selected={actualIndex() === index()}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                     renderValue={item().renderValue}
                   />
                 )}
@@ -226,10 +247,13 @@ export default function Menu(props: MenuProps) {
                     onInput={(value) => {
                       item().onInput(value);
                     }}
-                    selected={position() === index()}
-                    onMouseEnter={() => set(index())}
+                    selected={actualIndex() === index()}
+                    onMouseEnter={() => set(toInteractivePosition(index()))}
                   />
                 )}
+              </Match>
+              <Match when={item.type === "custom" && item}>
+                {(item) => <div class="flex-shrink-0">{item().render()}</div>}
               </Match>
             </Switch>
           )}

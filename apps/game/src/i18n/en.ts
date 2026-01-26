@@ -153,6 +153,9 @@ const en = {
         enterName: "Enter player name",
         addNew: "Add New Player",
         edit: "Edit Player",
+        changeAvatar: "Change Avatar",
+        removeAvatar: "Remove Avatar",
+        cropAvatar: "Crop Avatar",
       },
       volume: {
         title: "Volume",

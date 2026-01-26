@@ -34,6 +34,8 @@ type NavigationEvent = {
     | "sort-right"
     | "filter-left"
     | "filter-right"
+    | "zoom-in"
+    | "zoom-out"
     | "add-to-medley"
     | "remove-from-medley"
     | "joker-1"
@@ -57,8 +59,8 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   [" ", ["confirm"]],
   ["F3", ["search"]],
   ["F4", ["random"]],
-  ["F5", ["sort-left", "filter-left"]],
-  ["F6", ["sort-right", "filter-right"]],
+  ["F5", ["sort-left", "filter-left", "zoom-out"]],
+  ["F6", ["sort-right", "filter-right", "zoom-in"]],
   ["F1", ["add-to-medley", "joker-1"]],
   ["F2", ["remove-from-medley", "joker-2"]],
   ["s", ["skip"]],
@@ -80,8 +82,8 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["A", ["confirm"]],
   ["START", ["search"]],
   ["Y", ["random"]],
-  ["LB", ["sort-left", "filter-left", "joker-1", "instrumental"]],
-  ["RB", ["sort-right", "filter-right", "joker-2"]],
+  ["LB", ["sort-left", "filter-left", "zoom-out", "joker-1", "instrumental"]],
+  ["RB", ["sort-right", "filter-right", "zoom-in", "joker-2"]],
   ["X", ["menu", "skip", "clear"]],
   ["LT", ["remove-from-medley"]],
   ["RT", ["add-to-medley"]],
