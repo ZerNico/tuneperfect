@@ -11,7 +11,7 @@ import type { AppClient } from "@tuneperfect/contracts/app";
 import { RPCLink } from "@tuneperfect/orpc-webrtc/client";
 import { RPCHandler } from "@tuneperfect/orpc-webrtc/server";
 import { iceServers } from "./ice-servers";
-import { gameRouter } from "./router";
+import { type GameRouterContext, gameRouter } from "./router";
 
 export interface HostConnectionCallbacks {
   onIceCandidate: (candidate: string) => void;
@@ -51,6 +51,10 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
   let gameRpcChannelOpen = false;
   let appRpcChannelOpen = false;
 
+  // Track event handlers for cleanup
+  let gameRpcChannelCleanup: (() => void) | null = null;
+  let appRpcChannelCleanup: (() => void) | null = null;
+
   const checkBothChannelsOpen = () => {
     if (gameRpcChannelOpen && appRpcChannelOpen) {
       callbacks.onDataChannelOpen();
@@ -66,8 +70,8 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
       gameRpcChannel = channel;
 
       const handleOpen = () => {
-        const handler = new RPCHandler(gameRouter);
-        gameRpcHandlerCleanup = handler.upgrade(channel);
+        const handler = new RPCHandler<GameRouterContext>(gameRouter);
+        gameRpcHandlerCleanup = handler.upgrade(channel, { context: { userId } });
         gameRpcChannelOpen = true;
         checkBothChannelsOpen();
       };
@@ -85,6 +89,13 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
       channel.addEventListener("open", handleOpen);
       channel.addEventListener("close", handleClose);
       channel.addEventListener("error", handleError);
+
+      // Store cleanup function for this channel
+      gameRpcChannelCleanup = () => {
+        channel.removeEventListener("open", handleOpen);
+        channel.removeEventListener("close", handleClose);
+        channel.removeEventListener("error", handleError);
+      };
     } else if (channel.label === "app-rpc") {
       // This channel sends requests TO the app, we use it as client
       appRpcChannel = channel;
@@ -110,6 +121,13 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
       channel.addEventListener("open", handleOpen);
       channel.addEventListener("close", handleClose);
       channel.addEventListener("error", handleError);
+
+      // Store cleanup function for this channel
+      appRpcChannelCleanup = () => {
+        channel.removeEventListener("open", handleOpen);
+        channel.removeEventListener("close", handleClose);
+        channel.removeEventListener("error", handleError);
+      };
     }
   };
 
@@ -180,12 +198,18 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
     gameRpcHandlerCleanup?.();
     gameRpcHandlerCleanup = null;
 
+    // Remove data channel event listeners
+    gameRpcChannelCleanup?.();
+    gameRpcChannelCleanup = null;
+    appRpcChannelCleanup?.();
+    appRpcChannelCleanup = null;
+
     // Remove peer connection event listeners
     pc.removeEventListener("datachannel", handleDataChannel);
     pc.removeEventListener("icecandidate", handleIceCandidate);
     pc.removeEventListener("connectionstatechange", handleConnectionStateChange);
 
-    // Close channels (their event listeners are removed when the channel is closed or garbage collected)
+    // Close channels and connection
     if (gameRpcChannel) gameRpcChannel.close();
     if (appRpcChannel) appRpcChannel.close();
     pc.close();

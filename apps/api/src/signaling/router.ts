@@ -1,4 +1,4 @@
-import { eventIterator, os } from "@orpc/server";
+import { eventIterator, ORPCError, os } from "@orpc/server";
 import { requireUser } from "../auth/middleware";
 import { base } from "../base";
 import { requireLobby, requireLobbyOrUser } from "../lobby/middleware";
@@ -30,7 +30,7 @@ export const signalingRouter = os.prefix("/signaling").router({
       // Get user's lobbyId
       const user = await userService.getUserById(userId);
       if (!user?.lobbyId) {
-        return;
+        throw new ORPCError("PRECONDITION_FAILED", { message: "User is not in a lobby" });
       }
 
       const channel = `lobby:${user.lobbyId}:guest:${userId}`;
@@ -52,7 +52,7 @@ export const signalingRouter = os.prefix("/signaling").router({
         // Host (game client) sending to guest (mobile app)
         const lobbyId = context.payload.sub;
         if (!to) {
-          throw new Error("Target user ID required when host sends signal");
+          throw new ORPCError("BAD_REQUEST", { message: "Target user ID required when host sends signal" });
         }
         const channel = `lobby:${lobbyId}:guest:${to}`;
         signalingPublisher.publish(channel, signal);
@@ -60,10 +60,12 @@ export const signalingRouter = os.prefix("/signaling").router({
         // Guest (mobile app) sending to host (game client)
         const user = await userService.getUserById(context.payload.sub);
         if (!user?.lobbyId) {
-          throw new Error("User is not in a lobby");
+          throw new ORPCError("PRECONDITION_FAILED", { message: "User is not in a lobby" });
         }
         const channel = `lobby:${user.lobbyId}:host`;
-        signalingPublisher.publish(channel, signal);
+        // Override signal.from with the authenticated userId to prevent spoofing
+        const authenticatedSignal = { ...signal, from: context.payload.sub };
+        signalingPublisher.publish(channel, authenticatedSignal);
       }
     }),
 });

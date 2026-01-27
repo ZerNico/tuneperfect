@@ -218,6 +218,7 @@ const de: Dict = {
     title: "Songs",
     connecting: "Verbinde mit Spiel...",
     connectionFailed: "Verbindung zum Spiel fehlgeschlagen",
+    connectionTrouble: "Verbindungsprobleme zum Spiel. Versuche weiter...",
     retry: "Erneut versuchen",
     noSongs: "Keine Songs verfügbar",
     noSongsDescription: "Das Spiel hat noch keine Songs geteilt.",

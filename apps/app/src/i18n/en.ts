@@ -215,6 +215,7 @@ const en = {
     title: "Songs",
     connecting: "Connecting to game...",
     connectionFailed: "Failed to connect to game",
+    connectionTrouble: "Having trouble connecting to the game. Will keep trying...",
     retry: "Retry",
     noSongs: "No songs available",
     noSongsDescription: "The game client hasn't shared any songs yet.",

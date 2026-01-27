@@ -96,18 +96,18 @@ function SongsComponent() {
         {/* Connecting state */}
         <Match when={isConnecting()}>
           <div class="flex flex-grow flex-col items-center justify-center gap-4 py-12">
-            <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-500" />
-            <p class="text-slate-600">{t("songs.connecting")}</p>
+            <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
+            <p class="text-white/70">{t("songs.connecting")}</p>
           </div>
         </Match>
 
         {/* Failed/disconnected state */}
         <Match when={hasFailed()}>
           <div class="flex flex-grow flex-col items-center justify-center gap-4 py-12">
-            <IconWifiOff class="h-12 w-12 text-red-500" />
-            <p class="text-slate-600">{t("songs.connectionFailed")}</p>
+            <IconWifiOff class="h-12 w-12 text-red-400" />
+            <p class="text-white/70">{t("songs.connectionFailed")}</p>
             <Show when={webrtcStore.error()}>
-              <p class="text-red-500 text-sm">{webrtcStore.error()}</p>
+              <p class="text-red-400 text-sm">{webrtcStore.error()}</p>
             </Show>
             <Button intent="gradient" onClick={handleRetry}>
               {t("songs.retry")}
@@ -121,8 +121,8 @@ function SongsComponent() {
             when={!isLoadingSongs()}
             fallback={
               <div class="flex flex-grow flex-col items-center justify-center gap-4 py-12">
-                <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-500" />
-                <p class="text-slate-600">Loading songs...</p>
+                <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
+                <p class="text-white/70">Loading songs...</p>
               </div>
             }
           >
@@ -130,9 +130,9 @@ function SongsComponent() {
               when={songs().length > 0}
               fallback={
                 <div class="flex flex-grow flex-col items-center justify-center gap-2 py-12">
-                  <IconMusic class="h-12 w-12 text-slate-400" />
-                  <h3 class="font-medium text-slate-900">{t("songs.noSongs")}</h3>
-                  <p class="text-slate-500 text-sm">{t("songs.noSongsDescription")}</p>
+                  <IconMusic class="h-12 w-12 text-white/40" />
+                  <h3 class="font-medium text-white">{t("songs.noSongs")}</h3>
+                  <p class="text-white/60 text-sm">{t("songs.noSongsDescription")}</p>
                 </div>
               }
             >

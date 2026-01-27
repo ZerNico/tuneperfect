@@ -8,6 +8,7 @@ import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { lobbyQueryOptions } from "~/lib/queries";
+import { webrtcStore } from "~/stores/webrtc";
 
 export const Route = createFileRoute("/lobby/$id")({
   component: RouteComponent,
@@ -40,7 +41,9 @@ function RouteComponent() {
 
   const kickUserMutation = useMutation(() =>
     client.lobby.kickUser.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (_data, variables) => {
+        // Close WebRTC connection when user is kicked
+        webrtcStore.closeConnection(variables.userId);
         await queryClient.invalidateQueries(lobbyQueryOptions());
         navigate({ to: "/lobby" });
       },

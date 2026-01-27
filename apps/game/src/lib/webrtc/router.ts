@@ -8,9 +8,17 @@ import { gameContract, type SongSummary } from "@tuneperfect/contracts/game";
 import { songsStore } from "../../stores/songs";
 
 /**
- * Create the implementer from the contract.
+ * Context provided to all game RPC handlers.
+ * Contains the authenticated userId of the connected guest.
  */
-const os = implement(gameContract);
+export interface GameRouterContext {
+  userId: string;
+}
+
+/**
+ * Create the implementer from the contract with context type.
+ */
+const os = implement(gameContract).$context<GameRouterContext>();
 
 /**
  * The game router that mobile apps can call.

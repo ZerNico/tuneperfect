@@ -1,12 +1,7 @@
 import * as v from "valibot";
 
-// Simplified song for mobile display
-export const SongSummarySchema = v.object({
-  hash: v.string(),
-  title: v.string(),
-  artist: v.string(),
-});
-export type SongSummary = v.InferOutput<typeof SongSummarySchema>;
+// Re-export SongSummary from contracts for consistency
+export { type SongSummary, SongSummarySchema } from "@tuneperfect/contracts/game";
 
 // WebRTC signaling messages
 export const SignalSchema = v.variant("type", [

@@ -1,4 +1,5 @@
 import { createEffect, createRoot, createSignal } from "solid-js";
+import { t } from "~/lib/i18n";
 import { orpcClient } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 import { createGuestConnection, type GameClient, type GuestConnection } from "~/lib/webrtc/guest-connection";
@@ -271,7 +272,7 @@ createRoot(() => {
       // Show error toast after MAX_ATTEMPTS_BEFORE_TOAST failed attempts
       if (attempts === MAX_ATTEMPTS_BEFORE_TOAST) {
         notify({
-          message: "Having trouble connecting to the game. Will keep trying...",
+          message: t("songs.connectionTrouble"),
           intent: "warning",
         });
       }
