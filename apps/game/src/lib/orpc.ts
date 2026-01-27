@@ -24,3 +24,6 @@ const link = new RPCLink({
 
 const orpc: Client = createORPCClient(link);
 export const client = createORPCSolidQueryUtils(orpc);
+
+// Export raw client for direct calls (needed for SSE subscriptions)
+export const orpcClient = orpc;

@@ -13,6 +13,7 @@ import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
 import { lobbyRouter } from "./lobby/router";
+import { signalingRouter } from "./signaling/router";
 import { updateRouter } from "./update/router";
 import { userRouter } from "./user/router";
 
@@ -23,6 +24,7 @@ const router = {
   highscore: highscoreRouter,
   update: updateRouter,
   club: clubRouter,
+  signaling: signalingRouter,
 };
 
 setupJobs();
