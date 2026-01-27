@@ -4,7 +4,6 @@ import type { Component, JSX } from "solid-js";
 import { Dynamic, Show } from "solid-js/web";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
-import IconMusic from "~icons/lucide/music";
 import IconUser from "~icons/lucide/user";
 import IconUserPlus from "~icons/lucide/user-plus";
 import IconUsers from "~icons/lucide/users";
@@ -38,9 +37,6 @@ export default function NavItems(props: NavItemsProps) {
       >
         <NavItem to="/" icon={IconUsers}>
           {t("nav.lobby")}
-        </NavItem>
-        <NavItem to="/songs" icon={IconMusic}>
-          {t("nav.songs")}
         </NavItem>
       </Show>
 

@@ -1,11 +1,24 @@
+/**
+ * WebRTC guest connection for the mobile app.
+ * Uses two data channels:
+ * - "game-rpc": App sends requests to game, receives responses (client channel)
+ * - "app-rpc": App receives requests from game, sends responses (server channel)
+ */
+
+import { createORPCClient } from "@orpc/client";
+import type { GameClient } from "@tuneperfect/contracts/game";
+import { RPCLink } from "@tuneperfect/orpc-webrtc/client";
+import { RPCHandler } from "@tuneperfect/orpc-webrtc/server";
 import { iceServers } from "./ice-servers";
-import type { DataChannelMessage, SongSummary } from "./types";
+import { appRouter } from "./router";
 
 export interface GuestConnectionCallbacks {
   onIceCandidate: (candidate: string) => void;
   onConnectionStateChange: (state: RTCPeerConnectionState) => void;
-  onSongs: (songs: SongSummary[]) => void;
+  onDataChannelOpen: () => void;
 }
+
+export type { GameClient };
 
 export interface GuestConnection {
   pc: RTCPeerConnection;
@@ -13,117 +26,102 @@ export interface GuestConnection {
   setAnswer: (answerSdp: string) => Promise<void>;
   addIceCandidate: (candidate: string) => Promise<void>;
   close: () => void;
+  getGameClient: () => GameClient | null;
 }
 
 /**
  * Creates a WebRTC connection for the guest (mobile app) to connect to the host (game client).
- * The guest creates a data channel to receive song data from the host.
- *
- * Note: The guest creates the data channel as part of the offer, and the host will
- * receive it via ondatachannel and use it to send songs.
  */
 export function createGuestConnection(callbacks: GuestConnectionCallbacks): GuestConnection {
   const pc = new RTCPeerConnection({ iceServers });
 
-  // Buffer for ICE candidates received before remote description is set
   let pendingIceCandidates: string[] = [];
   let remoteDescriptionSet = false;
+  let gameClient: GameClient | null = null;
 
-  // Create data channel for receiving songs from host
-  // The guest creates this so it's included in the offer
-  const dataChannel = pc.createDataChannel("songs", {
-    ordered: true,
-  });
+  // Track which channels are open
+  let gameRpcChannelOpen = false;
+  let appRpcChannelOpen = false;
 
-  dataChannel.onopen = () => {
-    console.log("[WebRTC] Data channel opened");
-  };
-
-  dataChannel.onclose = () => {
-    console.log("[WebRTC] Data channel closed");
-  };
-
-  dataChannel.onerror = (error) => {
-    console.error("[WebRTC] Data channel error:", error);
-  };
-
-  dataChannel.onmessage = (event) => {
-    try {
-      const message = JSON.parse(event.data) as DataChannelMessage;
-
-      if (message.type === "songs") {
-        console.log(`[WebRTC] Received ${message.data.length} songs`);
-        callbacks.onSongs(message.data);
-      }
-    } catch (error) {
-      console.error("[WebRTC] Failed to parse data channel message:", error);
+  const checkBothChannelsOpen = () => {
+    if (gameRpcChannelOpen && appRpcChannelOpen) {
+      callbacks.onDataChannelOpen();
     }
   };
 
-  // Handle ICE candidates
+  // Channel for calling game procedures (app → game)
+  const gameRpcChannel = pc.createDataChannel("game-rpc", { ordered: true });
+
+  gameRpcChannel.onopen = () => {
+    const link = new RPCLink({ channel: gameRpcChannel });
+    gameClient = createORPCClient(link) as GameClient;
+    gameRpcChannelOpen = true;
+    checkBothChannelsOpen();
+  };
+
+  gameRpcChannel.onclose = () => {
+    gameClient = null;
+    gameRpcChannelOpen = false;
+  };
+
+  gameRpcChannel.onerror = (error) => {
+    console.error("[WebRTC] game-rpc channel error:", error);
+  };
+
+  // Channel for receiving game requests (game → app)
+  const appRpcChannel = pc.createDataChannel("app-rpc", { ordered: true });
+
+  appRpcChannel.onopen = () => {
+    const handler = new RPCHandler(appRouter);
+    handler.upgrade(appRpcChannel);
+    appRpcChannelOpen = true;
+    checkBothChannelsOpen();
+  };
+
+  appRpcChannel.onclose = () => {
+    appRpcChannelOpen = false;
+  };
+
+  appRpcChannel.onerror = (error) => {
+    console.error("[WebRTC] app-rpc channel error:", error);
+  };
+
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       callbacks.onIceCandidate(JSON.stringify(event.candidate));
     }
   };
 
-  // Track connection state
   pc.onconnectionstatechange = () => {
-    console.log(`[WebRTC] Connection state: ${pc.connectionState}`);
     callbacks.onConnectionStateChange(pc.connectionState);
   };
 
-  pc.oniceconnectionstatechange = () => {
-    console.log(`[WebRTC] ICE connection state: ${pc.iceConnectionState}`);
-  };
-
-  /**
-   * Create an offer to send to the host
-   */
   const createOffer = async (): Promise<string> => {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
     if (!offer.sdp) {
       throw new Error("Failed to create offer SDP");
     }
-
     return offer.sdp;
   };
 
-  /**
-   * Set the answer from the host
-   */
   const setAnswer = async (answerSdp: string) => {
-    await pc.setRemoteDescription({
-      type: "answer",
-      sdp: answerSdp,
-    });
-
+    await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
     remoteDescriptionSet = true;
 
-    // Process any buffered ICE candidates
-    if (pendingIceCandidates.length > 0) {
-      console.log(`[WebRTC] Processing ${pendingIceCandidates.length} buffered ICE candidates`);
-      for (const candidate of pendingIceCandidates) {
-        try {
-          const iceCandidate = JSON.parse(candidate) as RTCIceCandidateInit;
-          await pc.addIceCandidate(iceCandidate);
-        } catch (error) {
-          console.error("[WebRTC] Failed to add buffered ICE candidate:", error);
-        }
+    for (const candidate of pendingIceCandidates) {
+      try {
+        const iceCandidate = JSON.parse(candidate) as RTCIceCandidateInit;
+        await pc.addIceCandidate(iceCandidate);
+      } catch (error) {
+        console.error("[WebRTC] Failed to add buffered ICE candidate:", error);
       }
-      pendingIceCandidates = [];
     }
+    pendingIceCandidates = [];
   };
 
-  /**
-   * Add an ICE candidate from the host
-   */
   const addIceCandidate = async (candidate: string) => {
     if (!remoteDescriptionSet) {
-      // Buffer the candidate until remote description is set
-      console.log("[WebRTC] Buffering ICE candidate (remote description not set yet)");
       pendingIceCandidates.push(candidate);
       return;
     }
@@ -136,14 +134,14 @@ export function createGuestConnection(callbacks: GuestConnectionCallbacks): Gues
     }
   };
 
-  /**
-   * Close the connection
-   */
   const close = () => {
-    dataChannel.close();
+    gameRpcChannel.close();
+    appRpcChannel.close();
     pc.close();
-    console.log("[WebRTC] Connection closed");
+    gameClient = null;
   };
+
+  const getGameClient = (): GameClient | null => gameClient;
 
   return {
     pc,
@@ -151,5 +149,6 @@ export function createGuestConnection(callbacks: GuestConnectionCallbacks): Gues
     setAnswer,
     addIceCandidate,
     close,
+    getGameClient,
   };
 }

@@ -197,6 +197,10 @@ const en = {
   },
   lobby: {
     title: "Lobby",
+    playersTitle: "Players",
+    playersDescription: "View and invite players in the lobby",
+    songsTitle: "Songs",
+    songsDescription: "Browse available songs from the game",
     inviteToClub: "Invite to Club",
     selectClub: "Select Club",
     selectClubDescription: "Choose which club to invite {{ username }} to:",

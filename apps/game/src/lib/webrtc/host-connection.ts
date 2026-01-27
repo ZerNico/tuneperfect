@@ -1,5 +1,16 @@
+/**
+ * WebRTC host connection for the game client.
+ * Handles two data channels from each guest:
+ * - "game-rpc": Game receives requests from app, sends responses (server channel)
+ * - "app-rpc": Game sends requests to app, receives responses (client channel)
+ */
+
+import { createORPCClient } from "@orpc/client";
+import type { AppClient } from "@tuneperfect/contracts/app";
+import { RPCLink } from "@tuneperfect/orpc-webrtc/client";
+import { RPCHandler } from "@tuneperfect/orpc-webrtc/server";
 import { iceServers } from "./ice-servers";
-import type { DataChannelMessage, SongSummary } from "./types";
+import { gameRouter } from "./router";
 
 export interface HostConnectionCallbacks {
   onIceCandidate: (candidate: string) => void;
@@ -7,114 +18,106 @@ export interface HostConnectionCallbacks {
   onDataChannelOpen: () => void;
 }
 
+export type { AppClient };
+
 export interface HostConnection {
   pc: RTCPeerConnection;
   userId: string;
-  sendSongs: (songs: SongSummary[]) => void;
   createAnswer: (offerSdp: string) => Promise<string>;
   addIceCandidate: (candidate: string) => Promise<void>;
   close: () => void;
   isDataChannelOpen: () => boolean;
+  getAppClient: () => AppClient | null;
 }
 
 /**
- * Creates a WebRTC connection for the host (game client) to a specific guest (mobile app user).
- * The host receives a data channel from the guest and uses it to send song data.
- *
- * Note: The guest creates the data channel as part of their offer. The host receives it
- * via the ondatachannel event after setting the remote description.
+ * Creates a WebRTC connection for the host (game client) to a specific guest.
  */
 export function createHostConnection(userId: string, callbacks: HostConnectionCallbacks): HostConnection {
   const pc = new RTCPeerConnection({ iceServers });
 
-  // Data channel will be received from the guest via ondatachannel
-  let dataChannel: RTCDataChannel | null = null;
+  let gameRpcChannel: RTCDataChannel | null = null;
+  let appRpcChannel: RTCDataChannel | null = null;
+  let appClient: AppClient | null = null;
 
-  // Handle incoming data channel from guest
-  pc.ondatachannel = (event) => {
-    dataChannel = event.channel;
-    console.log(`[WebRTC] Data channel received from user ${userId}: ${dataChannel.label}`);
+  // Track which channels are open
+  let gameRpcChannelOpen = false;
+  let appRpcChannelOpen = false;
 
-    dataChannel.onopen = () => {
-      console.log(`[WebRTC] Data channel opened for user ${userId}`);
+  const checkBothChannelsOpen = () => {
+    if (gameRpcChannelOpen && appRpcChannelOpen) {
       callbacks.onDataChannelOpen();
-    };
-
-    dataChannel.onclose = () => {
-      console.log(`[WebRTC] Data channel closed for user ${userId}`);
-    };
-
-    dataChannel.onerror = (event) => {
-      console.error(`[WebRTC] Data channel error for user ${userId}:`, event);
-    };
+    }
   };
 
-  // Handle ICE candidates
+  // Handle incoming data channels from guest
+  pc.ondatachannel = (event) => {
+    const channel = event.channel;
+
+    if (channel.label === "game-rpc") {
+      // This channel receives requests FROM the app, we handle them
+      gameRpcChannel = channel;
+
+      channel.onopen = () => {
+        const handler = new RPCHandler(gameRouter);
+        handler.upgrade(channel);
+        gameRpcChannelOpen = true;
+        checkBothChannelsOpen();
+      };
+
+      channel.onclose = () => {
+        gameRpcChannelOpen = false;
+      };
+
+      channel.onerror = (event) => {
+        console.error(`[WebRTC] game-rpc channel error for user ${userId}:`, event);
+      };
+    } else if (channel.label === "app-rpc") {
+      // This channel sends requests TO the app, we use it as client
+      appRpcChannel = channel;
+
+      channel.onopen = () => {
+        const link = new RPCLink({ channel });
+        appClient = createORPCClient(link) as AppClient;
+        appRpcChannelOpen = true;
+        checkBothChannelsOpen();
+      };
+
+      channel.onclose = () => {
+        appClient = null;
+        appRpcChannelOpen = false;
+      };
+
+      channel.onerror = (event) => {
+        console.error(`[WebRTC] app-rpc channel error for user ${userId}:`, event);
+      };
+    }
+  };
+
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       callbacks.onIceCandidate(JSON.stringify(event.candidate));
     }
   };
 
-  // Track connection state
   pc.onconnectionstatechange = () => {
-    console.log(`[WebRTC] Connection state for user ${userId}: ${pc.connectionState}`);
     callbacks.onConnectionStateChange(pc.connectionState);
   };
 
-  pc.oniceconnectionstatechange = () => {
-    console.log(`[WebRTC] ICE connection state for user ${userId}: ${pc.iceConnectionState}`);
-  };
-
-  /**
-   * Check if data channel is open
-   */
   const isDataChannelOpen = (): boolean => {
-    return dataChannel !== null && dataChannel.readyState === "open";
+    return gameRpcChannelOpen && appRpcChannelOpen;
   };
 
-  /**
-   * Send the song list to the connected guest
-   */
-  const sendSongs = (songs: SongSummary[]) => {
-    if (dataChannel !== null && dataChannel.readyState === "open") {
-      const message: DataChannelMessage = {
-        type: "songs",
-        data: songs,
-      };
-      dataChannel.send(JSON.stringify(message));
-      console.log(`[WebRTC] Sent ${songs.length} songs to user ${userId}`);
-    } else {
-      console.warn(
-        `[WebRTC] Cannot send songs - data channel not open for user ${userId} (state: ${dataChannel?.readyState ?? "null"})`,
-      );
-    }
-  };
-
-  /**
-   * Process an offer from the guest and create an answer.
-   */
   const createAnswer = async (offerSdp: string): Promise<string> => {
-    // Set the remote description (the offer from guest)
-    await pc.setRemoteDescription({
-      type: "offer",
-      sdp: offerSdp,
-    });
-
-    // Create and set the answer
+    await pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-
     if (!answer.sdp) {
       throw new Error("Failed to create answer SDP");
     }
-
     return answer.sdp;
   };
 
-  /**
-   * Add an ICE candidate from the guest
-   */
   const addIceCandidate = async (candidate: string) => {
     try {
       const iceCandidate = JSON.parse(candidate) as RTCIceCandidateInit;
@@ -124,24 +127,22 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
     }
   };
 
-  /**
-   * Close the connection
-   */
   const close = () => {
-    if (dataChannel) {
-      dataChannel.close();
-    }
+    if (gameRpcChannel) gameRpcChannel.close();
+    if (appRpcChannel) appRpcChannel.close();
     pc.close();
-    console.log(`[WebRTC] Connection closed for user ${userId}`);
+    appClient = null;
   };
+
+  const getAppClient = (): AppClient | null => appClient;
 
   return {
     pc,
     userId,
-    sendSongs,
     createAnswer,
     addIceCandidate,
     close,
     isDataChannelOpen,
+    getAppClient,
   };
 }

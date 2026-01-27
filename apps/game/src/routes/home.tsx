@@ -14,7 +14,6 @@ import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
-import { useWebRTCAutoConnect } from "~/stores/webrtc";
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPartyPopper from "~icons/lucide/party-popper";
 import IconSettings from "~icons/lucide/settings";
@@ -27,9 +26,6 @@ export const Route = createFileRoute("/home")({
 function HomeComponent() {
   const navigate = useNavigate();
   const [pressed, setPressed] = createSignal(false);
-
-  // Auto-connect WebRTC when lobby is active
-  useWebRTCAutoConnect();
 
   const cards = [
     {

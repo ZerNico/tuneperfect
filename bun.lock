@@ -53,6 +53,7 @@
         "@iconify-json/lucide": "^1.2.85",
         "@kobalte/core": "^0.13.11",
         "@orpc/client": "^1.13.4",
+        "@orpc/server": "^1.13.4",
         "@orpc/solid-query": "^1.13.4",
         "@orpc/tanstack-query": "^1.13.4",
         "@solid-primitives/event-dispatcher": "^0.1.1",
@@ -63,6 +64,8 @@
         "@tanstack/solid-form": "^1.27.7",
         "@tanstack/solid-query": "^5.90.21",
         "@tanstack/solid-router": "^1.150.0",
+        "@tuneperfect/contracts": "*",
+        "@tuneperfect/orpc-webrtc": "*",
         "cva": "^1.0.0-beta.4",
         "solid-js": "^1.9.10",
         "tailwindcss": "^4.1.18",
@@ -86,6 +89,8 @@
         "@iconify-json/circle-flags": "^1.2.10",
         "@iconify-json/lucide": "^1.2.85",
         "@kobalte/core": "^0.13.11",
+        "@orpc/client": "^1.13.4",
+        "@orpc/server": "^1.13.4",
         "@solid-primitives/event-listener": "^2.4.3",
         "@solid-primitives/i18n": "^2.2.1",
         "@solid-primitives/keyed": "^1.5.2",
@@ -115,6 +120,8 @@
         "@tauri-apps/plugin-updater": "~2.9.0",
         "@tauri-apps/plugin-window-state": "^2.4.1",
         "@tuneperfect/api": "*",
+        "@tuneperfect/contracts": "*",
+        "@tuneperfect/orpc-webrtc": "*",
         "clsx": "^2.1.1",
         "cva": "^1.0.0-beta.4",
         "date-fns": "^4.1.0",
@@ -186,6 +193,13 @@
         "typescript": "^5.0.0",
       },
     },
+    "packages/contracts": {
+      "name": "@tuneperfect/contracts",
+      "version": "0.1.0",
+      "dependencies": {
+        "@orpc/server": "^1.13.4",
+      },
+    },
     "packages/email": {
       "name": "@tuneperfect/email",
       "dependencies": {
@@ -197,6 +211,19 @@
       "devDependencies": {
         "@types/react": "^19.2.8",
         "react-email": "^4.3.2",
+      },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
+    "packages/orpc-webrtc": {
+      "name": "@tuneperfect/orpc-webrtc",
+      "dependencies": {
+        "@orpc/client": "^1.13.4",
+        "@orpc/server": "^1.13.4",
+        "@orpc/shared": "^1.13.4",
+        "@orpc/standard-server": "^1.13.4",
+        "@orpc/standard-server-peer": "^1.13.4",
       },
       "peerDependencies": {
         "typescript": "^5.0.0",
@@ -1086,9 +1113,13 @@
 
     "@tuneperfect/cli": ["@tuneperfect/cli@workspace:packages/cli"],
 
+    "@tuneperfect/contracts": ["@tuneperfect/contracts@workspace:packages/contracts"],
+
     "@tuneperfect/email": ["@tuneperfect/email@workspace:packages/email"],
 
     "@tuneperfect/game": ["@tuneperfect/game@workspace:apps/game"],
+
+    "@tuneperfect/orpc-webrtc": ["@tuneperfect/orpc-webrtc@workspace:packages/orpc-webrtc"],
 
     "@tuneperfect/web": ["@tuneperfect/web@workspace:apps/web"],
 

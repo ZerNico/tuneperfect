@@ -1,24 +1,36 @@
+import { createEffect, createRoot, createSignal } from "solid-js";
 import { orpcClient } from "~/lib/orpc";
-import { createGuestConnection, type GuestConnection } from "~/lib/webrtc/guest-connection";
-import { songsStore } from "./songs";
+import { createGuestConnection, type GameClient, type GuestConnection } from "~/lib/webrtc/guest-connection";
 
 // Singleton connection state
 let connection: GuestConnection | null = null;
 let signalAbortController: AbortController | null = null;
+let currentUserId: string | null = null;
+
+// Reactive signals for connection state
+const [connectionState, setConnectionState] = createSignal<RTCPeerConnectionState>("new");
+const [isConnecting, setIsConnecting] = createSignal(false);
+const [error, setError] = createSignal<string | null>(null);
+const [gameClient, setGameClient] = createSignal<GameClient | null>(null);
+
+// Reconnection state
+const [shouldBeConnected, setShouldBeConnected] = createSignal(false);
+const [reconnectAttempts, setReconnectAttempts] = createSignal(0);
+let reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Connect to the game client host via WebRTC
  * @param userId The current user's ID (needed for signaling)
+ * @returns The oRPC game client when connected
  */
-export async function connectToHost(userId: string): Promise<void> {
+export async function connectToHost(userId: string): Promise<GameClient | null> {
   // Don't reconnect if already connected or connecting
-  if (songsStore.isConnecting() || songsStore.connectionState() === "connected") {
-    console.log("[WebRTC] Already connected or connecting");
-    return;
+  if (isConnecting() || connectionState() === "connected") {
+    return gameClient();
   }
 
-  songsStore.setIsConnecting(true);
-  songsStore.setError(null);
+  setIsConnecting(true);
+  setError(null);
 
   try {
     // Create the connection
@@ -37,19 +49,24 @@ export async function connectToHost(userId: string): Promise<void> {
         }
       },
       onConnectionStateChange: (state) => {
-        songsStore.setConnectionState(state);
+        setConnectionState(state);
 
         if (state === "connected") {
-          songsStore.setIsConnecting(false);
+          setIsConnecting(false);
         } else if (state === "disconnected" || state === "failed" || state === "closed") {
-          songsStore.setIsConnecting(false);
+          setIsConnecting(false);
+          setGameClient(() => null);
           if (state === "failed") {
-            songsStore.setError("Connection failed");
+            setError("Connection failed");
           }
         }
       },
-      onSongs: (songs) => {
-        songsStore.setSongs(songs);
+      onDataChannelOpen: () => {
+        // Get the game client when data channels are ready
+        const client = connection?.getGameClient() ?? null;
+        // Use a function to set the value to prevent SolidJS from calling it
+        // (SolidJS treats function values specially in signals)
+        setGameClient(() => client);
       },
     });
 
@@ -58,7 +75,6 @@ export async function connectToHost(userId: string): Promise<void> {
 
     // Create and send offer
     const offerSdp = await connection.createOffer();
-    console.log("[WebRTC] Created offer, sending to host");
 
     await orpcClient.signaling.sendSignal({
       signal: {
@@ -73,13 +89,9 @@ export async function connectToHost(userId: string): Promise<void> {
       signal: signalAbortController.signal,
     });
 
-    console.log("[WebRTC] Subscribed to signaling, waiting for answer");
-
     // Process incoming signals
     for await (const signal of iterator) {
       if (signalAbortController.signal.aborted) break;
-
-      console.log("[WebRTC] Received signal:", signal.type);
 
       if (signal.type === "answer" && connection) {
         await connection.setAnswer(signal.sdp);
@@ -87,20 +99,33 @@ export async function connectToHost(userId: string): Promise<void> {
         await connection.addIceCandidate(signal.candidate);
       }
     }
+
+    return gameClient();
   } catch (error) {
     console.error("[WebRTC] Connection error:", error);
-    songsStore.setError(error instanceof Error ? error.message : "Connection failed");
-    songsStore.setIsConnecting(false);
-    disconnectFromHost();
+    setError(error instanceof Error ? error.message : "Connection failed");
+    setIsConnecting(false);
+
+    // Clean up connection resources but set state to "failed" to trigger reconnect
+    if (signalAbortController) {
+      signalAbortController.abort();
+      signalAbortController = null;
+    }
+    if (connection) {
+      connection.close();
+      connection = null;
+    }
+    setGameClient(() => null);
+    setConnectionState("failed");
+
+    return null;
   }
 }
 
 /**
  * Disconnect from the game client host
  */
-export function disconnectFromHost(): void {
-  console.log("[WebRTC] Disconnecting from host");
-
+function disconnectFromHost(): void {
   // Abort the signal subscription
   if (signalAbortController) {
     signalAbortController.abort();
@@ -113,13 +138,98 @@ export function disconnectFromHost(): void {
     connection = null;
   }
 
-  // Reset the store
-  songsStore.reset();
+  // Reset state
+  setConnectionState("new");
+  setIsConnecting(false);
+  setError(null);
+  setGameClient(() => null);
+}
+
+/**
+ * Start a persistent connection to the game host.
+ * The connection will auto-reconnect on failure until stopConnection() is called.
+ * @param userId The current user's ID (needed for signaling)
+ */
+export function startConnection(userId: string): void {
+  currentUserId = userId;
+  setShouldBeConnected(true);
+  setReconnectAttempts(0);
+  setError(null);
+  connectToHost(userId);
+}
+
+/**
+ * Stop the connection and disable auto-reconnect.
+ */
+export function stopConnection(): void {
+  // Cancel any pending reconnect
+  if (reconnectTimeoutId) {
+    clearTimeout(reconnectTimeoutId);
+    reconnectTimeoutId = null;
+  }
+
+  currentUserId = null;
+  setShouldBeConnected(false);
+  setReconnectAttempts(0);
+  disconnectFromHost();
 }
 
 /**
  * Check if currently connected to the host
  */
 export function isConnected(): boolean {
-  return songsStore.connectionState() === "connected";
+  return connectionState() === "connected";
 }
+
+/**
+ * Exported reactive signals for UI components
+ */
+export const webrtcStore = {
+  connectionState,
+  isConnecting,
+  error,
+  gameClient,
+  reconnectAttempts,
+};
+
+// Auto-reconnect effect (runs at module level)
+createRoot(() => {
+  createEffect(() => {
+    const state = connectionState();
+    const shouldConnect = shouldBeConnected();
+    const userId = currentUserId;
+
+    // Reset attempts on successful connection
+    if (state === "connected") {
+      setReconnectAttempts(0);
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
+      return;
+    }
+
+    // Reconnect on failure if we should be connected
+    if (
+      shouldConnect &&
+      userId &&
+      !isConnecting() &&
+      !reconnectTimeoutId && // Prevent scheduling multiple reconnects
+      (state === "failed" || state === "disconnected" || state === "closed")
+    ) {
+      const attempts = reconnectAttempts();
+      // Exponential backoff: 2s, 4s, 8s, 16s, 32s, 64s (cap)
+      // Start at 2s to avoid immediate retry spam
+      const delay = Math.min(2000 * 2 ** attempts, 64000);
+
+      reconnectTimeoutId = setTimeout(() => {
+        reconnectTimeoutId = null;
+        // Double-check we still want to be connected
+        if (shouldBeConnected() && currentUserId) {
+          setReconnectAttempts((n) => n + 1);
+          connectToHost(currentUserId);
+        }
+      }, delay);
+    }
+  });
+});

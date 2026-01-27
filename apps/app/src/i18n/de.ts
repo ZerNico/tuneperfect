@@ -200,6 +200,10 @@ const de: Dict = {
   },
   lobby: {
     title: "Lobby",
+    playersTitle: "Spieler",
+    playersDescription: "Spieler in der Lobby anzeigen und einladen",
+    songsTitle: "Songs",
+    songsDescription: "Verfügbare Songs vom Spiel durchsuchen",
     inviteToClub: "Zu Club einladen",
     selectClub: "Club auswählen",
     selectClubDescription: "Wähle den Club aus, zu dem du {{ username }} einladen möchtest:",

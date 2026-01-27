@@ -1,0 +1,13 @@
+{
+  "name": "@tuneperfect/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./game": "./src/game.ts",
+    "./app": "./src/app.ts"
+  },
+  "dependencies": {
+    "@orpc/server": "^1.13.4"
+  }
+}
