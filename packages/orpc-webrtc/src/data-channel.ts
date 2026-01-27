@@ -17,18 +17,20 @@ export function postDataChannelMessage(channel: RTCDataChannel, data: DataChanne
 
 /**
  * Listen for messages on the data channel.
+ * @returns A cleanup function to remove the event listener.
  */
-export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: unknown) => void): void {
-  channel.addEventListener("message", (event) => {
-    callback(event.data);
-  });
+export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: unknown) => void): () => void {
+  const handler = (event: MessageEvent) => callback(event.data);
+  channel.addEventListener("message", handler);
+  return () => channel.removeEventListener("message", handler);
 }
 
 /**
  * Listen for the data channel close event.
+ * @returns A cleanup function to remove the event listener.
  */
-export function onDataChannelClose(channel: RTCDataChannel, callback: () => void): void {
-  channel.addEventListener("close", () => {
-    callback();
-  });
+export function onDataChannelClose(channel: RTCDataChannel, callback: () => void): () => void {
+  const handler = () => callback();
+  channel.addEventListener("close", handler);
+  return () => channel.removeEventListener("close", handler);
 }

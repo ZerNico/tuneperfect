@@ -4,11 +4,17 @@
  * Currently empty - reserved for future bidirectional communication.
  */
 
-import { os } from "@orpc/server";
+import { implement } from "@orpc/server";
+import { appContract } from "@tuneperfect/contracts/app";
+
+/**
+ * Create the implementer from the contract.
+ */
+const os = implement(appContract);
 
 /**
  * The app router that the game client can call.
- * This must match the contract defined in @tuneperfect/contracts/app.
+ * This implements the contract defined in @tuneperfect/contracts/app.
  *
  * Currently empty, but can be extended for features like:
  * - Sending user input/actions to the game

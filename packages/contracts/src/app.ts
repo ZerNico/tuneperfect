@@ -3,8 +3,7 @@
  * These types are shared so the game can have type-safe RPC calls to the app.
  */
 
-import type { RouterClient } from "@orpc/server";
-import { os } from "@orpc/server";
+import type { ContractRouterClient, InferContractRouterOutputs } from "@orpc/contract";
 
 /**
  * Contract definition for the app router.
@@ -15,14 +14,19 @@ import { os } from "@orpc/server";
  * - Syncing user preferences
  * - Real-time scoring feedback
  */
-export const appContract = os.router({});
+export const appContract = {};
 
 /**
- * Type of the app router for use in client type definitions.
+ * Type of the app contract for use in type definitions.
  */
-export type AppRouter = typeof appContract;
+export type AppContract = typeof appContract;
+
+/**
+ * Inferred output types for the app contract.
+ */
+export type AppOutputs = InferContractRouterOutputs<AppContract>;
 
 /**
  * Client type for calling app procedures from the game.
  */
-export type AppClient = RouterClient<AppRouter>;
+export type AppClient = ContractRouterClient<AppContract>;

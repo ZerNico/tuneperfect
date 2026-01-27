@@ -1,38 +1,52 @@
 /**
  * Contract types for the game router.
- * These types are shared so the mobile app can have type-safe RPC calls.
+ * These types are shared so the mobile app can have type-safe RPC calls to the game.
  */
 
-import type { RouterClient } from "@orpc/server";
-import { os } from "@orpc/server";
+import type { ContractRouterClient, InferContractRouterOutputs } from "@orpc/contract";
+import { oc } from "@orpc/contract";
+import * as v from "valibot";
 
 /**
- * Song summary returned to mobile apps.
+ * Valibot schema for song summary returned to mobile apps.
  */
-export interface SongSummary {
-  hash: string;
-  title: string;
-  artist: string;
-}
+export const SongSummarySchema = v.object({
+  hash: v.string(),
+  title: v.string(),
+  artist: v.string(),
+});
+
+/**
+ * Type inferred from the schema.
+ */
+export type SongSummary = v.InferOutput<typeof SongSummarySchema>;
+
+/**
+ * Contract for listing songs.
+ */
+export const listSongsContract = oc.output(v.array(SongSummarySchema));
 
 /**
  * Contract definition for the game router.
  * This defines the shape of procedures without implementation.
  */
-export const gameContract = os.router({
-  songs: os.router({
-    list: os.handler(async (): Promise<SongSummary[]> => {
-      throw new Error("Contract only - not implemented");
-    }),
-  }),
-});
+export const gameContract = {
+  songs: {
+    list: listSongsContract,
+  },
+};
 
 /**
- * Type of the game router for use in client type definitions.
+ * Type of the game contract for use in type definitions.
  */
-export type GameRouter = typeof gameContract;
+export type GameContract = typeof gameContract;
+
+/**
+ * Inferred output types for the game contract.
+ */
+export type GameOutputs = InferContractRouterOutputs<GameContract>;
 
 /**
  * Client type for calling game procedures from the app.
  */
-export type GameClient = RouterClient<GameRouter>;
+export type GameClient = ContractRouterClient<GameContract>;

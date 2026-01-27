@@ -17,8 +17,18 @@ export interface RPCLinkOptions<T extends ClientContext>
  * Creates a client that can make oRPC calls over the data channel.
  */
 export class RPCLink<T extends ClientContext> extends StandardRPCLink<T> {
+  private readonly linkClient: LinkDataChannelClient<T>;
+
   constructor(options: RPCLinkOptions<T>) {
     const linkClient = new LinkDataChannelClient(options);
     super(linkClient, { ...options, url: "webrtc://orpc" });
+    this.linkClient = linkClient;
+  }
+
+  /**
+   * Close the link and clean up resources.
+   */
+  close(): void {
+    this.linkClient.close();
   }
 }

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/solid-router";
-import type { Component } from "solid-js";
+import { type Component, For } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { t } from "~/lib/i18n";
 import IconMusic from "~icons/lucide/music";
@@ -34,15 +34,17 @@ function LobbyMainComponent() {
       </div>
 
       <div class="flex flex-col gap-4">
-        {cards.map((card) => (
-          <LobbyCard
-            label={card.label as string}
-            description={card.description as string}
-            gradient={card.gradient}
-            icon={card.icon}
-            to={card.to}
-          />
-        ))}
+        <For each={cards}>
+          {(card) => (
+            <LobbyCard
+              label={card.label as string}
+              description={card.description as string}
+              gradient={card.gradient}
+              icon={card.icon}
+              to={card.to}
+            />
+          )}
+        </For>
       </div>
     </div>
   );

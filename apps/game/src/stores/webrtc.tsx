@@ -8,11 +8,18 @@ function createWebRTCStore() {
   // Map of userId -> HostConnection
   const connections = new ReactiveMap<string, HostConnection>();
 
+  // Buffer ICE candidates for users whose connection is still being created
+  // This handles the race condition where ICE candidates arrive before handleOffer completes
+  const pendingIceCandidates = new Map<string, string[]>();
+
   // Signal subscription abort controller
   const [abortController, setAbortController] = createSignal<AbortController | null>(null);
 
   // Whether the signaling subscription is active
   const [isSubscribed, setIsSubscribed] = createSignal(false);
+
+  // Mutex to prevent race condition in startSignaling
+  let isStartingSignaling = false;
 
   /**
    * Create a connection for a user and handle their offer
@@ -43,6 +50,8 @@ function createWebRTCStore() {
       onConnectionStateChange: (state) => {
         if (state === "disconnected" || state === "failed" || state === "closed") {
           connections.delete(userId);
+          // Clean up any pending ICE candidates for this user
+          pendingIceCandidates.delete(userId);
         }
       },
       onDataChannelOpen: () => {
@@ -54,6 +63,15 @@ function createWebRTCStore() {
 
     try {
       const answerSdp = await connection.createAnswer(offerSdp);
+
+      // Process any buffered ICE candidates that arrived before the connection was ready
+      const bufferedCandidates = pendingIceCandidates.get(userId);
+      if (bufferedCandidates) {
+        for (const candidate of bufferedCandidates) {
+          await connection.addIceCandidate(candidate);
+        }
+        pendingIceCandidates.delete(userId);
+      }
 
       await orpcClient.signaling.sendSignal({
         signal: {
@@ -68,6 +86,7 @@ function createWebRTCStore() {
       console.error(`[WebRTC] Failed to handle offer from ${userId}:`, error);
       connection.close();
       connections.delete(userId);
+      pendingIceCandidates.delete(userId);
     }
   };
 
@@ -78,6 +97,14 @@ function createWebRTCStore() {
     const connection = connections.get(userId);
     if (connection) {
       await connection.addIceCandidate(candidate);
+    } else {
+      // Buffer the candidate - connection might still be creating
+      const existing = pendingIceCandidates.get(userId);
+      if (existing) {
+        existing.push(candidate);
+      } else {
+        pendingIceCandidates.set(userId, [candidate]);
+      }
     }
   };
 
@@ -85,7 +112,8 @@ function createWebRTCStore() {
    * Start listening for signaling messages
    */
   const startSignaling = async () => {
-    if (isSubscribed()) {
+    // Use both the signal and a mutex to prevent race conditions
+    if (isSubscribed() || isStartingSignaling) {
       return;
     }
 
@@ -93,6 +121,9 @@ function createWebRTCStore() {
     if (!lobby) {
       return;
     }
+
+    // Acquire mutex immediately (synchronous)
+    isStartingSignaling = true;
 
     const controller = new AbortController();
     setAbortController(controller);
@@ -119,6 +150,7 @@ function createWebRTCStore() {
     } finally {
       setIsSubscribed(false);
       setAbortController(null);
+      isStartingSignaling = false;
     }
   };
 
@@ -129,11 +161,13 @@ function createWebRTCStore() {
     abortController()?.abort();
     setAbortController(null);
     setIsSubscribed(false);
+    isStartingSignaling = false;
 
     for (const [_userId, connection] of connections) {
       connection.close();
     }
     connections.clear();
+    pendingIceCandidates.clear();
   };
 
   /**
@@ -145,6 +179,7 @@ function createWebRTCStore() {
       connection.close();
       connections.delete(userId);
     }
+    pendingIceCandidates.delete(userId);
   };
 
   /**

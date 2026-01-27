@@ -27,6 +27,8 @@ export interface LinkDataChannelClientOptions {
  */
 export class LinkDataChannelClient<T extends ClientContext> implements StandardLinkClient<T> {
   private readonly peer: ClientPeerWithoutCodec;
+  private readonly cleanupMessage: () => void;
+  private readonly cleanupClose: () => void;
 
   constructor(options: LinkDataChannelClientOptions) {
     this.peer = new ClientPeerWithoutCodec(async (message) => {
@@ -35,30 +37,45 @@ export class LinkDataChannelClient<T extends ClientContext> implements StandardL
       postDataChannelMessage(options.channel, JSON.stringify(serialized));
     });
 
-    onDataChannelMessage(options.channel, async (message: unknown) => {
-      let decoded;
-      if (isObject(message)) {
-        decoded = deserializeResponseMessage(message as unknown as Parameters<typeof deserializeResponseMessage>[0]);
-      } else if (typeof message === "string") {
-        try {
-          const parsed = JSON.parse(message);
-          if (isObject(parsed) && "i" in parsed) {
-            decoded = deserializeResponseMessage(parsed as unknown as Parameters<typeof deserializeResponseMessage>[0]);
-          } else {
+    this.cleanupMessage = onDataChannelMessage(options.channel, async (message: unknown) => {
+      try {
+        let decoded;
+        if (isObject(message)) {
+          decoded = deserializeResponseMessage(message as unknown as Parameters<typeof deserializeResponseMessage>[0]);
+        } else if (typeof message === "string") {
+          try {
+            const parsed = JSON.parse(message);
+            if (isObject(parsed) && "i" in parsed) {
+              decoded = deserializeResponseMessage(
+                parsed as unknown as Parameters<typeof deserializeResponseMessage>[0],
+              );
+            } else {
+              decoded = await decodeResponseMessage(message);
+            }
+          } catch {
             decoded = await decodeResponseMessage(message);
           }
-        } catch {
-          decoded = await decodeResponseMessage(message);
+        } else {
+          decoded = await decodeResponseMessage(message as Parameters<typeof decodeResponseMessage>[0]);
         }
-      } else {
-        decoded = await decodeResponseMessage(message as Parameters<typeof decodeResponseMessage>[0]);
+        await this.peer.message(decoded);
+      } catch (error) {
+        console.error("[LinkDataChannelClient] Error processing message:", error);
       }
-      await this.peer.message(decoded);
     });
 
-    onDataChannelClose(options.channel, () => {
+    this.cleanupClose = onDataChannelClose(options.channel, () => {
       this.peer.close();
     });
+  }
+
+  /**
+   * Close the client and clean up resources.
+   */
+  close(): void {
+    this.cleanupMessage();
+    this.cleanupClose();
+    this.peer.close();
   }
 
   async call(

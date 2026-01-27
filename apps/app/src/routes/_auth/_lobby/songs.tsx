@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, For, Match, on, Show, Switch } from "solid-js";
+import type { SongSummary } from "@tuneperfect/contracts/game";
+import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch } from "solid-js";
 import Button from "~/components/ui/button";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
@@ -15,17 +16,17 @@ export const Route = createFileRoute("/_auth/_lobby/songs")({
   component: SongsComponent,
 });
 
-interface SongSummary {
-  hash: string;
-  title: string;
-  artist: string;
-}
-
 function SongsComponent() {
   const session = useQuery(() => sessionQueryOptions());
   const [searchQuery, setSearchQuery] = createSignal("");
   const [songs, setSongs] = createSignal<SongSummary[]>([]);
   const [isLoadingSongs, setIsLoadingSongs] = createSignal(false);
+
+  // Track if component is still mounted for async cancellation
+  let isMounted = true;
+  onCleanup(() => {
+    isMounted = false;
+  });
 
   // Fetch songs when game client becomes available
   createEffect(
@@ -36,14 +37,24 @@ function SongsComponent() {
           setIsLoadingSongs(true);
           try {
             const songList = await client.songs.list();
-            setSongs(songList);
+            // Only update state if still mounted (prevents stale updates on navigation)
+            if (isMounted) {
+              setSongs(songList);
+            }
           } catch (error) {
-            console.error("[Songs] Failed to fetch songs:", error);
+            // Only log if still mounted (otherwise this is expected on navigation)
+            if (isMounted) {
+              console.error("[Songs] Failed to fetch songs:", error);
+            }
           } finally {
-            setIsLoadingSongs(false);
+            if (isMounted) {
+              setIsLoadingSongs(false);
+            }
           }
         } else {
-          setSongs([]);
+          if (isMounted) {
+            setSongs([]);
+          }
         }
       },
     ),

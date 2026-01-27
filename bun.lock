@@ -197,7 +197,8 @@
       "name": "@tuneperfect/contracts",
       "version": "0.1.0",
       "dependencies": {
-        "@orpc/server": "^1.13.4",
+        "@orpc/contract": "^1.13.4",
+        "valibot": "^1.2.0",
       },
     },
     "packages/email": {

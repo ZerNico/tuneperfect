@@ -1,11 +1,23 @@
 import { createEffect, createRoot, createSignal } from "solid-js";
 import { orpcClient } from "~/lib/orpc";
+import { notify } from "~/lib/toast";
 import { createGuestConnection, type GameClient, type GuestConnection } from "~/lib/webrtc/guest-connection";
+
+// Connection timeout in milliseconds
+const CONNECTION_TIMEOUT_MS = 30_000;
+// Number of failed attempts before showing error toast
+const MAX_ATTEMPTS_BEFORE_TOAST = 3;
 
 // Singleton connection state
 let connection: GuestConnection | null = null;
 let signalAbortController: AbortController | null = null;
-let currentUserId: string | null = null;
+let connectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+// Mutex to prevent duplicate connection attempts
+let isConnectionInProgress = false;
+
+// Reactive signal for currentUserId (was previously a plain variable)
+const [currentUserId, setCurrentUserId] = createSignal<string | null>(null);
 
 // Reactive signals for connection state
 const [connectionState, setConnectionState] = createSignal<RTCPeerConnectionState>("new");
@@ -19,20 +31,48 @@ const [reconnectAttempts, setReconnectAttempts] = createSignal(0);
 let reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 /**
+ * Clean up timeout if it exists
+ */
+function clearConnectionTimeout(): void {
+  if (connectionTimeoutId) {
+    clearTimeout(connectionTimeoutId);
+    connectionTimeoutId = null;
+  }
+}
+
+/**
  * Connect to the game client host via WebRTC
  * @param userId The current user's ID (needed for signaling)
  * @returns The oRPC game client when connected
  */
 export async function connectToHost(userId: string): Promise<GameClient | null> {
-  // Don't reconnect if already connected or connecting
-  if (isConnecting() || connectionState() === "connected") {
+  // Mutex check - prevent duplicate connection attempts
+  if (isConnectionInProgress) {
     return gameClient();
   }
 
+  // Don't reconnect if already connected
+  if (connectionState() === "connected") {
+    return gameClient();
+  }
+
+  // Acquire mutex
+  isConnectionInProgress = true;
   setIsConnecting(true);
   setError(null);
 
   try {
+    // Set connection timeout
+    connectionTimeoutId = setTimeout(() => {
+      console.warn("[WebRTC] Connection timeout after", CONNECTION_TIMEOUT_MS, "ms");
+      // Clean up and set to failed state
+      cleanupConnection();
+      setError("Connection timeout");
+      setConnectionState("failed");
+      setIsConnecting(false);
+      isConnectionInProgress = false;
+    }, CONNECTION_TIMEOUT_MS);
+
     // Create the connection
     connection = createGuestConnection({
       onIceCandidate: async (candidate) => {
@@ -52,9 +92,13 @@ export async function connectToHost(userId: string): Promise<GameClient | null> 
         setConnectionState(state);
 
         if (state === "connected") {
+          clearConnectionTimeout();
           setIsConnecting(false);
+          isConnectionInProgress = false;
         } else if (state === "disconnected" || state === "failed" || state === "closed") {
+          clearConnectionTimeout();
           setIsConnecting(false);
+          isConnectionInProgress = false;
           setGameClient(() => null);
           if (state === "failed") {
             setError("Connection failed");
@@ -107,18 +151,31 @@ export async function connectToHost(userId: string): Promise<GameClient | null> 
     setIsConnecting(false);
 
     // Clean up connection resources but set state to "failed" to trigger reconnect
-    if (signalAbortController) {
-      signalAbortController.abort();
-      signalAbortController = null;
-    }
-    if (connection) {
-      connection.close();
-      connection = null;
-    }
+    cleanupConnection();
     setGameClient(() => null);
     setConnectionState("failed");
 
     return null;
+  } finally {
+    // Always release mutex
+    isConnectionInProgress = false;
+  }
+}
+
+/**
+ * Clean up connection resources without resetting state signals
+ */
+function cleanupConnection(): void {
+  clearConnectionTimeout();
+
+  if (signalAbortController) {
+    signalAbortController.abort();
+    signalAbortController = null;
+  }
+
+  if (connection) {
+    connection.close();
+    connection = null;
   }
 }
 
@@ -126,23 +183,14 @@ export async function connectToHost(userId: string): Promise<GameClient | null> 
  * Disconnect from the game client host
  */
 function disconnectFromHost(): void {
-  // Abort the signal subscription
-  if (signalAbortController) {
-    signalAbortController.abort();
-    signalAbortController = null;
-  }
-
-  // Close the WebRTC connection
-  if (connection) {
-    connection.close();
-    connection = null;
-  }
+  cleanupConnection();
 
   // Reset state
   setConnectionState("new");
   setIsConnecting(false);
   setError(null);
   setGameClient(() => null);
+  isConnectionInProgress = false;
 }
 
 /**
@@ -151,7 +199,7 @@ function disconnectFromHost(): void {
  * @param userId The current user's ID (needed for signaling)
  */
 export function startConnection(userId: string): void {
-  currentUserId = userId;
+  setCurrentUserId(userId);
   setShouldBeConnected(true);
   setReconnectAttempts(0);
   setError(null);
@@ -168,7 +216,7 @@ export function stopConnection(): void {
     reconnectTimeoutId = null;
   }
 
-  currentUserId = null;
+  setCurrentUserId(null);
   setShouldBeConnected(false);
   setReconnectAttempts(0);
   disconnectFromHost();
@@ -197,7 +245,7 @@ createRoot(() => {
   createEffect(() => {
     const state = connectionState();
     const shouldConnect = shouldBeConnected();
-    const userId = currentUserId;
+    const userId = currentUserId();
 
     // Reset attempts on successful connection
     if (state === "connected") {
@@ -214,20 +262,32 @@ createRoot(() => {
       shouldConnect &&
       userId &&
       !isConnecting() &&
+      !isConnectionInProgress &&
       !reconnectTimeoutId && // Prevent scheduling multiple reconnects
       (state === "failed" || state === "disconnected" || state === "closed")
     ) {
       const attempts = reconnectAttempts();
+
+      // Show error toast after MAX_ATTEMPTS_BEFORE_TOAST failed attempts
+      if (attempts === MAX_ATTEMPTS_BEFORE_TOAST) {
+        notify({
+          message: "Having trouble connecting to the game. Will keep trying...",
+          intent: "warning",
+        });
+      }
+
       // Exponential backoff: 2s, 4s, 8s, 16s, 32s, 64s (cap)
       // Start at 2s to avoid immediate retry spam
       const delay = Math.min(2000 * 2 ** attempts, 64000);
 
       reconnectTimeoutId = setTimeout(() => {
         reconnectTimeoutId = null;
-        // Double-check we still want to be connected
-        if (shouldBeConnected() && currentUserId) {
+        // Double-check we still want to be connected (use signal getter)
+        const currentShouldConnect = shouldBeConnected();
+        const currentUserIdValue = currentUserId();
+        if (currentShouldConnect && currentUserIdValue) {
           setReconnectAttempts((n) => n + 1);
-          connectToHost(currentUserId);
+          connectToHost(currentUserIdValue);
         }
       }, delay);
     }
