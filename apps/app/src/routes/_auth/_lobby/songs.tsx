@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import type { SongSummary } from "@tuneperfect/contracts/game";
-import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch } from "solid-js";
+import { createEffect, createSignal, For, Match, on, onCleanup, Show, Switch } from "solid-js";
 import Button from "~/components/ui/button";
+import { useSongSearch } from "~/hooks/use-song-search";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { startConnection, stopConnection, webrtcStore } from "~/stores/webrtc";
@@ -60,14 +61,10 @@ function SongsComponent() {
     ),
   );
 
-  // Filter songs based on search query
-  const filteredSongs = createMemo(() => {
-    const query = searchQuery().toLowerCase().trim();
-    if (!query) return songs();
-
-    return songs().filter(
-      (song) => song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query),
-    );
+  // Use MiniSearch for fuzzy, accent-insensitive search
+  const { filteredSongs } = useSongSearch({
+    songs,
+    searchQuery,
   });
 
   const handleRetry = () => {
