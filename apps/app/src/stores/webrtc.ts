@@ -118,7 +118,13 @@ export async function connectToHost(userId: string): Promise<GameClient | null> 
     // Start listening for signals from the host
     signalAbortController = new AbortController();
 
-    // Create and send offer
+    // IMPORTANT: Subscribe to signals BEFORE sending the offer to avoid race condition
+    // where the answer arrives before we're listening
+    const iterator = await orpcClient.signaling.subscribeAsGuest(undefined, {
+      signal: signalAbortController.signal,
+    });
+
+    // Now create and send offer (after subscription is active)
     const offerSdp = await connection.createOffer();
 
     await orpcClient.signaling.sendSignal({
@@ -127,11 +133,6 @@ export async function connectToHost(userId: string): Promise<GameClient | null> 
         sdp: offerSdp,
         from: userId,
       },
-    });
-
-    // Subscribe to signals from the host (answer and ICE candidates)
-    const iterator = await orpcClient.signaling.subscribeAsGuest(undefined, {
-      signal: signalAbortController.signal,
     });
 
     // Process incoming signals

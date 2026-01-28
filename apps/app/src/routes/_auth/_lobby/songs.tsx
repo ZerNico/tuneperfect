@@ -80,7 +80,7 @@ function SongsComponent() {
 
   const isConnecting = () => webrtcStore.isConnecting() || webrtcStore.connectionState() === "connecting";
   const isConnected = () => webrtcStore.connectionState() === "connected";
-  const hasFailed = () => webrtcStore.connectionState() === "failed" || webrtcStore.error();
+  const hasFailed = () => webrtcStore.connectionState() === "failed" || !!webrtcStore.error();
 
   return (
     <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
