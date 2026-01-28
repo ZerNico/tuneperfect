@@ -1,5 +1,5 @@
-import type { Component, Ref } from "solid-js";
-import { Dynamic, Show } from "solid-js/web";
+import type { JSX, Ref } from "solid-js";
+import { Show } from "solid-js/web";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 interface IconButtonProps {
@@ -11,7 +11,7 @@ interface IconButtonProps {
   subtitle?: string;
   gradient: string;
   loading?: boolean;
-  icon: Component<{ class?: string }>;
+  icon: JSX.Element;
   onClick?: () => void;
   onMouseEnter?: () => void;
 }
@@ -36,13 +36,12 @@ export default function IconButton(props: IconButtonProps) {
           [props.gradient || ""]: true,
         }}
       >
-        <Show when={!props.loading} fallback={<Dynamic class="animate-spin text-6xl" component={IconLoaderCircle} />}>
-          <Dynamic class="text-6xl" component={props.icon} />
+        <Show when={!props.loading} fallback={<IconLoaderCircle class="animate-spin text-6xl" />}>
+          {props.icon}
         </Show>
       </div>
-    
-        <div class="max-w-full truncate text-ellipsis text-xs opacity-75">{props.subtitle || "\u00A0"}</div>
 
+      <div class="max-w-full truncate text-ellipsis text-xs opacity-75">{props.subtitle || "\u00A0"}</div>
     </button>
   );
 }

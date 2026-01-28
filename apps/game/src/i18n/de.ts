@@ -31,7 +31,6 @@ const de = {
   quit: {
     title: "Spiel beenden",
     message: "Möchtest du das Spiel wirklich beenden?",
-    
   },
   update: {
     checking: "Suche nach Updates...",
@@ -154,6 +153,9 @@ const de = {
         enterName: "Spielername eingeben",
         addNew: "Neuen Spieler hinzufügen",
         edit: "Spieler bearbeiten",
+        changeAvatar: "Avatar ändern",
+        removeAvatar: "Avatar entfernen",
+        cropAvatar: "Avatar zuschneiden",
       },
       volume: {
         title: "Lautstärke",

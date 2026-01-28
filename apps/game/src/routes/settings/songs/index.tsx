@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { type Component, createEffect, createMemo, createSignal, For, on } from "solid-js";
+import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -64,7 +64,7 @@ function SongsComponent() {
     const buttons: {
       label: string;
       subtitle?: string;
-      icon: Component<{ class?: string }>;
+      icon: JSX.Element;
       action?: () => void;
       loading?: boolean;
     }[] = [];
@@ -72,7 +72,7 @@ function SongsComponent() {
       buttons.push({
         label: folderName(path),
         subtitle: getSongCount(path),
-        icon: IconFolder,
+        icon: <IconFolder class="text-6xl" />,
         action: () =>
           navigate({
             to: "/settings/songs/$path",
@@ -84,7 +84,12 @@ function SongsComponent() {
     }
 
     if (songsStore.paths().length < 7) {
-      buttons.push({ label: t("settings.add"), icon: IconPlus, action: pickFolder, loading: loading() });
+      buttons.push({
+        label: t("settings.add"),
+        icon: <IconPlus class="text-6xl" />,
+        action: pickFolder,
+        loading: loading(),
+      });
     }
 
     return buttons;

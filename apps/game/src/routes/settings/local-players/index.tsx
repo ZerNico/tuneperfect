@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, createEffect, createMemo, createSignal, For, on } from "solid-js";
+import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
+import Avatar from "~/components/ui/avatar";
 import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
@@ -34,14 +35,18 @@ function LocalPlayersComponent() {
   const buttons = createMemo(() => {
     const buttons: {
       label: string;
-      icon: Component<{ class?: string }>;
+      icon: JSX.Element;
       action?: () => void;
     }[] = [];
 
     for (const player of localStore.players()) {
       buttons.push({
         label: player.username,
-        icon: IconUser,
+        icon: player.image ? (
+          <Avatar user={{ username: player.username, image: player.image }} class="h-24 w-24 text-3xl" />
+        ) : (
+          <IconUser class="text-6xl" />
+        ),
         action: () =>
           navigate({
             to: "/settings/local-players/$id",
@@ -54,7 +59,7 @@ function LocalPlayersComponent() {
 
     buttons.push({
       label: t("settings.add"),
-      icon: IconPlus,
+      icon: <IconPlus class="text-6xl" />,
       action: () => {
         navigate({
           to: "/settings/local-players/$id",

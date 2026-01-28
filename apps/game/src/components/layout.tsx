@@ -3,7 +3,7 @@ import { ToastRegion } from "./ui/toast";
 
 interface LayoutProps {
   children?: JSX.Element;
-  intent?: "primary" | "secondary";
+  intent?: "primary" | "secondary" | "popup";
   header?: JSX.Element;
   footer?: JSX.Element;
   background?: JSX.Element;
@@ -17,7 +17,7 @@ export default function Layout(props: LayoutProps) {
       <div
         class="flex h-screen w-screen items-center justify-center"
         classList={{
-          [backgroundClass()]: true,
+          [backgroundClass()]: props.intent !== "popup",
         }}
       >
         <div class="layout flex">

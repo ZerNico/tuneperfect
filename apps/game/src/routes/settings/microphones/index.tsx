@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { type Component, createEffect, createMemo, createSignal, For, on } from "solid-js";
+import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -28,14 +28,14 @@ function MicrophonesComponent() {
   const buttons = createMemo(() => {
     const buttons: {
       label: string;
-      icon: Component<{ class?: string }>;
+      icon: JSX.Element;
       action?: () => void;
     }[] = [];
 
     for (const [index, microphone] of settingsStore.microphones().entries()) {
       buttons.push({
         label: microphone.name,
-        icon: IconMicVocal,
+        icon: <IconMicVocal class="text-6xl" />,
         action: () => {
           navigate({ to: "/settings/microphones/$id", params: { id: index.toString() } });
         },
@@ -45,7 +45,7 @@ function MicrophonesComponent() {
     if (settingsStore.microphones().length < 2) {
       buttons.push({
         label: t("settings.add"),
-        icon: IconPlus,
+        icon: <IconPlus class="text-6xl" />,
         action: () => {
           navigate({ to: "/settings/microphones/$id", params: { id: settingsStore.microphones().length.toString() } });
         },
