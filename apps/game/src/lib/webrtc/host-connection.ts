@@ -108,7 +108,8 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
       };
 
       const handleClose = () => {
-        appRpcLink?.close();
+        // Clean up the RPC link - the linkClient handles its own cleanup internally
+        // We just need to null out our references
         appRpcLink = null;
         appClient = null;
         appRpcChannelOpen = false;
@@ -193,7 +194,9 @@ export function createHostConnection(userId: string, callbacks: HostConnectionCa
 
   const close = () => {
     // Clean up oRPC resources
-    appRpcLink?.close();
+    if (appRpcLink && typeof appRpcLink.close === "function") {
+      appRpcLink.close();
+    }
     appRpcLink = null;
     gameRpcHandlerCleanup?.();
     gameRpcHandlerCleanup = null;

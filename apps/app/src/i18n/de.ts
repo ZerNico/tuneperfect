@@ -200,6 +200,7 @@ const de: Dict = {
   },
   lobby: {
     title: "Lobby",
+    connected: "Mit Spiel verbunden",
     playersTitle: "Spieler",
     playersDescription: "Spieler in der Lobby anzeigen und einladen",
     songsTitle: "Songs",

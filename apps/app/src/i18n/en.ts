@@ -197,6 +197,7 @@ const en = {
   },
   lobby: {
     title: "Lobby",
+    connected: "Connected to game",
     playersTitle: "Players",
     playersDescription: "View and invite players in the lobby",
     songsTitle: "Songs",

@@ -232,6 +232,54 @@ export function isConnected(): boolean {
 }
 
 /**
+ * Returns a promise that resolves with the GameClient when connected,
+ * or rejects if the connection fails.
+ * Used by route loaders to await connection before rendering.
+ */
+export function waitForConnection(): Promise<GameClient> {
+  return new Promise((resolve, reject) => {
+    // Check if already connected
+    const client = gameClient();
+    if (client && connectionState() === "connected") {
+      resolve(client);
+      return;
+    }
+
+    // Check if already failed (and not retrying)
+    if (connectionState() === "failed" && !isConnecting() && !shouldBeConnected()) {
+      reject(new Error(error() ?? "Connection failed"));
+      return;
+    }
+
+    // Set up a reactive listener using createRoot to properly track signals
+    const dispose = createRoot((dispose) => {
+      createEffect(() => {
+        const state = connectionState();
+        const client = gameClient();
+        const connecting = isConnecting();
+        const err = error();
+
+        if (state === "connected" && client) {
+          dispose();
+          resolve(client);
+        } else if (state === "failed" && !connecting) {
+          dispose();
+          reject(new Error(err ?? "Connection failed"));
+        }
+      });
+
+      return dispose;
+    });
+
+    // Safety timeout - don't wait forever
+    setTimeout(() => {
+      dispose();
+      reject(new Error("Connection timeout"));
+    }, CONNECTION_TIMEOUT_MS + 5000); // Give a bit more time than the connection timeout
+  });
+}
+
+/**
  * Exported reactive signals for UI components
  */
 export const webrtcStore = {
