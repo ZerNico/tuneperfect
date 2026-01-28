@@ -11,6 +11,7 @@ const settingsStoreSchema = v.object({
     difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
     micPlaybackEnabled: v.fallback(v.boolean(), false),
+    songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
   }),
   volume: v.object({
     master: v.number(),
@@ -27,7 +28,7 @@ const settingsStoreSchema = v.object({
       delay: v.number(),
       gain: v.number(),
       threshold: v.number(),
-    })
+    }),
   ),
   songs: v.object({
     paths: v.array(v.string()),
@@ -45,6 +46,7 @@ const defaultSettings: SettingsStore = {
     difficulty: "easy",
     audioMode: "normal",
     micPlaybackEnabled: false,
+    songSelectStyle: "coverflow",
   },
   volume: {
     master: 1,

@@ -38,6 +38,8 @@ type NavigationEvent = {
     | "zoom-out"
     | "add-to-medley"
     | "remove-from-medley"
+    | "medley-up"
+    | "medley-down"
     | "joker-1"
     | "joker-2"
     | "skip"
@@ -71,6 +73,8 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["k", ["instrumental"]],
   ["Tab", ["menu"]],
   ["Shift+d", ["start-random-medley"]],
+  ["PageUp", ["medley-up"]],
+  ["PageDown", ["medley-down"]],
 ]);
 
 const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
@@ -95,6 +99,8 @@ const getAxisAction = (button: GamepadButton, direction: number): NavigationEven
       return direction > 0 ? "right" : "left";
     case "L_AXIS_Y":
       return direction > 0 ? "down" : "up";
+    case "R_AXIS_Y":
+      return direction > 0 ? "medley-down" : "medley-up";
     default:
       return undefined;
   }

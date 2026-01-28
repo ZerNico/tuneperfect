@@ -73,6 +73,19 @@ const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | nul
   return gainMultiplier;
 };
 
+// Shared AudioContext to avoid creating multiple contexts (browsers limit these)
+let sharedAudioContext: AudioContext | null = null;
+const getAudioContext = () => {
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    sharedAudioContext = new AudioContext();
+  }
+  // Resume suspended AudioContext (common on mobile or after tab switching)
+  if (sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume().catch((err) => console.warn("Failed to resume AudioContext:", err));
+  }
+  return sharedAudioContext;
+};
+
 export default function SongPlayer(props: SongPlayerProps) {
   const [audioElement, setAudioElement] = createSignal<HTMLAudioElement | undefined>();
   const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
@@ -87,7 +100,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   let syncTimeout: ReturnType<typeof setTimeout> | undefined;
   let endCheckInterval: ReturnType<typeof setInterval> | undefined;
   let fadeOutTimeout: ReturnType<typeof setTimeout> | undefined;
-  const audioContext = new AudioContext();
+  const audioContext = getAudioContext();
   let audioSource: MediaElementAudioSourceNode | undefined;
   let currentGainNode: GainNode | undefined;
 
@@ -118,14 +131,20 @@ export default function SongPlayer(props: SongPlayerProps) {
         audioSource = localAudioSource;
         currentGainNode = localGainNode;
 
-        const replayGainAdjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+        const replayGainAdjustment = calculateReplayGainAdjustment(
+          props.song.replayGainTrackGain,
+          props.song.replayGainTrackPeak,
+        );
         localGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
 
         // Update volume when it changes
         createEffect(() => {
           if (localGainNode) {
             const volume = props.volume ?? 1;
-            const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+            const adjustment = calculateReplayGainAdjustment(
+              props.song.replayGainTrackGain,
+              props.song.replayGainTrackPeak,
+            );
             localGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
           }
         });
@@ -165,7 +184,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         audioSource = undefined;
         currentGainNode = undefined;
       }
-    })
+    }),
   );
 
   // Handle track switching
@@ -218,7 +237,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           updateVolume();
         });
       }
-    })
+    }),
   );
 
   // Check if all required media is ready
@@ -278,13 +297,13 @@ export default function SongPlayer(props: SongPlayerProps) {
   // Schedule fade-out for medley mode
   const scheduleFadeOut = () => {
     clearTimeout(fadeOutTimeout);
-    
+
     if (props.mode !== "medley" || !props.song.end) return;
 
     const audio = audioElement();
     const video = videoElement();
     const mediaElement = audio || video;
-    
+
     if (!mediaElement) return;
 
     const currentTime = mediaElement.currentTime * 1000; // Convert to milliseconds
@@ -419,16 +438,19 @@ export default function SongPlayer(props: SongPlayerProps) {
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
         clearTimeout(fadeOutTimeout);
-        
+
         // Reset gain node to normal volume
         if (currentGainNode) {
           const volume = props.volume ?? 1;
-          const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+          const adjustment = calculateReplayGainAdjustment(
+            props.song.replayGainTrackGain,
+            props.song.replayGainTrackPeak,
+          );
           currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
           currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
         }
-      }
-    )
+      },
+    ),
   );
 
   // Handle ready state notifications
@@ -575,14 +597,27 @@ export default function SongPlayer(props: SongPlayerProps) {
           video.currentTime = time;
         }
       },
-    })
+    }),
   );
 
   onCleanup(() => {
     pause();
     stopEndTimeMonitoring();
     clearTimeout(fadeOutTimeout);
-    audioContext.close();
+
+    // Disconnect audio nodes (but don't close shared AudioContext)
+    try {
+      if (audioSource) {
+        audioSource.disconnect();
+        audioSource = undefined;
+      }
+      if (currentGainNode) {
+        currentGainNode.disconnect();
+        currentGainNode = undefined;
+      }
+    } catch {
+      // Ignore disconnection errors
+    }
   });
 
   return (
