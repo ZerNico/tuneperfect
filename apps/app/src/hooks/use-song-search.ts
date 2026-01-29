@@ -1,5 +1,5 @@
 import { debounce } from "@solid-primitives/scheduled";
-import type { SongSummary } from "@tuneperfect/contracts/game";
+import type { SongSummary } from "@tuneperfect/webrtc/contracts/game";
 import MiniSearch from "minisearch";
 import { type Accessor, createEffect, createMemo, createSignal } from "solid-js";
 

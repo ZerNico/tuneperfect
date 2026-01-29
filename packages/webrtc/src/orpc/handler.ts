@@ -1,7 +1,3 @@
-/**
- * Server-side handler for processing incoming oRPC requests over WebRTC data channels.
- */
-
 import type { Context } from "@orpc/server";
 import type { StandardHandler } from "@orpc/server/standard";
 import type { HandleStandardServerPeerMessageOptions } from "@orpc/server/standard-peer";
@@ -17,9 +13,8 @@ import {
 } from "@orpc/standard-server-peer";
 import { onDataChannelClose, onDataChannelMessage, postDataChannelMessage } from "./data-channel";
 
-/**
- * Determines if a message uses the serialized format.
- */
+export type DataChannelHandlerErrorCallback = (error: Error, requestId?: string | number) => void;
+
 function isSerializedFormat(message: unknown): boolean {
   if (isObject(message) && "i" in message && "p" in message) {
     return true;
@@ -35,32 +30,24 @@ function isSerializedFormat(message: unknown): boolean {
   return false;
 }
 
-/**
- * Handler that processes incoming oRPC requests from a WebRTC data channel.
- */
+export type DataChannelHandlerUpgradeOptions<T extends Context> = HandleStandardServerPeerMessageOptions<T> & {
+  onError?: DataChannelHandlerErrorCallback;
+};
+
 export class DataChannelHandler<T extends Context> {
   constructor(private readonly standardHandler: StandardHandler<T>) {}
 
-  /**
-   * Upgrade a data channel to handle oRPC requests.
-   * This channel should be dedicated to receiving requests and sending responses.
-   * @returns A cleanup function to remove event listeners and close the peer.
-   */
-  upgrade(
-    channel: RTCDataChannel,
-    ...rest: MaybeOptionalOptions<HandleStandardServerPeerMessageOptions<T>>
-  ): () => void {
-    // Track format per request ID to avoid race conditions
-    // Using string keys since request IDs may be strings or numbers depending on oRPC version
+  upgrade(channel: RTCDataChannel, ...rest: MaybeOptionalOptions<DataChannelHandlerUpgradeOptions<T>>): () => void {
+    const options = resolveMaybeOptionalOptions(rest);
+    const onError = options.onError ?? ((error: Error) => console.error("[DataChannelHandler] Error:", error));
+
+    // Track format per request ID so response uses same format as request
     const requestFormats = new Map<string, boolean>();
 
     const peer = new ServerPeerWithoutCodec(async (message) => {
       const [id, type, payload] = message;
       const idKey = String(id);
-      // Use the format that was determined when the request was received
       const useSerialized = requestFormats.get(idKey) ?? false;
-
-      // Clean up the format tracking after sending response (response types end the request)
       requestFormats.delete(idKey);
 
       if (useSerialized) {
@@ -79,19 +66,18 @@ export class DataChannelHandler<T extends Context> {
     });
 
     const cleanupMessage = onDataChannelMessage(channel, async (message) => {
+      let requestId: string | number | undefined;
       try {
-        const handleFn = createServerPeerHandleRequestFn(this.standardHandler, resolveMaybeOptionalOptions(rest));
-
-        // Determine format for this specific message
+        const handleFn = createServerPeerHandleRequestFn(this.standardHandler, options);
         const useSerialized = isSerializedFormat(message);
 
-        let decoded;
+        let decoded: Awaited<ReturnType<typeof decodeRequestMessage>>;
         if (isObject(message)) {
           decoded = deserializeRequestMessage(message as unknown as Parameters<typeof deserializeRequestMessage>[0]);
         } else if (typeof message === "string") {
           if (useSerialized) {
-            const parsed = JSON.parse(message);
-            decoded = deserializeRequestMessage(parsed as unknown as Parameters<typeof deserializeRequestMessage>[0]);
+            const parsed = JSON.parse(message) as Parameters<typeof deserializeRequestMessage>[0];
+            decoded = deserializeRequestMessage(parsed);
           } else {
             decoded = await decodeRequestMessage(message);
           }
@@ -99,13 +85,13 @@ export class DataChannelHandler<T extends Context> {
           decoded = await decodeRequestMessage(message as Parameters<typeof decodeRequestMessage>[0]);
         }
 
-        // Store the format for this request ID so the response uses the same format
-        const [requestId] = decoded;
+        requestId = decoded[0];
         requestFormats.set(String(requestId), useSerialized);
 
         await peer.message(decoded, handleFn);
-      } catch (error) {
-        console.error("[DataChannelHandler] Error processing message:", error);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        onError(error, requestId);
       }
     });
 
@@ -114,7 +100,6 @@ export class DataChannelHandler<T extends Context> {
       requestFormats.clear();
     });
 
-    // Return cleanup function
     return () => {
       cleanupMessage();
       cleanupClose();

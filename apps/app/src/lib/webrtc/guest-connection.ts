@@ -1,15 +1,25 @@
-/**
- * WebRTC guest connection for the mobile app.
- * Uses two data channels:
- * - "game-rpc": App sends requests to game, receives responses (client channel)
- * - "app-rpc": App receives requests from game, sends responses (server channel)
- */
+// WebRTC guest connection for the mobile app.
+// Uses two data channels:
+// - "game-rpc": App sends requests to game (client channel)
+// - "app-rpc": App receives requests from game (server channel)
 
 import type { ClientContext } from "@orpc/client";
 import { createORPCClient } from "@orpc/client";
-import type { GameClient } from "@tuneperfect/contracts/game";
-import { RPCLink } from "@tuneperfect/orpc-webrtc/client";
-import { RPCHandler } from "@tuneperfect/orpc-webrtc/server";
+import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
+import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
+import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
+import {
+  type ChannelTracker,
+  createChannelTracker,
+  createIceCandidateBuffer,
+  createOrderedDataChannel,
+  type IceCandidateBuffer,
+  parseIceCandidate,
+  processBufferedCandidates,
+  serializeIceCandidate,
+  setupDataChannelHandlers,
+  WEBRTC_CONFIG,
+} from "@tuneperfect/webrtc/utils";
 import { iceServers } from "./ice-servers";
 import { appRouter } from "./router";
 
@@ -30,83 +40,64 @@ export interface GuestConnection {
   getGameClient: () => GameClient | null;
 }
 
-/**
- * Creates a WebRTC connection for the guest (mobile app) to connect to the host (game client).
- */
 export function createGuestConnection(callbacks: GuestConnectionCallbacks): GuestConnection {
   const pc = new RTCPeerConnection({ iceServers });
 
-  let pendingIceCandidates: string[] = [];
-  let remoteDescriptionSet = false;
+  const iceBuffer: IceCandidateBuffer = createIceCandidateBuffer();
+
   let gameClient: GameClient | null = null;
   let gameRpcLink: RPCLink<ClientContext> | null = null;
   let appRpcHandlerCleanup: (() => void) | null = null;
+  let gameRpcChannelCleanup: (() => void) | null = null;
+  let appRpcChannelCleanup: (() => void) | null = null;
 
-  // Track which channels are open
-  let gameRpcChannelOpen = false;
-  let appRpcChannelOpen = false;
+  const channelTracker: ChannelTracker = createChannelTracker(
+    [WEBRTC_CONFIG.channels.gameRpc, WEBRTC_CONFIG.channels.appRpc],
+    () => callbacks.onDataChannelOpen(),
+  );
 
-  const checkBothChannelsOpen = () => {
-    if (gameRpcChannelOpen && appRpcChannelOpen) {
-      callbacks.onDataChannelOpen();
-    }
-  };
+  const gameRpcChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.gameRpc);
 
-  // Channel for calling game procedures (app → game)
-  const gameRpcChannel = pc.createDataChannel("game-rpc", { ordered: true });
+  const gameRpcSetup = setupDataChannelHandlers(gameRpcChannel, {
+    onOpen: () => {
+      gameRpcLink = new RPCLink({ channel: gameRpcChannel });
+      gameClient = createORPCClient(gameRpcLink) as GameClient;
+      channelTracker.markOpen(WEBRTC_CONFIG.channels.gameRpc);
+    },
+    onClose: () => {
+      gameRpcLink?.close();
+      gameRpcLink = null;
+      gameClient = null;
+      channelTracker.markClosed(WEBRTC_CONFIG.channels.gameRpc);
+    },
+    onError: (event) => {
+      console.error("[WebRTC] game-rpc channel error:", event);
+    },
+  });
+  gameRpcChannelCleanup = gameRpcSetup.cleanup;
 
-  const handleGameRpcOpen = () => {
-    gameRpcLink = new RPCLink({ channel: gameRpcChannel });
-    gameClient = createORPCClient(gameRpcLink) as GameClient;
-    gameRpcChannelOpen = true;
-    checkBothChannelsOpen();
-  };
+  const appRpcChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.appRpc);
 
-  const handleGameRpcClose = () => {
-    // Clean up the link
-    gameRpcLink?.close();
-    gameRpcLink = null;
-    gameClient = null;
-    gameRpcChannelOpen = false;
-  };
+  const appRpcSetup = setupDataChannelHandlers(appRpcChannel, {
+    onOpen: () => {
+      const handler = new RPCHandler(appRouter);
+      appRpcHandlerCleanup = handler.upgrade(appRpcChannel);
+      channelTracker.markOpen(WEBRTC_CONFIG.channels.appRpc);
+    },
+    onClose: () => {
+      appRpcHandlerCleanup?.();
+      appRpcHandlerCleanup = null;
+      channelTracker.markClosed(WEBRTC_CONFIG.channels.appRpc);
+    },
+    onError: (event) => {
+      console.error("[WebRTC] app-rpc channel error:", event);
+    },
+  });
+  appRpcChannelCleanup = appRpcSetup.cleanup;
 
-  const handleGameRpcError = (error: Event) => {
-    console.error("[WebRTC] game-rpc channel error:", error);
-  };
-
-  gameRpcChannel.addEventListener("open", handleGameRpcOpen);
-  gameRpcChannel.addEventListener("close", handleGameRpcClose);
-  gameRpcChannel.addEventListener("error", handleGameRpcError);
-
-  // Channel for receiving game requests (game → app)
-  const appRpcChannel = pc.createDataChannel("app-rpc", { ordered: true });
-
-  const handleAppRpcOpen = () => {
-    const handler = new RPCHandler(appRouter);
-    appRpcHandlerCleanup = handler.upgrade(appRpcChannel);
-    appRpcChannelOpen = true;
-    checkBothChannelsOpen();
-  };
-
-  const handleAppRpcClose = () => {
-    // Clean up the handler
-    appRpcHandlerCleanup?.();
-    appRpcHandlerCleanup = null;
-    appRpcChannelOpen = false;
-  };
-
-  const handleAppRpcError = (error: Event) => {
-    console.error("[WebRTC] app-rpc channel error:", error);
-  };
-
-  appRpcChannel.addEventListener("open", handleAppRpcOpen);
-  appRpcChannel.addEventListener("close", handleAppRpcClose);
-  appRpcChannel.addEventListener("error", handleAppRpcError);
-
-  // RTCPeerConnection event handlers
   const handleIceCandidate = (event: RTCPeerConnectionIceEvent) => {
     if (event.candidate) {
-      callbacks.onIceCandidate(JSON.stringify(event.candidate));
+      callbacks.onIceCandidate(serializeIceCandidate(event.candidate));
     }
   };
 
@@ -126,65 +117,48 @@ export function createGuestConnection(callbacks: GuestConnectionCallbacks): Gues
     return offer.sdp;
   };
 
-  const setAnswer = async (answerSdp: string) => {
+  const setAnswer = async (answerSdp: string): Promise<void> => {
     await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-    remoteDescriptionSet = true;
+    iceBuffer.setRemoteDescriptionReady();
 
-    for (const candidate of pendingIceCandidates) {
-      try {
-        const iceCandidate = JSON.parse(candidate) as RTCIceCandidateInit;
-        await pc.addIceCandidate(iceCandidate);
-      } catch (error) {
-        console.error("[WebRTC] Failed to add buffered ICE candidate:", error);
-      }
-    }
-    pendingIceCandidates = [];
+    await processBufferedCandidates(pc, iceBuffer, (candidate, error) => {
+      console.error("[WebRTC] Failed to add buffered ICE candidate:", error, candidate);
+    });
   };
 
-  const addIceCandidate = async (candidate: string) => {
-    if (!remoteDescriptionSet) {
-      pendingIceCandidates.push(candidate);
-      return;
-    }
+  const addIceCandidate = async (candidate: string): Promise<void> => {
+    const immediateCandidate = iceBuffer.addCandidate(candidate);
+    if (immediateCandidate === null) return;
 
     try {
-      const iceCandidate = JSON.parse(candidate) as RTCIceCandidateInit;
+      const iceCandidate = parseIceCandidate(immediateCandidate);
       await pc.addIceCandidate(iceCandidate);
     } catch (error) {
       console.error("[WebRTC] Failed to add ICE candidate:", error);
     }
   };
 
-  const close = () => {
-    // Clean up oRPC resources first
+  const close = (): void => {
     gameRpcLink?.close();
     gameRpcLink = null;
     appRpcHandlerCleanup?.();
     appRpcHandlerCleanup = null;
 
-    // Remove data channel event listeners
-    gameRpcChannel.removeEventListener("open", handleGameRpcOpen);
-    gameRpcChannel.removeEventListener("close", handleGameRpcClose);
-    gameRpcChannel.removeEventListener("error", handleGameRpcError);
-    appRpcChannel.removeEventListener("open", handleAppRpcOpen);
-    appRpcChannel.removeEventListener("close", handleAppRpcClose);
-    appRpcChannel.removeEventListener("error", handleAppRpcError);
+    gameRpcChannelCleanup?.();
+    gameRpcChannelCleanup = null;
+    appRpcChannelCleanup?.();
+    appRpcChannelCleanup = null;
 
-    // Remove peer connection event listeners
     pc.removeEventListener("icecandidate", handleIceCandidate);
     pc.removeEventListener("connectionstatechange", handleConnectionStateChange);
 
-    // Close channels and connection
     gameRpcChannel.close();
     appRpcChannel.close();
     pc.close();
 
-    // Reset state
     gameClient = null;
-    pendingIceCandidates = [];
-    remoteDescriptionSet = false;
-    gameRpcChannelOpen = false;
-    appRpcChannelOpen = false;
+    iceBuffer.clear();
+    channelTracker.reset();
   };
 
   const getGameClient = (): GameClient | null => gameClient;

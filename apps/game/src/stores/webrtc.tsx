@@ -141,6 +141,10 @@ function createWebRTCStore() {
           await handleOffer(signal.from, signal.sdp);
         } else if (signal.type === "ice-candidate") {
           await handleIceCandidate(signal.from, signal.candidate);
+        } else if (signal.type === "goodbye") {
+          // Guest is gracefully disconnecting - clean up their connection
+          console.log(`[WebRTC] Received goodbye from ${signal.from}, reason: ${signal.reason ?? "unknown"}`);
+          closeConnection(signal.from);
         }
       }
     } catch (error) {

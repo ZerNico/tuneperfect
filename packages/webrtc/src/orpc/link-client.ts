@@ -1,7 +1,3 @@
-/**
- * Client for sending oRPC requests over a WebRTC data channel.
- */
-
 import type { ClientContext, ClientOptions } from "@orpc/client";
 import type { StandardLinkClient } from "@orpc/client/standard";
 import { isObject } from "@orpc/shared";
@@ -14,23 +10,22 @@ import {
 } from "@orpc/standard-server-peer";
 import { onDataChannelClose, onDataChannelMessage, postDataChannelMessage } from "./data-channel";
 
+export type LinkDataChannelClientErrorCallback = (error: Error) => void;
+
 export interface LinkDataChannelClientOptions {
-  /**
-   * The RTCDataChannel to use for communication.
-   * This channel should be dedicated to sending requests and receiving responses.
-   */
   channel: RTCDataChannel;
+  onError?: LinkDataChannelClientErrorCallback;
 }
 
-/**
- * oRPC client that sends requests over a WebRTC data channel.
- */
 export class LinkDataChannelClient<T extends ClientContext> implements StandardLinkClient<T> {
   private readonly peer: ClientPeerWithoutCodec;
   private readonly cleanupMessage: () => void;
   private readonly cleanupClose: () => void;
+  private readonly onError: LinkDataChannelClientErrorCallback;
 
   constructor(options: LinkDataChannelClientOptions) {
+    this.onError = options.onError ?? ((error: Error) => console.error("[LinkDataChannelClient] Error:", error));
+
     this.peer = new ClientPeerWithoutCodec(async (message) => {
       const [id, type, payload] = message;
       const serialized = serializeRequestMessage(id, type, payload);
@@ -39,12 +34,12 @@ export class LinkDataChannelClient<T extends ClientContext> implements StandardL
 
     this.cleanupMessage = onDataChannelMessage(options.channel, async (message: unknown) => {
       try {
-        let decoded;
+        let decoded: Awaited<ReturnType<typeof decodeResponseMessage>>;
         if (isObject(message)) {
           decoded = deserializeResponseMessage(message as unknown as Parameters<typeof deserializeResponseMessage>[0]);
         } else if (typeof message === "string") {
           try {
-            const parsed = JSON.parse(message);
+            const parsed = JSON.parse(message) as Record<string, unknown>;
             if (isObject(parsed) && "i" in parsed) {
               decoded = deserializeResponseMessage(
                 parsed as unknown as Parameters<typeof deserializeResponseMessage>[0],
@@ -59,8 +54,9 @@ export class LinkDataChannelClient<T extends ClientContext> implements StandardL
           decoded = await decodeResponseMessage(message as Parameters<typeof decodeResponseMessage>[0]);
         }
         await this.peer.message(decoded);
-      } catch (error) {
-        console.error("[LinkDataChannelClient] Error processing message:", error);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        this.onError(error);
       }
     });
 
@@ -69,10 +65,7 @@ export class LinkDataChannelClient<T extends ClientContext> implements StandardL
     });
   }
 
-  /**
-   * Close the client and clean up resources.
-   */
-  close(): void {
+  close() {
     this.cleanupMessage();
     this.cleanupClose();
     this.peer.close();
