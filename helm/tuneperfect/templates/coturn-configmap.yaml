@@ -5,6 +5,6 @@ metadata:
   name: {{ include "tuneperfect.fullname" . }}-coturn-config
   namespace: {{ .Release.Namespace }}
 data:
-  STUN_URL: "stun:{{ .Values.coturn.realm }}:{{ .Values.coturn.listeningPort }}"
-  TURN_URL: "turn:{{ .Values.coturn.realm }}:{{ .Values.coturn.listeningPort }}"
+  STUN_URL: "{{ .Values.coturn.stunUrl }}"
+  TURN_URL: "{{ .Values.coturn.turnUrl }}"
 {{- end }}

@@ -23,21 +23,29 @@ spec:
       containers:
         - name: coturn
           image: "{{ .Values.coturn.image.repository }}:{{ .Values.coturn.image.tag }}"
+          command: ["/bin/sh", "-c"]
           args:
-            - --listening-port={{ .Values.coturn.listeningPort }}
-            - --tls-listening-port={{ .Values.coturn.tlsListeningPort }}
-            - --realm={{ .Values.coturn.realm }}
-            - --server-name={{ .Values.coturn.realm }}
-            - --user={{ .Values.coturn.username }}:{{ .Values.coturn.credential }}
-            - --min-port={{ .Values.coturn.minPort }}
-            - --max-port={{ .Values.coturn.maxPort }}
-            {{- if .Values.coturn.externalIp }}
-            - --external-ip={{ .Values.coturn.externalIp }}
-            {{- end }}
-            - --no-cli
-            - --no-multicast-peers
-            - --verbose
-            - --log-file=stdout
+            - |
+              /usr/bin/turnserver \
+                --listening-port={{ .Values.coturn.listeningPort }} \
+                --tls-listening-port={{ .Values.coturn.tlsListeningPort }} \
+                --realm={{ .Values.coturn.realm }} \
+                --server-name={{ .Values.coturn.realm }} \
+                --user=${TURN_USERNAME}:${TURN_CREDENTIAL} \
+                --min-port={{ .Values.coturn.minPort }} \
+                --max-port={{ .Values.coturn.maxPort }} \
+                {{- if .Values.coturn.externalIp }}
+                --external-ip={{ .Values.coturn.externalIp }} \
+                {{- end }}
+                --no-cli \
+                --no-multicast-peers \
+                --verbose \
+                --log-file=stdout
+          env:
+            - name: TURN_USERNAME
+              value: "{{ .Values.coturn.username }}"
+            - name: TURN_CREDENTIAL
+              value: "{{ .Values.coturn.credential }}"
           {{- if .Values.coturn.resources }}
           resources:
             {{- toYaml .Values.coturn.resources | nindent 12 }}

@@ -195,6 +195,8 @@ coturn:
     tag: "4"
   
   realm: "tuneperfect.localhost"
+  stunUrl: "stun:stun.tuneperfect.localhost:3478"
+  turnUrl: "turn:turn.tuneperfect.localhost:3478"
   username: "tuneperfect"
   credential: "tuneperfect"
   
