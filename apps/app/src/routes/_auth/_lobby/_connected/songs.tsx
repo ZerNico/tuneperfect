@@ -1,6 +1,7 @@
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
+import { useGameClient } from "~/contexts/game-client";
 import { useSongSearch } from "~/hooks/use-song-search";
 import { songsQueryOptions } from "~/lib/game-query";
 import { t } from "~/lib/i18n";
@@ -16,13 +17,14 @@ export const Route = createFileRoute("/_auth/_lobby/_connected/songs")({
 
 /**
  * Songs page - displays the list of songs from the game client.
- * Connection is guaranteed by the _connected layout, so we can assume gameClient exists.
+ * Game client is provided via context by the _connected layout.
  */
 function SongsComponent() {
+  const gameClient = useGameClient();
   const [searchQuery, setSearchQuery] = createSignal("");
 
-  // Fetch songs using TanStack Query - connection is guaranteed by parent layout
-  const songsQuery = createQuery(() => songsQueryOptions());
+  // Fetch songs using TanStack Query
+  const songsQuery = createQuery(() => songsQueryOptions(gameClient));
 
   // Use MiniSearch for fuzzy, accent-insensitive search
   const { filteredSongs } = useSongSearch({

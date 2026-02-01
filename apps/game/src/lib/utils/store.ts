@@ -1,5 +1,5 @@
 import { load } from "@tauri-apps/plugin-store";
-import { createEffect, createSignal, on } from "solid-js";
+import { createEffect, createRoot, createSignal, on } from "solid-js";
 import * as v from "valibot";
 import { makeNested } from "./setter";
 
@@ -61,23 +61,25 @@ export function createPersistentStore<T>(options: PersistentStoreOptions<T>) {
     }
   }
 
-  createEffect(
-    on(
-      settings,
-      async (currentSettings) => {
-        if (!initialized()) return;
+  createRoot(() => {
+    createEffect(
+      on(
+        settings,
+        async (currentSettings) => {
+          if (!initialized()) return;
 
-        try {
-          const store = await load(filename);
+          try {
+            const store = await load(filename);
 
-          for (const [key, value] of Object.entries(currentSettings as Record<string, unknown>)) {
-            await store.set(key, value);
-          }
-        } catch {}
-      },
-      { defer: true },
-    ),
-  );
+            for (const [key, value] of Object.entries(currentSettings as Record<string, unknown>)) {
+              await store.set(key, value);
+            }
+          } catch {}
+        },
+        { defer: true },
+      ),
+    );
+  });
 
   return {
     settings,

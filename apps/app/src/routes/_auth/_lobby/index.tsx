@@ -4,7 +4,7 @@ import { type Component, createMemo, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
-import { startConnection, stopConnection, webrtcStore } from "~/stores/webrtc";
+import { connectionStore, startConnection, stopConnection } from "~/stores/connection";
 import IconCheck from "~icons/lucide/check";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 import IconMusic from "~icons/lucide/music";
@@ -21,13 +21,12 @@ function LobbyMainComponent() {
 
   // Connection state helpers
   const isConnecting = createMemo(
-    () =>
-      webrtcStore.isConnecting() ||
-      webrtcStore.connectionState() === "connecting" ||
-      webrtcStore.connectionState() === "new",
+    () => connectionStore.connectionState() === "connecting" || connectionStore.connectionState() === "new",
   );
-  const isConnected = createMemo(() => webrtcStore.connectionState() === "connected");
-  const hasConnectionFailed = createMemo(() => webrtcStore.connectionState() === "failed");
+  const isConnected = createMemo(
+    () => connectionStore.connectionState() === "connected" && connectionStore.channelsReady(),
+  );
+  const hasConnectionFailed = createMemo(() => connectionStore.connectionState() === "failed");
 
   const handleRetryConnection = () => {
     const userId = session.data?.id;
