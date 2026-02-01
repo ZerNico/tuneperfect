@@ -1,6 +1,3 @@
-// WebRTC transport layer - creates RTCPeerConnection and data channels.
-// oRPC clients are created in the _connected route layout.
-
 import {
   type ChannelTracker,
   createChannelTracker,
@@ -13,7 +10,6 @@ import {
   setupDataChannelHandlers,
   WEBRTC_CONFIG,
 } from "@tuneperfect/webrtc/utils";
-import { iceServers } from "./ice-servers";
 
 export interface GuestConnectionCallbacks {
   onIceCandidate: (candidate: string) => void;
@@ -33,7 +29,10 @@ export interface GuestConnection {
   close: () => void;
 }
 
-export function createGuestConnection(callbacks: GuestConnectionCallbacks): GuestConnection {
+export function createGuestConnection(
+  iceServers: RTCIceServer[],
+  callbacks: GuestConnectionCallbacks,
+): GuestConnection {
   const pc = new RTCPeerConnection({ iceServers });
 
   const iceBuffer: IceCandidateBuffer = createIceCandidateBuffer();

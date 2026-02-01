@@ -157,6 +157,10 @@ apps:
           name: redis-credentials
       - secretRef:
           name: api-credentials
+      - configMapRef:
+          name: "{{ include \"tuneperfect.fullname\" . }}-coturn-config"
+      - secretRef:
+          name: coturn-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1
@@ -183,3 +187,28 @@ apps:
         - hosts:
             - "api.tuneperfect.localhost"
           secretName: "api-tls"
+
+coturn:
+  enabled: true
+  image:
+    repository: coturn/coturn
+    tag: "4"
+  
+  realm: "tuneperfect.localhost"
+  username: "tuneperfect"
+  credential: "tuneperfect"
+  
+  listeningPort: 3478
+  tlsListeningPort: 5349
+  
+  # Larger range supports more concurrent connections
+  minPort: 49152
+  maxPort: 65535
+  
+  # Optional - coturn auto-detects if not set
+  externalIp: ""
+  
+  # resources:
+  #   limits:
+  #     cpu: 500m
+  #     memory: 256Mi

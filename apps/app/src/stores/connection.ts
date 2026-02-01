@@ -4,6 +4,7 @@ import { t } from "~/lib/i18n";
 import { orpcClient } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
 import { createGuestConnection, type GuestConnection } from "~/lib/webrtc/guest-connection";
+import { getIceServers } from "~/lib/webrtc/ice-servers";
 
 function createConnectionStore() {
   const [connection, setConnection] = createSignal<GuestConnection | null>(null);
@@ -32,7 +33,9 @@ function createConnectionStore() {
     setConnectionState("connecting");
 
     try {
-      const conn = createGuestConnection({
+      const iceServers = await getIceServers();
+
+      const conn = createGuestConnection(iceServers, {
         onIceCandidate: async (candidate) => {
           try {
             await orpcClient.signaling.sendSignal({

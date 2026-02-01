@@ -1,8 +1,3 @@
-// WebRTC host connection for the game client.
-// Handles two data channels from each guest:
-// - "game-rpc": Game receives requests from app (server channel)
-// - "app-rpc": Game sends requests to app (client channel)
-
 import type { ClientContext } from "@orpc/client";
 import { createORPCClient } from "@orpc/client";
 import type { AppClient } from "@tuneperfect/webrtc/contracts/app";
@@ -19,7 +14,6 @@ import {
   setupDataChannelHandlers,
   WEBRTC_CONFIG,
 } from "@tuneperfect/webrtc/utils";
-import { iceServers } from "./ice-servers";
 import { type GameRouterContext, gameRouter } from "./router";
 
 export interface HostConnectionCallbacks {
@@ -40,7 +34,11 @@ export interface HostConnection {
   getAppClient: () => AppClient | null;
 }
 
-export function createHostConnection(userId: string, callbacks: HostConnectionCallbacks): HostConnection {
+export function createHostConnection(
+  userId: string,
+  iceServers: RTCIceServer[],
+  callbacks: HostConnectionCallbacks,
+): HostConnection {
   const pc = new RTCPeerConnection({ iceServers });
 
   let gameRpcChannel: RTCDataChannel | null = null;

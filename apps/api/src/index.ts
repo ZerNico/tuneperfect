@@ -16,6 +16,7 @@ import { lobbyRouter } from "./lobby/router";
 import { signalingRouter } from "./signaling/router";
 import { updateRouter } from "./update/router";
 import { userRouter } from "./user/router";
+import { webrtcRouter } from "./webrtc/router";
 
 const router = {
   auth: authRouter,
@@ -25,6 +26,7 @@ const router = {
   update: updateRouter,
   club: clubRouter,
   signaling: signalingRouter,
+  webrtc: webrtcRouter,
 };
 
 setupJobs();

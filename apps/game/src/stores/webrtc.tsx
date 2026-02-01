@@ -2,37 +2,26 @@ import { ReactiveMap } from "@solid-primitives/map";
 import { createEffect, createSignal, onCleanup } from "solid-js";
 import { orpcClient } from "~/lib/orpc";
 import { createHostConnection, type HostConnection } from "~/lib/webrtc/host-connection";
+import { getIceServers } from "~/lib/webrtc/ice-servers";
 import { lobbyStore } from "./lobby";
 
 function createWebRTCStore() {
-  // Map of userId -> HostConnection
   const connections = new ReactiveMap<string, HostConnection>();
-
-  // Buffer ICE candidates for users whose connection is still being created
-  // This handles the race condition where ICE candidates arrive before handleOffer completes
   const pendingIceCandidates = new Map<string, string[]>();
-
-  // Signal subscription abort controller
   const [abortController, setAbortController] = createSignal<AbortController | null>(null);
-
-  // Whether the signaling subscription is active
   const [isSubscribed, setIsSubscribed] = createSignal(false);
-
-  // Mutex to prevent race condition in startSignaling
   let isStartingSignaling = false;
 
-  /**
-   * Create a connection for a user and handle their offer
-   */
   const handleOffer = async (userId: string, offerSdp: string) => {
-    // Close existing connection if any
     const existingConnection = connections.get(userId);
     if (existingConnection) {
       existingConnection.close();
       connections.delete(userId);
     }
 
-    const connection = createHostConnection(userId, {
+    const iceServers = await getIceServers();
+
+    const connection = createHostConnection(userId, iceServers, {
       onIceCandidate: async (candidate) => {
         try {
           await orpcClient.signaling.sendSignal({
@@ -90,15 +79,11 @@ function createWebRTCStore() {
     }
   };
 
-  /**
-   * Handle incoming ICE candidate from a guest
-   */
   const handleIceCandidate = async (userId: string, candidate: string) => {
     const connection = connections.get(userId);
     if (connection) {
       await connection.addIceCandidate(candidate);
     } else {
-      // Buffer the candidate - connection might still be creating
       const existing = pendingIceCandidates.get(userId);
       if (existing) {
         existing.push(candidate);
@@ -108,11 +93,7 @@ function createWebRTCStore() {
     }
   };
 
-  /**
-   * Start listening for signaling messages
-   */
   const startSignaling = async () => {
-    // Use both the signal and a mutex to prevent race conditions
     if (isSubscribed() || isStartingSignaling) {
       return;
     }
@@ -122,7 +103,6 @@ function createWebRTCStore() {
       return;
     }
 
-    // Acquire mutex immediately (synchronous)
     isStartingSignaling = true;
 
     const controller = new AbortController();
@@ -174,9 +154,6 @@ function createWebRTCStore() {
     pendingIceCandidates.clear();
   };
 
-  /**
-   * Close connection for a specific user (e.g., when they leave the lobby)
-   */
   const closeConnection = (userId: string) => {
     const connection = connections.get(userId);
     if (connection) {
@@ -186,9 +163,6 @@ function createWebRTCStore() {
     pendingIceCandidates.delete(userId);
   };
 
-  /**
-   * Get the app client for a specific user (for future bidirectional calls)
-   */
   const getAppClient = (userId: string) => {
     const connection = connections.get(userId);
     return connection?.getAppClient() ?? null;
