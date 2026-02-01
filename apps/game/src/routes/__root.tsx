@@ -7,6 +7,7 @@ import { createSignal, Suspense } from "solid-js";
 import PopupContainer from "~/components/popup-container";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
+import { useWebRTCAutoConnect } from "~/stores/webrtc";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -26,6 +27,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
   useWakeLock();
+  useWebRTCAutoConnect();
 
   const toggleFullscreen = async () => {
     const window = getCurrentWindow();

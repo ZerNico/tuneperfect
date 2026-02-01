@@ -61,6 +61,8 @@ jobs:
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
           POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
+          TURN_USERNAME: ${{ secrets.TURN_USERNAME }}
+          TURN_CREDENTIAL: ${{ secrets.TURN_CREDENTIAL }}
         run: |
           echo "Deploying with image tag $IMAGE_TAG to domain $DOMAIN_NAME"
           helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART_PATH }} \
@@ -101,4 +103,10 @@ jobs:
             --set apps.api.env.COOKIE_DOMAIN=.$DOMAIN_NAME \
             --set apps.api.env.EMAIL_FROM="Tune Perfect <noreply@$DOMAIN_NAME>" \
             --set apps.api.env.VERSION=$IMAGE_TAG \
-            --set apps.api.env.GITHUB_REPO=${{ github.repository }}
+            --set apps.api.env.GITHUB_REPO=${{ github.repository }} \
+            --set coturn.enabled=true \
+            --set coturn.realm=$DOMAIN_NAME \
+            --set coturn.stunUrl=stun:stun.$DOMAIN_NAME:3478 \
+            --set coturn.turnUrl=turn:turn.$DOMAIN_NAME:3478 \
+            --set coturn.username=$TURN_USERNAME \
+            --set coturn.credential=$TURN_CREDENTIAL

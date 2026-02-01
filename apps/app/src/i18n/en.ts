@@ -8,7 +8,8 @@ const en = {
     emailInvalid: "Invalid email",
     passwordMinLength: "Password must be at least 6 characters",
     invalidEmailOrPassword: "Invalid email or password",
-    oauthUnverifiedEmailExists: "An unverified account exists with this email. Please check your inbox to verify your email, or use password reset if you've lost access.",
+    oauthUnverifiedEmailExists:
+      "An unverified account exists with this email. Please check your inbox to verify your email, or use password reset if you've lost access.",
     or: "Or",
     noAccount: "Don't have an account?",
     signUp: "Sign up",
@@ -192,9 +193,15 @@ const en = {
     lobby: "Lobby",
     join: "Join",
     clubs: "Clubs",
+    songs: "Songs",
   },
   lobby: {
     title: "Lobby",
+    connected: "Connected to game",
+    playersTitle: "Players",
+    playersDescription: "View and invite players in the lobby",
+    songsTitle: "Songs",
+    songsDescription: "Browse available songs from the game",
     inviteToClub: "Invite to Club",
     selectClub: "Select Club",
     selectClubDescription: "Choose which club to invite {{ username }} to:",
@@ -204,6 +211,16 @@ const en = {
     noClubsToInvite: "You don't have permission to invite members to any clubs",
     noUsers: "No one else is here",
     noUsersDescription: "You are currently the only one in the lobby.",
+  },
+  songs: {
+    title: "Songs",
+    connecting: "Connecting to game...",
+    connectionFailed: "Failed to connect to game",
+    connectionTrouble: "Having trouble connecting to the game. Will keep trying...",
+    retry: "Retry",
+    noSongs: "No songs available",
+    noSongsDescription: "The game client hasn't shared any songs yet.",
+    searchPlaceholder: "Search songs...",
   },
 };
 

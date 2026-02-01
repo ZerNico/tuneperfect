@@ -24,8 +24,11 @@ import { Route as AuthLobbyRouteImport } from './routes/_auth/_lobby'
 import { Route as AuthClubsIndexRouteImport } from './routes/_auth/clubs/index'
 import { Route as AuthLobbyIndexRouteImport } from './routes/_auth/_lobby/index'
 import { Route as AuthClubsIdRouteImport } from './routes/_auth/clubs/$id'
+import { Route as AuthLobbyPlayersRouteImport } from './routes/_auth/_lobby/players'
+import { Route as AuthLobbyConnectedRouteImport } from './routes/_auth/_lobby/_connected'
 import { Route as AuthNoLobbyJoinIndexRouteImport } from './routes/_auth/_no-lobby/join/index'
 import { Route as AuthNoLobbyJoinIdRouteImport } from './routes/_auth/_no-lobby/join/$id'
+import { Route as AuthLobbyConnectedSongsRouteImport } from './routes/_auth/_lobby/_connected/songs'
 
 const NoAuthRoute = NoAuthRouteImport.update({
   id: '/_no-auth',
@@ -98,6 +101,15 @@ const AuthClubsIdRoute = AuthClubsIdRouteImport.update({
   path: '/clubs/$id',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthLobbyPlayersRoute = AuthLobbyPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
+  getParentRoute: () => AuthLobbyRoute,
+} as any)
+const AuthLobbyConnectedRoute = AuthLobbyConnectedRouteImport.update({
+  id: '/_connected',
+  getParentRoute: () => AuthLobbyRoute,
+} as any)
 const AuthNoLobbyJoinIndexRoute = AuthNoLobbyJoinIndexRouteImport.update({
   id: '/join/',
   path: '/join/',
@@ -107,6 +119,11 @@ const AuthNoLobbyJoinIdRoute = AuthNoLobbyJoinIdRouteImport.update({
   id: '/join/$id',
   path: '/join/$id',
   getParentRoute: () => AuthNoLobbyRoute,
+} as any)
+const AuthLobbyConnectedSongsRoute = AuthLobbyConnectedSongsRouteImport.update({
+  id: '/songs',
+  path: '/songs',
+  getParentRoute: () => AuthLobbyConnectedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -118,9 +135,11 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
+  '/players': typeof AuthLobbyPlayersRoute
   '/clubs/$id': typeof AuthClubsIdRoute
   '/': typeof AuthLobbyIndexRoute
   '/clubs': typeof AuthClubsIndexRoute
+  '/songs': typeof AuthLobbyConnectedSongsRoute
   '/join/$id': typeof AuthNoLobbyJoinIdRoute
   '/join': typeof AuthNoLobbyJoinIndexRoute
 }
@@ -133,9 +152,11 @@ export interface FileRoutesByTo {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
+  '/players': typeof AuthLobbyPlayersRoute
   '/clubs/$id': typeof AuthClubsIdRoute
   '/': typeof AuthLobbyIndexRoute
   '/clubs': typeof AuthClubsIndexRoute
+  '/songs': typeof AuthLobbyConnectedSongsRoute
   '/join/$id': typeof AuthNoLobbyJoinIdRoute
   '/join': typeof AuthNoLobbyJoinIndexRoute
 }
@@ -153,9 +174,12 @@ export interface FileRoutesById {
   '/_no-auth/sign-in': typeof NoAuthSignInRoute
   '/_no-auth/sign-up': typeof NoAuthSignUpRoute
   '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
+  '/_auth/_lobby/_connected': typeof AuthLobbyConnectedRouteWithChildren
+  '/_auth/_lobby/players': typeof AuthLobbyPlayersRoute
   '/_auth/clubs/$id': typeof AuthClubsIdRoute
   '/_auth/_lobby/': typeof AuthLobbyIndexRoute
   '/_auth/clubs/': typeof AuthClubsIndexRoute
+  '/_auth/_lobby/_connected/songs': typeof AuthLobbyConnectedSongsRoute
   '/_auth/_no-lobby/join/$id': typeof AuthNoLobbyJoinIdRoute
   '/_auth/_no-lobby/join/': typeof AuthNoLobbyJoinIndexRoute
 }
@@ -170,9 +194,11 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
+    | '/players'
     | '/clubs/$id'
     | '/'
     | '/clubs'
+    | '/songs'
     | '/join/$id'
     | '/join'
   fileRoutesByTo: FileRoutesByTo
@@ -185,9 +211,11 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
+    | '/players'
     | '/clubs/$id'
     | '/'
     | '/clubs'
+    | '/songs'
     | '/join/$id'
     | '/join'
   id:
@@ -204,9 +232,12 @@ export interface FileRouteTypes {
     | '/_no-auth/sign-in'
     | '/_no-auth/sign-up'
     | '/_no-auth/verify-email'
+    | '/_auth/_lobby/_connected'
+    | '/_auth/_lobby/players'
     | '/_auth/clubs/$id'
     | '/_auth/_lobby/'
     | '/_auth/clubs/'
+    | '/_auth/_lobby/_connected/songs'
     | '/_auth/_no-lobby/join/$id'
     | '/_auth/_no-lobby/join/'
   fileRoutesById: FileRoutesById
@@ -323,6 +354,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthClubsIdRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/_lobby/players': {
+      id: '/_auth/_lobby/players'
+      path: '/players'
+      fullPath: '/players'
+      preLoaderRoute: typeof AuthLobbyPlayersRouteImport
+      parentRoute: typeof AuthLobbyRoute
+    }
+    '/_auth/_lobby/_connected': {
+      id: '/_auth/_lobby/_connected'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthLobbyConnectedRouteImport
+      parentRoute: typeof AuthLobbyRoute
+    }
     '/_auth/_no-lobby/join/': {
       id: '/_auth/_no-lobby/join/'
       path: '/join'
@@ -337,14 +382,36 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthNoLobbyJoinIdRouteImport
       parentRoute: typeof AuthNoLobbyRoute
     }
+    '/_auth/_lobby/_connected/songs': {
+      id: '/_auth/_lobby/_connected/songs'
+      path: '/songs'
+      fullPath: '/songs'
+      preLoaderRoute: typeof AuthLobbyConnectedSongsRouteImport
+      parentRoute: typeof AuthLobbyConnectedRoute
+    }
   }
 }
 
+interface AuthLobbyConnectedRouteChildren {
+  AuthLobbyConnectedSongsRoute: typeof AuthLobbyConnectedSongsRoute
+}
+
+const AuthLobbyConnectedRouteChildren: AuthLobbyConnectedRouteChildren = {
+  AuthLobbyConnectedSongsRoute: AuthLobbyConnectedSongsRoute,
+}
+
+const AuthLobbyConnectedRouteWithChildren =
+  AuthLobbyConnectedRoute._addFileChildren(AuthLobbyConnectedRouteChildren)
+
 interface AuthLobbyRouteChildren {
+  AuthLobbyConnectedRoute: typeof AuthLobbyConnectedRouteWithChildren
+  AuthLobbyPlayersRoute: typeof AuthLobbyPlayersRoute
   AuthLobbyIndexRoute: typeof AuthLobbyIndexRoute
 }
 
 const AuthLobbyRouteChildren: AuthLobbyRouteChildren = {
+  AuthLobbyConnectedRoute: AuthLobbyConnectedRouteWithChildren,
+  AuthLobbyPlayersRoute: AuthLobbyPlayersRoute,
   AuthLobbyIndexRoute: AuthLobbyIndexRoute,
 }
 

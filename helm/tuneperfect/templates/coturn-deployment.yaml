@@ -1,0 +1,53 @@
+{{- if .Values.coturn.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-coturn
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "tuneperfect.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: coturn
+  template:
+    metadata:
+      labels:
+        {{- include "tuneperfect.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: coturn
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: coturn
+          image: "{{ .Values.coturn.image.repository }}:{{ .Values.coturn.image.tag }}"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              /usr/bin/turnserver \
+                --listening-port={{ .Values.coturn.listeningPort }} \
+                --tls-listening-port={{ .Values.coturn.tlsListeningPort }} \
+                --realm={{ .Values.coturn.realm }} \
+                --server-name={{ .Values.coturn.realm }} \
+                --user=${TURN_USERNAME}:${TURN_CREDENTIAL} \
+                --min-port={{ .Values.coturn.minPort }} \
+                --max-port={{ .Values.coturn.maxPort }} \
+                {{- if .Values.coturn.externalIp }}
+                --external-ip={{ .Values.coturn.externalIp }} \
+                {{- end }}
+                --no-cli \
+                --no-multicast-peers \
+                --verbose \
+                --log-file=stdout
+          env:
+            - name: TURN_USERNAME
+              value: "{{ .Values.coturn.username }}"
+            - name: TURN_CREDENTIAL
+              value: "{{ .Values.coturn.credential }}"
+          {{- if .Values.coturn.resources }}
+          resources:
+            {{- toYaml .Values.coturn.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

@@ -183,3 +183,30 @@ apps:
         - hosts:
             - "api.tuneperfect.localhost"
           secretName: "api-tls"
+
+coturn:
+  enabled: true
+  image:
+    repository: coturn/coturn
+    tag: "4"
+  
+  realm: "tuneperfect.localhost"
+  stunUrl: "stun:stun.tuneperfect.localhost:3478"
+  turnUrl: "turn:turn.tuneperfect.localhost:3478"
+  username: "tuneperfect"
+  credential: "tuneperfect"
+  
+  listeningPort: 3478
+  tlsListeningPort: 5349
+  
+  # Larger range supports more concurrent connections
+  minPort: 49152
+  maxPort: 65535
+  
+  # Optional - coturn auto-detects if not set
+  externalIp: ""
+  
+  # resources:
+  #   limits:
+  #     cpu: 500m
+  #     memory: 256Mi

@@ -53,17 +53,21 @@
         "@iconify-json/lucide": "^1.2.85",
         "@kobalte/core": "^0.13.11",
         "@orpc/client": "^1.13.4",
+        "@orpc/server": "^1.13.4",
         "@orpc/solid-query": "^1.13.4",
         "@orpc/tanstack-query": "^1.13.4",
         "@solid-primitives/event-dispatcher": "^0.1.1",
         "@solid-primitives/event-listener": "^2.4.3",
         "@solid-primitives/i18n": "^2.2.1",
+        "@solid-primitives/scheduled": "^1.4.4",
         "@solid-primitives/storage": "^4.3.3",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/solid-form": "^1.27.7",
         "@tanstack/solid-query": "^5.90.21",
         "@tanstack/solid-router": "^1.150.0",
+        "@tuneperfect/webrtc": "*",
         "cva": "^1.0.0-beta.4",
+        "minisearch": "^7.1.2",
         "solid-js": "^1.9.10",
         "tailwindcss": "^4.1.18",
         "ufo": "^1.6.3",
@@ -86,6 +90,8 @@
         "@iconify-json/circle-flags": "^1.2.10",
         "@iconify-json/lucide": "^1.2.85",
         "@kobalte/core": "^0.13.11",
+        "@orpc/client": "^1.13.4",
+        "@orpc/server": "^1.13.4",
         "@solid-primitives/event-listener": "^2.4.3",
         "@solid-primitives/i18n": "^2.2.1",
         "@solid-primitives/keyed": "^1.5.2",
@@ -115,6 +121,7 @@
         "@tauri-apps/plugin-updater": "~2.9.0",
         "@tauri-apps/plugin-window-state": "^2.4.1",
         "@tuneperfect/api": "*",
+        "@tuneperfect/webrtc": "*",
         "clsx": "^2.1.1",
         "cva": "^1.0.0-beta.4",
         "date-fns": "^4.1.0",
@@ -197,6 +204,21 @@
       "devDependencies": {
         "@types/react": "^19.2.8",
         "react-email": "^4.3.2",
+      },
+      "peerDependencies": {
+        "typescript": "^5.0.0",
+      },
+    },
+    "packages/webrtc": {
+      "name": "@tuneperfect/webrtc",
+      "dependencies": {
+        "@orpc/client": "^1.13.4",
+        "@orpc/contract": "^1.13.4",
+        "@orpc/server": "^1.13.4",
+        "@orpc/shared": "^1.13.4",
+        "@orpc/standard-server": "^1.13.4",
+        "@orpc/standard-server-peer": "^1.13.4",
+        "valibot": "^1.2.0",
       },
       "peerDependencies": {
         "typescript": "^5.0.0",
@@ -1091,6 +1113,8 @@
     "@tuneperfect/game": ["@tuneperfect/game@workspace:apps/game"],
 
     "@tuneperfect/web": ["@tuneperfect/web@workspace:apps/web"],
+
+    "@tuneperfect/webrtc": ["@tuneperfect/webrtc@workspace:packages/webrtc"],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 

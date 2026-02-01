@@ -10,7 +10,8 @@ const de: Dict = {
     emailInvalid: "Ungültige E-Mail",
     passwordMinLength: "Passwort muss mindestens 6 Zeichen lang sein",
     invalidEmailOrPassword: "Ungültige E-Mail oder Passwort",
-    oauthUnverifiedEmailExists: "Ein unbestätigtes Konto mit dieser E-Mail existiert bereits. Bitte überprüfe dein Postfach, um deine E-Mail zu bestätigen, oder nutze die Passwort-Zurücksetzen-Funktion, falls du keinen Zugriff mehr hast.",
+    oauthUnverifiedEmailExists:
+      "Ein unbestätigtes Konto mit dieser E-Mail existiert bereits. Bitte überprüfe dein Postfach, um deine E-Mail zu bestätigen, oder nutze die Passwort-Zurücksetzen-Funktion, falls du keinen Zugriff mehr hast.",
     or: "Oder",
     noAccount: "Noch kein Konto?",
     signUp: "Registrieren",
@@ -195,9 +196,15 @@ const de: Dict = {
     lobby: "Lobby",
     join: "Beitreten",
     clubs: "Clubs",
+    songs: "Songs",
   },
   lobby: {
     title: "Lobby",
+    connected: "Mit Spiel verbunden",
+    playersTitle: "Spieler",
+    playersDescription: "Spieler in der Lobby anzeigen und einladen",
+    songsTitle: "Songs",
+    songsDescription: "Verfügbare Songs vom Spiel durchsuchen",
     inviteToClub: "Zu Club einladen",
     selectClub: "Club auswählen",
     selectClubDescription: "Wähle den Club aus, zu dem du {{ username }} einladen möchtest:",
@@ -207,6 +214,16 @@ const de: Dict = {
     noClubsToInvite: "Du hast keine Berechtigung, Mitglieder zu Clubs einzuladen",
     noUsers: "Niemand sonst ist hier",
     noUsersDescription: "Du bist derzeit der Einzige in der Lobby.",
+  },
+  songs: {
+    title: "Songs",
+    connecting: "Verbinde mit Spiel...",
+    connectionFailed: "Verbindung zum Spiel fehlgeschlagen",
+    connectionTrouble: "Verbindungsprobleme zum Spiel. Versuche weiter...",
+    retry: "Erneut versuchen",
+    noSongs: "Keine Songs verfügbar",
+    noSongsDescription: "Das Spiel hat noch keine Songs geteilt.",
+    searchPlaceholder: "Songs suchen...",
   },
 };
 

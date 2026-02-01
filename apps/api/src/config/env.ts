@@ -26,6 +26,10 @@ const ConfigSchema = v.object({
   UPLOADS_PATH: v.fallback(v.pipe(v.string(), v.nonEmpty()), "./uploads"),
   VERSION: v.string(),
   GITHUB_REPO: v.optional(v.string()),
+  STUN_URL: v.optional(v.string(), "stun:stun.l.google.com:19302"),
+  TURN_URL: v.optional(v.string()),
+  TURN_USERNAME: v.optional(v.string()),
+  TURN_CREDENTIAL: v.optional(v.string()),
 });
 
 const result = v.safeParse(ConfigSchema, process.env);

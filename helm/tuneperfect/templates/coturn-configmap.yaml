@@ -1,0 +1,10 @@
+{{- if .Values.coturn.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-coturn-config
+  namespace: {{ .Release.Namespace }}
+data:
+  STUN_URL: "{{ .Values.coturn.stunUrl }}"
+  TURN_URL: "{{ .Values.coturn.turnUrl }}"
+{{- end }}
