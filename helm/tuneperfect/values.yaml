@@ -157,10 +157,6 @@ apps:
           name: redis-credentials
       - secretRef:
           name: api-credentials
-      - configMapRef:
-          name: "{{ include \"tuneperfect.fullname\" . }}-coturn-config"
-      - secretRef:
-          name: coturn-credentials
     # secrets: 
     #   - my-secret-name
     replicaCount: 1

@@ -46,7 +46,7 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- if or $appConfig.secrets $appConfig.envFrom }}
+          {{- if or $appConfig.secrets $appConfig.envFrom (and (eq $appName "api") $.Values.coturn.enabled) }}
           envFrom:
             {{- if $appConfig.envFrom }}
             {{- toYaml $appConfig.envFrom | nindent 12 }}
@@ -56,6 +56,12 @@ spec:
             - secretRef:
                 name: {{ $secretName }}
             {{- end }}
+            {{- end }}
+            {{- if and (eq $appName "api") $.Values.coturn.enabled }}
+            - configMapRef:
+                name: {{ include "tuneperfect.fullname" $ }}-coturn-config
+            - secretRef:
+                name: coturn-credentials
             {{- end }}
           {{- end }}
           {{- if $appConfig.resources }}
