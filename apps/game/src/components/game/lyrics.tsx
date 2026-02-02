@@ -47,13 +47,17 @@ export default function Lyrics(props: LyricsProps) {
     return microphone ? `var(--color-${microphone.color}-500)` : "var(--color-white)";
   });
 
+  const isCompact = () => game.playerCount() > 2;
+
   return (
     <div
       class="w-full bg-black/70 transition-opacity duration-500"
       classList={{
         "opacity-0": !voiceTracker.phrase(),
-        "rounded-b-xl pt-[1.2cqh] pb-[0.8cqh]": props.position === "top",
-        "rounded-t-xl pb-[1.8cqh]": props.position === "bottom",
+        "rounded-b-xl pt-[1.2cqh] pb-[0.8cqh]": props.position === "top" && !isCompact(),
+        "rounded-t-xl pb-[1.8cqh]": props.position === "bottom" && !isCompact(),
+        "rounded-b-xl pt-[0.8cqh] pb-[0.4cqh]": props.position === "top" && isCompact(),
+        "rounded-t-xl pb-[1.2cqh]": props.position === "bottom" && isCompact(),
       }}
     >
       <div class="grid grid-cols-[1fr_max-content_1fr]">
@@ -73,16 +77,23 @@ export default function Lyrics(props: LyricsProps) {
         </div>
         <div>
           <Key
-            fallback={<span class="text-4xl text-transparent leading-relaxed">{"\u00A0"}</span>}
+            fallback={
+              <span
+                class="text-transparent leading-relaxed"
+                classList={{ "text-4xl": !isCompact(), "text-3xl": isCompact() }}
+              >
+                {"\u00A0"}
+              </span>
+            }
             each={voiceTracker.phrase()?.notes}
             by={(note) => note.startBeat}
           >
-            {(note) => <LyricsNote note={note()} color={lyricsColor()} />}
+            {(note) => <LyricsNote note={note()} color={lyricsColor()} compact={isCompact()} />}
           </Key>
         </div>
         <div />
       </div>
-      <div class="text-center text-3xl text-white/50">
+      <div class="text-center text-white/50" classList={{ "text-3xl": !isCompact(), "text-2xl": isCompact() }}>
         <For fallback={<span class="text-transparent">{"\u00A0"}</span>} each={voiceTracker.nextPhrase()?.notes}>
           {(note) => (
             <span
@@ -103,6 +114,7 @@ export default function Lyrics(props: LyricsProps) {
 interface LyricsNoteProps {
   note: Note;
   color: string;
+  compact?: boolean;
 }
 
 function LyricsNote(props: LyricsNoteProps) {
@@ -121,9 +133,11 @@ function LyricsNote(props: LyricsNoteProps) {
       style={{
         "background-image": `linear-gradient(to right, ${props.color} ${percentage()}%, white ${percentage()}%)`,
       }}
-      class="inline-block whitespace-pre bg-clip-text text-4xl text-transparent leading-relaxed"
+      class="inline-block whitespace-pre bg-clip-text text-transparent leading-relaxed"
       classList={{
         "m-[-0.15cqw] p-[0.15cqw] italic": props.note.type === "Freestyle",
+        "text-4xl": !props.compact,
+        "text-3xl": props.compact,
       }}
     >
       {props.note.text}

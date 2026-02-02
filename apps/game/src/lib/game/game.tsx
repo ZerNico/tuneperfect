@@ -23,7 +23,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
   const [scores, setScores] = createSignal<Score[]>([]);
-  const [preferInstrumental, setPreferInstrumental] = createSignal(settingsStore.general().audioMode === "preferInstrumental");
+  const [preferInstrumental, setPreferInstrumental] = createSignal(
+    settingsStore.general().audioMode === "preferInstrumental",
+  );
+  const [pitches, setPitches] = createSignal<number[]>([]);
 
   const start = async () => {
     const opts = options();
@@ -136,6 +139,18 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     });
   });
 
+  const flooredBeat = () => Math.floor(beat());
+
+  createEffect(async () => {
+    flooredBeat();
+    if (!started() || !playing()) return;
+
+    const result = await commands.getPitches();
+    if (result.status === "ok") {
+      setPitches(result.data);
+    }
+  });
+
   createEffect(() => {
     if (!started()) {
       return;
@@ -147,6 +162,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       stopLoop();
     }
   });
+
+  const playerCount = () => roundStore.settings()?.songs[0]?.players.filter(Boolean).length ?? 0;
 
   const addScore = (index: number, type: "normal" | "golden" | "bonus", value: number) => {
     setScores((prev) => {
@@ -181,6 +198,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     resetScores: () => setScores([]),
     preferInstrumental,
     setPreferInstrumental,
+    pitches,
+    playerCount,
   };
 
   const Provider = (props: { children: JSX.Element }) => <GameProvider value={values}>{props.children}</GameProvider>;

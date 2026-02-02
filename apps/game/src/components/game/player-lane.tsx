@@ -8,7 +8,6 @@ import Score from "./score";
 
 interface PlayerLaneProps {
   index: number;
-  playerCount: number;
   position: "top" | "bottom";
 }
 
@@ -17,6 +16,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
     index: props.index,
   }));
   const game = useGame();
+  const isCompact = () => game.playerCount() > 2;
 
   const [shouldHide, setShouldHide] = createSignal(false);
 
@@ -55,7 +55,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
             "transition-opacity duration-2000": !shouldHide(),
           }}
         >
-          <Pitch playerCount={props.playerCount} />
+          <Pitch />
         </div>
         <div
           class="absolute right-0 left-0 flex items-center justify-between px-20 py-4"
@@ -64,12 +64,24 @@ export default function PlayerLane(props: PlayerLaneProps) {
             "bottom-0": props.position === "top",
           }}
         >
-          <div class="flex items-center gap-4">
+          <div
+            class="flex items-center"
+            classList={{
+              "gap-4": !isCompact(),
+              "gap-2": isCompact(),
+            }}
+          >
             <Show when={player()}>
               {(player) => (
                 <>
-                  <Avatar user={player()} />
-                  <span>{player()?.username}</span>
+                  <Avatar user={player()} class={isCompact() ? "h-8 w-8" : ""} />
+                  <span
+                    classList={{
+                      "text-sm": isCompact(),
+                    }}
+                  >
+                    {player()?.username}
+                  </span>
                 </>
               )}
             </Show>

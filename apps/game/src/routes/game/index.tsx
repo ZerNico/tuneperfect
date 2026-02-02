@@ -162,7 +162,7 @@ function GameComponent() {
                     <For each={topPlayers()}>
                       {(_, index) => (
                         <>
-                          <PlayerLane index={index()} playerCount={playerCount()} position="top" />
+                          <PlayerLane index={index()} position="top" />
                           <Show when={index() < topPlayerCount() - 1}>
                             <div class="h-px bg-white/20" />
                           </Show>
@@ -184,7 +184,7 @@ function GameComponent() {
                             <Show when={index() > 0}>
                               <div class="h-px bg-white/20" />
                             </Show>
-                            <PlayerLane index={actualIndex()} playerCount={playerCount()} position="bottom" />
+                            <PlayerLane index={actualIndex()} position="bottom" />
                           </>
                         );
                       }}

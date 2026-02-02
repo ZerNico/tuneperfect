@@ -1,6 +1,5 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { type Accessor, createEffect, createMemo, createSignal, type JSX } from "solid-js";
-import { commands } from "~/bindings";
+import { type Accessor, createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
@@ -126,56 +125,67 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     totalBeats = 0;
   };
 
-  createEffect(async () => {
-    const flooredBeat = delayedFlooredBeat();
+  let lastProcessedBeat = -1;
 
-    const beatInfo = beats().get(flooredBeat);
+  createEffect(
+    on(
+      () => game.pitches(),
+      (allPitches) => {
+        const flooredBeat = delayedFlooredBeat();
 
-    if (!beatInfo) {
-      return;
-    }
+        if (flooredBeat === lastProcessedBeat) {
+          return;
+        }
+        lastProcessedBeat = flooredBeat;
 
-    const noteScore = getNoteScore(beatInfo.note);
+        const beatInfo = beats().get(flooredBeat);
 
-    if (noteScore > 0) {
-      totalBeats++;
+        if (!beatInfo) {
+          return;
+        }
 
-      const result = await commands.getPitch(options().index);
+        const noteScore = getNoteScore(beatInfo.note);
 
-      if (result.status !== "error") {
-        const { midiNote, rawMidiNote } = pitchProcessor.process(result.data, beatInfo.note);
+        if (noteScore > 0) {
+          totalBeats++;
 
-        const isRap = beatInfo.note.type.startsWith("Rap");
+          const pitch = allPitches[options().index];
 
-        // Determine if the note was sung correctly
-        const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
+          if (pitch !== undefined && pitch > 0) {
+            const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
 
-        if (isCorrect) {
-          correctBeats++;
+            const isRap = beatInfo.note.type.startsWith("Rap");
 
-          if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
-            addScore("golden", noteScore);
-          } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
-            addScore("normal", noteScore);
+            const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
+
+            if (isCorrect) {
+              correctBeats++;
+
+              if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
+                addScore("golden", noteScore);
+              } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
+                addScore("normal", noteScore);
+              }
+            }
+
+            if (midiNote > 0) {
+              processedBeats.set(flooredBeat, {
+                note: beatInfo.note,
+                midiNote: isRap ? beatInfo.note.midiNote : midiNote,
+                rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
+                isFirstInPhrase: beatInfo.isFirstInPhrase,
+                isFirstInNote: beatInfo.isFirstInNote,
+              });
+            }
           }
         }
 
-        if (midiNote > 0) {
-          processedBeats.set(flooredBeat, {
-            note: beatInfo.note,
-            midiNote: isRap ? beatInfo.note.midiNote : midiNote,
-            rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
-            isFirstInPhrase: beatInfo.isFirstInPhrase,
-            isFirstInNote: beatInfo.isFirstInNote,
-          });
+        if (beatInfo.isLastInPhrase) {
+          awardBonus();
         }
-      }
-    }
-
-    if (beatInfo.isLastInPhrase) {
-      awardBonus();
-    }
-  });
+      },
+    ),
+  );
 
   const addScore = (type: "normal" | "golden" | "bonus", value: number) => {
     game.addScore(options().index, type, value);
@@ -198,7 +208,9 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     score,
   };
 
-  const Provider = (props: { children: JSX.Element }) => <PlayerProvider value={values}>{props.children}</PlayerProvider>;
+  const Provider = (props: { children: JSX.Element }) => (
+    <PlayerProvider value={values}>{props.children}</PlayerProvider>
+  );
 
   return {
     ...values,

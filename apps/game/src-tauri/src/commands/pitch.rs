@@ -3,6 +3,7 @@ use crate::{
     error::AppError,
     AppState,
 };
+use futures::future::join_all;
 use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
@@ -56,23 +57,42 @@ pub fn stop_recording(state: State<'_, AppState>) -> Result<(), AppError> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_pitch(state: State<'_, AppState>, index: i32) -> Result<f32, AppError> {
-    let processors = state.processors.read()
-        .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
+pub async fn get_pitches(state: State<'_, AppState>) -> Result<Vec<f32>, AppError> {
+    let futures = {
+        let processors = state.processors.read()
+            .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
 
-    let processor = processors
-        .get(&(index as usize))
-        .ok_or(AppError::ProcessorError("processor not found".to_string()))?;
-    
-    let pitch = match processor.lock() {
-        Ok(mut processor) => processor.get_pitch(),
-        Err(poisoned) => {
-            // Handle poisoned mutex by recovering the data
-            eprintln!("Mutex poisoned for processor {}, attempting recovery during pitch read", index);
-            let mut processor = poisoned.into_inner();
-            processor.get_pitch()
+        let mut processor_refs: Vec<_> = Vec::new();
+        let mut index = 0;
+        while let Some(processor) = processors.get(&index) {
+            processor_refs.push((index, processor.clone()));
+            index += 1;
         }
+
+        processor_refs
+            .into_iter()
+            .map(|(idx, processor)| {
+                tokio::task::spawn_blocking(move || {
+                    match processor.lock() {
+                        Ok(mut p) => (idx, p.get_pitch()),
+                        Err(poisoned) => {
+                            eprintln!("Mutex poisoned for processor {}, attempting recovery", idx);
+                            (idx, poisoned.into_inner().get_pitch())
+                        }
+                    }
+                })
+            })
+            .collect::<Vec<_>>()
     };
 
-    Ok(pitch)
+    let mut results: Vec<(usize, f32)> = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|r: Result<(usize, f32), _>| r.ok())
+        .collect();
+
+    results.sort_by_key(|(idx, _)| *idx);
+    let pitches: Vec<f32> = results.into_iter().map(|(_, pitch)| pitch).collect();
+
+    Ok(pitches)
 }

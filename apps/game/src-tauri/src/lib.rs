@@ -39,7 +39,7 @@ pub fn run() {
             microphones::get_microphones,
             pitch::start_recording,
             pitch::stop_recording,
-            pitch::get_pitch,
+            pitch::get_pitches,
             media_server::get_media_server_base_url,
             songs::parse_songs_from_paths,
         ])

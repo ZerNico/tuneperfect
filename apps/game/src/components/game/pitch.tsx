@@ -1,18 +1,17 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, createSignal, For, Show } from "solid-js";
+import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
 import { settingsStore } from "~/stores/settings";
 
-interface PitchProps {
-  playerCount: number;
-}
-
-export default function Pitch(props: PitchProps) {
+export default function Pitch() {
+  const game = useGame();
   const player = usePlayer();
-  const ROW_COUNT = props.playerCount <= 2 ? 16 : 12;
+  const isCompact = () => game.playerCount() > 2;
+  const ROW_COUNT = isCompact() ? 12 : 16;
 
   const averageNote = createMemo(() => {
     const phrase = player.phrase();
@@ -177,7 +176,7 @@ export default function Pitch(props: PitchProps) {
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   return (
-    <div class="grid grow px-48 py-[2cqh]">
+    <div class="grid grow" classList={{ "px-60 py-[2cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
       <div
         style={{
           "grid-template-rows": `repeat(${ROW_COUNT},1fr)`,
