@@ -154,7 +154,7 @@ function PlayerSelectionComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("select.title")} />}
+      header={<TitleBar title={t("select.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
       background={
         <Show when={songs().length === 1 && songs()[0]} fallback={<div />}>
@@ -361,16 +361,17 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
     }
   };
 
-  const playerMenuItems = createMemo((): MenuItem[] => {
-    const items: MenuItem[] = [];
-
+  const users = createMemo(() => {
     const guestUser: GuestUser = {
       id: "guest",
       username: t("common.players.guest"),
       type: "guest",
     };
+    return [guestUser, ...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || [])];
+  });
 
-    const users = () => [guestUser, ...lobbyStore.localPlayersInLobby(), ...(lobbyQuery.data?.users || [])];
+  const playerMenuItems = createMemo((): MenuItem[] => {
+    const items: MenuItem[] = [];
 
     if (isDuet()) {
       items.push({
