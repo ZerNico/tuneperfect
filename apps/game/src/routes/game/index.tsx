@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import GameLayout from "~/components/game/game-layout";
-import Half from "~/components/game/half";
+import Lyrics from "~/components/game/lyrics";
 import PauseMenu from "~/components/game/pause-menu";
+import PlayerLane from "~/components/game/player-lane";
 import Progress from "~/components/game/progress";
 import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
@@ -24,11 +25,23 @@ function GameComponent() {
 
   const roundSong = () => roundStore.settings()?.songs[0];
 
-  const { GameProvider, start, stop, pause, resume, playing, started, scores, skip, setPreferInstrumental, preferInstrumental, resetScores } =
-    createGame(() => ({
-      songPlayerRef: songPlayerRef(),
-      song: roundSong()?.song,
-    }));
+  const {
+    GameProvider,
+    start,
+    stop,
+    pause,
+    resume,
+    playing,
+    started,
+    scores,
+    skip,
+    setPreferInstrumental,
+    preferInstrumental,
+    resetScores,
+  } = createGame(() => ({
+    songPlayerRef: songPlayerRef(),
+    song: roundSong()?.song,
+  }));
 
   const paused = () => !playing() && started();
 
@@ -88,6 +101,33 @@ function GameComponent() {
     roundActions.returnRound();
   };
 
+  const players = createMemo(() => roundSong()?.players.filter(Boolean) || []);
+  const playerCount = createMemo(() => players().length);
+
+  const voiceAssignments = createMemo(() => roundSong()?.voice || []);
+  const voiceCount = createMemo(() => roundSong()?.song.voices.length || 1);
+
+  const topVoice = createMemo(() => voiceAssignments()[0] ?? 0);
+  const bottomVoice = createMemo(() => {
+    if (voiceCount() > 1) {
+      return topVoice() === 0 ? 1 : 0;
+    }
+    return topVoice();
+  });
+
+  const useQuadLayout = createMemo(() => playerCount() >= 3);
+  const topPlayerCount = createMemo(() => (useQuadLayout() ? 2 : 1));
+  const bottomPlayerCount = createMemo(() => (useQuadLayout() ? 2 : 1));
+
+  const topPlayers = createMemo(() => players().slice(0, topPlayerCount()));
+  const bottomPlayers = createMemo(() => {
+    const count = playerCount();
+    if (count === 3) {
+      return players().slice(topPlayerCount(), topPlayerCount() + 1);
+    }
+    return players().slice(topPlayerCount(), topPlayerCount() + bottomPlayerCount());
+  });
+
   return (
     <GameLayout>
       <GameProvider>
@@ -114,21 +154,59 @@ function GameComponent() {
                     mode={roundSong()?.mode}
                   />
                 </div>
-                <div class="relative z-1 grid h-full grow grid-rows-[1fr_1fr]">
-                  <Show when={roundSong()?.players[0]}>
-                    <Half index={0} />
-                  </Show>
-                  <Show when={roundSong()?.players[1]}>
-                    <Half index={1} />
-                  </Show>
-                </div>
-                <div class="absolute inset-0">
-                  <Progress />
+
+                <div class="relative z-1 flex h-full grow flex-col">
+                  <Lyrics voiceIndex={topVoice()} position="top" />
+
+                  <div class="flex flex-grow flex-col" style={{ flex: topPlayerCount() }}>
+                    <For each={topPlayers()}>
+                      {(_, index) => (
+                        <>
+                          <PlayerLane index={index()} playerCount={playerCount()} position="top" />
+                          <Show when={index() < topPlayerCount() - 1}>
+                            <div class="h-px bg-white/20" />
+                          </Show>
+                        </>
+                      )}
+                    </For>
+                  </div>
+
+                  <div class="relative z-10 h-10">
+                    <Progress />
+                  </div>
+
+                  <div class="flex flex-grow flex-col" style={{ flex: useQuadLayout() ? 2 : 1 }}>
+                    <For each={bottomPlayers()}>
+                      {(_, index) => {
+                        const actualIndex = () => topPlayerCount() + index();
+                        return (
+                          <>
+                            <Show when={index() > 0}>
+                              <div class="h-px bg-white/20" />
+                            </Show>
+                            <PlayerLane index={actualIndex()} playerCount={playerCount()} position="bottom" />
+                          </>
+                        );
+                      }}
+                    </For>
+                    <Show when={playerCount() === 3}>
+                      <div class="h-px bg-white/20" />
+                      <div class="flex-1" />
+                    </Show>
+                  </div>
+
+                  <Lyrics voiceIndex={bottomVoice()} position="bottom" />
                 </div>
               </div>
 
               <Show when={paused()}>
-                <PauseMenu class="absolute inset-0" onClose={resume} onExit={handleEnded} onRestart={handleRestart} gradient={gradient()} />
+                <PauseMenu
+                  class="absolute inset-0"
+                  onClose={resume}
+                  onExit={handleEnded}
+                  onRestart={handleRestart}
+                  gradient={gradient()}
+                />
               </Show>
 
               <div
@@ -145,7 +223,9 @@ function GameComponent() {
                 <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">
                   <p class="text-3xl">{roundSong()?.song.artist}</p>
                   <div class="max-w-200">
-                    <span class={`${gradient()} bg-linear-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}>
+                    <span
+                      class={`${gradient()} bg-linear-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}
+                    >
                       {roundSong()?.song.title}
                     </span>
                   </div>

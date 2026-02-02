@@ -6,10 +6,13 @@ import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
 import { settingsStore } from "~/stores/settings";
 
-const ROW_COUNT = 16;
+interface PitchProps {
+  playerCount: number;
+}
 
-export default function Pitch() {
+export default function Pitch(props: PitchProps) {
   const player = usePlayer();
+  const ROW_COUNT = props.playerCount <= 2 ? 16 : 12;
 
   const averageNote = createMemo(() => {
     const phrase = player.phrase();
@@ -174,13 +177,7 @@ export default function Pitch() {
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   return (
-    <div
-      class="grid grow px-48"
-      classList={{
-        "pt-[2cqh] pb-[8cqh]": player.index() === 0,
-        "pt-[8cqh] pb-[2cqh]": player.index() === 1,
-      }}
-    >
+    <div class="grid grow px-48 py-[2cqh]">
       <div
         style={{
           "grid-template-rows": `repeat(${ROW_COUNT},1fr)`,
@@ -360,7 +357,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
     for (let i = 1; i < currentPoints.length; i++) {
       const p0 = currentPoints[i - 1];
       const p1 = currentPoints[i];
-      
+
       if (!p0 || !p1) continue;
 
       const midX = (p0.x + p1.x) / 2;

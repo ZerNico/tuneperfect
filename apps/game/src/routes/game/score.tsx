@@ -213,7 +213,7 @@ function ScoreComponent() {
                 <HighscoreList scores={highscores()} class="h-full w-100 max-w-full" />
               </div>
             </Show>
-            <div class="flex grow flex-col items-center justify-center gap-4">
+            <div class="flex grow flex-col items-center justify-center gap-2">
               <For each={scoreData()}>
                 {(data) => (
                   <ScoreCard
@@ -223,6 +223,7 @@ function ScoreComponent() {
                     micColor={data.micColor}
                     position={data.position}
                     maxPossibleScore={maxPossibleScore()}
+                    playerCount={scoreData().length}
                   />
                 )}
               </For>
@@ -253,6 +254,7 @@ interface ScoreCardProps {
   position: number;
   animatedStages: ScoreCategory[];
   maxPossibleScore: number;
+  playerCount: number;
 }
 
 function ScoreCard(props: ScoreCardProps) {
@@ -279,7 +281,7 @@ function ScoreCard(props: ScoreCardProps) {
     startValue: number,
     endValue: number,
     setValue: (value: number) => void,
-    duration: number
+    duration: number,
   ): ReturnType<typeof setInterval> => {
     const stepValue = (endValue - startValue) / ANIMATION_STEPS;
     const stepDuration = duration / ANIMATION_STEPS;
@@ -298,7 +300,12 @@ function ScoreCard(props: ScoreCardProps) {
     return interval;
   };
 
-  const animatePercentage = (startValue: number, endValue: number, setValue: (value: number) => void, duration: number): (() => void) => {
+  const animatePercentage = (
+    startValue: number,
+    endValue: number,
+    setValue: (value: number) => void,
+    duration: number,
+  ): (() => void) => {
     const startTime = performance.now();
     let animationFrame: number;
 
@@ -347,14 +354,19 @@ function ScoreCard(props: ScoreCardProps) {
         const targetPercentage = getPercentage(scoreValue);
 
         // Animate the score numbers (slower, stepped)
-        animateCounter(0, scoreValue, (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })), ANIMATION_DURATION);
+        animateCounter(
+          0,
+          scoreValue,
+          (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })),
+          ANIMATION_DURATION,
+        );
 
         // Animate the bar percentages (smooth, requestAnimationFrame)
         const cleanup = animatePercentage(
           0,
           targetPercentage,
           (value) => setAnimatedPercentages((prev) => ({ ...prev, [category]: value })),
-          ANIMATION_DURATION
+          ANIMATION_DURATION,
         );
 
         cleanupFunctions.push(cleanup);
@@ -367,31 +379,89 @@ function ScoreCard(props: ScoreCardProps) {
     });
   });
 
+  const isCompact = () => props.playerCount > 2;
+
   return (
     <div
-      class="flex w-140 flex-col gap-4 rounded-xl p-6 shadow-xl transition-all"
+      class="flex w-140 rounded-xl shadow-xl transition-all"
+      classList={{
+        "flex-col gap-4 p-6": !isCompact(),
+        "flex-row gap-3 p-4": isCompact(),
+      }}
       style={{
         background: `linear-gradient(90deg, ${getColorVar(props.micColor, 600)}, ${getColorVar(props.micColor, 500)})`,
       }}
     >
-      <div class="flex w-full items-center justify-between">
-        <div class="flex items-center gap-3">
-          <Avatar user={props.player} />
-          <div class="font-bold text-lg text-white">{props.player.username}</div>
+      <div
+        class="flex flex-col"
+        classList={{
+          "flex-1 gap-2": isCompact(),
+          "gap-4": !isCompact(),
+        }}
+      >
+        <div class="flex w-full items-center justify-between">
+          <div class="flex items-center gap-3">
+            <Avatar user={props.player} class={isCompact() ? "h-8 w-8" : ""} />
+            <div
+              class="font-bold text-white"
+              classList={{
+                "text-base": isCompact(),
+                "text-lg": !isCompact(),
+              }}
+            >
+              {props.player.username}
+            </div>
+          </div>
+          <div
+            class="font-bold text-white"
+            classList={{
+              "text-2xl": isCompact(),
+              "text-3xl": !isCompact(),
+            }}
+          >
+            {animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}
+          </div>
         </div>
-        <div class="font-bold text-3xl text-white">{animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}</div>
+
+        <div
+          class="w-full overflow-hidden rounded-lg bg-black/20"
+          classList={{
+            "h-6": isCompact(),
+            "h-10": !isCompact(),
+          }}
+        >
+          <div class="flex h-full">
+            <ScoreBar percentage={animatedPercentages().normal} color={getColorVar(props.micColor, 400)} />
+            <ScoreBar percentage={animatedPercentages().golden} color={getColorVar(props.micColor, 300)} />
+            <ScoreBar percentage={animatedPercentages().bonus} color={getColorVar(props.micColor, 50)} />
+          </div>
+        </div>
       </div>
 
-      <div class="flex h-10 w-full overflow-hidden rounded-lg bg-black/20">
-        <ScoreBar percentage={animatedPercentages().normal} color={getColorVar(props.micColor, 400)} />
-        <ScoreBar percentage={animatedPercentages().golden} color={getColorVar(props.micColor, 300)} />
-        <ScoreBar percentage={animatedPercentages().bonus} color={getColorVar(props.micColor, 50)} />
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        <ScoreDetail label={t("score.normal")} value={animatedScores().normal} color={getColorVar(props.micColor, 400)} />
-        <ScoreDetail label={t("score.golden")} value={animatedScores().golden} color={getColorVar(props.micColor, 300)} />
-        <ScoreDetail label={t("score.bonus")} value={animatedScores().bonus} color={getColorVar(props.micColor, 50)} />
+      <div
+        classList={{
+          "grid grid-cols-1 gap-1": isCompact(),
+          "grid grid-cols-3 gap-3": !isCompact(),
+        }}
+      >
+        <ScoreDetail
+          label={t("score.normal")}
+          value={animatedScores().normal}
+          color={getColorVar(props.micColor, 400)}
+          compact={isCompact()}
+        />
+        <ScoreDetail
+          label={t("score.golden")}
+          value={animatedScores().golden}
+          color={getColorVar(props.micColor, 300)}
+          compact={isCompact()}
+        />
+        <ScoreDetail
+          label={t("score.bonus")}
+          value={animatedScores().bonus}
+          color={getColorVar(props.micColor, 50)}
+          compact={isCompact()}
+        />
       </div>
     </div>
   );
@@ -409,13 +479,39 @@ function ScoreBar(props: { percentage: number; color: string }) {
   );
 }
 
-function ScoreDetail(props: { label: string; value: number; color: string }) {
+function ScoreDetail(props: { label: string; value: number; color: string; compact?: boolean }) {
   return (
-    <div class="flex items-center gap-2 rounded-md bg-black/10 px-3 py-1.5">
-      <div class="h-4 w-4 rounded-sm" style={{ "background-color": props.color }} />
-      <div class="flex flex-col">
+    <div
+      class="flex items-center gap-2 rounded-md bg-black/10"
+      classList={{
+        "px-2 py-1": props.compact,
+        "px-3 py-1.5": !props.compact,
+      }}
+    >
+      <div
+        class="rounded-sm"
+        classList={{
+          "h-3 w-3": props.compact,
+          "h-4 w-4": !props.compact,
+        }}
+        style={{ "background-color": props.color }}
+      />
+      <div
+        classList={{
+          "flex min-w-24 flex-row items-center justify-between": props.compact,
+          "flex flex-col": !props.compact,
+        }}
+      >
         <span class="text-white/70 text-xs">{props.label}</span>
-        <span class="font-medium text-sm text-white">{props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+        <span
+          class="font-medium text-white tabular-nums"
+          classList={{
+            "text-xs": props.compact,
+            "text-sm": !props.compact,
+          }}
+        >
+          {props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+        </span>
       </div>
     </div>
   );
