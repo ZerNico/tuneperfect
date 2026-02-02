@@ -2,6 +2,8 @@ import { createMemo, For, Show } from "solid-js";
 import { useGame } from "~/lib/game/game-context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { getColorVar } from "~/lib/utils/color";
+import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 const formatTime = (seconds: number): string => {
@@ -148,8 +150,9 @@ export default function Progress() {
       return "var(--color-white)";
     }
 
-    const microphone = settingsStore.microphones()[leadingPlayerIndex];
-    const color = microphone ? `var(--color-${microphone.color}-500)` : "var(--color-white)";
+    const players = roundStore.settings()?.songs[0]?.players || [];
+    const microphone = players[leadingPlayerIndex]?.microphone;
+    const color = microphone ? getColorVar(microphone.color, 500) : "var(--color-white)";
 
     return color;
   };

@@ -21,7 +21,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const roundSong = () => roundStore.settings()?.songs[0];
 
   const voice = createMemo(() => {
-    const voiceIndex = roundSong()?.voice[options().index];
+    const voiceIndex = roundSong()?.players[options().index]?.voice;
     if (voiceIndex === undefined) {
       return undefined;
     }
@@ -62,7 +62,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   });
 
   const microphone = createMemo(() => {
-    const mic = settingsStore.microphones()[options().index];
+    const mic = roundSong()?.players[options().index]?.microphone;
     if (!mic) {
       throw new Error("Microphone not found");
     }
@@ -192,7 +192,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   };
 
   const score = () => game.scores()[options().index] ?? { normal: 0, golden: 0, bonus: 0 };
-  const player = () => roundSong()?.players[options().index] ?? null;
+  const player = () => roundSong()?.players[options().index]?.player ?? null;
 
   const values: PlayerContextValue = {
     index: () => options().index,

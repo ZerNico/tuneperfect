@@ -124,7 +124,7 @@ export default function Menu(props: MenuProps) {
   };
 
   return (
-    <div class={twMerge("flex h-full max-h-full w-full flex-grow flex-col justify-center", props.class)}>
+    <div class={twMerge("flex h-full max-h-full w-full grow flex-col justify-center", props.class)}>
       <div
         ref={scrollContainer}
         class="styled-scrollbars flex max-h-full flex-col overflow-y-auto"
@@ -137,7 +137,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Button
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     selected={actualIndex() === index()}
@@ -155,7 +155,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Input
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     label={item().label}
@@ -172,7 +172,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Select
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     label={item().label}
@@ -192,7 +192,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Select
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     label={item().label}
@@ -212,7 +212,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Select
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     label={item().label}
@@ -232,7 +232,7 @@ export default function Menu(props: MenuProps) {
                 {(item) => (
                   <Slider
                     ref={setItemRef(index())}
-                    class="flex-shrink-0"
+                    class="shrink-0"
                     layer={props.layer}
                     gradient={props.gradient || "gradient-settings"}
                     label={item().label}
@@ -249,7 +249,7 @@ export default function Menu(props: MenuProps) {
                 )}
               </Match>
               <Match when={item.type === "custom" && item}>
-                {(item) => <div class="flex-shrink-0">{item().render()}</div>}
+                {(item) => <div class="shrink-0">{item().render()}</div>}
               </Match>
             </Switch>
           )}

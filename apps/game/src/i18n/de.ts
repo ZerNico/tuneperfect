@@ -63,6 +63,13 @@ const de = {
     noClub: "Kein Club",
     recreateLobby: "Lobby neu erstellen",
   },
+  select: {
+    title: "Auswahl",
+    addPlayer: "Spieler hinzufügen",
+    start: "Starten",
+    selectPlayer: "Spieler auswählen",
+    playerRequired: "Bitte wähle mindestens einen Spieler aus",
+  },
   sing: {
     title: "Singen",
     songs: "Lieder",

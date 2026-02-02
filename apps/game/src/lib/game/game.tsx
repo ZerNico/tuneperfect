@@ -37,7 +37,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const samplesPerBeat = Math.floor((48000 * beatToMsWithoutGap(opts.song, 1)) / 1000);
     await commands.startRecording(
-      settingsStore.microphones(),
+      roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
       samplesPerBeat,
       settingsStore.general().micPlaybackEnabled,
       settingsStore.volume().micPlayback,
@@ -72,9 +72,11 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTimeMs = playerRef.getCurrentTime() * 1000;
 
-    const usedVoices = roundStore.settings()?.songs[0]?.voice ?? [];
+    const usedVoices = roundStore.settings()?.songs[0]?.players.filter(Boolean).map((p) => p?.voice) ?? [];
 
     for (const voiceIndex of usedVoices) {
+      if (voiceIndex === undefined) continue;
+
       const voice = currentSong.voices[voiceIndex];
       if (!voice) continue;
 
@@ -96,6 +98,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     let nextNoteTime: number | null = null;
 
     for (const voiceIndex of usedVoices) {
+      if (voiceIndex === undefined) continue;
       const voice = currentSong.voices[voiceIndex];
       if (!voice) continue;
 

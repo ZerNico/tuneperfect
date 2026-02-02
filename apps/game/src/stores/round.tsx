@@ -3,11 +3,17 @@ import { createSignal } from "solid-js";
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import type { Microphone } from "./settings";
+
+export interface PlayerSelection {
+  player: User;
+  voice: number;
+  microphone: Microphone;
+}
 
 interface QueuedSong {
   song: LocalSong;
-  voice: number[];
-  players: (User | undefined)[];
+  players: PlayerSelection[];
   mode: "regular" | "medley";
 }
 

@@ -74,7 +74,7 @@ function ScoreComponent() {
       const totalScore: Score = { normal: 0, golden: 0, bonus: 0 };
 
       for (const res of currentResults) {
-        const voiceIndex = res.song.voice[index];
+        const voiceIndex = res.song.players[index]?.voice;
         if (voiceIndex === undefined) continue;
 
         const voice = res.song.song.voices[voiceIndex];
@@ -89,11 +89,10 @@ function ScoreComponent() {
         totalScore.bonus += relativeScore.bonus;
       }
 
-      const micColor = settingsStore.microphones()[index]?.color;
-      if (!micColor) continue;
+      const micColor = player.microphone.color;
 
       result.push({
-        player,
+        player: player.player,
         score: totalScore,
         totalScore: Math.floor(totalScore.normal + totalScore.golden + totalScore.bonus),
         micColor,

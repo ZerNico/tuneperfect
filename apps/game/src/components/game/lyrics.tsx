@@ -6,7 +6,6 @@ import { msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
 import { roundStore } from "~/stores/round";
-import { settingsStore } from "~/stores/settings";
 
 interface LyricsProps {
   voiceIndex: number;
@@ -38,12 +37,9 @@ export default function Lyrics(props: LyricsProps) {
   });
 
   const lyricsColor = createMemo(() => {
-    const voiceAssignments = roundStore.settings()?.songs[0]?.voice || [];
-    const playerIndex = voiceAssignments.findIndex((v) => v === props.voiceIndex);
-    if (playerIndex === -1) {
-      return "var(--color-white)";
-    }
-    const microphone = settingsStore.microphones()[playerIndex];
+    const players = roundStore.settings()?.songs[0]?.players || [];
+    const playerIndex = props.position === "top" ? 0 : players.length - 1;
+    const microphone = players.at(playerIndex)?.microphone;
     return microphone ? `var(--color-${microphone.color}-500)` : "var(--color-white)";
   });
 

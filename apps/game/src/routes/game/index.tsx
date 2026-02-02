@@ -101,13 +101,12 @@ function GameComponent() {
     roundActions.returnRound();
   };
 
-  const players = createMemo(() => roundSong()?.players.filter(Boolean) || []);
+  const players = createMemo(() => roundSong()?.players || []);
   const playerCount = createMemo(() => players().length);
 
-  const voiceAssignments = createMemo(() => roundSong()?.voice || []);
   const voiceCount = createMemo(() => roundSong()?.song.voices.length || 1);
 
-  const topVoice = createMemo(() => voiceAssignments()[0] ?? 0);
+  const topVoice = createMemo(() => players()[0]?.voice ?? 0);
   const bottomVoice = createMemo(() => {
     if (voiceCount() > 1) {
       return topVoice() === 0 ? 1 : 0;
@@ -158,7 +157,7 @@ function GameComponent() {
                 <div class="relative z-1 flex h-full grow flex-col">
                   <Lyrics voiceIndex={topVoice()} position="top" />
 
-                  <div class="flex flex-grow flex-col" style={{ flex: topPlayerCount() }}>
+                  <div class="flex grow flex-col" style={{ flex: topPlayerCount() }}>
                     <For each={topPlayers()}>
                       {(_, index) => (
                         <>
@@ -175,7 +174,7 @@ function GameComponent() {
                     <Progress />
                   </div>
 
-                  <div class="flex flex-grow flex-col" style={{ flex: useQuadLayout() ? 2 : 1 }}>
+                  <div class="flex grow flex-col" style={{ flex: useQuadLayout() ? 2 : 1 }}>
                     <For each={bottomPlayers()}>
                       {(_, index) => {
                         const actualIndex = () => topPlayerCount() + index();

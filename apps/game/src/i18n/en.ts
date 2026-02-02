@@ -63,6 +63,13 @@ const en = {
     noClub: "No Club",
     recreateLobby: "Recreate Lobby",
   },
+  select: {
+    title: "Select",
+    addPlayer: "Add Player",
+    start: "Start",
+    selectPlayer: "Select Player",
+    playerRequired: "Please select at least one player",
+  },
   sing: {
     title: "Sing",
     songs: "Songs",

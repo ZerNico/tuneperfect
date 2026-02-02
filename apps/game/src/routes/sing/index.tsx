@@ -106,7 +106,7 @@ function SingComponent() {
 
   const startRegular = (song: LocalSong) => {
     playSound("confirm");
-    navigate({ to: "/sing/$hash", params: { hash: song.hash } });
+    navigate({ to: "/sing/select", search: { songs: [song.hash] } });
   };
 
   const startMedley = () => {
@@ -337,7 +337,7 @@ function SingComponent() {
       <Switch>
         <Match when={songSelectStyle() === "grid"}>
           <div class="relative flex h-full min-h-0 gap-8">
-            <div class="relative w-1/2 -ml-8">
+            <div class="-ml-8 relative w-1/2">
               <SongGrid
                 ref={gridRef}
                 items={songs()}
