@@ -1,7 +1,6 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, Match, on, Show, Switch } from "solid-js";
-import { Motion, Presence } from "solid-motionone";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
@@ -39,7 +38,6 @@ export const Route = createFileRoute("/sing/")({
   component: SingComponent,
 });
 
-// Module-level signals to preserve state across navigations
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>(null);
 const [searchQuery, setSearchQuery] = createSignal("");
 const [searchFilter, setSearchFilter] = createSignal<SearchFilter>("all");
@@ -53,7 +51,6 @@ function SingComponent() {
   const navigate = useNavigate();
   const songs = createMemo(() => songsStore.songs());
 
-  // Initialize current song if not set
   if (!currentSong()) {
     const firstSong = songs()[0];
     if (firstSong) {
@@ -61,33 +58,50 @@ function SingComponent() {
     }
   }
 
-  // Debounced song for preview player - only updates after scrolling stops
-  const [previewSong, setPreviewSong] = createSignal<LocalSong | null>(currentSong());
+  // Double-buffered preview player — two persistent SongPlayer instances that crossfade
+  const [slotASong, setSlotASong] = createSignal<LocalSong | null>(currentSong());
+  const [slotBSong, setSlotBSong] = createSignal<LocalSong | null>(null);
+  const [activeSlot, setActiveSlot] = createSignal<"a" | "b">("a");
   const [isScrolling, setIsScrolling] = createSignal(false);
+  let cleanupTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  const debouncedSetPreviewSong = debounce((song: LocalSong | null) => {
-    // Verify the song is still the current song to avoid race conditions
+  const debouncedSwapSlot = debounce((song: LocalSong | null) => {
     if (song && song.hash !== currentSong()?.hash) return;
-    setPreviewSong(song);
+    swapToSong(song);
   }, 500);
+
+  const swapToSong = (song: LocalSong | null) => {
+    clearTimeout(cleanupTimeout);
+
+    const current = activeSlot();
+    const next = current === "a" ? "b" : "a";
+
+    if (next === "a") setSlotASong(song);
+    else setSlotBSong(song);
+
+    setActiveSlot(next);
+
+    // Clear old slot after crossfade completes
+    cleanupTimeout = setTimeout(() => {
+      if (current === "a") setSlotASong(null);
+      else setSlotBSong(null);
+    }, 600);
+  };
 
   createEffect(
     on(currentSong, (song) => {
       if (isScrolling()) {
-        // When scrolling fast, clear preview and debounce the new one
-        setPreviewSong(null);
-        debouncedSetPreviewSong(song);
+        swapToSong(null);
+        debouncedSwapSlot(song);
       } else {
-        // Single navigation - update immediately
-        debouncedSetPreviewSong.clear();
-        setPreviewSong(song);
+        debouncedSwapSlot.clear();
+        swapToSong(song);
       }
     }),
   );
 
   const isMedley = createMemo(() => medleySongs().length > 0);
 
-  // Ref to control the song scroller/grid
   let scrollerRef: SongScrollerRef | undefined;
   let gridRef: SongGridRef | undefined;
 
@@ -310,27 +324,30 @@ function SingComponent() {
       }
       background={
         <div class="relative h-full w-full">
-          <Presence>
-            <Show when={previewSong()} keyed>
-              {(song) => (
-                <Motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  class="absolute inset-0 z-1"
-                >
-                  <SongPlayer
-                    mode="preview"
-                    volume={settingsStore.getVolume("preview")}
-                    class="h-full w-full opacity-60"
-                    playing
-                    song={song}
-                  />
-                </Motion.div>
-              )}
-            </Show>
-          </Presence>
+          <div
+            class="absolute inset-0 z-1 transition-opacity duration-500"
+            style={{ opacity: activeSlot() === "a" && slotASong() ? 1 : 0 }}
+          >
+            <SongPlayer
+              mode="preview"
+              volume={settingsStore.getVolume("preview")}
+              class="h-full w-full opacity-60"
+              playing={activeSlot() === "a" && !!slotASong()}
+              song={slotASong()}
+            />
+          </div>
+          <div
+            class="absolute inset-0 z-1 transition-opacity duration-500"
+            style={{ opacity: activeSlot() === "b" && slotBSong() ? 1 : 0 }}
+          >
+            <SongPlayer
+              mode="preview"
+              volume={settingsStore.getVolume("preview")}
+              class="h-full w-full opacity-60"
+              playing={activeSlot() === "b" && !!slotBSong()}
+              song={slotBSong()}
+            />
+          </div>
         </div>
       }
     >
