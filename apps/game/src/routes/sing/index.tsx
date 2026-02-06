@@ -62,13 +62,14 @@ function SingComponent() {
   const [slotASong, setSlotASong] = createSignal<LocalSong | null>(currentSong());
   const [slotBSong, setSlotBSong] = createSignal<LocalSong | null>(null);
   const [activeSlot, setActiveSlot] = createSignal<"a" | "b">("a");
-  const [isScrolling, setIsScrolling] = createSignal(false);
   let cleanupTimeout: ReturnType<typeof setTimeout> | undefined;
+  let pendingSwap = false;
 
-  const debouncedSwapSlot = debounce((song: LocalSong | null) => {
-    if (song && song.hash !== currentSong()?.hash) return;
-    swapToSong(song);
-  }, 500);
+  const clearActiveSlot = () => {
+    clearTimeout(cleanupTimeout);
+    if (activeSlot() === "a") setSlotASong(null);
+    else setSlotBSong(null);
+  };
 
   const swapToSong = (song: LocalSong | null) => {
     clearTimeout(cleanupTimeout);
@@ -81,22 +82,25 @@ function SingComponent() {
 
     setActiveSlot(next);
 
-    // Clear old slot after crossfade completes
     cleanupTimeout = setTimeout(() => {
       if (current === "a") setSlotASong(null);
       else setSlotBSong(null);
     }, 600);
   };
 
+  const debouncedSwap = debounce((song: LocalSong | null) => {
+    pendingSwap = false;
+    if (song && song.hash !== currentSong()?.hash) return;
+    swapToSong(song);
+  }, 200);
+
   createEffect(
     on(currentSong, (song) => {
-      if (isScrolling()) {
-        swapToSong(null);
-        debouncedSwapSlot(song);
-      } else {
-        debouncedSwapSlot.clear();
-        swapToSong(song);
+      if (pendingSwap) {
+        clearActiveSlot();
       }
+      pendingSwap = true;
+      debouncedSwap(song);
     }),
   );
 
@@ -365,7 +369,6 @@ function SingComponent() {
                 class="absolute inset-0"
                 onSelectedItemChange={handleCenteredItemChange}
                 onFilteredCountChange={setFilteredSongCount}
-                onScrollingChange={setIsScrolling}
                 onConfirm={startRegular}
               />
             </div>
@@ -442,7 +445,6 @@ function SingComponent() {
               class="-mx-16 h-60 w-[calc(100%+8cqw)]"
               onCenteredItemChange={handleCenteredItemChange}
               onFilteredCountChange={setFilteredSongCount}
-              onScrollingChange={setIsScrolling}
               onConfirm={startRegular}
             >
               {(song) => <SongCard song={song} />}

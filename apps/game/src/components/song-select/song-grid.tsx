@@ -1,4 +1,4 @@
-import { debounce, throttle } from "@solid-primitives/scheduled";
+import { throttle } from "@solid-primitives/scheduled";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, type Ref } from "solid-js";
 import { useNavigation } from "~/hooks/navigation";
@@ -27,7 +27,6 @@ interface SongGridProps {
   initialSong?: LocalSong;
   onSelectedItemChange?: (item: LocalSong | null, index: number) => void;
   onFilteredCountChange?: (count: number) => void;
-  onScrollingChange?: (isScrolling: boolean) => void;
   onConfirm?: (item: LocalSong) => void;
   class?: string;
 }
@@ -238,7 +237,6 @@ export function SongGrid(props: SongGridProps) {
     () => ({ goToRandomSong }),
   );
 
-  const setScrollingFalse = debounce(() => props.onScrollingChange?.(false), 200);
   const throttledNavigate = throttle(navigate, 100);
 
   useNavigation({
@@ -249,8 +247,6 @@ export function SongGrid(props: SongGridProps) {
       else if (event.action === "down") navigate("down");
     },
     onRepeat: (event) => {
-      props.onScrollingChange?.(true);
-      setScrollingFalse();
       if (event.action === "left") throttledNavigate("left");
       else if (event.action === "right") throttledNavigate("right");
       else if (event.action === "up") throttledNavigate("up");
