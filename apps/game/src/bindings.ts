@@ -52,6 +52,46 @@ async parseSongsFromPaths(paths: string[]) : Promise<Result<SongGroup[], AppErro
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async webrtcCreateAnswer(userId: string, offerSdp: string, iceServers: IceServerConfig[]) : Promise<Result<string, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("webrtc_create_answer", { userId, offerSdp, iceServers }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async webrtcAddIceCandidate(userId: string, candidate: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("webrtc_add_ice_candidate", { userId, candidate }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async webrtcSendMessage(userId: string, label: string, data: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("webrtc_send_message", { userId, label, data }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async webrtcCloseConnection(userId: string) : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("webrtc_close_connection", { userId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async webrtcCloseAll() : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("webrtc_close_all") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -72,7 +112,9 @@ startParsingEvent: "start-parsing-event"
 
 /** user-defined types **/
 
-export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string }
+export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string }
+export type IceServerConfig = { urls: IceServerUrls; username?: string | null; credential?: string | null }
+export type IceServerUrls = string | string[]
 export type LocalSong = ({ title: string; artist: string; bpm: number; gap: number; videoGap: number; start: number | null; end: number | null; hash: string; album: string | null; language: string[] | null; edition: string[] | null; genre: string[] | null; year: number | null; creator: string[] | null; relative: boolean | null; audio: string | null; instrumental: string | null; cover: string | null; video: string | null; background: string | null; p1: string | null; p2: string | null; previewStart: number | null; version: string | null; tags: string[] | null; medleyStartBeat: number | null; medleyEndBeat: number | null; medleyStart: number | null; medleyEnd: number | null; voices: Voice[] }) & { audioUrl: string | null; instrumentalUrl: string | null; videoUrl: string | null; coverUrl: string | null; backgroundUrl: string | null; replayGainTrackGain: number | null; replayGainTrackPeak: number | null }
 export type Microphone = { name: string; channels: number }
 /**

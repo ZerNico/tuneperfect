@@ -1,5 +1,6 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { createEffect, createSignal, onCleanup } from "solid-js";
+import { commands } from "~/bindings";
 import { orpcClient } from "~/lib/orpc";
 import { createHostConnection, type HostConnection } from "~/lib/webrtc/host-connection";
 import { getIceServers } from "~/lib/webrtc/ice-servers";
@@ -152,6 +153,13 @@ function createWebRTCStore() {
     }
     connections.clear();
     pendingIceCandidates.clear();
+
+    // Tell Rust to close all remaining peer connections
+    commands.webrtcCloseAll().then((result) => {
+      if (result.status === "error") {
+        console.error("[WebRTC] Failed to close all Rust connections:", result.error);
+      }
+    });
   };
 
   const closeConnection = (userId: string) => {
