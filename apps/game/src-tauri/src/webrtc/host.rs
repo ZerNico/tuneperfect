@@ -12,7 +12,6 @@ use webrtc::api::APIBuilder;
 use webrtc::data_channel::data_channel_message::DataChannelMessage;
 use webrtc::data_channel::RTCDataChannel;
 use webrtc::ice_transport::ice_candidate::RTCIceCandidateInit;
-use webrtc::ice_transport::ice_credential_type::RTCIceCredentialType;
 use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
@@ -80,17 +79,11 @@ impl IceServerConfig {
             IceServerUrls::Multiple(urls) => urls.clone(),
         };
 
-        let has_credentials = self.username.is_some() && self.credential.is_some();
-
         RTCIceServer {
             urls,
             username: self.username.clone().unwrap_or_default(),
             credential: self.credential.clone().unwrap_or_default(),
-            credential_type: if has_credentials {
-                RTCIceCredentialType::Password
-            } else {
-                RTCIceCredentialType::Unspecified
-            },
+            ..Default::default()
         }
     }
 }
@@ -119,9 +112,35 @@ impl PeerState {
             .get(label)
             .ok_or_else(|| format!("No data channel '{label}'"))?;
 
-        dc.send_text(data.to_string())
-            .await
-            .map_err(|e| format!("Failed to send message on '{label}': {e}"))?;
+        // SCTP has a max message size (default ~64KB in webrtc-rs).
+        // Messages under the limit are sent directly; larger ones are chunked
+        // with a simple header protocol so the receiver can reassemble.
+        const MAX_CHUNK_SIZE: usize = 48_000;
+
+        if data.len() <= MAX_CHUNK_SIZE {
+            dc.send_text(data.to_string())
+                .await
+                .map_err(|e| format!("Failed to send message on '{label}': {e}"))?;
+        } else {
+            let chunk_id = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+
+            let chunks: Vec<&str> = data
+                .as_bytes()
+                .chunks(MAX_CHUNK_SIZE)
+                .map(|c| std::str::from_utf8(c).unwrap_or_default())
+                .collect();
+            let total = chunks.len();
+
+            for (i, chunk) in chunks.iter().enumerate() {
+                let msg = format!("\x01CHUNK:{chunk_id}:{i}:{total}\n{chunk}");
+                dc.send_text(msg)
+                    .await
+                    .map_err(|e| format!("Failed to send chunk {}/{total} on '{label}': {e}", i + 1))?;
+            }
+        }
 
         Ok(())
     }
