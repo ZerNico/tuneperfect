@@ -400,7 +400,7 @@ function ScoreCard(props: ScoreCardProps) {
       >
         <div class="flex w-full items-center justify-between">
           <div class="flex items-center gap-3">
-            <Avatar user={props.player} class={isCompact() ? "h-8 w-8" : ""} />
+            <Avatar user={props.player} class={isCompact() ? "h-8 w-8" : ""} fallbackClass="bg-white/20" />
             <div
               class="font-bold text-white"
               classList={{

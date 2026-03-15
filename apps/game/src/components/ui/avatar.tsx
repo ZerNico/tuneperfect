@@ -8,6 +8,8 @@ interface AvatarProps {
     username?: string | null;
   };
   class?: string;
+  /** CSS classes for the fallback circle (when no image). Defaults to "gradient-settings bg-linear-to-tr" */
+  fallbackClass?: string;
 }
 
 export default function Avatar(props: AvatarProps) {
@@ -34,7 +36,12 @@ export default function Avatar(props: AvatarProps) {
 
   return (
     <div class={twMerge("grid h-10 w-10", props.class)}>
-      <div class="gradient-settings col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr text-white leading-none">
+      <div
+        class={twMerge(
+          "col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full text-white leading-none",
+          props.fallbackClass ?? "gradient-settings bg-linear-to-tr",
+        )}
+      >
         {fallback()}
       </div>
       <Show when={!error() && props.user?.image}>
