@@ -111,7 +111,7 @@ function SingComponent() {
 
   const startMedley = () => {
     playSound("confirm");
-    navigate({ to: "/sing/medley", search: { songs: medleySongs().map((song) => song.hash) } });
+    navigate({ to: "/sing/select", search: { songs: medleySongs().map((song) => song.hash), mode: "medley" } });
   };
 
   const selectRandomSong = () => {
@@ -155,7 +155,7 @@ function SingComponent() {
     }
 
     playSound("confirm");
-    navigate({ to: "/sing/medley", search: { songs: selectedSongs.map((song) => song.hash) } });
+    navigate({ to: "/sing/select", search: { songs: selectedSongs.map((song) => song.hash), mode: "medley" } });
   };
 
   const moveSorting = (direction: "left" | "right") => {

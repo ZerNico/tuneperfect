@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
-import { joinURL } from "ufo";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -31,6 +30,7 @@ export const Route = createFileRoute("/sing/select")({
   component: PlayerSelectionComponent,
   validateSearch: v.object({
     songs: v.array(v.string()),
+    mode: v.optional(v.picklist(["regular", "medley"]), "regular"),
   }),
 });
 
@@ -128,10 +128,9 @@ function PlayerSelectionComponent() {
 
   const hasAnyPlayer = createMemo(() => slotSelections().some((selection) => selection !== undefined));
 
-  const startGame = () => {
-    const song = songs()[0];
-    if (!song) return;
+  const isMedley = createMemo(() => search().mode === "medley");
 
+  const startGame = () => {
     if (!hasAnyPlayer()) {
       notify({
         message: t("select.playerRequired"),
@@ -148,7 +147,21 @@ function PlayerSelectionComponent() {
       }
     }
 
-    roundActions.startRound({ songs: [{ song, players, mode: "regular" }] });
+    if (isMedley()) {
+      const queuedSongs = songs().map((song) => {
+        const voiceCount = song.voices.length;
+        const medleyPlayers = players.map((p, i) => ({
+          ...p,
+          voice: i % voiceCount,
+        }));
+        return { song, players: medleyPlayers, mode: "medley" as const };
+      });
+      roundActions.startRound({ songs: queuedSongs });
+    } else {
+      const song = songs()[0];
+      if (!song) return;
+      roundActions.startRound({ songs: [{ song, players, mode: "regular" }] });
+    }
   };
 
   return (
@@ -157,7 +170,7 @@ function PlayerSelectionComponent() {
       header={<TitleBar title={t("select.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
       background={
-        <Show when={songs().length === 1 && songs()[0]} fallback={<div />}>
+        <Show when={!isMedley() && songs()[0]} fallback={<div />}>
           {(song) => (
             <div class="h-full w-full bg-black">
               <img class="h-full w-full object-cover opacity-50" src={song().coverUrl ?? ""} alt={song().title} />
@@ -168,7 +181,21 @@ function PlayerSelectionComponent() {
       }
     >
       <div class="flex h-full flex-col items-center justify-center gap-8">
-        <Show when={songs().length === 1 && songs()[0]}>
+        <Show
+          when={!isMedley() && songs()[0]}
+          fallback={
+            <Show when={isMedley()}>
+              <div class="flex flex-col items-center gap-3 text-center">
+                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center font-bold text-5xl text-transparent">
+                  Medley
+                </span>
+                <p class="text-2xl opacity-80">
+                  {songs().length === 1 ? t("sing.songCount.one", { count: 1 }) : t("sing.songCount.other", { count: songs().length })}
+                </p>
+              </div>
+            </Show>
+          }
+        >
           {(song) => {
             const isDuet = () => song().voices.length > 1;
             const getVoiceName = (voiceIndex: number) => {
@@ -200,7 +227,7 @@ function PlayerSelectionComponent() {
               {(microphone, index) => (
                 <PlayerSlot
                   microphone={microphone}
-                  song={songs().length === 1 ? songs()[0] : null}
+                  song={!isMedley() ? songs()[0] : null}
                   selection={getSlotSelection(index())}
                   onSelect={(selection) => setSlotSelection(index(), selection)}
                   selected={playerSlotLoop.position() === index() && menuLoop.position() === 0}
@@ -235,49 +262,6 @@ interface PlayerSlotProps {
   onSelect: (selection: Selection | null) => void;
   selected?: boolean;
   onMouseEnter?: () => void;
-}
-
-function SlotAvatar(props: { user: User; class?: string }) {
-  const [error, setError] = createSignal(false);
-
-  createEffect(
-    on(
-      () => props.user,
-      () => setError(false),
-    ),
-  );
-
-  const fallback = () => props.user?.username?.at(0) || "?";
-
-  const pictureUrl = () => {
-    const image = "image" in props.user ? props.user.image : undefined;
-    if (image?.startsWith("/")) {
-      return joinURL(import.meta.env.VITE_API_URL ?? "", image);
-    }
-    return image || undefined;
-  };
-
-  const hasImage = () => {
-    if ("image" in props.user) return !!props.user.image;
-    return false;
-  };
-
-  return (
-    <div class={`grid ${props.class ?? "h-20 w-20"}`}>
-      <div class="col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-white/20 text-white leading-none">
-        {fallback()}
-      </div>
-      <Show when={!error() && hasImage()}>
-        <img
-          onError={() => setError(true)}
-          src={pictureUrl()}
-          alt={props.user?.username || "Avatar"}
-          class="col-start-1 row-start-1 block h-full w-full rounded-full"
-          referrerPolicy="no-referrer"
-        />
-      </Show>
-    </div>
-  );
 }
 
 function PlayerSlot(props: PlayerSlotProps) {
@@ -351,7 +335,7 @@ function PlayerSlot(props: PlayerSlotProps) {
           }
         >
           {(selection) => (
-            <SlotAvatar user={selection().player} class="h-20 w-20 text-2xl" />
+            <Avatar user={selection().player} class="h-20 w-20 text-2xl" fallbackClass="bg-white/20" />
           )}
         </Show>
       </div>
