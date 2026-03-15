@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     tanstackStart(),
+    nitro({ preset: "bun" }),
     viteSolid({ ssr: true }),
     icons({
       customCollections: {
@@ -18,6 +19,7 @@ export default defineConfig({
       },
       compiler: "solid",
     }),
+
     tailwindcss(),
   ],
 });

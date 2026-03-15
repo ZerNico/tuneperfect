@@ -99,9 +99,19 @@ async webrtcCloseAll() : Promise<Result<null, AppError>> {
 
 
 export const events = __makeEvents__<{
+channelCloseEvent: ChannelCloseEvent,
+channelMessageEvent: ChannelMessageEvent,
+channelOpenEvent: ChannelOpenEvent,
+connectionStateEvent: ConnectionStateEvent,
+iceCandidateEvent: IceCandidateEvent,
 progressEvent: ProgressEvent,
 startParsingEvent: StartParsingEvent
 }>({
+channelCloseEvent: "channel-close-event",
+channelMessageEvent: "channel-message-event",
+channelOpenEvent: "channel-open-event",
+connectionStateEvent: "connection-state-event",
+iceCandidateEvent: "ice-candidate-event",
 progressEvent: "progress-event",
 startParsingEvent: "start-parsing-event"
 })
@@ -113,6 +123,11 @@ startParsingEvent: "start-parsing-event"
 /** user-defined types **/
 
 export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string }
+export type ChannelCloseEvent = { userId: string; label: string }
+export type ChannelMessageEvent = { userId: string; label: string; data: string }
+export type ChannelOpenEvent = { userId: string; label: string }
+export type ConnectionStateEvent = { userId: string; state: string }
+export type IceCandidateEvent = { userId: string; candidate: string }
 export type IceServerConfig = { urls: IceServerUrls; username?: string | null; credential?: string | null }
 export type IceServerUrls = string | string[]
 export type LocalSong = ({ title: string; artist: string; bpm: number; gap: number; videoGap: number; start: number | null; end: number | null; hash: string; album: string | null; language: string[] | null; edition: string[] | null; genre: string[] | null; year: number | null; creator: string[] | null; relative: boolean | null; audio: string | null; instrumental: string | null; cover: string | null; video: string | null; background: string | null; p1: string | null; p2: string | null; previewStart: number | null; version: string | null; tags: string[] | null; medleyStartBeat: number | null; medleyEndBeat: number | null; medleyStart: number | null; medleyEnd: number | null; voices: Voice[] }) & { audioUrl: string | null; instrumentalUrl: string | null; videoUrl: string | null; coverUrl: string | null; backgroundUrl: string | null; replayGainTrackGain: number | null; replayGainTrackPeak: number | null }

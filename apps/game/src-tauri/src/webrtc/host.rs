@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
+use tauri_specta::Event;
 use tokio::sync::Mutex;
 use webrtc::api::interceptor_registry::register_default_interceptors;
 use webrtc::api::media_engine::MediaEngine;
@@ -19,37 +20,35 @@ use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use webrtc::peer_connection::RTCPeerConnection;
 
-/// Event name constants — the TS side uses these same strings via Tauri's `listen()`.
-pub mod events {
-    pub const ICE_CANDIDATE: &str = "webrtc://ice-candidate";
-    pub const CONNECTION_STATE: &str = "webrtc://connection-state";
-    pub const CHANNEL_OPEN: &str = "webrtc://channel-open";
-    pub const CHANNEL_CLOSE: &str = "webrtc://channel-close";
-    pub const CHANNEL_MESSAGE: &str = "webrtc://channel-message";
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct IceCandidateEvent {
     pub user_id: String,
     pub candidate: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionStateEvent {
     pub user_id: String,
     pub state: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 #[serde(rename_all = "camelCase")]
-pub struct ChannelStateEvent {
+pub struct ChannelOpenEvent {
     pub user_id: String,
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelCloseEvent {
+    pub user_id: String,
+    pub label: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct ChannelMessageEvent {
     pub user_id: String,
@@ -140,13 +139,11 @@ fn setup_ice_candidate_callback(pc: &Arc<RTCPeerConnection>, user_id: &str, hand
                     Ok(init) => serde_json::to_string(&init).unwrap_or_default(),
                     Err(_) => return,
                 };
-                let _ = handle.emit(
-                    events::ICE_CANDIDATE,
-                    IceCandidateEvent {
-                        user_id: uid,
-                        candidate: json,
-                    },
-                );
+                let _ = IceCandidateEvent {
+                    user_id: uid,
+                    candidate: json,
+                }
+                .emit(&handle);
             }
         })
     }));
@@ -173,13 +170,11 @@ fn setup_connection_state_callback(
                 _ => "unknown",
             };
             log::info!("[WebRTC] Connection state for {uid}: {state_str}");
-            let _ = handle.emit(
-                events::CONNECTION_STATE,
-                ConnectionStateEvent {
-                    user_id: uid,
-                    state: state_str.to_string(),
-                },
-            );
+            let _ = ConnectionStateEvent {
+                user_id: uid,
+                state: state_str.to_string(),
+            }
+            .emit(&handle);
         })
     }));
 }
@@ -216,13 +211,11 @@ fn setup_data_channel_callback(
                     let handle = handle.clone();
                     Box::pin(async move {
                         log::debug!("[WebRTC] Data channel '{label}' opened for user {uid}");
-                        let _ = handle.emit(
-                            events::CHANNEL_OPEN,
-                            ChannelStateEvent {
-                                user_id: uid,
-                                label,
-                            },
-                        );
+                        let _ = ChannelOpenEvent {
+                            user_id: uid,
+                            label,
+                        }
+                        .emit(&handle);
                     })
                 }));
             }
@@ -243,13 +236,11 @@ fn setup_data_channel_callback(
                             let mut ch = channels_close.lock().await;
                             ch.remove(&label);
                         }
-                        let _ = handle.emit(
-                            events::CHANNEL_CLOSE,
-                            ChannelStateEvent {
-                                user_id: uid,
-                                label,
-                            },
-                        );
+                        let _ = ChannelCloseEvent {
+                            user_id: uid,
+                            label,
+                        }
+                        .emit(&handle);
                     })
                 }));
             }
@@ -264,14 +255,12 @@ fn setup_data_channel_callback(
                     let handle = handle.clone();
                     Box::pin(async move {
                         let data = String::from_utf8(msg.data.to_vec()).unwrap_or_default();
-                        let _ = handle.emit(
-                            events::CHANNEL_MESSAGE,
-                            ChannelMessageEvent {
-                                user_id: uid,
-                                label,
-                                data,
-                            },
-                        );
+                        let _ = ChannelMessageEvent {
+                            user_id: uid,
+                            label,
+                            data,
+                        }
+                        .emit(&handle);
                     })
                 }));
             }

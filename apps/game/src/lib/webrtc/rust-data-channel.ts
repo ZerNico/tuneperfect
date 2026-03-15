@@ -1,5 +1,5 @@
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { commands } from "~/bindings";
+import type { UnlistenFn } from "@tauri-apps/api/event";
+import { commands, events } from "~/bindings";
 
 /**
  * Adapter that mimics the browser RTCDataChannel interface but routes
@@ -27,16 +27,13 @@ export class RustDataChannel extends EventTarget {
   }
 
   async startListening(): Promise<() => void> {
-    this._unlistenMessage = await listen<{ userId: string; label: string; data: string }>(
-      "webrtc://channel-message",
-      (event) => {
-        if (event.payload.userId === this._userId && event.payload.label === this._label) {
-          this.dispatchEvent(new MessageEvent("message", { data: event.payload.data }));
-        }
-      },
-    );
+    this._unlistenMessage = await events.channelMessageEvent.listen((event) => {
+      if (event.payload.userId === this._userId && event.payload.label === this._label) {
+        this.dispatchEvent(new MessageEvent("message", { data: event.payload.data }));
+      }
+    });
 
-    this._unlistenClose = await listen<{ userId: string; label: string }>("webrtc://channel-close", (event) => {
+    this._unlistenClose = await events.channelCloseEvent.listen((event) => {
       if (event.payload.userId === this._userId && event.payload.label === this._label) {
         this._readyState = "closed";
         this.dispatchEvent(new Event("close"));

@@ -1,11 +1,11 @@
 import type { ClientContext } from "@orpc/client";
 import { createORPCClient } from "@orpc/client";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { AppClient } from "@tuneperfect/webrtc/contracts/app";
 import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
 import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
 import { type ChannelTracker, createChannelTracker, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { commands, type IceServerConfig } from "~/bindings";
+import { commands, events, type IceServerConfig } from "~/bindings";
 import { type GameRouterContext, gameRouter } from "./router";
 import { RustDataChannel } from "./rust-data-channel";
 
@@ -48,21 +48,21 @@ export function createHostConnection(
   );
 
   const setupEventListeners = async () => {
-    const unlistenIce = await listen<{ userId: string; candidate: string }>("webrtc://ice-candidate", (event) => {
+    const unlistenIce = await events.iceCandidateEvent.listen((event) => {
       if (!closed && event.payload.userId === userId) {
         callbacks.onIceCandidate(event.payload.candidate);
       }
     });
     unlisteners.push(unlistenIce);
 
-    const unlistenState = await listen<{ userId: string; state: string }>("webrtc://connection-state", (event) => {
+    const unlistenState = await events.connectionStateEvent.listen((event) => {
       if (!closed && event.payload.userId === userId) {
         callbacks.onConnectionStateChange(event.payload.state as RTCPeerConnectionState);
       }
     });
     unlisteners.push(unlistenState);
 
-    const unlistenChannelOpen = await listen<{ userId: string; label: string }>("webrtc://channel-open", (event) => {
+    const unlistenChannelOpen = await events.channelOpenEvent.listen((event) => {
       if (closed || event.payload.userId !== userId) return;
 
       const label = event.payload.label;
@@ -83,7 +83,7 @@ export function createHostConnection(
     });
     unlisteners.push(unlistenChannelOpen);
 
-    const unlistenChannelClose = await listen<{ userId: string; label: string }>("webrtc://channel-close", (event) => {
+    const unlistenChannelClose = await events.channelCloseEvent.listen((event) => {
       if (closed || event.payload.userId !== userId) return;
 
       const label = event.payload.label;
