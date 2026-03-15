@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import * as v from "valibot";
+import { joinURL } from "ufo";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -25,7 +26,6 @@ import { type PlayerSelection, useRoundActions } from "~/stores/round";
 import { type Microphone, settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconPlus from "~icons/lucide/plus";
-import IconUser from "~icons/lucide/user";
 
 export const Route = createFileRoute("/sing/select")({
   component: PlayerSelectionComponent,
@@ -159,15 +159,15 @@ function PlayerSelectionComponent() {
       background={
         <Show when={songs().length === 1 && songs()[0]} fallback={<div />}>
           {(song) => (
-            <div class="h-full w-full bg-black backdrop-blur-2xl">
+            <div class="h-full w-full bg-black">
               <img class="h-full w-full object-cover opacity-50" src={song().coverUrl ?? ""} alt={song().title} />
-              <div class="absolute inset-0 z-1 backdrop-blur-2xl" />
+              <div class="absolute inset-0 z-1 backdrop-blur-2xl [will-change:backdrop-filter]" />
             </div>
           )}
         </Show>
       }
     >
-      <div class="flex h-full flex-col items-center justify-center gap-12">
+      <div class="flex h-full flex-col items-center justify-center gap-8">
         <Show when={songs().length === 1 && songs()[0]}>
           {(song) => {
             const isDuet = () => song().voices.length > 1;
@@ -194,8 +194,8 @@ function PlayerSelectionComponent() {
           }}
         </Show>
 
-        <div class="flex w-full flex-col gap-4">
-          <div class="flex w-full items-center justify-center gap-6">
+        <div class="flex flex-col items-center gap-6">
+          <div class="flex items-center justify-center gap-6">
             <For each={settingsStore.microphones()}>
               {(microphone, index) => (
                 <PlayerSlot
@@ -216,7 +216,7 @@ function PlayerSelectionComponent() {
           <Button
             onClick={startGame}
             gradient="gradient-sing"
-            class="w-full"
+            class="max-w-md w-full"
             onMouseEnter={() => menuLoop.set(1)}
             selected={menuLoop.position() === 1}
           >
@@ -235,6 +235,49 @@ interface PlayerSlotProps {
   onSelect: (selection: Selection | null) => void;
   selected?: boolean;
   onMouseEnter?: () => void;
+}
+
+function SlotAvatar(props: { user: User; class?: string }) {
+  const [error, setError] = createSignal(false);
+
+  createEffect(
+    on(
+      () => props.user,
+      () => setError(false),
+    ),
+  );
+
+  const fallback = () => props.user?.username?.at(0) || "?";
+
+  const pictureUrl = () => {
+    const image = "image" in props.user ? props.user.image : undefined;
+    if (image?.startsWith("/")) {
+      return joinURL(import.meta.env.VITE_API_URL ?? "", image);
+    }
+    return image || undefined;
+  };
+
+  const hasImage = () => {
+    if ("image" in props.user) return !!props.user.image;
+    return false;
+  };
+
+  return (
+    <div class={`grid ${props.class ?? "h-20 w-20"}`}>
+      <div class="col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-white/20 text-white leading-none">
+        {fallback()}
+      </div>
+      <Show when={!error() && hasImage()}>
+        <img
+          onError={() => setError(true)}
+          src={pictureUrl()}
+          alt={props.user?.username || "Avatar"}
+          class="col-start-1 row-start-1 block h-full w-full rounded-full"
+          referrerPolicy="no-referrer"
+        />
+      </Show>
+    </div>
+  );
 }
 
 function PlayerSlot(props: PlayerSlotProps) {
@@ -284,46 +327,46 @@ function PlayerSlot(props: PlayerSlotProps) {
       type="button"
       onClick={openSelectPlayerPopup}
       onMouseEnter={props.onMouseEnter}
-      class="flex h-60 w-50 cursor-pointer flex-col overflow-hidden rounded-xl transition-all duration-200 ease-in-out active:scale-95"
-      classList={{ "scale-105": props.selected, "opacity-50": !props.selected, "scale-95!": pressed() }}
+      class="flex w-56 cursor-pointer flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-200 ease-in-out active:scale-95"
+      classList={{
+        "ring-4 ring-white scale-105": props.selected,
+        "opacity-50": !props.selected,
+        "scale-95!": pressed(),
+      }}
       style={{
-        background: `linear-gradient(90deg, ${getColorVar(props.microphone.color, 500)} 0%, ${getColorVar(props.microphone.color, 600)} 100%)`,
+        background: `linear-gradient(180deg, ${getColorVar(props.microphone.color, 500)} 0%, ${getColorVar(props.microphone.color, 700)} 100%)`,
       }}
     >
-      <div class="flex w-full grow flex-col items-center justify-center gap-4">
+      {/* Main content area */}
+      <div class="flex w-full grow flex-col items-center justify-center gap-4 p-6">
         <Show
           when={props.selection}
           fallback={
             <>
-              <div class="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white border-dashed font-bold text-4xl">
-                <IconPlus class="text-4xl" />
+              <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 transition-colors">
+                <IconPlus class="text-3xl opacity-70" />
               </div>
-              <span class="text-center text-sm">{t("select.addPlayer")}</span>
+              <span class="text-center text-sm opacity-70">{t("select.addPlayer")}</span>
             </>
           }
         >
           {(selection) => (
-            <>
-              <Show
-                when={selection().player}
-                fallback={
-                  <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
-                    <IconUser class="text-4xl" />
-                  </div>
-                }
-              >
-                <Avatar user={selection().player} class="h-20 w-20 text-2xl" />
-              </Show>
-              <div class="flex flex-col items-center gap-1">
-                <span class="text-center font-medium text-sm">{selection().player.username}</span>
-                <Show when={isDuet()}>
-                  <span class="text-center text-xs opacity-70">{getVoiceName(selection().voice)}</span>
-                </Show>
-              </div>
-            </>
+            <SlotAvatar user={selection().player} class="h-20 w-20 text-2xl" />
           )}
         </Show>
       </div>
+
+      {/* Footer name area */}
+      <Show when={props.selection}>
+        {(selection) => (
+          <div class="flex w-full flex-col items-center gap-0.5 bg-black/20 px-4 py-3">
+            <span class="max-w-full truncate text-center font-semibold text-sm">{selection().player.username}</span>
+            <Show when={isDuet()}>
+              <span class="text-center text-xs opacity-60">{getVoiceName(selection().voice)}</span>
+            </Show>
+          </div>
+        )}
+      </Show>
     </button>
   );
 }
