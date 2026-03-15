@@ -23,7 +23,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
   const [scores, setScores] = createSignal<Score[]>([]);
-  const [preferInstrumental, setPreferInstrumental] = createSignal(settingsStore.general().audioMode === "preferInstrumental");
+  const [preferInstrumental, setPreferInstrumental] = createSignal(
+    settingsStore.general().audioMode === "preferInstrumental",
+  );
+  const [pitches, setPitches] = createSignal<number[]>([]);
 
   const start = async () => {
     const opts = options();
@@ -34,7 +37,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const samplesPerBeat = Math.floor((48000 * beatToMsWithoutGap(opts.song, 1)) / 1000);
     await commands.startRecording(
-      settingsStore.microphones(),
+      roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
       samplesPerBeat,
       settingsStore.general().micPlaybackEnabled,
       settingsStore.volume().micPlayback,
@@ -69,9 +72,11 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTimeMs = playerRef.getCurrentTime() * 1000;
 
-    const usedVoices = roundStore.settings()?.songs[0]?.voice ?? [];
+    const usedVoices = roundStore.settings()?.songs[0]?.players.filter(Boolean).map((p) => p?.voice) ?? [];
 
     for (const voiceIndex of usedVoices) {
+      if (voiceIndex === undefined) continue;
+
       const voice = currentSong.voices[voiceIndex];
       if (!voice) continue;
 
@@ -93,6 +98,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     let nextNoteTime: number | null = null;
 
     for (const voiceIndex of usedVoices) {
+      if (voiceIndex === undefined) continue;
       const voice = currentSong.voices[voiceIndex];
       if (!voice) continue;
 
@@ -136,6 +142,18 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     });
   });
 
+  const flooredBeat = () => Math.floor(beat());
+
+  createEffect(async () => {
+    flooredBeat();
+    if (!started() || !playing()) return;
+
+    const result = await commands.getPitches();
+    if (result.status === "ok") {
+      setPitches(result.data);
+    }
+  });
+
   createEffect(() => {
     if (!started()) {
       return;
@@ -147,6 +165,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       stopLoop();
     }
   });
+
+  const playerCount = () => roundStore.settings()?.songs[0]?.players.filter(Boolean).length ?? 0;
 
   const addScore = (index: number, type: "normal" | "golden" | "bonus", value: number) => {
     setScores((prev) => {
@@ -181,6 +201,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     resetScores: () => setScores([]),
     preferInstrumental,
     setPreferInstrumental,
+    pitches,
+    playerCount,
   };
 
   const Provider = (props: { children: JSX.Element }) => <GameProvider value={values}>{props.children}</GameProvider>;

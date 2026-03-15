@@ -17,7 +17,7 @@ import { getColorVar } from "~/lib/utils/color";
 import { times } from "~/lib/utils/loop";
 import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
 import { type Round, versusStore } from "~/stores/party/versus";
-import { roundStore, useRoundActions } from "~/stores/round";
+import { type PlayerSelection, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 import IconDices from "~icons/lucide/dices";
@@ -156,8 +156,8 @@ export const Route = createFileRoute("/party/versus/")({
           score: currentScore,
         };
 
-        const playerRounds = newRounds[player.id] ?? [];
-        newRounds[player.id] = [...playerRounds, round];
+        const playerRounds = newRounds[player.player.id] ?? [];
+        newRounds[player.player.id] = [...playerRounds, round];
       }
 
       versusStore.setState((state) => ({
@@ -335,10 +335,17 @@ function VersusComponent() {
     const song = currentSong();
     if (!song) return;
 
-    const players = versusStore.state().matchups[0];
-    if (!players) return;
+    const matchup = versusStore.state().matchups[0];
+    if (!matchup) return;
 
-    roundActions.startRound({ songs: [{ song, voice: [0, 0], players, mode: "regular" }], returnTo: "/party/versus" });
+    const players: PlayerSelection[] = [];
+    for (const [index, player] of matchup.entries()) {
+      const microphone = settingsStore.microphones()[index];
+      if (!microphone) continue;
+      players.push({ player: player, voice: 0, microphone });
+    }
+
+    roundActions.startRound({ songs: [{ song, players, mode: "regular" }], returnTo: "/party/versus" });
   };
 
   const menuItems: MenuItem[] = [

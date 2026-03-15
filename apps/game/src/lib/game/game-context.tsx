@@ -20,6 +20,8 @@ export interface GameContextValue {
   addScore: (index: number, type: "normal" | "golden" | "bonus", value: number) => void;
   preferInstrumental: Accessor<boolean>;
   setPreferInstrumental: Setter<boolean>;
+  pitches: Accessor<number[]>;
+  playerCount: Accessor<number>;
 }
 
 export const GameContext = createContext<GameContextValue>();

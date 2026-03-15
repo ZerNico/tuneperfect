@@ -1,4 +1,5 @@
 import { createMemo } from "solid-js";
+import { useGame } from "~/lib/game/game-context";
 import { usePlayer } from "~/lib/game/player-context";
 
 interface ScoreProps {
@@ -9,6 +10,7 @@ interface ScoreProps {
 }
 
 export default function Score(props: ScoreProps) {
+  const game = useGame();
   const player = usePlayer();
 
   const score = createMemo(() => {
@@ -28,10 +30,18 @@ export default function Score(props: ScoreProps) {
   });
 
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
+  const isCompact = () => game.playerCount() > 2;
 
   return (
     <div class={props.class} classList={props.classList}>
-      <p class="text-5xl tabular-nums" style={{ color: micColor() }}>
+      <p
+        class="tabular-nums"
+        classList={{
+          "text-5xl": !isCompact(),
+          "text-3xl": isCompact(),
+        }}
+        style={{ color: micColor() }}
+      >
         {score()}
       </p>
     </div>

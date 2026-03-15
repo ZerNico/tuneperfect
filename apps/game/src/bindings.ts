@@ -29,9 +29,9 @@ async stopRecording() : Promise<Result<null, AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getPitch(index: number) : Promise<Result<number, AppError>> {
+async getPitches() : Promise<Result<number[], AppError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_pitch", { index }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_pitches") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

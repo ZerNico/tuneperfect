@@ -63,6 +63,13 @@ const en = {
     noClub: "No Club",
     recreateLobby: "Recreate Lobby",
   },
+  select: {
+    title: "Select",
+    addPlayer: "Add Player",
+    start: "Start",
+    selectPlayer: "Select Player",
+    playerRequired: "Please select at least one player",
+  },
   sing: {
     title: "Sing",
     songs: "Songs",
@@ -184,7 +191,7 @@ const en = {
       start: "Start",
       jokers: "Jokers",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
-      microphoneRequired: "You need 2 microphones to start a versus game.",
+      microphoneRequired: "You need at least 2 microphones to start a versus game.",
       exit: "Exit",
       continue: "Continue",
       restart: "Restart",

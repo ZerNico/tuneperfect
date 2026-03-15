@@ -1,15 +1,17 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, createSignal, For, Show } from "solid-js";
+import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
 import { settingsStore } from "~/stores/settings";
 
-const ROW_COUNT = 16;
-
 export default function Pitch() {
+  const game = useGame();
   const player = usePlayer();
+  const isCompact = () => game.playerCount() > 2;
+  const ROW_COUNT = isCompact() ? 12 : 16;
 
   const averageNote = createMemo(() => {
     const phrase = player.phrase();
@@ -174,13 +176,7 @@ export default function Pitch() {
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   return (
-    <div
-      class="grid grow px-48"
-      classList={{
-        "pt-[2cqh] pb-[8cqh]": player.index() === 0,
-        "pt-[8cqh] pb-[2cqh]": player.index() === 1,
-      }}
-    >
+    <div class="grid grow" classList={{ "px-60 py-[2cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
       <div
         style={{
           "grid-template-rows": `repeat(${ROW_COUNT},1fr)`,
@@ -360,7 +356,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
     for (let i = 1; i < currentPoints.length; i++) {
       const p0 = currentPoints[i - 1];
       const p1 = currentPoints[i];
-      
+
       if (!p0 || !p1) continue;
 
       const midX = (p0.x + p1.x) / 2;

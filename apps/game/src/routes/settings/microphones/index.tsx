@@ -42,7 +42,7 @@ function MicrophonesComponent() {
       });
     }
 
-    if (settingsStore.microphones().length < 2) {
+    if (settingsStore.microphones().length < 4) {
       buttons.push({
         label: t("settings.add"),
         icon: <IconPlus class="text-6xl" />,
