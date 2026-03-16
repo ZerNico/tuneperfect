@@ -1,6 +1,6 @@
 import { createEventListener } from "@solid-primitives/event-listener";
 import { platform } from "@tauri-apps/plugin-os";
-import { createEffect, createSignal, type JSX, Match, on, onCleanup, type Ref, Show, Switch } from "solid-js";
+import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, type Ref, Show } from "solid-js";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -14,7 +14,7 @@ export interface SongPlayerRef {
 
 interface SongPlayerProps {
   ref?: Ref<SongPlayerRef>;
-  song: LocalSong;
+  song: LocalSong | null;
   volume?: number;
   playing?: boolean;
   class?: string;
@@ -25,7 +25,6 @@ interface SongPlayerProps {
   preferInstrumental?: boolean;
 }
 
-// Utility function to get detailed media error message
 const getMediaErrorMessage = (element: HTMLMediaElement): string => {
   const mediaError = element.error;
 
@@ -61,10 +60,8 @@ const getMediaErrorMessage = (element: HTMLMediaElement): string => {
 const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | null): number => {
   if (gainDb == null) return 1;
 
-  // Convert dB gain to linear multiplier
   const gainMultiplier = 10 ** (gainDb / 20);
 
-  // If we have peak information, prevent clipping
   if (peak && peak > 0) {
     const maxAllowedGain = 1.0 / peak;
     return Math.min(gainMultiplier, maxAllowedGain);
@@ -73,13 +70,11 @@ const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | nul
   return gainMultiplier;
 };
 
-// Shared AudioContext to avoid creating multiple contexts (browsers limit these)
 let sharedAudioContext: AudioContext | null = null;
 const getAudioContext = () => {
   if (!sharedAudioContext || sharedAudioContext.state === "closed") {
     sharedAudioContext = new AudioContext();
   }
-  // Resume suspended AudioContext (common on mobile or after tab switching)
   if (sharedAudioContext.state === "suspended") {
     sharedAudioContext.resume().catch((err) => console.warn("Failed to resume AudioContext:", err));
   }
@@ -87,14 +82,13 @@ const getAudioContext = () => {
 };
 
 export default function SongPlayer(props: SongPlayerProps) {
-  const [audioElement, setAudioElement] = createSignal<HTMLAudioElement | undefined>();
-  const [videoElement, setVideoElement] = createSignal<HTMLVideoElement | undefined>();
   const [audioReady, setAudioReady] = createSignal(false);
   const [videoReady, setVideoReady] = createSignal(false);
   const [videoError, setVideoError] = createSignal(false);
   const [hasInitialized, setHasInitialized] = createSignal(false);
   const [isCurrentlyPlaying, setIsCurrentlyPlaying] = createSignal(false);
   const [currentAudioUrl, setCurrentAudioUrl] = createSignal<string | undefined>();
+  const [currentVideoUrl, setCurrentVideoUrl] = createSignal<string | undefined>();
   const [preservedTime, setPreservedTime] = createSignal<number | undefined>();
 
   let syncTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -104,105 +98,93 @@ export default function SongPlayer(props: SongPlayerProps) {
   let audioSource: MediaElementAudioSourceNode | undefined;
   let currentGainNode: GainNode | undefined;
 
-  // Setup audio context for audio element
-  createEffect(
-    on(audioElement, (audio, prevAudio) => {
-      // Clean up previous source if it exists
-      if (audioSource && prevAudio) {
-        try {
-          audioSource.disconnect();
-        } catch {
-          // Ignore disconnection errors
-        }
-        audioSource = undefined;
-      }
+  // Persistent media elements to avoid repeated decoder/createMediaElementSource setup (leaks on macOS/WebKit)
+  let audioElementRef!: HTMLAudioElement;
+  let videoElementRef!: HTMLVideoElement;
 
-      if (!audio) return;
+  const videoActive = () => !!currentVideoUrl() && !videoError();
 
-      let localAudioSource: MediaElementAudioSourceNode | undefined;
-      let localGainNode: GainNode | undefined;
+  // Fallback visual: background image or cover art when video is not active
+  const fallbackVisual = createMemo(() => {
+    const song = props.song;
+    if (!song || videoActive()) return null;
+    if (song.backgroundUrl) return { type: "background" as const, url: song.backgroundUrl };
+    if (song.coverUrl) return { type: "cover" as const, url: song.coverUrl };
+    return null;
+  });
 
+  onMount(() => {
+    const audio = audioElementRef;
+    if (!audio) return;
+
+    let localAudioSource: MediaElementAudioSourceNode | undefined;
+    let localGainNode: GainNode | undefined;
+
+    try {
+      localAudioSource = audioContext.createMediaElementSource(audio);
+      localGainNode = audioContext.createGain();
+      localAudioSource.connect(localGainNode);
+      localGainNode.connect(audioContext.destination);
+
+      audioSource = localAudioSource;
+      currentGainNode = localGainNode;
+
+      const song = props.song;
+      const replayGainAdjustment = calculateReplayGainAdjustment(
+        song?.replayGainTrackGain ?? null,
+        song?.replayGainTrackPeak ?? null,
+      );
+      localGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
+    } catch (error) {
+      console.warn("Failed to create audio source:", error);
       try {
-        localAudioSource = audioContext.createMediaElementSource(audio);
-        localGainNode = audioContext.createGain();
-        localAudioSource.connect(localGainNode);
-        localGainNode.connect(audioContext.destination);
-
-        audioSource = localAudioSource;
-        currentGainNode = localGainNode;
-
-        const replayGainAdjustment = calculateReplayGainAdjustment(
-          props.song.replayGainTrackGain,
-          props.song.replayGainTrackPeak,
-        );
-        localGainNode.gain.value = (props.volume ?? 1) * replayGainAdjustment;
-
-        // Update volume when it changes
-        createEffect(() => {
-          if (localGainNode) {
-            const volume = props.volume ?? 1;
-            const adjustment = calculateReplayGainAdjustment(
-              props.song.replayGainTrackGain,
-              props.song.replayGainTrackPeak,
-            );
-            localGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
-          }
-        });
-
-        onCleanup(() => {
-          try {
-            if (localGainNode) {
-              localGainNode.disconnect();
-            }
-            if (localAudioSource) {
-              localAudioSource.disconnect();
-            }
-          } catch {
-            // Ignore disconnection errors during cleanup
-          }
-          // Clear the global reference if it matches our current source
-          if (audioSource === localAudioSource) {
-            audioSource = undefined;
-          }
-          if (currentGainNode === localGainNode) {
-            currentGainNode = undefined;
-          }
-        });
-      } catch (error) {
-        console.warn("Failed to create audio source:", error);
-        // Clean up any partially created nodes if error occurred
-        try {
-          if (localGainNode) {
-            localGainNode.disconnect();
-          }
-          if (localAudioSource) {
-            localAudioSource.disconnect();
-          }
-        } catch {
-          // Ignore cleanup errors
-        }
-        audioSource = undefined;
-        currentGainNode = undefined;
+        if (localGainNode) localGainNode.disconnect();
+        if (localAudioSource) localAudioSource.disconnect();
+      } catch {
+        // Ignore cleanup errors
       }
-    }),
-  );
+      audioSource = undefined;
+      currentGainNode = undefined;
+    }
+  });
 
-  // Handle track switching
   createEffect(() => {
-    const { audioUrl, instrumentalUrl } = props.song;
+    if (!currentGainNode) return;
+    const volume = props.volume ?? 1;
+    const song = props.song;
+    const adjustment = calculateReplayGainAdjustment(
+      song?.replayGainTrackGain ?? null,
+      song?.replayGainTrackPeak ?? null,
+    );
+    currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
+  });
+
+  // Audio src management
+  createEffect(() => {
+    const song = props.song;
+    const audioUrl = song?.audioUrl;
+    const instrumentalUrl = song?.instrumentalUrl;
     const newUrl = (props.preferInstrumental && instrumentalUrl) || audioUrl || undefined;
     const currentUrl = currentAudioUrl();
-    const audio = audioElement();
+    const audio = audioElementRef;
 
     if (newUrl === currentUrl) return;
 
-    // Store state before switching
     const wasPlaying = audio && !audio.paused;
     const currentTime = audio?.currentTime ?? 0;
 
     setCurrentAudioUrl(newUrl);
 
-    if (audio && currentUrl && newUrl) {
+    if (newUrl) {
+      audio.src = newUrl;
+    } else {
+      audio.removeAttribute("src");
+      audio.load();
+      setAudioReady(false);
+      return;
+    }
+
+    if (currentUrl && newUrl) {
       setAudioReady(false);
       setPreservedTime(currentTime);
 
@@ -220,95 +202,102 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
   });
 
-  // Setup volume control for video element
-  createEffect(
-    on(videoElement, (video) => {
-      if (!video) return;
+  // Video src management
+  createEffect(() => {
+    const song = props.song;
+    const newUrl = song?.videoUrl || undefined;
+    const currentUrl = currentVideoUrl();
+    const video = videoElementRef;
 
-      // Only control volume for video if there's no separate audio element
-      if (!currentAudioUrl()) {
-        const updateVolume = () => {
-          video.volume = props.volume ?? 1;
-        };
+    if (newUrl === currentUrl) return;
 
-        updateVolume();
+    setCurrentVideoUrl(newUrl);
+    setVideoReady(false);
+    setVideoError(false);
 
-        createEffect(() => {
-          updateVolume();
-        });
-      }
-    }),
-  );
+    if (newUrl) {
+      video.src = newUrl;
+    } else {
+      video.removeAttribute("src");
+      video.load();
+    }
+  });
 
-  // Check if all required media is ready
+  // Video volume (only when there's no separate audio track)
+  createEffect(() => {
+    if (!currentVideoUrl()) return;
+    videoElementRef.volume = currentAudioUrl() ? 0 : (props.volume ?? 1);
+  });
+
+  // Video muted state (mute when there's a separate audio track)
+  createEffect(() => {
+    videoElementRef.muted = !!currentAudioUrl();
+  });
+
   const isReady = () => {
-    const audio = audioElement();
-    const video = videoElement();
+    if (!props.song) return false;
 
-    if (!audio && !video) return false;
-    if (audio && !audioReady()) return false;
-    if (video && !videoError() && !videoReady()) return false;
+    const hasAudio = !!currentAudioUrl();
+    const hasVideo = videoActive();
+
+    if (!hasAudio && !hasVideo) return false;
+    if (hasAudio && !audioReady()) return false;
+    if (hasVideo && !videoReady()) return false;
 
     return true;
   };
 
-  // Set initial time for preview mode
   const setPreviewTime = () => {
-    const audio = audioElement();
-    const video = videoElement();
-    const previewStart = getPreviewStartTime(props.song, props.song.videoGap ?? 0);
+    const song = props.song;
+    if (!song) return;
 
-    if (audio && audio.currentTime === 0) {
-      audio.currentTime = previewStart / 1000; // Convert milliseconds to seconds
+    const previewStart = getPreviewStartTime(song, song.videoGap ?? 0);
+
+    if (currentAudioUrl() && audioElementRef.currentTime === 0) {
+      audioElementRef.currentTime = previewStart / 1000;
     }
-    if (video && video.currentTime === 0) {
-      video.currentTime = previewStart / 1000; // Convert milliseconds to seconds
+    if (videoActive() && videoElementRef.currentTime === 0) {
+      videoElementRef.currentTime = previewStart / 1000;
     }
   };
 
-  // Apply fade-in effect for medley mode
   const applyFadeIn = () => {
-    if (props.mode !== "medley" || !currentGainNode) return;
+    const song = props.song;
+    if (props.mode !== "medley" || !currentGainNode || !song) return;
 
     const volume = props.volume ?? 1;
-    const adjustment = calculateReplayGainAdjustment(props.song.replayGainTrackGain, props.song.replayGainTrackPeak);
+    const adjustment = calculateReplayGainAdjustment(song.replayGainTrackGain, song.replayGainTrackPeak);
     const targetVolume = volume * adjustment;
-    const fadeInDuration = 3; // seconds
+    const fadeInDuration = 3;
 
-    // Start from 0 and fade to target volume over 3 seconds
     currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
     currentGainNode.gain.setValueAtTime(0, audioContext.currentTime);
     currentGainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + fadeInDuration);
   };
 
-  // Apply fade-out effect for medley mode
   const applyFadeOut = () => {
     if (props.mode !== "medley" || !currentGainNode) return;
 
-    const fadeOutDuration = 3; // seconds
+    const fadeOutDuration = 3;
     const currentVolume = currentGainNode.gain.value;
 
-    // Fade from current volume to 0 over 3 seconds
     currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
     currentGainNode.gain.setValueAtTime(currentVolume, audioContext.currentTime);
     currentGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeOutDuration);
   };
 
-  // Schedule fade-out for medley mode
   const scheduleFadeOut = () => {
     clearTimeout(fadeOutTimeout);
 
-    if (props.mode !== "medley" || !props.song.end) return;
+    const song = props.song;
+    if (props.mode !== "medley" || !song?.end) return;
 
-    const audio = audioElement();
-    const video = videoElement();
-    const mediaElement = audio || video;
-
+    const mediaElement = currentAudioUrl() ? audioElementRef : videoActive() ? videoElementRef : undefined;
     if (!mediaElement) return;
 
-    const currentTime = mediaElement.currentTime * 1000; // Convert to milliseconds
-    const endTime = props.song.end;
-    const fadeOutDuration = 3000; // 3 seconds in milliseconds
+    const currentTime = mediaElement.currentTime * 1000;
+    const endTime = song.end;
+    const fadeOutDuration = 3000;
     const timeUntilFadeOut = endTime - currentTime - fadeOutDuration;
 
     if (timeUntilFadeOut > 0) {
@@ -316,19 +305,19 @@ export default function SongPlayer(props: SongPlayerProps) {
         applyFadeOut();
       }, timeUntilFadeOut);
     } else if (timeUntilFadeOut > -fadeOutDuration) {
-      // We're already in the fade-out window, apply it immediately
       applyFadeOut();
     }
   };
 
-  // Sync and start playback
   const play = async () => {
-    const audio = audioElement();
-    const video = videoElement();
+    const song = props.song;
+    if (!song) return;
+
+    const audio = currentAudioUrl() ? audioElementRef : undefined;
+    const video = videoActive() ? videoElementRef : undefined;
 
     if (!audio && !video) return;
 
-    // Ensure AudioContext is resumed if needed
     if (audioContext.state === "suspended") {
       try {
         await audioContext.resume();
@@ -337,27 +326,23 @@ export default function SongPlayer(props: SongPlayerProps) {
       }
     }
 
-    // Clear any existing sync timeout
     clearTimeout(syncTimeout);
 
     try {
-      // Set initial times
       if (props.mode === "preview") {
         setPreviewTime();
-      } else if (props.song.start) {
+      } else if (song.start) {
         if (audio && audio.currentTime === 0) {
-          audio.currentTime = props.song.start / 1000; // Convert milliseconds to seconds
+          audio.currentTime = song.start / 1000;
         }
         if (video && video.currentTime === 0) {
-          video.currentTime = props.song.start / 1000; // Convert milliseconds to seconds
+          video.currentTime = song.start / 1000;
         }
       }
 
-      // Apply fade-in for medley mode
       applyFadeIn();
 
       if (audio && video) {
-        // Sync both audio and video with proper videoGap handling
         await syncVideoToAudio(audio, video);
       } else if (audio) {
         await audio.play();
@@ -365,33 +350,30 @@ export default function SongPlayer(props: SongPlayerProps) {
         await video.play();
       }
 
-      // Schedule fade-out for medley mode
       scheduleFadeOut();
     } catch (error) {
       console.warn("Failed to start playback:", error);
     }
   };
 
-  // Stop playback
   const pause = () => {
-    audioElement()?.pause();
-    videoElement()?.pause();
+    audioElementRef?.pause();
+    videoElementRef?.pause();
     clearTimeout(syncTimeout);
     clearTimeout(fadeOutTimeout);
     clearInterval(endCheckInterval);
   };
 
   const checkForSongEnd = () => {
-    if (!props.song.end) return;
+    const song = props.song;
+    if (!song?.end) return;
 
-    // Use preserved time during track switching to prevent premature end detection
     const preserved = preservedTime();
-    const rawCurrentTime = preserved ?? audioElement()?.currentTime ?? videoElement()?.currentTime ?? 0;
-    const endTimeInSeconds = props.song.end / 1000; // Convert milliseconds to seconds
+    const rawCurrentTime = preserved ?? audioElementRef?.currentTime ?? videoElementRef?.currentTime ?? 0;
+    const endTimeInSeconds = song.end / 1000;
 
     if (rawCurrentTime >= endTimeInSeconds) {
       pause();
-      // Use queueMicrotask to defer callback
       queueMicrotask(() => {
         handleEnded();
       });
@@ -400,7 +382,8 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   const startEndTimeMonitoring = () => {
     clearInterval(endCheckInterval);
-    if (props.song.end) {
+    const song = props.song;
+    if (song?.end) {
       endCheckInterval = setInterval(checkForSongEnd, 100);
     }
   };
@@ -409,43 +392,50 @@ export default function SongPlayer(props: SongPlayerProps) {
     clearInterval(endCheckInterval);
   };
 
-  // Main playback control effect
   createEffect(() => {
     const shouldPlay = props.playing && isReady();
     const currentlyPlaying = isCurrentlyPlaying();
 
     if (shouldPlay && !currentlyPlaying) {
-      // Transition from not playing to playing
       play();
       startEndTimeMonitoring();
       setIsCurrentlyPlaying(true);
     } else if (!props.playing && currentlyPlaying) {
-      // Transition from playing to not playing
       pause();
       stopEndTimeMonitoring();
       setIsCurrentlyPlaying(false);
     }
   });
 
-  // Reset when song changes
   createEffect(
     on(
       () => props.song,
-      () => {
+      (song) => {
+        pause();
+        stopEndTimeMonitoring();
+        clearTimeout(syncTimeout);
+        clearTimeout(fadeOutTimeout);
+
         setAudioReady(false);
         setVideoReady(false);
         setVideoError(false);
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
-        clearTimeout(fadeOutTimeout);
+        setPreservedTime(undefined);
 
-        // Reset gain node to normal volume
-        if (currentGainNode) {
+        if (audioElementRef) {
+          if (!audioElementRef.paused) audioElementRef.pause();
+          audioElementRef.currentTime = 0;
+        }
+
+        if (videoElementRef) {
+          if (!videoElementRef.paused) videoElementRef.pause();
+          videoElementRef.currentTime = 0;
+        }
+
+        if (currentGainNode && song) {
           const volume = props.volume ?? 1;
-          const adjustment = calculateReplayGainAdjustment(
-            props.song.replayGainTrackGain,
-            props.song.replayGainTrackPeak,
-          );
+          const adjustment = calculateReplayGainAdjustment(song.replayGainTrackGain, song.replayGainTrackPeak);
           currentGainNode.gain.cancelScheduledValues(audioContext.currentTime);
           currentGainNode.gain.setValueAtTime(volume * adjustment, audioContext.currentTime);
         }
@@ -453,7 +443,6 @@ export default function SongPlayer(props: SongPlayerProps) {
     ),
   );
 
-  // Handle ready state notifications
   createEffect(() => {
     if (isReady() && !hasInitialized()) {
       setHasInitialized(true);
@@ -462,13 +451,14 @@ export default function SongPlayer(props: SongPlayerProps) {
   });
 
   const syncVideoToAudio = async (audio: HTMLAudioElement, video: HTMLVideoElement) => {
-    const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
+    const song = props.song;
+    if (!song) return;
+
+    const videoGap = (song.videoGap ?? 0) / 1000;
     const expectedVideoTime = audio.currentTime + videoGap;
     const gap = video.currentTime - expectedVideoTime;
 
-    // Check if we can start both elements immediately
     if (Math.abs(gap) <= 0.01 || expectedVideoTime >= 0) {
-      // Either already in sync or video can start from a valid position
       if (expectedVideoTime >= 0) {
         video.currentTime = expectedVideoTime;
       }
@@ -493,16 +483,17 @@ export default function SongPlayer(props: SongPlayerProps) {
     }, delaySeconds * 1000);
   };
 
-  // Resync video to audio when window regains focus
   const resyncOnFocus = () => {
-    const audio = audioElement();
-    const video = videoElement();
+    const song = props.song;
+    if (!song) return;
 
-    // Only resync if we have both elements and are currently playing
+    const audio = audioElementRef;
+    const video = videoActive() ? videoElementRef : undefined;
+
     if (!audio || !video || !isCurrentlyPlaying()) return;
 
     try {
-      const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
+      const videoGap = (song.videoGap ?? 0) / 1000;
       const expectedVideoTime = audio.currentTime + videoGap;
       const timeDifference = Math.abs(expectedVideoTime - video.currentTime);
 
@@ -542,7 +533,6 @@ export default function SongPlayer(props: SongPlayerProps) {
     const errorMessage = getMediaErrorMessage(videoEl);
 
     setVideoError(true);
-    setVideoElement(undefined);
 
     if (!currentAudioUrl()) {
       console.error("Failed to play video:", errorMessage);
@@ -556,6 +546,8 @@ export default function SongPlayer(props: SongPlayerProps) {
     const audioEl = error.currentTarget;
     const errorMessage = getMediaErrorMessage(audioEl);
 
+    if (!currentAudioUrl()) return;
+
     console.error("Failed to play audio:", errorMessage);
     props.onError?.();
   };
@@ -564,37 +556,32 @@ export default function SongPlayer(props: SongPlayerProps) {
     () => props.ref,
     () => ({
       getCurrentTime: () => {
-        // Return preserved time during track switching to prevent visual jumps
         const preserved = preservedTime();
         if (preserved !== undefined) return preserved;
 
-        const audio = audioElement();
-        const video = videoElement();
-
-        return audio?.currentTime ?? video?.currentTime ?? 0;
+        return audioElementRef?.currentTime ?? videoElementRef?.currentTime ?? 0;
       },
       getDuration: () => {
-        const audio = audioElement();
-        const video = videoElement();
-        return audio?.duration ?? video?.duration ?? 0;
+        return audioElementRef?.duration ?? videoElementRef?.duration ?? 0;
       },
       setCurrentTime: (time: number) => {
-        // If we're switching tracks, update preserved time too
+        const song = props.song;
+        if (!song) return;
+
         if (preservedTime() !== undefined) {
           setPreservedTime(time);
         }
 
-        const audio = audioElement();
-        const video = videoElement();
+        const hasVideo = videoActive();
 
-        if (audio && video) {
-          const videoGap = (props.song.videoGap ?? 0) / 1000; // Convert milliseconds to seconds
-          audio.currentTime = time;
-          video.currentTime = time + videoGap;
-        } else if (audio) {
-          audio.currentTime = time;
-        } else if (video) {
-          video.currentTime = time;
+        if (currentAudioUrl() && hasVideo) {
+          const videoGap = (song.videoGap ?? 0) / 1000;
+          audioElementRef.currentTime = time;
+          videoElementRef.currentTime = time + videoGap;
+        } else if (currentAudioUrl()) {
+          audioElementRef.currentTime = time;
+        } else if (hasVideo) {
+          videoElementRef.currentTime = time;
         }
       },
     }),
@@ -605,7 +592,6 @@ export default function SongPlayer(props: SongPlayerProps) {
     stopEndTimeMonitoring();
     clearTimeout(fadeOutTimeout);
 
-    // Disconnect audio nodes (but don't close shared AudioContext)
     try {
       if (audioSource) {
         audioSource.disconnect();
@@ -627,52 +613,45 @@ export default function SongPlayer(props: SongPlayerProps) {
         [props.class || ""]: true,
       }}
     >
-      <Switch>
-        <Match when={!videoError() && props.song.videoUrl}>
-          {(videoUrl) => (
-            <video
-              muted={!!currentAudioUrl()}
-              class="h-full w-full object-cover"
-              ref={setVideoElement}
-              preload="auto"
-              crossorigin="anonymous"
-              onCanPlayThrough={handleVideoCanPlayThrough}
-              onEnded={() => {
-                if (!currentAudioUrl()) {
-                  handleEnded();
-                }
-              }}
-              src={videoUrl()}
-              onError={handleVideoError}
-            />
-          )}
-        </Match>
-        <Match when={props.song.backgroundUrl}>
-          {(backgroundUrl) => <img alt="" class="h-full w-full object-contain" src={backgroundUrl()} />}
-        </Match>
-        <Match when={props.song.coverUrl}>
-          {(coverUrl) => (
-            <div class="relative h-full w-full">
-              <img src={coverUrl()} alt="" class="absolute inset-0 h-full w-full object-cover blur-2xl" />
-              <img src={coverUrl()} alt="" class="relative h-full w-full object-contain" />
-            </div>
-          )}
-        </Match>
-      </Switch>
+      <video
+        ref={videoElementRef}
+        class="h-full w-full object-cover"
+        classList={{ hidden: !videoActive() }}
+        preload="auto"
+        crossorigin="anonymous"
+        onCanPlayThrough={handleVideoCanPlayThrough}
+        onEnded={() => {
+          if (!currentAudioUrl()) {
+            handleEnded();
+          }
+        }}
+        onError={handleVideoError}
+      />
 
-      <Show when={currentAudioUrl()}>
-        {(audioUrl) => (
-          <audio
-            ref={setAudioElement}
-            preload="auto"
-            crossorigin="anonymous"
-            onCanPlayThrough={handleAudioCanPlayThrough}
-            onEnded={handleEnded}
-            onError={handleAudioError}
-            src={audioUrl()}
-          />
+      <Show when={fallbackVisual()}>
+        {(visual) => (
+          <Show
+            when={visual().type === "cover" && visual()}
+            fallback={<img alt="" class="h-full w-full object-contain" src={visual().url} />}
+          >
+            {(cover) => (
+              <div class="relative h-full w-full">
+                <img src={cover().url} alt="" class="absolute inset-0 h-full w-full object-cover blur-2xl" />
+                <img src={cover().url} alt="" class="relative h-full w-full object-contain" />
+              </div>
+            )}
+          </Show>
         )}
       </Show>
+
+      <audio
+        ref={audioElementRef}
+        preload="auto"
+        crossorigin="anonymous"
+        onCanPlayThrough={handleAudioCanPlayThrough}
+        onEnded={handleEnded}
+        onError={handleAudioError}
+      />
     </div>
   );
 }
