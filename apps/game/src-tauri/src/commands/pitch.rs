@@ -96,3 +96,45 @@ pub async fn get_pitches(state: State<'_, AppState>) -> Result<Vec<f32>, AppErro
 
     Ok(pitches)
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_audio_levels(state: State<'_, AppState>) -> Result<Vec<f32>, AppError> {
+    let futures = {
+        let processors = state.processors.read()
+            .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
+
+        let mut processor_refs: Vec<_> = Vec::new();
+        let mut index = 0;
+        while let Some(processor) = processors.get(&index) {
+            processor_refs.push((index, processor.clone()));
+            index += 1;
+        }
+
+        processor_refs
+            .into_iter()
+            .map(|(idx, processor)| {
+                tokio::task::spawn_blocking(move || {
+                    match processor.lock() {
+                        Ok(p) => (idx, p.get_level()),
+                        Err(poisoned) => {
+                            eprintln!("Mutex poisoned for processor {}, attempting recovery", idx);
+                            (idx, poisoned.into_inner().get_level())
+                        }
+                    }
+                })
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let mut results: Vec<(usize, f32)> = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|r: Result<(usize, f32), _>| r.ok())
+        .collect();
+
+    results.sort_by_key(|(idx, _)| *idx);
+    let levels: Vec<f32> = results.into_iter().map(|(_, level)| level).collect();
+
+    Ok(levels)
+}

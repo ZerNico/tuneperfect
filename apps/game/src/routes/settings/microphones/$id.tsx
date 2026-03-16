@@ -4,6 +4,7 @@ import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
+import MicLevelMeter from "~/components/mic-level-meter";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { type Microphone, settingsStore } from "~/stores/settings";
@@ -36,7 +37,9 @@ function MicrophoneComponent() {
   return (
     <Layout
       intent="secondary"
-      header={<TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />}
+      header={
+        <TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />
+      }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
       <Suspense
@@ -56,7 +59,7 @@ function MicrophoneComponent() {
                 delay: 200,
                 gain: 1,
                 threshold: 2,
-              }
+              },
             );
 
             const deleteMicrophone = () => {
@@ -140,6 +143,18 @@ function MicrophoneComponent() {
                 onInput: (threshold: number) => {
                   setMicrophone((prev) => ({ ...prev, threshold }));
                 },
+              },
+              {
+                type: "custom",
+                interactive: false,
+                render: () => (
+                  <MicLevelMeter
+                    name={() => microphone().name}
+                    channel={() => microphone().channel}
+                    gain={() => microphone().gain}
+                    threshold={() => microphone().threshold}
+                  />
+                ),
               },
               {
                 type: "button",

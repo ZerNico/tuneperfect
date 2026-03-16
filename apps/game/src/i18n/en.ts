@@ -159,6 +159,7 @@ const en = {
         delay: "Delay",
         gain: "Gain",
         threshold: "Threshold",
+        level: "Level",
       },
       localPlayers: {
         title: "Local Players",

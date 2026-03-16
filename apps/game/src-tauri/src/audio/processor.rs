@@ -58,6 +58,19 @@ impl Processor {
         pitch
     }
 
+    /// Get the RMS (root mean square) audio level of the most recent samples
+    pub fn get_level(&self) -> f32 {
+        let slices = self.audio_buffer.as_slices();
+        let samples = [slices.0, slices.1].concat();
+        let window_size = self.samples_per_beat.min(samples.len());
+        if window_size == 0 {
+            return 0.0;
+        }
+        let start = samples.len() - window_size;
+        let sum_squares: f32 = samples[start..].iter().map(|s| s * s).sum();
+        (sum_squares / window_size as f32).sqrt()
+    }
+
     fn apply_gain(&self, sample: f32) -> f32 {
         (sample * self.options.gain).clamp(-1.0, 1.0)
     }

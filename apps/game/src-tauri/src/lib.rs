@@ -41,6 +41,7 @@ pub fn run() {
             pitch::start_recording,
             pitch::stop_recording,
             pitch::get_pitches,
+            pitch::get_audio_levels,
             media_server::get_media_server_base_url,
             songs::parse_songs_from_paths,
             webrtc::commands::webrtc_create_answer,
