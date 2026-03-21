@@ -159,6 +159,7 @@ const de = {
         delay: "Verzögerung",
         gain: "Verstärkung",
         threshold: "Schwellenwert",
+        level: "Pegel",
       },
       localPlayers: {
         title: "Lokale Spieler",
