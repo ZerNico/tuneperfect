@@ -58,7 +58,7 @@ impl Processor {
         pitch
     }
 
-    /// Get the RMS (root mean square) audio level of the most recent samples
+    /// Peak level of the most recent window — same metric as `above_noise_threshold`
     pub fn get_level(&self) -> f32 {
         let slices = self.audio_buffer.as_slices();
         let samples = [slices.0, slices.1].concat();
@@ -67,8 +67,9 @@ impl Processor {
             return 0.0;
         }
         let start = samples.len() - window_size;
-        let sum_squares: f32 = samples[start..].iter().map(|s| s * s).sum();
-        (sum_squares / window_size as f32).sqrt()
+        samples[start..]
+            .iter()
+            .fold(0.0f32, |max, &s| max.max(s.abs()))
     }
 
     fn apply_gain(&self, sample: f32) -> f32 {

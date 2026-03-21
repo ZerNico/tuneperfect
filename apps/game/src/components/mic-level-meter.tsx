@@ -24,7 +24,6 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const name = props.name();
       if (!name) return;
 
-      // Stop any existing recording first
       await commands.stopRecording().catch(() => {});
 
       const result = await commands.startRecording(
@@ -51,14 +50,14 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     await commands.stopRecording().catch(() => {});
   };
 
-  // Start/restart recording when mic name or channel changes (debounced)
+  // Restart the recording stream when device or channel changes
   createEffect(
     on([() => props.name(), () => props.channel()], () => {
       debouncedRestart();
     }),
   );
 
-  // Restart recording when gain changes so the processor uses the new gain (debounced)
+  // Gain is baked into the audio processor, so we need to restart for it too
   createEffect(
     on(
       () => props.gain(),
@@ -71,17 +70,18 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     ),
   );
 
-  // Convert linear RMS (0–1) to a 0–1 meter value using a dB scale.
-  // Maps -60 dB .. 0 dB  →  0 .. 1, which matches human loudness perception
-  // and makes the meter responsive across quiet and loud signals.
-  const rmsToMeter = (rms: number): number => {
-    if (rms <= 0) return 0;
-    const db = 20 * Math.log10(rms);
+  // dB scale so quiet sounds are still visible and loud ones don't just max out
+  const ampToMeter = (amp: number): number => {
+    if (amp <= 0) return 0;
+    const db = 20 * Math.log10(amp);
     const minDb = -60;
     return Math.max(0, Math.min(1, (db - minDb) / -minDb));
   };
 
-  // Poll audio levels while active
+  // Smooth out the meter — jumps up instantly but falls off gradually
+  let peakHold = 0;
+  const decay = 0.85;
+
   createEffect(() => {
     if (!active()) return;
 
@@ -89,24 +89,23 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const result = await commands.getAudioLevels();
       const value = result.status === "ok" ? result.data[0] : undefined;
       if (value !== undefined) {
-        setLevel(rmsToMeter(value));
+        const meter = ampToMeter(value);
+        peakHold = meter >= peakHold ? meter : peakHold * decay;
+        setLevel(peakHold);
       }
     }, 50);
 
     onCleanup(() => clearInterval(interval));
   });
 
-  // Clean up on unmount
   onCleanup(() => {
     stopPreview();
   });
 
   const percentage = () => level() * 100;
-  const thresholdPercentage = () => {
-    // The threshold is compared as threshold/100 against peak samples in Rust,
-    // which is close to RMS for sustained sounds. Map it through the same dB scale.
-    return rmsToMeter(props.threshold() / 100) * 100;
-  };
+
+  // Matches the peak check in Rust's above_noise_threshold exactly
+  const thresholdPercentage = () => ampToMeter(props.threshold() / 100) * 100;
 
   return (
     <div class="grid h-16 items-center overflow-hidden rounded-lg">
@@ -115,7 +114,6 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
         <div class="flex items-center gap-8">
           <div class="relative grid h-5 grow items-center overflow-hidden rounded-md">
             <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
-            {/* Gradient bar clipped to current level */}
             <div
               class="col-start-1 row-start-1 h-full w-full transition-[clip-path] duration-75"
               style={{
@@ -123,7 +121,6 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
                 "clip-path": `inset(0 ${100 - percentage()}% 0 0)`,
               }}
             />
-            {/* Threshold marker */}
             <div
               class="z-1 col-start-1 row-start-1 h-full w-0.5 bg-white/50"
               style={{ "margin-left": `${thresholdPercentage()}%` }}
