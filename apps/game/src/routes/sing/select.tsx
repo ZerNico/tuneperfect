@@ -20,6 +20,7 @@ import { notify } from "~/lib/toast";
 import type { GuestUser, User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
+import { getVoiceName, isDuet } from "~/lib/utils/song";
 import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
 import { type PlayerSelection, useRoundActions } from "~/stores/round";
@@ -202,29 +203,21 @@ function PlayerSelectionComponent() {
             </Show>
           }
         >
-          {(song) => {
-            const isDuet = () => song().voices.length > 1;
-            const getVoiceName = (voiceIndex: number) => {
-              const voiceKey = `p${voiceIndex + 1}` as "p1" | "p2";
-              return song()[voiceKey] || `${t("sing.voice")} ${voiceIndex + 1}`;
-            };
-
-            return (
-              <div class="flex flex-col items-center gap-3 text-center">
-                <p class="text-2xl opacity-80">{song().artist}</p>
-                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
-                  {song().title}
-                </span>
-                <Show when={isDuet()}>
-                  <div class="mt-2 flex items-center gap-1 text-sm">
-                    <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(0)}</span>
-                    <span class="opacity-50">&</span>
-                    <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(1)}</span>
-                  </div>
-                </Show>
-              </div>
-            );
-          }}
+          {(song) => (
+            <div class="flex flex-col items-center gap-3 text-center">
+              <p class="text-2xl opacity-80">{song().artist}</p>
+              <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center font-bold text-5xl text-transparent">
+                {song().title}
+              </span>
+              <Show when={isDuet(song())}>
+                <div class="mt-2 flex items-center gap-1 text-sm">
+                  <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(song(), 0)}</span>
+                  <span class="opacity-50">&</span>
+                  <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(song(), 1)}</span>
+                </div>
+              </Show>
+            </div>
+          )}
         </Show>
 
         <div class="flex flex-col items-center gap-6">
@@ -304,14 +297,6 @@ function PlayerSlot(props: PlayerSlotProps) {
     },
   }));
 
-  const getVoiceName = (voiceIndex: number) => {
-    if (!props.song) return `${t("sing.voice")} ${voiceIndex + 1}`;
-    const voiceKey = `p${voiceIndex + 1}` as "p1" | "p2";
-    return props.song[voiceKey] || `${t("sing.voice")} ${voiceIndex + 1}`;
-  };
-
-  const isDuet = () => props.song && props.song.voices.length > 1;
-
   return (
     <button
       type="button"
@@ -348,9 +333,9 @@ function PlayerSlot(props: PlayerSlotProps) {
       <Show when={props.selection}>
         {(selection) => (
           <div class="flex w-full flex-col items-center gap-0.5 bg-black/20 px-4 py-3">
-            <span class="max-w-full truncate text-center text-sm font-semibold">{selection().player.username}</span>
-            <Show when={isDuet()}>
-              <span class="text-center text-xs opacity-60">{getVoiceName(selection().voice)}</span>
+            <span class="max-w-full truncate text-center font-semibold text-sm">{selection().player.username}</span>
+            <Show when={isDuet(props.song)}>
+              <span class="text-center text-xs opacity-60">{getVoiceName(props.song ?? null, selection().voice)}</span>
             </Show>
           </div>
         )}
@@ -376,14 +361,6 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
 
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
-  const isDuet = () => props.song && props.song.voices.length > 1;
-
-  const getVoiceName = (voiceIndex: number) => {
-    if (!props.song) return `${t("sing.voice")} ${voiceIndex + 1}`;
-    const voiceKey = `p${voiceIndex + 1}` as "p1" | "p2";
-    return props.song[voiceKey] || `${t("sing.voice")} ${voiceIndex + 1}`;
-  };
-
   const handlePlayerSelect = (player: User) => {
     props.onSelect({ player, voice: selectedVoice() });
   };
@@ -408,14 +385,16 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
   const playerMenuItems = createMemo((): MenuItem[] => {
     const items: MenuItem[] = [];
 
-    if (isDuet()) {
+    if (isDuet(props.song)) {
       items.push({
         type: "select-number",
         label: t("sing.voice"),
         value: () => selectedVoice(),
         onChange: (voice: number) => setSelectedVoice(voice),
         options: props.song?.voices.map((_, index) => index) ?? [],
-        renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(voice) : "?"}</span>,
+        renderValue: (voice: number | null) => (
+          <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>
+        ),
       });
     }
 
