@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/solid-query";
+
 import { tryCatch } from "~/lib/utils/try-catch";
+
 import { client } from "./orpc";
 
 export function sessionQueryOptions() {

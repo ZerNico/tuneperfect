@@ -1,4 +1,5 @@
-import { type Accessor, createContext, type JSX, type Setter, useContext } from "solid-js";
+import { type Accessor, createContext, createMemo, type JSX, type Setter, useContext } from "solid-js";
+
 import type { LocalSong } from "~/lib/ultrastar/song";
 import type { Score } from "~/stores/round";
 
@@ -27,7 +28,10 @@ export interface GameContextValue {
 export const GameContext = createContext<GameContextValue>();
 
 export function GameProvider(props: { value: GameContextValue; children: JSX.Element }) {
-  return <GameContext.Provider value={props.value}>{props.children}</GameContext.Provider>;
+  const value = createMemo(() => props.value);
+
+  // oxlint-disable-next-line solid/reactivity
+  return <GameContext.Provider value={value()}>{props.children}</GameContext.Provider>;
 }
 
 export function useGame() {

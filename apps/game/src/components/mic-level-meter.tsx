@@ -1,5 +1,6 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createEffect, createSignal, on, onCleanup } from "solid-js";
+
 import { commands } from "~/bindings";
 import { t } from "~/lib/i18n";
 
@@ -41,7 +42,8 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     }
   };
 
-  const debouncedRestart = debounce(() => startPreview(), 300);
+  // oxlint-disable-next-line solid/reactivity
+  const debouncedRestart = debounce(startPreview, 300);
 
   const stopPreview = async () => {
     debouncedRestart.clear();
@@ -110,14 +112,15 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   return (
     <div class="grid h-16 items-center overflow-hidden rounded-lg">
       <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center font-bold text-xl">{t("settings.sections.microphones.level")}</div>
+        <div class="text-center text-xl font-bold">{t("settings.sections.microphones.level")}</div>
         <div class="flex items-center gap-8">
           <div class="relative grid h-5 grow items-center overflow-hidden rounded-md">
             <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
             <div
               class="col-start-1 row-start-1 h-full w-full transition-[clip-path] duration-75"
               style={{
-                background: "linear-gradient(to right, #155e75 0%, #10b981 50%, #10b981 75%, #fbbf24 90%, #ef4444 100%)",
+                background:
+                  "linear-gradient(to right, #155e75 0%, #10b981 50%, #10b981 75%, #fbbf24 90%, #ef4444 100%)",
                 "clip-path": `inset(0 ${100 - percentage()}% 0 0)`,
               }}
             />

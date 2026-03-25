@@ -1,5 +1,6 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, For, Show } from "solid-js";
+
 import { useGame } from "~/lib/game/game-context";
 import { createVoiceTracker } from "~/lib/game/voice-tracker";
 import { msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
@@ -75,7 +76,7 @@ export default function Lyrics(props: LyricsProps) {
           <Key
             fallback={
               <span
-                class="text-transparent leading-relaxed"
+                class="leading-relaxed text-transparent"
                 classList={{ "text-4xl": !isCompact(), "text-3xl": isCompact() }}
               >
                 {"\u00A0"}
@@ -129,7 +130,7 @@ function LyricsNote(props: LyricsNoteProps) {
       style={{
         "background-image": `linear-gradient(to right, ${props.color} ${percentage()}%, white ${percentage()}%)`,
       }}
-      class="inline-block whitespace-pre bg-clip-text text-transparent leading-relaxed"
+      class="inline-block bg-clip-text leading-relaxed whitespace-pre text-transparent"
       classList={{
         "m-[-0.15cqw] p-[0.15cqw] italic": props.note.type === "Freestyle",
         "text-4xl": !props.compact,

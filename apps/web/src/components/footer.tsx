@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer class="border-white/10 border-t bg-[#101024]/80 backdrop-blur-lg">
+    <footer class="border-t border-white/10 bg-[#101024]/80 backdrop-blur-lg">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
-        <div class="flex items-center gap-4 text-slate-400 text-sm">
+        <div class="flex items-center gap-4 text-sm text-slate-400">
           <span>© {new Date().getFullYear()} Tune Perfect</span>
         </div>
         <div class="flex items-center gap-4 text-sm">

@@ -1,4 +1,5 @@
 import { createMemo, For, Show } from "solid-js";
+
 import { useGame } from "~/lib/game/game-context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -159,7 +160,9 @@ export default function Progress() {
 
   return (
     <div class="grid h-full w-full grid-cols-[5cqw_1fr_5cqw] items-center justify-center gap-2">
-      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">{formatTime(timingInfo().elapsed)}</div>
+      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
+        {formatTime(timingInfo().elapsed)}
+      </div>
       <div class="relative h-1.5 w-full overflow-hidden rounded-full bg-white/20">
         <Show when={settingsStore.general().showNoteSegments}>
           <For each={noteSegments()}>
@@ -179,7 +182,9 @@ export default function Progress() {
           style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
         />
       </div>
-      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">{formatTime(timingInfo().remaining)}</div>
+      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
+        {formatTime(timingInfo().remaining)}
+      </div>
     </div>
   );
 }

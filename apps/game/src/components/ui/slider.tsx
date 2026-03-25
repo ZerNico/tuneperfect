@@ -1,8 +1,9 @@
 import type { JSX, Ref } from "solid-js";
-import { useNavigation } from "~/hooks/navigation";
-import { clamp } from "~/lib/utils/math";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
+import { useNavigation } from "~/hooks/navigation";
+import { clamp } from "~/lib/utils/math";
 
 interface SliderProps {
   selected?: boolean;
@@ -60,8 +61,11 @@ export default function Slider(props: SliderProps) {
   }));
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: This is a slider
-    <div ref={props.ref} class="grid h-16 items-center overflow-hidden rounded-lg" onMouseEnter={props.onMouseEnter}>
+    <div
+      ref={props.ref}
+      class="grid h-16 items-center overflow-hidden rounded-lg"
+      onMouseEnter={() => props.onMouseEnter?.()}
+    >
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
         classList={{
@@ -70,25 +74,25 @@ export default function Slider(props: SliderProps) {
         }}
       />
       <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center font-bold text-xl">{props.label}</div>
+        <div class="text-center text-xl font-bold">{props.label}</div>
         <div class="flex items-center gap-8">
           <button class="cursor-pointer" type="button" onClick={() => changeValue("left")}>
             <IconTriangleLeft />
           </button>
-          <div class="grid h-5 flex-grow items-center">
+          <div class="grid h-5 grow items-center">
             <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
             <div
               class="col-start-1 row-start-1 h-full w-full rounded-md bg-white"
               style={{ width: `${percentage()}%` }}
             />
             <div
-              class="col-start-1 row-start-1 text-center font-bold text-sm text-white"
+              class="col-start-1 row-start-1 text-center text-sm font-bold text-white"
               style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
             >
               {props.value}
             </div>
             <div
-              class="col-start-1 row-start-1 text-center font-bold text-black text-sm"
+              class="col-start-1 row-start-1 text-center text-sm font-bold text-black"
               style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
             >
               {props.value}

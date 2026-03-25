@@ -1,10 +1,12 @@
 import type { ClientContext } from "@orpc/client";
 import type { StandardRPCLinkOptions } from "@orpc/client/standard";
 import { StandardRPCLink } from "@orpc/client/standard";
+
 import { LinkDataChannelClient, type LinkDataChannelClientOptions } from "./link-client";
 
 export interface RPCLinkOptions<T extends ClientContext>
-  extends Omit<StandardRPCLinkOptions<T>, "url" | "method" | "fallbackMethod" | "maxUrlLength">,
+  extends
+    Omit<StandardRPCLinkOptions<T>, "url" | "method" | "fallbackMethod" | "maxUrlLength">,
     LinkDataChannelClientOptions {}
 
 export class RPCLink<T extends ClientContext> extends StandardRPCLink<T> {

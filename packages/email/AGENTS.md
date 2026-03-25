@@ -15,6 +15,7 @@ bun run email dev --port 3003      # React Email preview UI
 ## Patterns & Conventions
 
 ### File organization
+
 ```
 ├── index.tsx              # Render functions (renderVerifyEmail, renderResetPassword)
 ├── emails/
@@ -28,6 +29,7 @@ bun run email dev --port 3003      # React Email preview UI
 - ❌ **DON'T**: Use SolidJS here — React Email requires React
 
 ### Adding a new email template
+
 1. Create `emails/my-template.tsx` with React Email components
 2. Export props type and component
 3. Add `renderMyTemplate()` function in `index.tsx`
@@ -35,14 +37,14 @@ bun run email dev --port 3003      # React Email preview UI
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `index.tsx` | Render function exports (entry point) |
-| `emails/verify-email.tsx` | Email verification template |
-| `emails/reset-password.tsx` | Password reset template |
+| File                        | Purpose                               |
+| --------------------------- | ------------------------------------- |
+| `index.tsx`                 | Render function exports (entry point) |
+| `emails/verify-email.tsx`   | Email verification template           |
+| `emails/reset-password.tsx` | Password reset template               |
 
 ## Pre-PR Checks
 
 ```bash
-bunx biome check packages/email
+bun run lint packages/email && bun run format:check packages/email
 ```

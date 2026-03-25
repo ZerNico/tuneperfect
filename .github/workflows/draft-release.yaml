@@ -40,7 +40,7 @@ jobs:
     needs: [build-api, build-web, build-app, build-game]
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

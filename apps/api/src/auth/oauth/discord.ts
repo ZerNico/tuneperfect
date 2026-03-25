@@ -1,6 +1,7 @@
 import * as arctic from "arctic";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
+
 import { env } from "../../config/env";
 import { db } from "../../lib/db";
 import * as schema from "../../lib/db/schema";
@@ -87,10 +88,7 @@ class DiscordOAuthClient {
         updateData.emailVerified = true;
       }
       if (Object.keys(updateData).length > 0) {
-        await tx
-          .update(schema.users)
-          .set(updateData)
-          .where(eq(schema.users.id, user.id));
+        await tx.update(schema.users).set(updateData).where(eq(schema.users.id, user.id));
       }
       await tx.insert(schema.oauthAccounts).values({
         userId: user.id,

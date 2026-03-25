@@ -10,4 +10,4 @@ jobs:
     uses: ./.github/workflows/deploy-kubernetes.yaml
     with:
       tag: ${{ github.event.release.tag_name }}
-    secrets: inherit 
+    secrets: inherit

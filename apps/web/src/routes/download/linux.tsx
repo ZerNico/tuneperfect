@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/solid-router"
-import DownloadCard from "~/components/download-card";
-import { posthog } from "~/lib/posthog";
+import { createFileRoute } from "@tanstack/solid-router";
 import IconPackage from "~icons/lucide/package";
 import IconLinux from "~icons/sing/linux";
+
+import DownloadCard from "~/components/download-card";
+import { posthog } from "~/lib/posthog";
 
 export const Route = createFileRoute("/download/linux")({
   component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
         <div class="mb-6 flex items-center gap-4">
           <IconLinux class="h-12 w-12 text-white brightness-1000" />
           <div>
-            <h1 class="font-bold text-4xl">Download for Linux</h1>
+            <h1 class="text-4xl font-bold">Download for Linux</h1>
             <p class="text-slate-400">Choose your distribution or use the universal AppImage</p>
           </div>
         </div>
@@ -93,8 +94,8 @@ function RouteComponent() {
 
             <div class="space-y-4">
               <div>
-                <h4 class="mb-2 font-medium text-slate-300 text-sm">AppImage:</h4>
-                <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
+                <h4 class="mb-2 text-sm font-medium text-slate-300">AppImage:</h4>
+                <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
                   chmod +x Tune.Perfect_{version()}_amd64.AppImage
                   <br />
                   ./Tune.Perfect_{version()}_amd64.AppImage
@@ -102,8 +103,8 @@ function RouteComponent() {
               </div>
 
               <div>
-                <h4 class="mb-2 font-medium text-slate-300 text-sm">Debian/Ubuntu (.deb):</h4>
-                <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
+                <h4 class="mb-2 text-sm font-medium text-slate-300">Debian/Ubuntu (.deb):</h4>
+                <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
                   sudo apt update && sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
                   <br />
                   sudo dpkg -i Tune.Perfect_{version()}_amd64.deb
@@ -113,8 +114,8 @@ function RouteComponent() {
               </div>
 
               <div>
-                <h4 class="mb-2 font-medium text-slate-300 text-sm">Red Hat/Fedora (.rpm):</h4>
-                <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
+                <h4 class="mb-2 text-sm font-medium text-slate-300">Red Hat/Fedora (.rpm):</h4>
+                <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
                   sudo dnf install libwebkit2gtk-4.1-0 libgtk-3-0
                   <br />
                   sudo dnf install Tune.Perfect-{version()}-1.x86_64.rpm
@@ -126,7 +127,7 @@ function RouteComponent() {
           {/* System Requirements */}
           <div class="rounded-xl border border-slate-700 bg-slate-800/50 p-6">
             <h3 class="mb-3 font-semibold text-slate-200">System Requirements</h3>
-            <div class="space-y-2 text-slate-400 text-xs">
+            <div class="space-y-2 text-xs text-slate-400">
               <ul class="ml-4 list-disc space-y-1">
                 <li>2 GB RAM minimum, 4 GB recommended</li>
                 <li>Audio input device (microphone) required for gameplay</li>

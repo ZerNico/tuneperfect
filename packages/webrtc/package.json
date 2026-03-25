@@ -1,7 +1,7 @@
 {
   "name": "@tuneperfect/webrtc",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     "./orpc": "./src/orpc/index.ts",
     "./orpc/client": "./src/orpc/rpc-link.ts",

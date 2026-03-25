@@ -1,24 +1,9 @@
 {
-  "editor.defaultFormatter": "biomejs.biome",
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "typescript.experimental.useTsgo": false,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.codeActionsOnSave": {
-    "quickfix.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "source.format.oxc": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
-  "[rust]": {
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
-  },
-  "rust-analyzer.linkedProjects": ["apps/game/src-tauri/Cargo.toml"],
-  "rust-analyzer.cargo.extraEnv": {
-    "MACOSX_DEPLOYMENT_TARGET": "10.13"
-  },
-  "rust-analyzer.cargo.targetDir": "target/analyzer",
   "tailwindCSS.experimental.classRegex": [
     ["classList={{([^;]*)}}", "\\s*?[\"'`]([^\"'`]*).*?:"],
     ["cva\\(((?:[^()]|\\([^()]*\\))*)\\)", "[\"'`]?([^\"'`]+)[\"'`]?"],
@@ -33,10 +18,12 @@
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true
   },
-  "[github-actions-workflow]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
-  "[shellscript]": {
-    "editor.defaultFormatter": "shakram02.bash-beautify"
-  }
+  "rust-analyzer.linkedProjects": ["apps/game/src-tauri/Cargo.toml"],
+  "rust-analyzer.cargo.extraEnv": {
+    "MACOSX_DEPLOYMENT_TARGET": "10.13"
+  },
+  "rust-analyzer.cargo.targetDir": "target/analyzer",
 }

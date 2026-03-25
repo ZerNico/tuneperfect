@@ -1,5 +1,6 @@
 import { For } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
+
 import { popup } from "~/lib/popup";
 
 export default function PopupContainer() {
@@ -22,7 +23,6 @@ export default function PopupContainer() {
               class="fixed inset-0"
               style={{ "z-index": 50 + index() }}
             >
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop is not keyboard focusable */}
               <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleBackdropClick} />
 
               <Motion.div

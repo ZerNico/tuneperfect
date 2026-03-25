@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
+import IconFolder from "~icons/lucide/folder";
+import IconPlus from "~icons/lucide/plus";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -10,8 +13,6 @@ import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { songsStore } from "~/stores/songs";
-import IconFolder from "~icons/lucide/folder";
-import IconPlus from "~icons/lucide/plus";
 
 export const Route = createFileRoute("/settings/songs/")({
   component: SongsComponent,
@@ -127,7 +128,7 @@ function SongsComponent() {
       header={<TitleBar title={t("settings.title")} description={t("settings.sections.songs.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="flex w-full flex-grow items-center justify-center gap-4">
+      <div class="flex w-full grow items-center justify-center gap-4">
         <For each={buttons()}>
           {(button, index) => (
             <IconButton

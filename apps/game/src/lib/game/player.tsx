@@ -1,7 +1,9 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { type Accessor, createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
+
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
+
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
 import type { Note } from "../ultrastar/note";
 import { getMaxScore, getNoteScore } from "../utils/score";

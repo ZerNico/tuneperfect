@@ -1,7 +1,9 @@
 import { createEffect, createSignal, Show } from "solid-js";
+
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";
+
 import Avatar from "../ui/avatar";
 import Pitch from "./pitch";
 import Score from "./score";

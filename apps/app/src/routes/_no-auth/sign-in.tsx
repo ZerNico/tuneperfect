@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { onMount } from "solid-js";
 import { joinURL } from "ufo";
 import * as v from "valibot";
+
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
@@ -26,7 +27,8 @@ function SignInComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
 
-  const absoluteRedirect = () => (search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin);
+  const absoluteRedirect = () =>
+    search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
 
   // Check for OAuth error on mount
   onMount(() => {
@@ -54,7 +56,7 @@ function SignInComponent() {
         client.auth.signIn.call({
           email: value.email,
           password: value.password,
-        })
+        }),
       );
 
       if (error) {
@@ -94,9 +96,9 @@ function SignInComponent() {
   }));
 
   return (
-    <div class="flex flex-grow flex-col items-center justify-center p-2">
+    <div class="flex grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("signIn.title")}</h1>
+        <h1 class="text-xl font-semibold">{t("signIn.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -132,7 +134,7 @@ function SignInComponent() {
           </form.Field>
 
           <div class="flex items-center justify-between">
-            <Link to="/forgot-password" class="text-slate-600 text-sm hover:text-slate-800">
+            <Link to="/forgot-password" class="text-sm text-slate-600 hover:text-slate-800">
               {t("signIn.forgotPassword")}
             </Link>
           </div>
@@ -162,7 +164,7 @@ function SignInComponent() {
           <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
-        <p class="text-slate-500 text-sm">
+        <p class="text-sm text-slate-500">
           {t("signIn.noAccount")}{" "}
           <Link
             to="/sign-up"

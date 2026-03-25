@@ -39,7 +39,7 @@ export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: u
       if (buf.parts.size === buf.total) {
         chunkBuffers.delete(id);
         const sorted = Array.from(buf.parts.entries())
-          .sort((a, b) => a[0] - b[0])
+          .toSorted((a, b) => a[0] - b[0])
           .map(([, v]) => v);
         callback(sorted.join(""));
       }

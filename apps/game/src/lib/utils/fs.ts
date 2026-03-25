@@ -1,5 +1,6 @@
 import { join } from "@tauri-apps/api/path";
 import { type DirEntry, readDir, stat } from "@tauri-apps/plugin-fs";
+
 import { folderName } from "./path";
 
 export interface DirEntryWithChildren extends DirEntry {

@@ -4,6 +4,7 @@ import { ClientRetryPlugin } from "@orpc/client/plugins";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { Client } from "@tuneperfect/api";
 import { joinURL } from "ufo";
+
 import { config } from "./config";
 
 const ORPC_URL = joinURL(config.API_URL, "/rpc");

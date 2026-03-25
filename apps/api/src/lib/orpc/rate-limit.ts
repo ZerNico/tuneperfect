@@ -1,7 +1,7 @@
+import { init } from ".";
 import { tryCatch } from "../../utils/try-catch";
 import { logger } from "../logger";
 import { redis } from "../redis";
-import { init } from ".";
 
 export interface RateLimitMetadata {
   rateLimit: {

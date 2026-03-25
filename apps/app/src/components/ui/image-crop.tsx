@@ -1,7 +1,9 @@
 import { createEffect, createSignal, on } from "solid-js";
-import { t } from "~/lib/i18n";
 import IconMinus from "~icons/lucide/minus";
 import IconPlus from "~icons/lucide/plus";
+
+import { t } from "~/lib/i18n";
+
 import Button from "./button";
 
 interface ImageCropProps {
@@ -220,7 +222,13 @@ export default function ImageCrop(props: ImageCropProps) {
     const state = cropState();
     const size = canvasSize();
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(imageRef, state.offsetX, state.offsetY, imageRef.naturalWidth * state.scale, imageRef.naturalHeight * state.scale);
+    ctx.drawImage(
+      imageRef,
+      state.offsetX,
+      state.offsetY,
+      imageRef.naturalWidth * state.scale,
+      imageRef.naturalHeight * state.scale,
+    );
   };
 
   const loadImage = () => {
@@ -230,7 +238,7 @@ export default function ImageCrop(props: ImageCropProps) {
       const imageAspect = imageRef.naturalWidth / imageRef.naturalHeight;
       const initialScale = Math.max(
         imageAspect > 1 ? canvasSize() / imageRef.naturalHeight : canvasSize() / imageRef.naturalWidth,
-        getMinimumScale()
+        getMinimumScale(),
       );
 
       setCropState({
@@ -276,7 +284,8 @@ export default function ImageCrop(props: ImageCropProps) {
 
     cropCtx.drawImage(imageRef, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 512, 512);
 
-    cropCanvas.toBlob((blob) => blob && props.onCrop(blob), "image/webp", 1.0);
+    const onCrop = props.onCrop;
+    cropCanvas.toBlob((blob) => blob && onCrop(blob), "image/webp", 1.0);
   };
 
   createEffect(() => {
@@ -289,11 +298,11 @@ export default function ImageCrop(props: ImageCropProps) {
   createEffect(
     on(cropState, () => {
       if (imageRef?.complete) drawImage();
-    })
+    }),
   );
 
-  const currentScale = cropState().scale;
-  const minScale = getMinimumScale();
+  const currentScale = createMemo(() => cropState().scale);
+  const minScale = createMemo(() => getMinimumScale());
 
   return (
     <div class={`flex flex-col gap-4 ${props.class || ""}`}>
@@ -303,7 +312,7 @@ export default function ImageCrop(props: ImageCropProps) {
             ref={canvasRef}
             width={canvasSize()}
             height={canvasSize()}
-            class="aspect-square w-full cursor-move select-none rounded-lg border-2 border-slate-200 shadow-md"
+            class="aspect-square w-full cursor-move rounded-lg border-2 border-slate-200 shadow-md select-none"
             style={{ "touch-action": "none" }}
             onPointerDown={handlePointerStart}
             onPointerMove={handlePointerMove}
@@ -321,12 +330,12 @@ export default function ImageCrop(props: ImageCropProps) {
 
           <div class="pointer-events-none absolute inset-0 h-full w-full rounded-full border-3 border-white shadow-lg" />
 
-          <div class="-translate-y-1/2 absolute top-1/2 right-3 flex flex-col gap-2">
+          <div class="absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-2">
             <button
               type="button"
               class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
               onClick={() => handleZoomButtonClick("in")}
-              disabled={currentScale >= 5}
+              disabled={currentScale() >= 5}
             >
               <IconPlus class="h-5 w-5 text-white" />
             </button>
@@ -334,7 +343,7 @@ export default function ImageCrop(props: ImageCropProps) {
               type="button"
               class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
               onClick={() => handleZoomButtonClick("out")}
-              disabled={currentScale <= minScale}
+              disabled={currentScale() <= minScale()}
             >
               <IconMinus class="h-5 w-5 text-white" />
             </button>

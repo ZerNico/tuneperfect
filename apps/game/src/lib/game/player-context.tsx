@@ -1,8 +1,10 @@
 import type { ReactiveMap } from "@solid-primitives/map";
-import { type Accessor, createContext, type JSX, useContext } from "solid-js";
+import { type Accessor, createContext, createMemo, type JSX, useContext } from "solid-js";
+
 import type { Phrase } from "~/lib/ultrastar/phrase";
 import type { Score } from "~/stores/round";
 import type { Microphone } from "~/stores/settings";
+
 import type { User } from "../types";
 import type { Note } from "../ultrastar/note";
 export interface PlayerContextValue {
@@ -25,7 +27,10 @@ export interface PlayerContextValue {
 export const PlayerContext = createContext<PlayerContextValue>();
 
 export function PlayerProvider(props: { value: PlayerContextValue; children: JSX.Element }) {
-  return <PlayerContext.Provider value={props.value}>{props.children}</PlayerContext.Provider>;
+  const value = createMemo(() => props.value);
+
+  // oxlint-disable-next-line solid/reactivity
+  return <PlayerContext.Provider value={value()}>{props.children}</PlayerContext.Provider>;
 }
 
 export function usePlayer() {

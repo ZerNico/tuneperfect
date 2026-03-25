@@ -10,6 +10,7 @@ import {
   onMount,
   type Ref,
 } from "solid-js";
+
 import { useNavigation } from "~/hooks/navigation";
 import { type SearchFilter, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -58,7 +59,7 @@ export function SongScroller(props: SongScrollerProps) {
 
   const { filteredItems: filteredAndSortedItems } = useSongFilter({
     items: () => props.items,
-    sort: () => props.sort,
+    sortOption: () => props.sort,
     searchQuery: () => props.searchQuery,
     searchFilter: () => props.searchFilter,
   });
@@ -191,7 +192,6 @@ export function SongScroller(props: SongScrollerProps) {
     const result: VisibleItem[] = [];
     for (let position = start; position <= end; position++) {
       const songIndex = mod(position, length);
-      // biome-ignore lint/style/noNonNullAssertion: songIndex is always valid due to mod
       result.push({ item: items[songIndex]!, position });
     }
     return result;

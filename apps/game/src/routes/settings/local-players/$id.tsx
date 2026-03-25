@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { createMemo, createSignal } from "solid-js";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";

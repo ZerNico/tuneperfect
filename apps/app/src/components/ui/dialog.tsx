@@ -1,6 +1,7 @@
 import { Dialog as KDialog } from "@kobalte/core/dialog";
 import type { JSX } from "solid-js";
 import IconX from "~icons/lucide/x";
+
 import Card from "./card";
 
 interface DialogProps {
@@ -19,7 +20,7 @@ function DialogRoot(props: DialogProps) {
           <KDialog.Content class="m-4 max-h-[calc(100vh-2rem)] max-w-md overflow-auto shadow-lg">
             <Card class="flex flex-col gap-4">
               <div class="flex items-center justify-between">
-                <KDialog.Title class="font-semibold text-lg">{props.title}</KDialog.Title>
+                <KDialog.Title class="text-lg font-semibold">{props.title}</KDialog.Title>
                 <KDialog.CloseButton class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-black/10">
                   <IconX class="" />
                 </KDialog.CloseButton>
@@ -40,7 +41,7 @@ interface DialogDescriptionProps {
 
 function DialogDescription(props: DialogDescriptionProps) {
   return (
-    <KDialog.Description class="text-slate-600 text-sm" classList={{ [props.class || ""]: true }}>
+    <KDialog.Description class="text-sm text-slate-600" classList={{ [props.class || ""]: true }}>
       {props.children}
     </KDialog.Description>
   );

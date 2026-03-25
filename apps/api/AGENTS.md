@@ -21,7 +21,9 @@ Requires: PostgreSQL, Redis, `.env` (copy from `.env.example`)
 ## Patterns & Conventions
 
 ### Domain module structure
+
 Each domain lives in `src/<domain>/` with these files:
+
 ```
 src/user/
 ├── router.ts      # oRPC route definitions (handlers)
@@ -40,6 +42,7 @@ src/user/
 - ❌ **DON'T**: Use Express/Hono/etc. — this is a raw Bun.serve + oRPC setup
 
 ### oRPC chain pattern
+
 ```ts
 export const myRouter = os.prefix("/things").router({
   getOne: base
@@ -51,6 +54,7 @@ export const myRouter = os.prefix("/things").router({
 ```
 
 ### Database
+
 - **ORM**: Drizzle with PostgreSQL
 - **Schema**: `src/lib/db/schema.ts` — all tables defined here
 - **Relations**: `src/lib/db/relations.ts`
@@ -58,30 +62,32 @@ export const myRouter = os.prefix("/things").router({
 - Always use `timestampColumns` helper for `createdAt`/`updatedAt`
 
 ### Auth flow
+
 - JWT access tokens stored in HTTP-only cookies
 - Refresh token rotation via `src/auth/service.ts`
 - OAuth: Google + Discord (`src/auth/oauth/`)
 - Protect routes with `requireUser` middleware from `src/auth/middleware.ts`
 
 ### Environment
+
 - All env vars validated with Valibot in `src/config/env.ts`
 - Add new vars to both `src/config/env.ts` schema AND `.env.example`
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/index.ts` | Server entry, router composition, CORS, plugins |
-| `src/base.ts` | Base oRPC chain (DB injection, rate limit, error handling) |
-| `src/lib/orpc/index.tsx` | oRPC init with context/metadata types |
-| `src/lib/db/schema.ts` | All Drizzle table definitions |
-| `src/lib/db/relations.ts` | Drizzle relation declarations |
-| `src/config/env.ts` | Validated env config |
-| `src/auth/middleware.ts` | `requireUser` auth middleware |
-| `src/auth/service.ts` | JWT signing/verification, password hashing |
-| `src/lib/logger.ts` | Pino logger instance |
-| `src/lib/redis.ts` | Redis client singleton |
-| `src/types.ts` | Shared TypeScript types |
+| File                      | Purpose                                                    |
+| ------------------------- | ---------------------------------------------------------- |
+| `src/index.ts`            | Server entry, router composition, CORS, plugins            |
+| `src/base.ts`             | Base oRPC chain (DB injection, rate limit, error handling) |
+| `src/lib/orpc/index.tsx`  | oRPC init with context/metadata types                      |
+| `src/lib/db/schema.ts`    | All Drizzle table definitions                              |
+| `src/lib/db/relations.ts` | Drizzle relation declarations                              |
+| `src/config/env.ts`       | Validated env config                                       |
+| `src/auth/middleware.ts`  | `requireUser` auth middleware                              |
+| `src/auth/service.ts`     | JWT signing/verification, password hashing                 |
+| `src/lib/logger.ts`       | Pino logger instance                                       |
+| `src/lib/redis.ts`        | Redis client singleton                                     |
+| `src/types.ts`            | Shared TypeScript types                                    |
 
 ## JIT Index Hints
 
@@ -104,5 +110,5 @@ rg -n "Cron\|setupJobs" src/                   # find scheduled jobs
 ## Pre-PR Checks
 
 ```bash
-bunx biome check apps/api && cd apps/api && bun build.ts
+bun run lint apps/api && bun run format:check apps/api && cd apps/api && bun build.ts
 ```

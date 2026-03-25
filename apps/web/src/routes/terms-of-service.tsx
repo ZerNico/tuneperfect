@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/solid-router"
+import { createFileRoute } from "@tanstack/solid-router";
 export const Route = createFileRoute("/terms-of-service")({
   component: TermsOfServiceComponent,
 });
@@ -13,13 +13,13 @@ function TermsOfServiceComponent() {
   return (
     <div class="mx-auto max-w-4xl px-4 py-12">
       <div class="mb-8">
-        <h1 class="mb-4 font-bold text-3xl md:text-4xl">Terms of Service</h1>
+        <h1 class="mb-4 text-3xl font-bold md:text-4xl">Terms of Service</h1>
         <p class="text-slate-300">Last updated: June 8th, 2025</p>
       </div>
 
       <div class="space-y-8 text-slate-200">
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">1. Welcome to Tune Perfect!</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">1. Welcome to Tune Perfect!</h2>
           <p>
             By using Tune Perfect, you're agreeing to these terms. We've tried to keep them fair and straightforward. If
             something doesn't seem right to you, feel free to reach out to us!
@@ -27,7 +27,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">2. What Tune Perfect Offers</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">2. What Tune Perfect Offers</h2>
           <p class="mb-2">Tune Perfect is an open-source karaoke gaming application that lets you:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>Sing along to songs with real-time pitch detection</li>
@@ -39,10 +39,10 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">3. Your Account</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">3. Your Account</h2>
           <div class="space-y-4">
             <div>
-              <h3 class="mb-2 font-medium text-lg text-white">Setting Up Your Account</h3>
+              <h3 class="mb-2 text-lg font-medium text-white">Setting Up Your Account</h3>
               <ul class="list-disc space-y-2 pl-6">
                 <li>Please provide accurate information when creating your account</li>
                 <li>Keep your login details secure - they're your key to the game!</li>
@@ -51,7 +51,7 @@ function TermsOfServiceComponent() {
               </ul>
             </div>
             <div>
-              <h3 class="mb-2 font-medium text-lg text-white">Taking Care of Your Account</h3>
+              <h3 class="mb-2 text-lg font-medium text-white">Taking Care of Your Account</h3>
               <ul class="list-disc space-y-2 pl-6">
                 <li>You're responsible for what happens with your account</li>
                 <li>Let us know right away if you notice any suspicious activity</li>
@@ -62,7 +62,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">4. Playing Nice Together</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">4. Playing Nice Together</h2>
           <p class="mb-2">To keep Tune Perfect fun for everyone, please don't:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>Break any laws or regulations</li>
@@ -87,7 +87,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">5. Your Scores and Achievements</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">5. Your Scores and Achievements</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>We store your game scores and achievements to track your progress</li>
             <li>If we detect cheating, we might need to reset scores to keep things fair</li>
@@ -97,7 +97,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">6. Multiplayer Fun</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">6. Multiplayer Fun</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>Lobby availability depends on server capacity and technical factors</li>
             <li>We temporarily store lobby data during your gaming session</li>
@@ -106,7 +106,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">7. Open Source and Licensing</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">7. Open Source and Licensing</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>Tune Perfect is open source and released under the MIT License</li>
             <li>
@@ -126,7 +126,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">8. Your Privacy Matters</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">8. Your Privacy Matters</h2>
           <p>
             We care about your privacy and try to collect only what we need to make the game work well. Please check out
             our Privacy Policy to see how we handle your information. By playing Tune Perfect, you're okay with how we
@@ -135,7 +135,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">9. Keeping the Lights On</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">9. Keeping the Lights On</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>We work hard to keep Tune Perfect running smoothly, but sometimes things happen</li>
             <li>Occasionally we need to do maintenance that might interrupt your game</li>
@@ -145,7 +145,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">10. When Things Go Wrong</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">10. When Things Go Wrong</h2>
           <p class="mb-2">We might need to suspend accounts if someone:</p>
           <ul class="list-disc space-y-2 pl-6">
             <li>Repeatedly breaks these terms</li>
@@ -156,7 +156,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">11. The Fine Print</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">11. The Fine Print</h2>
           <ul class="list-disc space-y-2 pl-6">
             <li>Tune Perfect is provided as-is - we're doing our best but can't promise perfection</li>
             <li>Pitch detection and scoring do their best but might not always be spot-on</li>
@@ -166,7 +166,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">12. Liability Limits</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">12. Liability Limits</h2>
           <p>
             While we strive to provide a great experience, we can't be held responsible for indirect damages, lost
             profits, or data loss that might result from using Tune Perfect. This is pretty standard for software
@@ -175,7 +175,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">13. Updates to These Terms</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">13. Updates to These Terms</h2>
           <p>
             Sometimes we might need to update these terms. When we do, we'll post the changes here and let you know
             about any big updates. If you keep using Tune Perfect after we make changes, that means you're cool with the
@@ -184,7 +184,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">14. Legal Stuff</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">14. Legal Stuff</h2>
           <p>
             These terms follow applicable laws, and any disputes would be handled through appropriate legal channels. We
             hope it never comes to that though!
@@ -192,7 +192,7 @@ function TermsOfServiceComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 font-semibold text-white text-xl">15. Get in Touch</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">15. Get in Touch</h2>
           <p>
             Got questions about these terms? Found a bug? Want to contribute? <br />
             Reach out to us through our{" "}

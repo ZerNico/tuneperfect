@@ -1,8 +1,10 @@
 import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
+
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
 import type { LocalSong } from "~/lib/ultrastar/song";
+
 import type { Microphone } from "./settings";
 
 export interface PlayerSelection {

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+
 import GameLayout from "~/components/game/game-layout";
 import Lyrics from "~/components/game/lyrics";
 import PauseMenu from "~/components/game/pause-menu";
@@ -223,7 +224,7 @@ function GameComponent() {
                   <p class="text-3xl">{roundSong()?.song.artist}</p>
                   <div class="max-w-200">
                     <span
-                      class={`${gradient()} bg-linear-to-b bg-clip-text text-center font-bold text-7xl text-transparent`}
+                      class={`${gradient()} bg-linear-to-b bg-clip-text text-center text-7xl font-bold text-transparent`}
                     >
                       {roundSong()?.song.title}
                     </span>

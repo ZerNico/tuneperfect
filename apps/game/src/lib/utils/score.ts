@@ -1,4 +1,5 @@
 import type { Score } from "~/stores/round";
+
 import type { Note } from "../ultrastar/note";
 import type { Voice } from "../ultrastar/voice";
 

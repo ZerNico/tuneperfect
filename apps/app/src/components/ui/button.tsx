@@ -42,18 +42,15 @@ export default function Button(props: ButtonProps | LinkProps) {
     [props.class || ""]: true,
   });
 
-  if ("to" in props) {
-    return (
-      <Link to={props.to} classList={classes()} ref={props.ref}>
-        <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
-      </Link>
-    );
-  }
-
-  return (
+  // oxlint-disable-next-line solid/components-return-once
+  return "to" in props ? (
+    <Link to={props.to} classList={classes()} ref={props.ref}>
+      <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
+    </Link>
+  ) : (
     <button
       type={props.type || "button"}
-      onClick={props.onClick}
+      onClick={() => props.onClick?.()}
       classList={classes()}
       disabled={props.disabled}
       ref={props.ref}

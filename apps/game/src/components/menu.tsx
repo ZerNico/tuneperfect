@@ -1,8 +1,10 @@
 import { createEffect, For, type JSX, Match, on, Switch } from "solid-js";
 import { twMerge } from "tailwind-merge";
+
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { playSound } from "~/lib/sound";
+
 import Button from "./ui/button";
 import Input from "./ui/input";
 import Select from "./ui/select";
@@ -128,7 +130,7 @@ export default function Menu(props: MenuProps) {
       <div
         ref={scrollContainer}
         class="styled-scrollbars flex max-h-full flex-col overflow-y-auto"
-        style="max-height: calc(100vh - 12rem);"
+        style={{ "max-height": "calc(100vh - 12rem)" }}
       >
         <For each={props.items}>
           {(item, index) => (

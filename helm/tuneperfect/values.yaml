@@ -82,7 +82,7 @@ apps:
       tag: ""
     env:
       VITE_APP_URL: "https://app.tuneperfect.localhost"
-    # secrets: 
+    # secrets:
     #   - my-secret-name
     replicaCount: 1
     service:
@@ -114,7 +114,7 @@ apps:
       tag: ""
     env:
       VITE_API_URL: "https://api.tuneperfect.localhost"
-    # secrets: 
+    # secrets:
     #   - my-secret-name
     replicaCount: 1
     service:
@@ -144,7 +144,7 @@ apps:
       repository: ghcr.io/zernico/tuneperfect-api
       pullPolicy: IfNotPresent
       tag: ""
-    env: 
+    env:
       API_URL: "https://api.tuneperfect.localhost"
       APP_URL: "https://app.tuneperfect.localhost"
       SUPPORT_EMAIL: "support@tuneperfect.localhost"
@@ -157,7 +157,7 @@ apps:
           name: redis-credentials
       - secretRef:
           name: api-credentials
-    # secrets: 
+    # secrets:
     #   - my-secret-name
     replicaCount: 1
     service:
@@ -189,23 +189,23 @@ coturn:
   image:
     repository: coturn/coturn
     tag: "4"
-  
+
   realm: "tuneperfect.localhost"
   stunUrl: "stun:stun.tuneperfect.localhost:3478"
   turnUrl: "turn:turn.tuneperfect.localhost:3478"
   username: "tuneperfect"
   credential: "tuneperfect"
-  
+
   listeningPort: 3478
   tlsListeningPort: 5349
-  
+
   # Larger range supports more concurrent connections
   minPort: 49152
   maxPort: 65535
-  
+
   # Optional - coturn auto-detects if not set
   externalIp: ""
-  
+
   # resources:
   #   limits:
   #     cpu: 500m

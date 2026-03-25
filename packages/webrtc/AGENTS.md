@@ -21,6 +21,7 @@ import { ... } from "@tuneperfect/webrtc/contracts/app";   // App-specific contr
 ## Patterns & Conventions
 
 ### File organization
+
 ```
 src/
 ├── contracts/            # oRPC contract definitions (type-only, no implementation)
@@ -44,26 +45,28 @@ src/
 ```
 
 ### Contract pattern
+
 - ✅ **DO**: Define contracts with `oc` from `@orpc/contract` — see `src/contracts/game.ts`
 - ✅ **DO**: Use Valibot schemas for contract I/O types
 - ✅ **DO**: Export both the contract and inferred types (`GameContract`, `GameClient`, `GameOutputs`)
 - ❌ **DON'T**: Put implementation logic here — only contracts and transport
 
 ### How it connects
+
 1. **Game** (host) creates `RTCPeerConnection`, opens DataChannels, attaches `rpc-handler`
 2. **App** (guest) connects as peer, uses `rpc-link` to call procedures over DataChannel
 3. Signaling (offer/answer/ICE) goes through the API's signaling endpoints
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/contracts/game.ts` | Game contracts (songs list, ping) |
-| `src/contracts/app.ts` | App contracts |
-| `src/orpc/rpc-link.ts` | oRPC client link over DataChannel |
-| `src/orpc/rpc-handler.ts` | oRPC server handler over DataChannel |
-| `src/utils/config.ts` | WebRTC constants (timeouts, reconnect policy) |
-| `src/utils/heartbeat.ts` | Heartbeat keep-alive mechanism |
+| File                      | Purpose                                       |
+| ------------------------- | --------------------------------------------- |
+| `src/contracts/game.ts`   | Game contracts (songs list, ping)             |
+| `src/contracts/app.ts`    | App contracts                                 |
+| `src/orpc/rpc-link.ts`    | oRPC client link over DataChannel             |
+| `src/orpc/rpc-handler.ts` | oRPC server handler over DataChannel          |
+| `src/utils/config.ts`     | WebRTC constants (timeouts, reconnect policy) |
+| `src/utils/heartbeat.ts`  | Heartbeat keep-alive mechanism                |
 
 ## JIT Index Hints
 
@@ -81,5 +84,5 @@ rg -n "WEBRTC_CONFIG" src/utils/config.ts                               # find c
 ## Pre-PR Checks
 
 ```bash
-bunx biome check packages/webrtc
+bun run lint packages/webrtc && bun run format:check packages/webrtc
 ```

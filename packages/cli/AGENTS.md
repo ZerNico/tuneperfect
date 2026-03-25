@@ -16,6 +16,7 @@ bun run tuneperfect dev --filter game --filter api  # start subset of apps
 ## What It Does
 
 The `dev` command:
+
 1. Generates local TLS certificates via `mkcert` (stored in `.tmp/certs/`)
 2. Starts Caddy reverse proxy (reads `Caddyfile` in project root)
 3. Starts Turborepo dev for all (or filtered) apps
@@ -28,12 +29,12 @@ The `dev` command:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
+| File           | Purpose                               |
+| -------------- | ------------------------------------- |
 | `src/index.ts` | CLI entry — all commands defined here |
 
 ## Pre-PR Checks
 
 ```bash
-bunx biome check packages/cli
+bun run lint packages/cli && bun run format:check packages/cli
 ```

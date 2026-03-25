@@ -1,13 +1,10 @@
 {
   "name": "@tuneperfect/email",
-  "module": "index.tsx",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "module": "index.tsx",
   "scripts": {
     "dev": "bun run email dev --port 3003"
-  },
-  "peerDependencies": {
-    "typescript": "^6.0.0"
   },
   "dependencies": {
     "@react-email/components": "^1.0.10",
@@ -18,5 +15,8 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "react-email": "^5.2.10"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.0"
   }
 }

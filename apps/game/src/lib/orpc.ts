@@ -3,6 +3,7 @@ import { RPCLink } from "@orpc/client/fetch";
 import { createORPCSolidQueryUtils } from "@orpc/solid-query";
 import type { Client } from "@tuneperfect/api";
 import { joinURL } from "ufo";
+
 import { lobbyStore } from "~/stores/lobby";
 
 const ORPC_URL = joinURL(import.meta.env.VITE_API_URL ?? "", "/rpc");

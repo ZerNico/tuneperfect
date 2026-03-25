@@ -1,4 +1,5 @@
 import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
 import { highscores } from "../lib/db/schema";
@@ -52,10 +53,7 @@ export class HighscoreService {
 
     const userIdArray = Array.from(userIds);
 
-    const whereConditions = [
-      eq(highscores.hash, hash),
-      inArray(highscores.userId, userIdArray)
-    ];
+    const whereConditions = [eq(highscores.hash, hash), inArray(highscores.userId, userIdArray)];
 
     if (difficulty) {
       whereConditions.push(eq(highscores.difficulty, difficulty));

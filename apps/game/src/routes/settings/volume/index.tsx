@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";

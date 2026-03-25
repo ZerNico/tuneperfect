@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { exit } from "@tauri-apps/plugin-process";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -40,9 +41,9 @@ function QuitComponent() {
       header={<TitleBar title={t("quit.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="grid flex-grow grid-rows-[1fr_2fr]">
+      <div class="grid grow grid-rows-[1fr_2fr]">
         <div class="flex items-end justify-center">
-          <div class="font-bold text-3xl">{t("quit.message")}</div>
+          <div class="text-3xl font-bold">{t("quit.message")}</div>
         </div>
         <Menu items={menuItems} onBack={onBack} />
       </div>

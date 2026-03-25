@@ -1,12 +1,14 @@
 import { For, Show } from "solid-js";
-import { keyMode } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
 import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
+import { keyMode } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
+
 import type { SortOption } from "./song-scroller";
 
 const SORT_OPTIONS: SortOption[] = ["artist", "title", "year"];
@@ -43,7 +45,7 @@ export function SortSelect(props: SortSelectProps) {
           {(sortOption) => (
             <button
               type="button"
-              class="gradient-sing cursor-pointer rounded-full px-2 text-md text-white capitalize transition-all hover:opacity-75 active:scale-95"
+              class="gradient-sing text-md cursor-pointer rounded-full px-2 text-white capitalize transition-all hover:opacity-75 active:scale-95"
               classList={{
                 "gradient-sing bg-linear-to-b shadow-xl": sortOption.toLowerCase() === props.selected,
               }}

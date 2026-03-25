@@ -3,6 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
+import IconArrowRight from "~icons/lucide/arrow-right";
+import IconCheck from "~icons/lucide/check";
+import IconPlus from "~icons/lucide/plus";
+import IconUsers from "~icons/lucide/users";
+import IconX from "~icons/lucide/x";
+
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
@@ -10,11 +16,6 @@ import Dialog from "~/components/ui/dialog";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
-import IconArrowRight from "~icons/lucide/arrow-right";
-import IconCheck from "~icons/lucide/check";
-import IconPlus from "~icons/lucide/plus";
-import IconUsers from "~icons/lucide/users";
-import IconX from "~icons/lucide/x";
 
 export const Route = createFileRoute("/_auth/clubs/")({
   component: ClubsIndexComponent,
@@ -84,9 +85,9 @@ function ClubsIndexComponent() {
   };
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6 flex items-center justify-between">
-        <h1 class="font-bold text-3xl">{t("clubs.title")}</h1>
+        <h1 class="text-3xl font-bold">{t("clubs.title")}</h1>
         <Button intent="gradient" onClick={() => setCreateClubDialog(true)}>
           {t("clubs.create")}
         </Button>
@@ -95,7 +96,7 @@ function ClubsIndexComponent() {
       <Show when={invitesQuery.isSuccess && invitesCount() > 0}>
         <div class="mb-8">
           <div class="mb-4 flex items-start gap-1">
-            <h2 class="font-bold text-2xl">{t("clubs.invites")}</h2>
+            <h2 class="text-2xl font-bold">{t("clubs.invites")}</h2>
             <span class="text-sm">{invitesCount()}</span>
           </div>
           <div class="flex flex-col gap-4">
@@ -104,7 +105,7 @@ function ClubsIndexComponent() {
                 <Card class="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
                   <div>
                     <div class="font-semibold text-slate-800">{invite.club?.name}</div>
-                    <div class="text-slate-500 text-sm">
+                    <div class="text-sm text-slate-500">
                       {t("clubs.invitedBy", { username: invite.inviter?.username || "" })}
                     </div>
                   </div>
@@ -142,7 +143,7 @@ function ClubsIndexComponent() {
       </Show>
 
       <div>
-        <h2 class="mb-4 font-bold text-2xl">{t("clubs.yourClubs")}</h2>
+        <h2 class="mb-4 text-2xl font-bold">{t("clubs.yourClubs")}</h2>
         <Show when={clubsQuery.isPending}>
           <div class="text-center">{t("common.loading")}</div>
         </Show>
@@ -153,15 +154,15 @@ function ClubsIndexComponent() {
                 <Link to="/clubs/$id" params={{ id: club.id }} class="group">
                   <Card class="flex h-full flex-col justify-between transition-all group-hover:scale-105 group-hover:shadow-lg">
                     <div>
-                      <div class="font-bold text-lg">{club.name}</div>
-                      <div class="text-slate-500 text-sm">
+                      <div class="text-lg font-bold">{club.name}</div>
+                      <div class="text-sm text-slate-500">
                         {club.members.length === 1
                           ? t("clubs.membersOne", { count: club.members.length })
                           : t("clubs.membersOther", { count: club.members.length })}
                       </div>
                     </div>
                     <div class="mt-4 flex items-center justify-between">
-                      <div class="-space-x-3 flex">
+                      <div class="flex -space-x-3">
                         <For each={club.members.slice(0, 5)}>
                           {(member) => (
                             <div class="rounded-full border-2 border-white">
@@ -170,7 +171,7 @@ function ClubsIndexComponent() {
                           )}
                         </For>
                         <Show when={club.members.length > 5}>
-                          <div class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-600 text-white text-xs">
+                          <div class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-600 text-xs text-white">
                             +{club.members.length - 5}
                           </div>
                         </Show>
@@ -185,9 +186,9 @@ function ClubsIndexComponent() {
         </Show>
         <Show when={clubsQuery.isSuccess && !clubsQuery.data?.length}>
           <div class="py-12 text-center">
-            <IconUsers class="mx-auto h-12 w-12 text-gray-400" />
-            <h3 class="mt-2 font-medium text-gray-900 text-sm">{t("clubs.noClubs")}</h3>
-            <p class="mt-1 text-gray-500 text-sm">{t("clubs.noClubsDescription")}</p>
+            <IconUsers class="text-gray-400 mx-auto h-12 w-12" />
+            <h3 class="text-gray-900 mt-2 text-sm font-medium">{t("clubs.noClubs")}</h3>
+            <p class="text-gray-500 mt-1 text-sm">{t("clubs.noClubsDescription")}</p>
             <div class="mt-6">
               <Button intent="gradient" onClick={() => setCreateClubDialog(true)}>
                 <IconPlus class="mr-2 h-5 w-5" />

@@ -2,7 +2,9 @@ import { mergeRefs } from "@solid-primitives/refs";
 import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 import { twMerge } from "tailwind-merge";
+
 import { keyMode, useNavigation } from "~/hooks/navigation";
+
 import { VirtualKeyboard } from "./virtual-keyboard";
 
 interface InputProps {
@@ -90,10 +92,9 @@ export default function Input(props: InputProps) {
 
   return (
     <>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: This is a input */}
       <div
         class={twMerge("grid h-16 items-center overflow-hidden rounded-lg", props.class)}
-        onMouseEnter={props.onMouseEnter}
+        onMouseEnter={() => props.onMouseEnter?.()}
       >
         <div
           class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
@@ -103,7 +104,7 @@ export default function Input(props: InputProps) {
           }}
         />
         <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-          <div class="text-center font-bold text-xl">{props.label}</div>
+          <div class="text-center text-xl font-bold">{props.label}</div>
           <div class="flex items-center justify-center">
             <div class="w-full">
               <input
@@ -114,7 +115,7 @@ export default function Input(props: InputProps) {
                 value={props.value || ""}
                 placeholder={props.placeholder}
                 maxLength={props.maxLength}
-                onInput={props.onInput}
+                onInput={(event) => props.onInput?.(event)}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 class="w-full bg-transparent py-2 text-xl text-white focus:outline-none"

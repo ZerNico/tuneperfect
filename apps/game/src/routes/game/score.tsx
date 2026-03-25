@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -469,7 +470,7 @@ function ScoreCard(props: ScoreCardProps) {
 function ScoreBar(props: { percentage: number; color: string }) {
   return (
     <div
-      class="flex h-full items-center justify-center font-medium text-white/90 text-xs"
+      class="flex h-full items-center justify-center text-xs font-medium text-white/90"
       style={{
         width: `${props.percentage}%`,
         "background-color": props.color,
@@ -501,7 +502,7 @@ function ScoreDetail(props: { label: string; value: number; color: string; compa
           "flex flex-col": !props.compact,
         }}
       >
-        <span class="text-white/70 text-xs">{props.label}</span>
+        <span class="text-xs text-white/70">{props.label}</span>
         <span
           class="font-medium text-white tabular-nums"
           classList={{

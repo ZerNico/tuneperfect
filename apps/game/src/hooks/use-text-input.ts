@@ -3,7 +3,7 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     const input = inputRef();
     const selectionStart = input.selectionStart;
     if (selectionStart === null) return;
-    
+
     const newSelectionStart = selectionStart + (direction === "left" ? -1 : 1);
     if (newSelectionStart < 0) {
       return;
@@ -17,7 +17,7 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     const input = inputRef();
     const cursor = input.selectionStart;
     if (cursor === null) return;
-    
+
     input.value = input.value.slice(0, cursor) + character + input.value.slice(cursor);
     input.setSelectionRange(cursor + 1, cursor + 1);
     sendInputEvent();
@@ -28,9 +28,9 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     const input = inputRef();
     const selectionStart = input.selectionStart;
     const selectionEnd = input.selectionEnd;
-    
+
     if (selectionStart === null || selectionEnd === null) return;
-    
+
     if (selectionStart !== selectionEnd) {
       input.value = input.value.slice(0, selectionStart) + input.value.slice(selectionEnd);
       input.setSelectionRange(selectionStart, selectionStart);
@@ -39,7 +39,7 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
       input.value = input.value.slice(0, selectionStart - 1) + input.value.slice(selectionStart);
       input.setSelectionRange(selectionStart - 1, selectionStart - 1);
     }
-    
+
     scrollToSelectionStart();
     sendInputEvent();
   };
@@ -49,7 +49,7 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     const fontSize = window.getComputedStyle(input).fontSize;
     const fontSizeNumber = Number.parseFloat(fontSize);
     const charWidth = fontSizeNumber * 0.55;
-    
+
     if (input.selectionStart) {
       input.scrollLeft = input.selectionStart * charWidth - input.clientWidth / 2;
     }
@@ -78,4 +78,4 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     sendInputEvent,
     selectAll,
   };
-} 
+}

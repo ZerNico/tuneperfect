@@ -19,6 +19,7 @@ Requires `.env` (copy from `.env.example`): `VITE_API_URL`, `VITE_WEB_URL`
 ## Patterns & Conventions
 
 ### File organization
+
 ```
 src/
 ├── components/           # Reusable UI components
@@ -35,7 +36,9 @@ src/
 ```
 
 ### Route layout groups
+
 Routes use TanStack Router layout prefixes:
+
 - `_auth/` — requires authentication (profile, lobby, clubs)
 - `_no-auth/` — public pages (sign-in, sign-up, forgot-password)
 - `_auth/_lobby/` — requires active lobby connection
@@ -43,6 +46,7 @@ Routes use TanStack Router layout prefixes:
 - `_auth/_no-lobby/` — auth pages without active lobby
 
 ### Component patterns
+
 - ✅ **DO**: Use functional components with `cva` variants — see `src/components/ui/button.tsx`
 - ✅ **DO**: Use Kobalte for accessible primitives — see `src/components/ui/dialog.tsx`
 - ✅ **DO**: Use `~/` path alias for imports
@@ -50,24 +54,28 @@ Routes use TanStack Router layout prefixes:
 - ✅ **DO**: Handle errors with `tryCatch` utility — see `src/lib/utils/try-catch.ts`
 
 ### oRPC client
+
 - Client configured in `src/lib/orpc.ts` with auto-refresh on 401
 - Use `client.<domain>.<method>.call()` for direct calls
 - Use `client.<domain>.<method>.queryOptions()` with TanStack Query for reactive data
 - Session managed via `src/lib/auth.ts` → `sessionQueryOptions()`
 
 ### i18n
+
 - Dictionaries: `src/i18n/en.ts`, `src/i18n/de.ts`
 - Type-safe flat keys via `@solid-primitives/i18n`
 - Access via `t("section.key")` — setup in `src/lib/i18n.ts`
 - Template interpolation: `t("key", { variable: value })`
 
 ### Auth
+
 - Cookie-based JWT auth (httpOnly cookies set by API)
 - Auto token refresh on 401 via `ClientRetryPlugin` in `src/lib/orpc.ts`
 - Session expiry dispatches `session:expired` custom event
 - Protected routes check session in layout route loaders
 
 ### WebRTC (guest side)
+
 - App acts as **guest** in WebRTC connections (game is host)
 - Connection store: `src/stores/connection.ts` (with auto-reconnect)
 - Guest connection: `src/lib/webrtc/guest-connection.ts`
@@ -75,20 +83,20 @@ Routes use TanStack Router layout prefixes:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/main.tsx` | App entry — QueryClient, Router, DialogProvider |
-| `src/lib/orpc.ts` | oRPC client with auto-refresh |
-| `src/lib/auth.ts` | Session query options |
-| `src/lib/i18n.ts` | i18n setup |
-| `src/lib/config.ts` | Runtime config from env vars |
-| `src/lib/toast.tsx` | Toast notification system |
-| `src/lib/dialog.tsx` | Confirmation dialog system |
-| `src/stores/connection.ts` | WebRTC connection store (guest) |
-| `src/contexts/game-client.tsx` | Game client context (WebRTC) |
-| `src/routes/_auth.tsx` | Auth layout (session guard) |
-| `src/routes/_no-auth.tsx` | Public layout |
-| `src/i18n/en.ts` | English dictionary (source of truth for keys) |
+| File                           | Purpose                                         |
+| ------------------------------ | ----------------------------------------------- |
+| `src/main.tsx`                 | App entry — QueryClient, Router, DialogProvider |
+| `src/lib/orpc.ts`              | oRPC client with auto-refresh                   |
+| `src/lib/auth.ts`              | Session query options                           |
+| `src/lib/i18n.ts`              | i18n setup                                      |
+| `src/lib/config.ts`            | Runtime config from env vars                    |
+| `src/lib/toast.tsx`            | Toast notification system                       |
+| `src/lib/dialog.tsx`           | Confirmation dialog system                      |
+| `src/stores/connection.ts`     | WebRTC connection store (guest)                 |
+| `src/contexts/game-client.tsx` | Game client context (WebRTC)                    |
+| `src/routes/_auth.tsx`         | Auth layout (session guard)                     |
+| `src/routes/_no-auth.tsx`      | Public layout                                   |
+| `src/i18n/en.ts`               | English dictionary (source of truth for keys)   |
 
 ## JIT Index Hints
 
@@ -111,5 +119,5 @@ rg -n "export const use" src/hooks/                                # find hooks
 ## Pre-PR Checks
 
 ```bash
-bunx biome check apps/app && cd apps/app && bun run --bun vite build
+bun run lint apps/app && bun run format:check apps/app && cd apps/app && bun run --bun vite build
 ```

@@ -1,0 +1,63 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "jsx-a11y"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": [
+    "**/routeTree.gen.ts",
+    "**/styles.css",
+    "**/bindings.ts",
+    "**/.nitro/**",
+    "**/.tanstack-start/**",
+    "**/.output/**",
+    "**/drizzle/meta/**",
+    "**/drizzle/**/snapshot.json"
+  ],
+  "rules": {
+    "eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "eslint/no-shadow": "off",
+    "eslint/no-unassigned-vars": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/html-has-lang": "off",
+    "jsx-a11y/lang": "off",
+    "jsx-a11y/media-has-caption": "off",
+    "typescript/no-explicit-any": "off",
+    "typescript/no-non-null-assertion": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-empty-file": "off",
+    "unicorn/prefer-add-event-listener": "off"
+  },
+  "overrides": [
+    {
+      "files": ["apps/app/src/**/*.{ts,tsx}", "apps/game/src/**/*.{ts,tsx}", "apps/web/src/**/*.{ts,tsx}"],
+      "jsPlugins": ["eslint-plugin-solid"],
+      "rules": {
+        "solid/components-return-once": "warn",
+        "solid/event-handlers": "warn",
+        "solid/imports": "warn",
+        "solid/jsx-no-duplicate-props": "warn",
+        "solid/jsx-no-script-url": "warn",
+        "solid/jsx-no-undef": "warn",
+        "solid/no-destructure": "warn",
+        "solid/no-innerhtml": "warn",
+        "solid/no-react-deps": "warn",
+        "solid/no-react-specific-props": "warn",
+        "solid/no-unknown-namespaces": "warn",
+        "solid/prefer-for": "warn",
+        "solid/reactivity": "warn",
+        "solid/self-closing-comp": "warn",
+        "solid/style-prop": "warn"
+      }
+    }
+  ]
+}

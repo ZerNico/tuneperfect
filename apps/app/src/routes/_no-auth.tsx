@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/solid-router";
+
 import { sessionQueryOptions } from "~/lib/auth";
 import { tryCatch } from "~/lib/utils/try-catch";
 

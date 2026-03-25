@@ -1,12 +1,13 @@
 import { Toast as KToast } from "@kobalte/core/toast";
 import { createMemo } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
-import { t } from "~/lib/i18n";
 import CircleAlert from "~icons/lucide/circle-alert";
 import CircleCheck from "~icons/lucide/circle-check";
 import CircleX from "~icons/lucide/circle-x";
 import Info from "~icons/lucide/info";
 import X from "~icons/lucide/x";
+
+import { t } from "~/lib/i18n";
 
 const TOAST_ICONS = new Map([
   ["success", CircleCheck],
@@ -36,13 +37,13 @@ export default function Toast(props: ToastProps) {
   return (
     <KToast
       toastId={props.toastId}
-      class="flex w-full transform items-start justify-between rounded-lg p-3 data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)] data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out"
+      class="flex w-full transform items-start justify-between rounded-lg p-3 data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
       classList={{
         [bgColor() || ""]: true,
       }}
     >
       <div class="flex">
-        <div class={`mr-3 flex-shrink-0 text-xl text-toast-${props.intent}`}>
+        <div class={`mr-3 shrink-0 text-xl text-toast-${props.intent}`}>
           <Dynamic component={IconComponent()} />
         </div>
         <div class="flex flex-col gap-1">

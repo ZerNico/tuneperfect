@@ -21,6 +21,7 @@ Requires: Rust toolchain, Tauri CLI, `.env` (copy from `.env.example`)
 ## Patterns & Conventions
 
 ### File organization
+
 ```
 src/
 ├── assets/icons/         # Custom SVG icons (loaded via unplugin-icons)
@@ -47,6 +48,7 @@ src-tauri/
 ```
 
 ### SolidJS patterns
+
 - ✅ **DO**: Use functional components — see `src/components/ui/button.tsx`
 - ✅ **DO**: Use `cva` for component variants — see `src/components/ui/button.tsx`
 - ✅ **DO**: Use store pattern for global state — see `src/stores/settings.tsx`
@@ -56,23 +58,27 @@ src-tauri/
 - ❌ **DON'T**: Use React patterns (useEffect, useState) — this is SolidJS
 
 ### Routing
+
 - File-based routing via TanStack Router plugin
 - Route tree auto-generated at `src/routeTree.gen.ts` — **never edit manually**
 - Layout routes use underscore prefix: `_auth.tsx`, `_no-auth.tsx`
 - Dynamic params use `$` prefix: `$id.tsx`, `$hash.tsx`, `$path.tsx`
 
 ### i18n
+
 - Dictionaries in `src/i18n/en.ts` and `src/i18n/de.ts`
 - Flat key structure: `{ "section.key": "value" }` via `@solid-primitives/i18n`
 - Access via `t("section.key")` — see `src/lib/i18n.ts` (game) for setup
 
 ### Tauri / Rust
+
 - Tauri commands in `src-tauri/src/commands/`
 - TypeScript bindings auto-generated at `src/bindings.ts` via `tauri-specta` — **never edit manually**
 - Audio pipeline: `src-tauri/src/audio/` (cpal device → resampler → processor → pitch)
 - UltraStar song format parsed in both Rust (`src-tauri/src/ultrastar/`) and TS (`src/lib/ultrastar/`)
 
 ### WebRTC (host side)
+
 - Game acts as **host** in WebRTC connections (companion app is guest)
 - Connection logic: `src/lib/webrtc/host-connection.ts`
 - oRPC-over-WebRTC router: `src/lib/webrtc/router.ts`
@@ -80,21 +86,21 @@ src-tauri/
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/main.tsx` | App entry — QueryClient, Router setup |
-| `src/routes/__root.tsx` | Root route — wake lock, navigation, fullscreen |
-| `src/stores/settings.tsx` | Persistent settings store (Valibot-validated) |
-| `src/stores/songs.tsx` | Song library state |
-| `src/stores/lobby.tsx` | Lobby/multiplayer state |
-| `src/stores/round.tsx` | Current game round state (scores, players) |
-| `src/lib/game/game.tsx` | Core game loop (audio sync, scoring) |
-| `src/lib/game/pitch.tsx` | Pitch detection + rendering |
-| `src/lib/orpc.ts` | oRPC client setup (API connection) |
-| `src/lib/webrtc/host-connection.ts` | WebRTC host connection |
-| `src-tauri/src/lib.rs` | Tauri plugin registration, command binding |
-| `src-tauri/src/commands/songs.rs` | Song scanning/loading commands |
-| `src-tauri/src/audio/recorder.rs` | Microphone recording pipeline |
+| File                                | Purpose                                        |
+| ----------------------------------- | ---------------------------------------------- |
+| `src/main.tsx`                      | App entry — QueryClient, Router setup          |
+| `src/routes/__root.tsx`             | Root route — wake lock, navigation, fullscreen |
+| `src/stores/settings.tsx`           | Persistent settings store (Valibot-validated)  |
+| `src/stores/songs.tsx`              | Song library state                             |
+| `src/stores/lobby.tsx`              | Lobby/multiplayer state                        |
+| `src/stores/round.tsx`              | Current game round state (scores, players)     |
+| `src/lib/game/game.tsx`             | Core game loop (audio sync, scoring)           |
+| `src/lib/game/pitch.tsx`            | Pitch detection + rendering                    |
+| `src/lib/orpc.ts`                   | oRPC client setup (API connection)             |
+| `src/lib/webrtc/host-connection.ts` | WebRTC host connection                         |
+| `src-tauri/src/lib.rs`              | Tauri plugin registration, command binding     |
+| `src-tauri/src/commands/songs.rs`   | Song scanning/loading commands                 |
+| `src-tauri/src/audio/recorder.rs`   | Microphone recording pipeline                  |
 
 ## JIT Index Hints
 
@@ -118,10 +124,11 @@ rg -n "export const use" src/hooks/                                # find hooks
 ## Pre-PR Checks
 
 ```bash
-bunx biome check apps/game && cd apps/game && bun run build:vite
+bun run lint apps/game && bun run format:check apps/game && cd apps/game && bun run build:vite
 ```
 
 For Rust changes:
+
 ```bash
 cd apps/game/src-tauri && cargo check
 ```

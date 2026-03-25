@@ -1,7 +1,8 @@
 import { type Component, children, createSignal, For, type JSX, onCleanup, onMount } from "solid-js";
-import { cn } from "~/lib/utils/cn";
 import IconChevronLeft from "~icons/lucide/chevron-left";
 import IconChevronRight from "~icons/lucide/chevron-right";
+
+import { cn } from "~/lib/utils/cn";
 
 interface SliderProps {
   class?: string;
@@ -47,7 +48,7 @@ const Slider: Component<SliderProps> = (props) => {
   const startAutoScroll = () => {
     if (!props.autoScroll) return;
     autoScrollTimer = window.setInterval(() => {
-      const nextIndex = (currentIndex() + 1) % slides.length;
+      const nextIndex = sliderRef ? (Math.round(sliderRef.scrollLeft / sliderRef.clientWidth) + 1) % slides.length : 0;
       scrollToSlide(nextIndex);
     }, props.autoScroll);
   };
@@ -71,7 +72,6 @@ const Slider: Component<SliderProps> = (props) => {
   });
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: This is a slider
     <div class={cn("relative w-full", props.class)} onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
       <div ref={sliderRef} class="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto">
         <For each={slides}>{(slide) => <div class="w-full flex-none snap-center">{slide}</div>}</For>
@@ -79,7 +79,7 @@ const Slider: Component<SliderProps> = (props) => {
       <button
         type="button"
         onClick={handlePrev}
-        class="-translate-y-1/2 absolute top-1/2 left-4 cursor-pointer rounded-full bg-[#203141]/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-[#203141]/75 max-md:hidden"
+        class="absolute top-1/2 left-4 -translate-y-1/2 cursor-pointer rounded-full bg-[#203141]/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-[#203141]/75 max-md:hidden"
         disabled={currentIndex() === 0}
       >
         <IconChevronLeft class="-translate-x-0.25 text-xl" />
@@ -87,7 +87,7 @@ const Slider: Component<SliderProps> = (props) => {
       <button
         type="button"
         onClick={handleNext}
-        class="-translate-y-1/2 absolute top-1/2 right-4 cursor-pointer rounded-full bg-[#203141]/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-[#203141]/75 max-md:hidden"
+        class="absolute top-1/2 right-4 -translate-y-1/2 cursor-pointer rounded-full bg-[#203141]/50 p-2 text-white backdrop-blur-sm transition-all hover:bg-[#203141]/75 max-md:hidden"
         disabled={currentIndex() === slides.length - 1}
       >
         <IconChevronRight class="translate-x-0.25 text-xl" />

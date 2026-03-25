@@ -5,7 +5,9 @@ import type { AppClient } from "@tuneperfect/webrtc/contracts/app";
 import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
 import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
 import { type ChannelTracker, createChannelTracker, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
+
 import { commands, events, type IceServerConfig } from "~/bindings";
+
 import { type GameRouterContext, gameRouter } from "./router";
 import { RustDataChannel } from "./rust-data-channel";
 

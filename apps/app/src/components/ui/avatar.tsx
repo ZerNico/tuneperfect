@@ -1,5 +1,6 @@
 import { createEffect, createSignal, on, Show } from "solid-js";
 import { joinURL } from "ufo";
+
 import { config } from "~/lib/config";
 
 interface AvatarProps {

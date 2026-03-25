@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import * as v from "valibot";
+import IconPlus from "~icons/lucide/plus";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -20,11 +22,9 @@ import type { LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
-
 import { type PlayerSelection, useRoundActions } from "~/stores/round";
 import { type Microphone, settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
-import IconPlus from "~icons/lucide/plus";
 
 export const Route = createFileRoute("/sing/select")({
   component: PlayerSelectionComponent,
@@ -74,7 +74,11 @@ function PlayerSelectionComponent() {
     });
   };
 
-  initializeSlotSelections();
+  createEffect(
+    on([songs, () => settingsStore.microphones().length], () => {
+      initializeSlotSelections();
+    }),
+  );
 
   const getSlotSelection = (index: number) => slotSelections()[index] ?? null;
 
@@ -174,7 +178,7 @@ function PlayerSelectionComponent() {
           {(song) => (
             <div class="h-full w-full bg-black">
               <img class="h-full w-full object-cover opacity-50" src={song().coverUrl ?? ""} alt={song().title} />
-              <div class="absolute inset-0 z-1 backdrop-blur-2xl [will-change:backdrop-filter]" />
+              <div class="absolute inset-0 z-1 backdrop-blur-2xl will-change-[backdrop-filter]" />
             </div>
           )}
         </Show>
@@ -186,11 +190,13 @@ function PlayerSelectionComponent() {
           fallback={
             <Show when={isMedley()}>
               <div class="flex flex-col items-center gap-3 text-center">
-                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center font-bold text-5xl text-transparent">
+                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
                   Medley
                 </span>
                 <p class="text-2xl opacity-80">
-                  {songs().length === 1 ? t("sing.songCount.one", { count: 1 }) : t("sing.songCount.other", { count: songs().length })}
+                  {songs().length === 1
+                    ? t("sing.songCount.one", { count: 1 })
+                    : t("sing.songCount.other", { count: songs().length })}
                 </p>
               </div>
             </Show>
@@ -206,7 +212,7 @@ function PlayerSelectionComponent() {
             return (
               <div class="flex flex-col items-center gap-3 text-center">
                 <p class="text-2xl opacity-80">{song().artist}</p>
-                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center font-bold text-5xl text-transparent">
+                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
                   {song().title}
                 </span>
                 <Show when={isDuet()}>
@@ -243,7 +249,7 @@ function PlayerSelectionComponent() {
           <Button
             onClick={startGame}
             gradient="gradient-sing"
-            class="max-w-md w-full"
+            class="w-full max-w-md"
             onMouseEnter={() => menuLoop.set(1)}
             selected={menuLoop.position() === 1}
           >
@@ -310,10 +316,10 @@ function PlayerSlot(props: PlayerSlotProps) {
     <button
       type="button"
       onClick={openSelectPlayerPopup}
-      onMouseEnter={props.onMouseEnter}
+      onMouseEnter={() => props.onMouseEnter?.()}
       class="flex w-56 cursor-pointer flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-200 ease-in-out active:scale-95"
       classList={{
-        "ring-4 ring-white scale-105": props.selected,
+        "scale-105 ring-4 ring-white": props.selected,
         "opacity-50": !props.selected,
         "scale-95!": pressed(),
       }}
@@ -334,9 +340,7 @@ function PlayerSlot(props: PlayerSlotProps) {
             </>
           }
         >
-          {(selection) => (
-            <Avatar user={selection().player} class="h-20 w-20 text-2xl" fallbackClass="bg-white/20" />
-          )}
+          {(selection) => <Avatar user={selection().player} class="h-20 w-20 text-2xl" fallbackClass="bg-white/20" />}
         </Show>
       </div>
 
@@ -344,7 +348,7 @@ function PlayerSlot(props: PlayerSlotProps) {
       <Show when={props.selection}>
         {(selection) => (
           <div class="flex w-full flex-col items-center gap-0.5 bg-black/20 px-4 py-3">
-            <span class="max-w-full truncate text-center font-semibold text-sm">{selection().player.username}</span>
+            <span class="max-w-full truncate text-center text-sm font-semibold">{selection().player.username}</span>
             <Show when={isDuet()}>
               <span class="text-center text-xs opacity-60">{getVoiceName(selection().voice)}</span>
             </Show>
@@ -364,7 +368,11 @@ interface SelectPlayerPopupProps {
 }
 
 function SelectPlayerPopup(props: SelectPlayerPopupProps) {
-  const [selectedVoice, setSelectedVoice] = createSignal(props.selection?.voice ?? 0);
+  const [selectedVoice, setSelectedVoice] = createSignal(0);
+
+  createEffect(() => {
+    setSelectedVoice(props.selection?.voice ?? 0);
+  });
 
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
 

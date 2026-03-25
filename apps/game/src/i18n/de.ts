@@ -16,6 +16,15 @@ const de = {
     },
     yes: "Ja",
     no: "Nein",
+    routeError: {
+      title: "Etwas ist schiefgelaufen",
+      tryAgain: "Erneut versuchen",
+      goHome: "Zur Startseite",
+      copyDetails: "Fehlerdetails kopieren",
+      copied: "Fehlerdetails in die Zwischenablage kopiert",
+      copyFailed: "Kopieren in die Zwischenablage fehlgeschlagen",
+      detailsHeading: "Details",
+    },
   },
   home: {
     title: "Willkommen",

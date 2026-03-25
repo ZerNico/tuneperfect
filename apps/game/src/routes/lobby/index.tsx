@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import { createMemo } from "solid-js";
+import IconHome from "~icons/lucide/home";
+import IconRefreshCw from "~icons/lucide/refresh-cw";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -12,8 +15,6 @@ import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { availableClubsQueryOptions, lobbyQueryOptions } from "~/lib/queries";
 import { lobbyStore } from "~/stores/lobby";
-import IconHome from "~icons/lucide/home";
-import IconRefreshCw from "~icons/lucide/refresh-cw";
 
 export const Route = createFileRoute("/lobby/")({
   component: LobbyComponent,
@@ -43,7 +44,7 @@ function LobbyComponent() {
 
   const menuItems: Accessor<MenuItem[]> = createMemo(() => {
     const items: MenuItem[] = [];
-    
+
     const clubs = availableClubsQuery.data || [];
     const selectedClub = lobbyQuery.data?.selectedClub;
 
@@ -61,10 +62,7 @@ function LobbyComponent() {
         },
         options: clubOptions,
         renderValue: (value) => {
-          if (value === noClubOption || !value) {
-            return <span>{t("lobby.noClub")}</span>;
-          }
-          const club = clubs.find((c) => c.id === value);
+          const club = value && value !== noClubOption ? clubs.find((c) => c.id === value) : null;
           return <span>{club?.name || t("lobby.noClub")}</span>;
         },
       });

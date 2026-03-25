@@ -1,5 +1,4 @@
-/** biome-ignore-all lint/complexity/noBannedTypes: Its fine here */
-/** biome-ignore-all lint/suspicious/noExplicitAny: Its fine here */
+// These utility types intentionally use broad object constraints and `any` to model nested paths.
 type PathImpl<T, K extends keyof T> = K extends string
   ? T[K] extends Record<string, any>
     ? T[K] extends ArrayLike<any>
@@ -157,7 +156,7 @@ function updateNestedPath(current: any, path: PropertyKey[], value: any): any {
   const prevValue = target[finalKey];
 
   if (typeof value === "function") {
-    target[finalKey] = value(prevValue, [...path].reverse());
+    target[finalKey] = value(prevValue, [...path].toReversed());
   } else {
     target[finalKey] = value;
   }

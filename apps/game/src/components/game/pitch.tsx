@@ -1,5 +1,6 @@
 import { Key } from "@solid-primitives/keyed";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
+
 import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
@@ -33,9 +34,7 @@ export default function Pitch() {
       return notes[0].length;
     }
 
-    // biome-ignore lint/style/noNonNullAssertion: Checked above
     const firstNote = notes[0]!;
-    // biome-ignore lint/style/noNonNullAssertion: Checked above
     const lastNote = notes.at(-1)!;
 
     return lastNote.startBeat + lastNote.length - firstNote.startBeat;
@@ -146,6 +145,7 @@ export default function Pitch() {
       return [];
     }
 
+    // oxlint-disable-next-line solid/reactivity
     return currentBeats.reduce((grouped, beat) => {
       const lastGroup = grouped[grouped.length - 1];
 
@@ -221,10 +221,11 @@ interface PitchNoteProps {
 
 function SparkleParticles(props: { length: number }) {
   // Scale particles based on note length: base 4 particles + 2 per beat, capped at 16
-  const particleCount = Math.min(4 + Math.floor(props.length * 2), 16);
+  const particleCount = createMemo(() => Math.min(4 + Math.floor(props.length * 2), 16));
 
   // Generate random particles with different delays and positions
-  const particles = Array.from({ length: particleCount }, (_, i) => ({
+  // oxlint-disable-next-line solid/reactivity
+  const particles = Array.from({ length: particleCount() }, (_, i) => ({
     id: i,
     delay: Math.random() * 2,
     x: Math.random() * 100,
@@ -265,7 +266,7 @@ function PitchNote(props: PitchNoteProps) {
       }}
     >
       <div
-        class="-translate-y-1/4 relative h-2/1 w-full transform overflow-hidden rounded-full border-[0.15cqw] shadow-md"
+        class="relative h-2/1 w-full -translate-y-1/4 transform overflow-hidden rounded-full border-[0.15cqw] shadow-md"
         classList={{
           "border-yellow-400 bg-yellow-400/20": props.note.type.endsWith("Golden"),
           "border-white bg-black/20": !props.note.type.endsWith("Golden"),
@@ -291,14 +292,16 @@ interface ProcessedNoteProps {
 }
 
 function ProcessedNote(props: ProcessedNoteProps) {
-  const [firstBeat] = createSignal(props.delayedBeat);
+  // The initial delayed beat acts as the fixed start reference for this note fill animation.
+  // oxlint-disable-next-line solid/reactivity
+  const firstBeat = props.delayedBeat;
 
   const fill = createMemo(() => {
     const delayedBeat = props.delayedBeat;
 
-    const fillPercentage = clamp(((delayedBeat - firstBeat()) / props.length) * 100, 0, 100);
+    const fillPercentage = clamp(((delayedBeat - firstBeat) / props.length) * 100, 0, 100);
 
-    if (delayedBeat - firstBeat() <= 1) {
+    if (delayedBeat - firstBeat <= 1) {
       return {
         clipPercentage: fillPercentage,
         widthPercentage: 100 / props.length,
@@ -384,7 +387,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
         "grid-column": `${props.column} / span ${props.length}`,
       }}
     >
-      <div class="-translate-y-1/4 absolute h-2/1 w-full transform p-[0.35cqw]">
+      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.35cqw]">
         <div class="relative h-full w-full">
           <div
             style={{

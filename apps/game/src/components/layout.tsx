@@ -1,4 +1,5 @@
 import { type JSX, Suspense } from "solid-js";
+
 import { ToastRegion } from "./ui/toast";
 
 interface LayoutProps {
@@ -21,10 +22,10 @@ export default function Layout(props: LayoutProps) {
         }}
       >
         <div class="layout flex">
-          <div class="@container relative flex flex-grow overflow-hidden">
+          <div class="@container relative flex grow overflow-hidden">
             <Suspense fallback={<div />}>
               <div class="absolute inset-0 h-full w-full">{props.background}</div>
-              <div class="relative z-1 grid max-w-full flex-grow grid-rows-[min-content_1fr_min-content] gap-6 p-16">
+              <div class="relative z-1 grid max-w-full grow grid-rows-[min-content_1fr_min-content] gap-6 p-16">
                 <div>{props.header}</div>
                 <div class="flex w-full min-w-0 flex-col">{props.children}</div>
                 <div>{props.footer}</div>

@@ -1,6 +1,7 @@
 import { load } from "@tauri-apps/plugin-store";
 import { createEffect, createRoot, createSignal, on } from "solid-js";
 import * as v from "valibot";
+
 import { makeNested } from "./setter";
 
 export interface PersistentStoreOptions<T> {
@@ -30,7 +31,9 @@ async function createBackupStore(filename: string, entries: [string, unknown][])
 export function createPersistentStore<T>(options: PersistentStoreOptions<T>) {
   const { filename, schema, defaults } = options;
 
-  const [settings, setSettings, updateSettings] = makeNested(createSignal<T>(defaults));
+  // oxlint-disable-next-line solid/reactivity
+  const settingsSignal = createSignal<T>(defaults);
+  const [settings, setSettings, updateSettings] = makeNested(settingsSignal);
   const [initialized, setInitialized] = createSignal(false);
 
   async function initialize() {

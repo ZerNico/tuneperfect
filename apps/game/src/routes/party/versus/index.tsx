@@ -3,6 +3,14 @@ import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { batch, createMemo, createSignal, For, Show } from "solid-js";
 import { Transition } from "solid-transition-group";
 import { twMerge } from "tailwind-merge";
+import IconDices from "~icons/lucide/dices";
+import IconHash from "~icons/lucide/hash";
+import IconTrophy from "~icons/lucide/trophy";
+import IconF1Key from "~icons/sing/f1-key";
+import IconF2Key from "~icons/sing/f2-key";
+import IconGamepadLB from "~icons/sing/gamepad-lb";
+import IconGamepadRB from "~icons/sing/gamepad-rb";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -20,13 +28,6 @@ import { type Round, versusStore } from "~/stores/party/versus";
 import { type PlayerSelection, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
-import IconDices from "~icons/lucide/dices";
-import IconHash from "~icons/lucide/hash";
-import IconTrophy from "~icons/lucide/trophy";
-import IconF1Key from "~icons/sing/f1-key";
-import IconF2Key from "~icons/sing/f2-key";
-import IconGamepadLB from "~icons/sing/gamepad-lb";
-import IconGamepadRB from "~icons/sing/gamepad-rb";
 
 interface SongItem {
   song: LocalSong | null;
@@ -63,7 +64,7 @@ function calculatePlayerScores(players: User[], roundsData: Record<string, Round
       }
       return { user: player, wins, totalScore, roundsPlayed };
     })
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (b.wins !== a.wins) {
         return b.wins - a.wins;
       }
@@ -119,7 +120,6 @@ export const Route = createFileRoute("/party/versus/")({
       ...state,
       playedSongs: [...state.playedSongs, lastResult.song.song],
     }));
-
 
     if (scores.length !== 2 || !voice || players.length !== 2) {
       console.warn("Conditions not met for processing round results:", { settings, voice, players, scores });
@@ -291,7 +291,10 @@ function VersusComponent() {
 
   const currentMatchup = createMemo(() => versusStore.state().matchups[0] ?? null);
 
-  const [jokers, setJokers] = createSignal<[number, number]>([versusStore.settings()?.jokers ?? 0, versusStore.settings()?.jokers ?? 0]);
+  const [jokers, setJokers] = createSignal<[number, number]>([
+    versusStore.settings()?.jokers ?? 0,
+    versusStore.settings()?.jokers ?? 0,
+  ]);
 
   const winners = createMemo(() => {
     const players = versusStore.state().players;
@@ -413,13 +416,16 @@ function VersusComponent() {
         </div>
       }
     >
-      <div class="grid flex-grow grid-cols-[2fr_5fr] items-center gap-4">
+      <div class="grid grow grid-cols-[2fr_5fr] items-center gap-4">
         <div>
           <VersusHighscoreList />
         </div>
-        <Show when={currentMatchup()} fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}>
+        <Show
+          when={currentMatchup()}
+          fallback={<VersusEndScreen winners={winners()} menuItems={menuItems} onBack={onBack} t={t} />}
+        >
           {(matchup) => (
-            <div class="mask-x-from-99% mask-x-to-100% flex w-full flex-col items-center justify-center gap-14 py-4">
+            <div class="flex w-full flex-col items-center justify-center gap-14 mask-x-from-99% mask-x-to-100% py-4">
               <MatchupPlayerDisplay
                 player={matchup()[0]}
                 colorName={settingsStore.microphones()[0]?.color ?? "blue"}
@@ -431,7 +437,8 @@ function VersusComponent() {
               <div
                 class="pointer-events-none flex transform-gpu justify-center will-change-transform"
                 style={{
-                  transform: state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
+                  transform:
+                    state() === "animating" ? `translateX(-${((1 + SONGS_BETWEEN) * 100) / TOTAL_SONG_ITEMS}%)` : "",
                   transition: state() === "animating" ? "transform 3s cubic-bezier(0.42, 0, 0.4, 1)" : "",
                   width: `${(TOTAL_SONG_ITEMS / SONGS_ON_SCREEN) * 100}%`,
                 }}
@@ -440,13 +447,15 @@ function VersusComponent() {
                 <Show when={displayedSongs()}>
                   {(data) => (
                     <>
-                      <For each={times(PADDING)}>{() => <div class="flex-shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}</For>
+                      <For each={times(PADDING)}>
+                        {() => <div class="shrink-0" style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }} />}
+                      </For>
                       <Key each={data()} by={(item) => item.id}>
                         {(songItem, index) => (
                           <button
                             type="button"
                             onTransitionEnd={(event) => event.stopPropagation()}
-                            class="relative aspect-square w-full flex-shrink-0 transform p-2 transition-transform duration-250"
+                            class="relative aspect-square w-full shrink-0 transform p-2 transition-transform duration-250"
                             style={{ width: `${100 / TOTAL_SONG_ITEMS}%` }}
                             classList={{
                               "pointer-events-auto scale-130 cursor-pointer active:scale-125":
@@ -513,7 +522,7 @@ function VersusEndScreen(props: VersusEndScreenProps) {
       <div class="flex flex-1 flex-col items-center justify-center">
         <IconTrophy class="text-6xl" />
         <Show when={props.winners.length > 0}>
-          <p class="gradient-party bg-gradient-to-b bg-clip-text text-center font-bold text-6xl text-transparent">
+          <p class="gradient-party bg-gradient-to-b bg-clip-text text-center text-6xl font-bold text-transparent">
             <Show when={props.winners.length === 1} fallback={props.t("party.versus.draw")}>
               {props.winners[0]?.username} {props.t("party.versus.wins")}!
             </Show>
@@ -560,9 +569,9 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
         background: `linear-gradient(90deg, ${getColorVar(props.colorName, 600)}, ${getColorVar(props.colorName, 500)})`,
       }}
     >
-      <div class="flex flex-grow flex-row items-center gap-4 overflow-hidden">
+      <div class="flex grow flex-row items-center gap-4 overflow-hidden">
         <Avatar user={props.player} />
-        <div class="truncate font-bold text-xl">{props.player.username}</div>
+        <div class="truncate text-xl font-bold">{props.player.username}</div>
       </div>
       <div class="flex flex-row items-center gap-2">
         <Show when={props.playerIndex === 0}>
@@ -575,7 +584,11 @@ function MatchupPlayerDisplay(props: MatchupPlayerDisplayProps) {
             <IconGamepadRB class="text-base" />
           </Show>
         </Show>
-        <button type="button" class="cursor-pointer transition-all hover:opacity-75 active:scale-95 " onClick={props.onReroll}>
+        <button
+          type="button"
+          class="cursor-pointer transition-all hover:opacity-75 active:scale-95"
+          onClick={() => props.onReroll()}
+        >
           <IconDices class="text-xl" />
         </button>
         <p class="">{props.jokers}</p>
@@ -603,7 +616,7 @@ function VersusHighscoreList(props: VersusHighscoreListProps) {
             {(score) => (
               <div class="flex h-7 w-full items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4">
                 <div
-                  class="flex h-full w-10 flex-shrink-0 items-center justify-center text-center"
+                  class="flex h-full w-10 shrink-0 items-center justify-center text-center"
                   classList={{
                     "bg-yellow-500": score.rank === 1,
                     "bg-white text-black": score.rank !== 1,
@@ -612,16 +625,16 @@ function VersusHighscoreList(props: VersusHighscoreListProps) {
                   {score.rank}.
                 </div>
 
-                <div class="flex flex-grow items-center gap-2 overflow-hidden">
-                  <Avatar user={score.user} class="h-6 w-6 flex-shrink-0" />
+                <div class="flex grow items-center gap-2 overflow-hidden">
+                  <Avatar user={score.user} class="h-6 w-6 shrink-0" />
                   <span class="truncate">{score.user.username || "?"}</span>
                 </div>
-                <div class="flex flex-shrink-0 flex-row items-center gap-4">
-                  <span class="flex flex-shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
+                <div class="flex shrink-0 flex-row items-center gap-4">
+                  <span class="flex shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
                     <IconTrophy />
                     {score.wins} / {score.roundsPlayed}
                   </span>
-                  <span class="flex flex-shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
+                  <span class="flex shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
                     <IconHash />
                     {score.totalScore.toLocaleString("en-US", {
                       maximumFractionDigits: 0,

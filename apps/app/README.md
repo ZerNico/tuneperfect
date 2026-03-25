@@ -1,4 +1,4 @@
-Welcome to your new TanStack app! 
+Welcome to your new TanStack app!
 
 # Getting Started
 
@@ -21,9 +21,8 @@ bun run build
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
-
-
 ## Routing
+
 This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as fiels in `src/routes`.
 
 ### Adding A Route
@@ -59,8 +58,8 @@ In the File Based Routing setup the layout is located in `src/routes/__root.tsx`
 Here is an example layout that includes a header:
 
 ```tsx
-import { Outlet, createRootRoute } from '@tanstack/solid-router'
-import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
+import { Outlet, createRootRoute } from "@tanstack/solid-router";
+import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 
 import { Link } from "@tanstack/solid-router";
 
@@ -77,7 +76,7 @@ export const Route = createRootRoute({
       <TanStackRouterDevtools />
     </>
   ),
-})
+});
 ```
 
 The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.

@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createResource, createSignal, Show, Suspense } from "solid-js";
+import IconLoaderCircle from "~icons/lucide/loader-circle";
+
 import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
@@ -8,7 +10,6 @@ import MicLevelMeter from "~/components/mic-level-meter";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { type Microphone, settingsStore } from "~/stores/settings";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/settings/microphones/$id")({
   component: MicrophoneComponent,

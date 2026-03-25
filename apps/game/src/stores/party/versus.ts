@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+
 import { generateMatchups, type Matchup } from "~/lib/party/versus/matchup";
 import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/song";

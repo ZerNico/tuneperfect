@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { exists, mkdir } from "node:fs/promises";
+
 import { helpPlugin } from "@clerc/plugin-help";
 import { $ } from "bun";
 import { Clerc } from "clerc";

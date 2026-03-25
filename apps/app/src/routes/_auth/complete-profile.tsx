@@ -3,6 +3,7 @@ import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
+
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
@@ -67,9 +68,9 @@ function RouteComponent() {
   }));
 
   return (
-    <div class="flex flex-grow flex-col items-center justify-center p-2">
+    <div class="flex grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("completeProfile.title")}</h1>
+        <h1 class="text-xl font-semibold">{t("completeProfile.title")}</h1>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {

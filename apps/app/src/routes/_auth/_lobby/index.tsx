@@ -2,15 +2,16 @@ import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import { type Component, createMemo, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { sessionQueryOptions } from "~/lib/auth";
-import { t } from "~/lib/i18n";
-import { connectionStore, startConnection, stopConnection } from "~/stores/connection";
 import IconCheck from "~icons/lucide/check";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 import IconMusic from "~icons/lucide/music";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
 import IconUsers from "~icons/lucide/users";
 import IconWifiOff from "~icons/lucide/wifi-off";
+
+import { sessionQueryOptions } from "~/lib/auth";
+import { t } from "~/lib/i18n";
+import { connectionStore, startConnection, stopConnection } from "~/stores/connection";
 
 export const Route = createFileRoute("/_auth/_lobby/")({
   component: LobbyMainComponent,
@@ -56,9 +57,9 @@ function LobbyMainComponent() {
   ];
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6">
-        <h1 class="font-bold text-3xl">{t("lobby.title")}</h1>
+        <h1 class="text-3xl font-bold">{t("lobby.title")}</h1>
 
         {/* Connection status indicator */}
         <div class="mt-2 flex items-center gap-2">
@@ -125,18 +126,18 @@ function LobbyCard(props: LobbyCardProps) {
     <Show
       when={!props.disabled}
       fallback={
-        <div class="group flex cursor-not-allowed overflow-hidden rounded-xl bg-white/50 shadow-lg opacity-60">
+        <div class="group flex cursor-not-allowed overflow-hidden rounded-xl bg-white/50 opacity-60 shadow-lg">
           <div
-            class="flex w-24 flex-shrink-0 items-center justify-center bg-gradient-to-br p-4 opacity-50"
+            class="flex w-24 shrink-0 items-center justify-center bg-gradient-to-br p-4 opacity-50"
             classList={{
               [props.gradient]: true,
             }}
           >
             <Dynamic component={props.icon} class="h-10 w-10 text-white" />
           </div>
-          <div class="flex flex-grow flex-col justify-center p-4">
-            <div class="font-semibold text-lg text-slate-800">{props.label}</div>
-            <div class="text-slate-500 text-sm">{props.disabledReason ?? props.description}</div>
+          <div class="flex grow flex-col justify-center p-4">
+            <div class="text-lg font-semibold text-slate-800">{props.label}</div>
+            <div class="text-sm text-slate-500">{props.disabledReason ?? props.description}</div>
           </div>
         </div>
       }
@@ -146,16 +147,16 @@ function LobbyCard(props: LobbyCardProps) {
         class="group flex cursor-pointer overflow-hidden rounded-xl bg-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]"
       >
         <div
-          class="flex w-24 flex-shrink-0 items-center justify-center bg-gradient-to-br p-4"
+          class="flex w-24 shrink-0 items-center justify-center bg-gradient-to-br p-4"
           classList={{
             [props.gradient]: true,
           }}
         >
           <Dynamic component={props.icon} class="h-10 w-10 text-white" />
         </div>
-        <div class="flex flex-grow flex-col justify-center p-4">
-          <div class="font-semibold text-lg text-slate-800">{props.label}</div>
-          <div class="text-slate-500 text-sm">{props.description}</div>
+        <div class="flex grow flex-col justify-center p-4">
+          <div class="text-lg font-semibold text-slate-800">{props.label}</div>
+          <div class="text-sm text-slate-500">{props.description}</div>
         </div>
       </Link>
     </Show>

@@ -16,6 +16,15 @@ const en = {
     },
     yes: "Yes",
     no: "No",
+    routeError: {
+      title: "Something went wrong",
+      tryAgain: "Try again",
+      goHome: "Go to home",
+      copyDetails: "Copy error details",
+      copied: "Error details copied to clipboard",
+      copyFailed: "Could not copy to clipboard",
+      detailsHeading: "Details",
+    },
   },
   home: {
     title: "Welcome",

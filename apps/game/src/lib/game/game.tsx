@@ -1,11 +1,13 @@
 import createRAF from "@solid-primitives/raf";
 import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
+
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
+
 import { type GameContextValue, GameProvider } from "./game-context";
 
 export interface CreateGameOptions {
@@ -72,7 +74,11 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTimeMs = playerRef.getCurrentTime() * 1000;
 
-    const usedVoices = roundStore.settings()?.songs[0]?.players.filter(Boolean).map((p) => p?.voice) ?? [];
+    const usedVoices =
+      roundStore
+        .settings()
+        ?.songs[0]?.players.filter(Boolean)
+        .map((p) => p?.voice) ?? [];
 
     for (const voiceIndex of usedVoices) {
       if (voiceIndex === undefined) continue;
@@ -144,14 +150,16 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const flooredBeat = () => Math.floor(beat());
 
-  createEffect(async () => {
+  createEffect(() => {
     flooredBeat();
     if (!started() || !playing()) return;
 
-    const result = await commands.getPitches();
-    if (result.status === "ok") {
-      setPitches(result.data);
-    }
+    void (async () => {
+      const result = await commands.getPitches();
+      if (result.status === "ok") {
+        setPitches(result.data);
+      }
+    })();
   });
 
   createEffect(() => {

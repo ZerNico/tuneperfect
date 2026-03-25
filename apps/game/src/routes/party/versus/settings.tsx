@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
+
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";

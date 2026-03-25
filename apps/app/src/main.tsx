@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
-import { routeTree } from "./routeTree.gen";
-import "./styles.css";
+
 import { DialogProvider } from "./lib/dialog.tsx";
+
+import "./styles.css";
+import { routeTree } from "./routeTree.gen";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

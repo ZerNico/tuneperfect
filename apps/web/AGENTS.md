@@ -19,6 +19,7 @@ Requires `.env`: `VITE_APP_URL`, `SUPPORT_EMAIL`, `GITHUB_REPO`, `VERSION`, `VIT
 ## Patterns & Conventions
 
 ### File organization
+
 ```
 src/
 ├── assets/icons/         # Platform SVG icons (windows, linux, apple)
@@ -38,29 +39,31 @@ src/
 ```
 
 ### Component patterns
+
 - ✅ **DO**: Use functional components — see `src/components/ui/button.tsx`
 - ✅ **DO**: Use `cn()` utility for conditional class merging — see `src/lib/utils/cn.tsx`
 - ✅ **DO**: Use TanStack Start SSR features where applicable
 - ❌ **DON'T**: Add auth/API calls here — this is a static marketing site
 
 ### Styling
+
 - Tailwind CSS v4 via `@tailwindcss/vite` plugin
 - Kobalte for headless components
 - Custom icons via `unplugin-icons` (Lucide + custom SVG collection)
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/router.tsx` | Router factory |
-| `src/routes/__root.tsx` | Root layout |
-| `src/routes/index.tsx` | Landing page |
-| `src/components/header.tsx` | Site header/nav |
-| `src/components/footer.tsx` | Site footer |
-| `src/components/download-card.tsx` | Platform download cards |
-| `src/lib/config.ts` | Runtime config from env vars |
-| `src/lib/posthog.ts` | Analytics |
-| `vite.config.ts` | Vite + SolidStart + Nitro config |
+| File                               | Purpose                          |
+| ---------------------------------- | -------------------------------- |
+| `src/router.tsx`                   | Router factory                   |
+| `src/routes/__root.tsx`            | Root layout                      |
+| `src/routes/index.tsx`             | Landing page                     |
+| `src/components/header.tsx`        | Site header/nav                  |
+| `src/components/footer.tsx`        | Site footer                      |
+| `src/components/download-card.tsx` | Platform download cards          |
+| `src/lib/config.ts`                | Runtime config from env vars     |
+| `src/lib/posthog.ts`               | Analytics                        |
+| `vite.config.ts`                   | Vite + SolidStart + Nitro config |
 
 ## JIT Index Hints
 
@@ -79,5 +82,5 @@ rg -n "createFileRoute" src/routes/                                 # find route
 ## Pre-PR Checks
 
 ```bash
-bunx biome check apps/web && cd apps/web && vite build
+bun run lint apps/web && bun run format:check apps/web && cd apps/web && vite build
 ```

@@ -2,6 +2,8 @@ import { useMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { differenceInDays } from "date-fns";
 import { Match, onMount, Switch } from "solid-js";
+import IconLoaderCircle from "~icons/lucide/loader-circle";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -11,7 +13,6 @@ import { client } from "~/lib/orpc";
 import { queryClient } from "~/main";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/create-lobby")({
   component: IndexComponent,
@@ -26,7 +27,7 @@ function IndexComponent() {
         lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId }, createdAt: Date.now() });
         goToLoading();
       },
-    })
+    }),
   );
 
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
@@ -41,7 +42,7 @@ function IndexComponent() {
     const currentLobby = lobbyStore.lobby();
     if (currentLobby) {
       const isLobbyOlderThanOneDay = differenceInDays(Date.now(), currentLobby.createdAt) >= 1;
-      
+
       if (isLobbyOlderThanOneDay) {
         lobbyStore.clearLobby();
         createLobbyMutation.mutate({});
@@ -77,13 +78,13 @@ function IndexComponent() {
     <Layout intent="primary" footer={<KeyHints hints={["navigate", "confirm"]} />}>
       <Switch>
         <Match when={createLobbyMutation.isPending}>
-          <div class="flex flex-grow items-center justify-center">
+          <div class="flex grow items-center justify-center">
             <IconLoaderCircle class="animate-spin text-6xl" />
           </div>
         </Match>
         <Match when={createLobbyMutation.isError}>
-          <div class="flex w-full flex-grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center font-bold text-4xl">{t("createLobby.failed")}</h1>
+          <div class="flex w-full grow flex-col justify-center">
+            <h1 class="mb-[10cqh] text-center text-4xl font-bold">{t("createLobby.failed")}</h1>
             <Menu items={menuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>

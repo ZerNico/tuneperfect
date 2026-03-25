@@ -3,6 +3,10 @@ import { Key } from "@solid-primitives/keyed";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
+import IconChevronLeft from "~icons/lucide/chevron-left";
+import IconUserPlus from "~icons/lucide/user-plus";
+import IconUsers from "~icons/lucide/users";
+
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
@@ -10,9 +14,6 @@ import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import IconChevronLeft from "~icons/lucide/chevron-left";
-import IconUserPlus from "~icons/lucide/user-plus";
-import IconUsers from "~icons/lucide/users";
 
 export const Route = createFileRoute("/_auth/_lobby/players")({
   component: PlayersComponent,
@@ -94,13 +95,13 @@ function PlayersComponent() {
   };
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6">
         <Link to="/" class="mb-2 flex items-center gap-1 text-white/70 transition-colors hover:text-white">
           <IconChevronLeft class="h-5 w-5" />
           <span class="text-sm">{t("lobby.title")}</span>
         </Link>
-        <h1 class="font-bold text-3xl">{t("lobby.playersTitle")}</h1>
+        <h1 class="text-3xl font-bold">{t("lobby.playersTitle")}</h1>
       </div>
 
       <Show
@@ -110,9 +111,9 @@ function PlayersComponent() {
             when={lobbyQuery.isPending}
             fallback={
               <div class="py-12 text-center">
-                <IconUsers class="mx-auto h-12 w-12 text-gray-400" />
-                <h3 class="mt-2 font-medium text-gray-900 text-sm">{t("lobby.noUsers")}</h3>
-                <p class="mt-1 text-gray-500 text-sm">{t("lobby.noUsersDescription")}</p>
+                <IconUsers class="text-gray-400 mx-auto h-12 w-12" />
+                <h3 class="text-gray-900 mt-2 text-sm font-medium">{t("lobby.noUsers")}</h3>
+                <p class="text-gray-500 mt-1 text-sm">{t("lobby.noUsersDescription")}</p>
               </div>
             }
           >
@@ -125,7 +126,7 @@ function PlayersComponent() {
             {(user) => (
               <div class="flex items-center justify-between rounded-lg bg-white p-4">
                 <div class="flex items-center gap-3">
-                  <Avatar class="flex-shrink-0" user={user()} />
+                  <Avatar class="shrink-0" user={user()} />
                   <div>
                     <div class="font-semibold text-slate-800">{user().username}</div>
                   </div>
@@ -172,7 +173,7 @@ function PlayersComponent() {
                     <div class="flex items-center gap-3">
                       <div>
                         <div class="font-semibold text-slate-800">{club.name}</div>
-                        <div class="text-slate-500 text-sm">
+                        <div class="text-sm text-slate-500">
                           {club.members.length === 1
                             ? t("clubs.membersOne", { count: club.members.length })
                             : t("clubs.membersOther", { count: club.members.length })}

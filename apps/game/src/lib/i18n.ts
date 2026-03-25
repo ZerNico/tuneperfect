@@ -1,5 +1,6 @@
 import * as i18n from "@solid-primitives/i18n";
 import { createMemo } from "solid-js";
+
 import * as de from "~/i18n/de";
 import * as en from "~/i18n/en";
 import { settingsStore } from "~/stores/settings";
@@ -22,6 +23,7 @@ const locale = createMemo(() => {
 });
 
 const dict = createMemo(() => getDictionary(locale()));
+// oxlint-disable-next-line solid/reactivity
 const t = i18n.translator(dict, i18n.resolveTemplate);
 
 const setLocale = (lang: Locale) => {

@@ -45,30 +45,23 @@ export default function Button(props: ButtonProps | InternalLinkProps | LinkProp
     [props.class || ""]: true,
   });
 
-  if ("to" in props) {
-    return (
-      <Link to={props.to} classList={classes()} onClick={props.onClick}>
-        <ButtonContent>{props.children}</ButtonContent>
-      </Link>
-    );
-  }
-
-  if ("href" in props) {
-    return (
-      <a
-        href={props.href}
-        target={props.target}
-        classList={classes()}
-        download={props.download}
-        onClick={props.onClick}
-      >
-        <ButtonContent>{props.children}</ButtonContent>
-      </a>
-    );
-  }
-
-  return (
-    <button type={props.type || "button"} onClick={props.onClick} classList={classes()}>
+  // oxlint-disable-next-line solid/components-return-once
+  return "to" in props ? (
+    <Link to={props.to} classList={classes()} onClick={() => props.onClick?.()}>
+      <ButtonContent>{props.children}</ButtonContent>
+    </Link>
+  ) : "href" in props ? (
+    <a
+      href={props.href}
+      target={props.target}
+      classList={classes()}
+      download={props.download}
+      onClick={() => props.onClick?.()}
+    >
+      <ButtonContent>{props.children}</ButtonContent>
+    </a>
+  ) : (
+    <button type={props.type || "button"} onClick={() => props.onClick?.()} classList={classes()}>
       <ButtonContent>{props.children}</ButtonContent>
     </button>
   );
