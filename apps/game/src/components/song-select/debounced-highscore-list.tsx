@@ -1,5 +1,6 @@
 import { safe } from "@orpc/client";
 import { createEffect, createSignal, on, onCleanup } from "solid-js";
+
 import HighscoreList, { type Highscore } from "~/components/highscore-list";
 import { client } from "~/lib/orpc";
 import { lobbyStore } from "~/stores/lobby";

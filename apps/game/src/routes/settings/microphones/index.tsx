@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
+import IconMicVocal from "~icons/lucide/mic-vocal";
+import IconPlus from "~icons/lucide/plus";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -9,8 +12,6 @@ import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { settingsStore } from "~/stores/settings";
-import IconMicVocal from "~icons/lucide/mic-vocal";
-import IconPlus from "~icons/lucide/plus";
 
 export const Route = createFileRoute("/settings/microphones/")({
   component: MicrophonesComponent,
@@ -42,7 +43,7 @@ function MicrophonesComponent() {
       });
     }
 
-    if (settingsStore.microphones().length < 2) {
+    if (settingsStore.microphones().length < 4) {
       buttons.push({
         label: t("settings.add"),
         icon: <IconPlus class="text-6xl" />,
@@ -90,7 +91,7 @@ function MicrophonesComponent() {
       }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="flex w-full flex-grow items-center justify-center gap-4">
+      <div class="flex w-full grow items-center justify-center gap-4">
         <For each={buttons()}>
           {(button, index) => (
             <IconButton

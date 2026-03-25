@@ -1,10 +1,5 @@
-import { createFileRoute } from "@tanstack/solid-router"
-import { createSignal, onMount } from "solid-js";
-import FeatureCard from "~/components/feature-card";
-import Slider from "~/components/slider";
-import Button from "~/components/ui/button";
-import { cn } from "~/lib/utils/cn";
-import { getColorVar } from "~/lib/utils/color";
+import { createFileRoute } from "@tanstack/solid-router";
+import { createMemo, createSignal, onMount } from "solid-js";
 import IconApple from "~icons/logos/apple";
 import IconGithub from "~icons/lucide/github";
 import IconMicVocal from "~icons/lucide/mic-vocal";
@@ -13,6 +8,12 @@ import IconSettings from "~icons/lucide/settings";
 import IconUsers from "~icons/lucide/users";
 import IconLinux from "~icons/sing/linux";
 import IconWindows from "~icons/sing/windows";
+
+import FeatureCard from "~/components/feature-card";
+import Slider from "~/components/slider";
+import Button from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
+import { getColorVar } from "~/lib/utils/color";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -35,10 +36,10 @@ function RouteComponent() {
           <Note class="absolute bottom-[20%] left-[30%] w-12 md:bottom-[25%]" color="red" />
           <Note class="absolute right-[35%] bottom-[15%] w-40 max-md:hidden" color="green" />
           <Note class="absolute top-[18%] right-[40%] max-md:hidden" color="purple" />
-          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center font-bold text-4xl opacity-0 md:text-6xl">
+          <h1 class="animate-[fadeInUp_0.6s_ease-out_forwards] text-center text-4xl font-bold opacity-0 md:text-6xl">
             Tune Perfect
           </h1>
-          <p class="max-w-xl animate-[fadeInUp_0.6s_ease-out_0.2s_forwards] text-center text-white/90 text-wrap-balance opacity-0">
+          <p class="text-wrap-balance max-w-xl animate-[fadeInUp_0.6s_ease-out_0.2s_forwards] text-center text-white/90 opacity-0">
             Experience the ultimate karaoke game that brings the party to your living room. Perfect your pitch, compete
             with friends, and have a blast!
           </p>
@@ -62,7 +63,7 @@ function RouteComponent() {
 
         <section class="relative z-2 mx-auto max-w-4xl px-4">
           <div class="mb-4 flex flex-col items-center gap-2">
-            <h2 class="text-center font-bold text-2xl md:text-3xl">Features</h2>
+            <h2 class="text-center text-2xl font-bold md:text-3xl">Features</h2>
             <div class="gradient-party mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
           </div>
           <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
@@ -107,7 +108,7 @@ function RouteComponent() {
           id="download"
         >
           <div class="mb-4 flex flex-col items-center gap-2">
-            <h2 class="text-center font-bold text-2xl md:text-3xl">Download</h2>
+            <h2 class="text-center text-2xl font-bold md:text-3xl">Download</h2>
             <div class="gradient-settings mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
           </div>
           <p class="mb-8 text-center text-white/80">Choose your platform to see available download options.</p>
@@ -135,9 +136,9 @@ function RouteComponent() {
           </div>
         </section>
 
-        <section class="relative z-2 mx-auto w-full max-w-6xl ">
+        <section class="relative z-2 mx-auto w-full max-w-6xl">
           <div class="relative z-2 mb-4 flex flex-col items-center gap-2">
-            <h2 class="text-center font-bold text-2xl md:text-3xl">More Screenshots</h2>
+            <h2 class="text-center text-2xl font-bold md:text-3xl">More Screenshots</h2>
             <div class="gradient-lobby mx-auto h-1 w-18 rounded-full bg-gradient-to-r" />
           </div>
           <Slider class="relative z-2" autoScroll={5000}>
@@ -177,8 +178,8 @@ function Note(props: NoteProps) {
     }, timeout);
   });
 
-  const colorFrom = getColorVar(props.color, 400);
-  const colorTo = getColorVar(props.color, 600);
+  const colorFrom = createMemo(() => getColorVar(props.color, 400));
+  const colorTo = createMemo(() => getColorVar(props.color, 600));
 
   return (
     <div class={cn("h-8 w-20 rounded-full border-2 border-white p-1 md:h-10", props.class)}>
@@ -189,7 +190,7 @@ function Note(props: NoteProps) {
             ? "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)"
             : "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
           "transition-duration": `${randomDuration}ms`,
-          background: `linear-gradient(to right, ${colorFrom}, ${colorTo})`,
+          background: `linear-gradient(to right, ${colorFrom()}, ${colorTo()})`,
         }}
       />
     </div>

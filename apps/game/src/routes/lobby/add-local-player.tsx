@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import { createMemo } from "solid-js";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";

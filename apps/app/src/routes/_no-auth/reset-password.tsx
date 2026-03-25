@@ -3,6 +3,7 @@ import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import * as v from "valibot";
+
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
@@ -88,9 +89,9 @@ function ResetPasswordComponent() {
   }));
 
   return (
-    <div class="flex flex-grow flex-col items-center justify-center p-2">
+    <div class="flex grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("resetPassword.title")}</h1>
+        <h1 class="text-xl font-semibold">{t("resetPassword.title")}</h1>
 
         {success() ? (
           <div class="flex flex-col gap-4">
@@ -171,7 +172,7 @@ function ResetPasswordComponent() {
           </>
         )}
 
-        <p class="text-slate-500 text-sm">
+        <p class="text-sm text-slate-500">
           {t("resetPassword.rememberedPassword")}{" "}
           <Link to="/sign-in" class="text-slate-800">
             {t("common.backToSignIn")}

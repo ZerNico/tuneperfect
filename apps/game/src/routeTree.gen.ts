@@ -19,8 +19,7 @@ import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as PartyIndexRouteImport } from './routes/party/index'
 import { Route as LobbyIndexRouteImport } from './routes/lobby/index'
 import { Route as GameIndexRouteImport } from './routes/game/index'
-import { Route as SingMedleyRouteImport } from './routes/sing/medley'
-import { Route as SingHashRouteImport } from './routes/sing/$hash'
+import { Route as SingSelectRouteImport } from './routes/sing/select'
 import { Route as SettingsCreditsRouteImport } from './routes/settings/credits'
 import { Route as LobbySelectClubRouteImport } from './routes/lobby/select-club'
 import { Route as LobbyAddLocalPlayerRouteImport } from './routes/lobby/add-local-player'
@@ -90,14 +89,9 @@ const GameIndexRoute = GameIndexRouteImport.update({
   path: '/game/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SingMedleyRoute = SingMedleyRouteImport.update({
-  id: '/sing/medley',
-  path: '/sing/medley',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SingHashRoute = SingHashRouteImport.update({
-  id: '/sing/$hash',
-  path: '/sing/$hash',
+const SingSelectRoute = SingSelectRouteImport.update({
+  id: '/sing/select',
+  path: '/sing/select',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsCreditsRoute = SettingsCreditsRouteImport.update({
@@ -206,24 +200,23 @@ export interface FileRoutesByFullPath {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
-  '/sing/$hash': typeof SingHashRoute
-  '/sing/medley': typeof SingMedleyRoute
-  '/game': typeof GameIndexRoute
-  '/lobby': typeof LobbyIndexRoute
-  '/party': typeof PartyIndexRoute
-  '/settings': typeof SettingsIndexRoute
-  '/sing': typeof SingIndexRoute
+  '/sing/select': typeof SingSelectRoute
+  '/game/': typeof GameIndexRoute
+  '/lobby/': typeof LobbyIndexRoute
+  '/party/': typeof PartyIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/sing/': typeof SingIndexRoute
   '/lobby/local/$id': typeof LobbyLocalIdRoute
   '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/local-players/$id': typeof SettingsLocalPlayersIdRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
-  '/party/versus': typeof PartyVersusIndexRoute
-  '/settings/general': typeof SettingsGeneralIndexRoute
-  '/settings/local-players': typeof SettingsLocalPlayersIndexRoute
-  '/settings/microphones': typeof SettingsMicrophonesIndexRoute
-  '/settings/songs': typeof SettingsSongsIndexRoute
-  '/settings/volume': typeof SettingsVolumeIndexRoute
+  '/party/versus/': typeof PartyVersusIndexRoute
+  '/settings/general/': typeof SettingsGeneralIndexRoute
+  '/settings/local-players/': typeof SettingsLocalPlayersIndexRoute
+  '/settings/microphones/': typeof SettingsMicrophonesIndexRoute
+  '/settings/songs/': typeof SettingsSongsIndexRoute
+  '/settings/volume/': typeof SettingsVolumeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -238,8 +231,7 @@ export interface FileRoutesByTo {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
-  '/sing/$hash': typeof SingHashRoute
-  '/sing/medley': typeof SingMedleyRoute
+  '/sing/select': typeof SingSelectRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
   '/party': typeof PartyIndexRoute
@@ -271,8 +263,7 @@ export interface FileRoutesById {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
-  '/sing/$hash': typeof SingHashRoute
-  '/sing/medley': typeof SingMedleyRoute
+  '/sing/select': typeof SingSelectRoute
   '/game/': typeof GameIndexRoute
   '/lobby/': typeof LobbyIndexRoute
   '/party/': typeof PartyIndexRoute
@@ -305,24 +296,23 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
-    | '/sing/$hash'
-    | '/sing/medley'
-    | '/game'
-    | '/lobby'
-    | '/party'
-    | '/settings'
-    | '/sing'
+    | '/sing/select'
+    | '/game/'
+    | '/lobby/'
+    | '/party/'
+    | '/settings/'
+    | '/sing/'
     | '/lobby/local/$id'
     | '/party/versus/settings'
     | '/settings/local-players/$id'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
-    | '/party/versus'
-    | '/settings/general'
-    | '/settings/local-players'
-    | '/settings/microphones'
-    | '/settings/songs'
-    | '/settings/volume'
+    | '/party/versus/'
+    | '/settings/general/'
+    | '/settings/local-players/'
+    | '/settings/microphones/'
+    | '/settings/songs/'
+    | '/settings/volume/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -337,8 +327,7 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
-    | '/sing/$hash'
-    | '/sing/medley'
+    | '/sing/select'
     | '/game'
     | '/lobby'
     | '/party'
@@ -369,8 +358,7 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
-    | '/sing/$hash'
-    | '/sing/medley'
+    | '/sing/select'
     | '/game/'
     | '/lobby/'
     | '/party/'
@@ -402,8 +390,7 @@ export interface RootRouteChildren {
   LobbyAddLocalPlayerRoute: typeof LobbyAddLocalPlayerRoute
   LobbySelectClubRoute: typeof LobbySelectClubRoute
   SettingsCreditsRoute: typeof SettingsCreditsRoute
-  SingHashRoute: typeof SingHashRoute
-  SingMedleyRoute: typeof SingMedleyRoute
+  SingSelectRoute: typeof SingSelectRoute
   GameIndexRoute: typeof GameIndexRoute
   LobbyIndexRoute: typeof LobbyIndexRoute
   PartyIndexRoute: typeof PartyIndexRoute
@@ -462,50 +449,43 @@ declare module '@tanstack/solid-router' {
     '/sing/': {
       id: '/sing/'
       path: '/sing'
-      fullPath: '/sing'
+      fullPath: '/sing/'
       preLoaderRoute: typeof SingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/': {
       id: '/settings/'
       path: '/settings'
-      fullPath: '/settings'
+      fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party/': {
       id: '/party/'
       path: '/party'
-      fullPath: '/party'
+      fullPath: '/party/'
       preLoaderRoute: typeof PartyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lobby/': {
       id: '/lobby/'
       path: '/lobby'
-      fullPath: '/lobby'
+      fullPath: '/lobby/'
       preLoaderRoute: typeof LobbyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/game/': {
       id: '/game/'
       path: '/game'
-      fullPath: '/game'
+      fullPath: '/game/'
       preLoaderRoute: typeof GameIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sing/medley': {
-      id: '/sing/medley'
-      path: '/sing/medley'
-      fullPath: '/sing/medley'
-      preLoaderRoute: typeof SingMedleyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sing/$hash': {
-      id: '/sing/$hash'
-      path: '/sing/$hash'
-      fullPath: '/sing/$hash'
-      preLoaderRoute: typeof SingHashRouteImport
+    '/sing/select': {
+      id: '/sing/select'
+      path: '/sing/select'
+      fullPath: '/sing/select'
+      preLoaderRoute: typeof SingSelectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/credits': {
@@ -560,42 +540,42 @@ declare module '@tanstack/solid-router' {
     '/settings/volume/': {
       id: '/settings/volume/'
       path: '/settings/volume'
-      fullPath: '/settings/volume'
+      fullPath: '/settings/volume/'
       preLoaderRoute: typeof SettingsVolumeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/songs/': {
       id: '/settings/songs/'
       path: '/settings/songs'
-      fullPath: '/settings/songs'
+      fullPath: '/settings/songs/'
       preLoaderRoute: typeof SettingsSongsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/microphones/': {
       id: '/settings/microphones/'
       path: '/settings/microphones'
-      fullPath: '/settings/microphones'
+      fullPath: '/settings/microphones/'
       preLoaderRoute: typeof SettingsMicrophonesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/local-players/': {
       id: '/settings/local-players/'
       path: '/settings/local-players'
-      fullPath: '/settings/local-players'
+      fullPath: '/settings/local-players/'
       preLoaderRoute: typeof SettingsLocalPlayersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/general/': {
       id: '/settings/general/'
       path: '/settings/general'
-      fullPath: '/settings/general'
+      fullPath: '/settings/general/'
       preLoaderRoute: typeof SettingsGeneralIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party/versus/': {
       id: '/party/versus/'
       path: '/party/versus'
-      fullPath: '/party/versus'
+      fullPath: '/party/versus/'
       preLoaderRoute: typeof PartyVersusIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -650,8 +630,7 @@ const rootRouteChildren: RootRouteChildren = {
   LobbyAddLocalPlayerRoute: LobbyAddLocalPlayerRoute,
   LobbySelectClubRoute: LobbySelectClubRoute,
   SettingsCreditsRoute: SettingsCreditsRoute,
-  SingHashRoute: SingHashRoute,
-  SingMedleyRoute: SingMedleyRoute,
+  SingSelectRoute: SingSelectRoute,
   GameIndexRoute: GameIndexRoute,
   LobbyIndexRoute: LobbyIndexRoute,
   PartyIndexRoute: PartyIndexRoute,

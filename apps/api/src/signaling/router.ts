@@ -1,4 +1,5 @@
 import { eventIterator, ORPCError, os } from "@orpc/server";
+
 import { requireUser } from "../auth/middleware";
 import { base } from "../base";
 import { requireLobby, requireLobbyOrUser } from "../lobby/middleware";

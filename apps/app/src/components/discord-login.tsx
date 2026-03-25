@@ -1,7 +1,9 @@
 import { createSignal } from "solid-js";
 import { joinURL, withQuery } from "ufo";
-import { config } from "~/lib/config";
 import DiscordIcon from "~icons/logos/discord-icon";
+
+import { config } from "~/lib/config";
+
 import Button from "./ui/button";
 
 interface DiscordLoginProps {

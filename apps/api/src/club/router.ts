@@ -4,7 +4,6 @@ import * as v from "valibot";
 import { requireUser } from "../auth/middleware";
 import { base } from "../base";
 import { UsernameSchema } from "../user/models";
-
 import { ClubMemberRoleSchema, ClubNameSchema } from "./models";
 import { clubService } from "./service";
 

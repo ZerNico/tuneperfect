@@ -1,4 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/solid-router";
+
 import { roundStore } from "~/stores/round";
 
 export const Route = createFileRoute("/game/next")({
@@ -17,4 +18,3 @@ function NextComponent() {
 
   return <Navigate to="/game/restart" replace />;
 }
-

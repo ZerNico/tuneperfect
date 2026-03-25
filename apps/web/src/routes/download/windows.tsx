@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/solid-router"
-import DownloadCard from "~/components/download-card";
-import { posthog } from "~/lib/posthog";
+import { createFileRoute } from "@tanstack/solid-router";
 import IconChip from "~icons/lucide/cpu";
 import IconWindows from "~icons/sing/windows";
+
+import DownloadCard from "~/components/download-card";
+import { posthog } from "~/lib/posthog";
 
 export const Route = createFileRoute("/download/windows")({
   component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
         <div class="mb-6 flex items-center gap-4">
           <IconWindows class="h-12 w-12 text-white" />
           <div>
-            <h1 class="font-bold text-4xl">Download for Windows</h1>
+            <h1 class="text-4xl font-bold">Download for Windows</h1>
             <p class="text-slate-400">Choose the version that matches your PC</p>
           </div>
         </div>
@@ -68,11 +69,11 @@ function RouteComponent() {
 
         <div class="mt-12 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
           <h3 class="mb-3 font-semibold text-slate-200">Not sure which version to choose?</h3>
-          <p class="mb-4 text-slate-300 text-sm">
+          <p class="mb-4 text-sm text-slate-300">
             Most modern Windows PCs use 64-bit Windows. If you're not sure, you can check by going to Settings → System
             → About and looking at the "System type" field.
           </p>
-          <div class="space-y-2 text-slate-400 text-xs">
+          <div class="space-y-2 text-xs text-slate-400">
             <p>
               <strong>System Requirements:</strong>
             </p>

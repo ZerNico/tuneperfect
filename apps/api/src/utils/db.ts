@@ -2,6 +2,7 @@ import type { SQL as BunSQL } from "bun";
 import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
+
 import { logger } from "../lib/logger";
 
 export function lower(email: AnyPgColumn): SQL {

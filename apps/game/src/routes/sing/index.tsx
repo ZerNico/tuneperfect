@@ -1,6 +1,15 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, Match, on, Show, Switch } from "solid-js";
+import IconDices from "~icons/lucide/dices";
+import IconMenu from "~icons/lucide/menu";
+import IconMusic from "~icons/lucide/music";
+import IconDuet from "~icons/sing/duet";
+import IconF4Key from "~icons/sing/f4-key";
+import IconGamepadX from "~icons/sing/gamepad-x";
+import IconGamepadY from "~icons/sing/gamepad-y";
+import IconTabKey from "~icons/sing/tab-key";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
@@ -25,14 +34,6 @@ import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
-import IconDices from "~icons/lucide/dices";
-import IconMenu from "~icons/lucide/menu";
-import IconMusic from "~icons/lucide/music";
-import IconDuet from "~icons/sing/duet";
-import IconF4Key from "~icons/sing/f4-key";
-import IconGamepadX from "~icons/sing/gamepad-x";
-import IconGamepadY from "~icons/sing/gamepad-y";
-import IconTabKey from "~icons/sing/tab-key";
 
 export const Route = createFileRoute("/sing/")({
   component: SingComponent,
@@ -50,13 +51,6 @@ const [medleySongs, setMedleySongs] = createSignal<LocalSong[]>([]);
 function SingComponent() {
   const navigate = useNavigate();
   const songs = createMemo(() => songsStore.songs());
-
-  if (!currentSong()) {
-    const firstSong = songs()[0];
-    if (firstSong) {
-      setCurrentSong(firstSong);
-    }
-  }
 
   // Double-buffered preview player — two persistent SongPlayer instances that crossfade
   const [slotASong, setSlotASong] = createSignal<LocalSong | null>(currentSong());
@@ -88,14 +82,27 @@ function SingComponent() {
     }, 600);
   };
 
+  let latestSongHash: string | null = null;
+
+  // oxlint-disable-next-line solid/reactivity
   const debouncedSwap = debounce((song: LocalSong | null) => {
     pendingSwap = false;
-    if (song && song.hash !== currentSong()?.hash) return;
+    if (song && song.hash !== latestSongHash) return;
     swapToSong(song);
   }, 200);
 
+  createEffect(() => {
+    if (!currentSong()) {
+      const firstSong = songs()[0];
+      if (firstSong) {
+        setCurrentSong(firstSong);
+      }
+    }
+  });
+
   createEffect(
     on(currentSong, (song) => {
+      latestSongHash = song?.hash ?? null;
       if (pendingSwap) {
         clearActiveSlot();
       }
@@ -124,12 +131,12 @@ function SingComponent() {
 
   const startRegular = (song: LocalSong) => {
     playSound("confirm");
-    navigate({ to: "/sing/$hash", params: { hash: song.hash } });
+    navigate({ to: "/sing/select", search: { songs: [song.hash] } });
   };
 
   const startMedley = () => {
     playSound("confirm");
-    navigate({ to: "/sing/medley", search: { songs: medleySongs().map((song) => song.hash) } });
+    navigate({ to: "/sing/select", search: { songs: medleySongs().map((song) => song.hash), mode: "medley" } });
   };
 
   const selectRandomSong = () => {
@@ -173,7 +180,7 @@ function SingComponent() {
     }
 
     playSound("confirm");
-    navigate({ to: "/sing/medley", search: { songs: selectedSongs.map((song) => song.hash) } });
+    navigate({ to: "/sing/select", search: { songs: selectedSongs.map((song) => song.hash), mode: "medley" } });
   };
 
   const moveSorting = (direction: "left" | "right") => {
@@ -358,7 +365,7 @@ function SingComponent() {
       <Switch>
         <Match when={songSelectStyle() === "grid"}>
           <div class="relative flex h-full min-h-0 gap-8">
-            <div class="relative w-1/2 -ml-8">
+            <div class="relative -ml-8 w-1/2">
               <SongGrid
                 ref={gridRef}
                 items={songs()}
@@ -377,7 +384,7 @@ function SingComponent() {
                 <div class="relative flex flex-col">
                   <p class="text-xl">{currentSong()?.artist}</p>
                   <div class="max-w-full">
-                    <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent">
+                    <span class="gradient-sing bg-linear-to-b bg-clip-text text-6xl font-bold text-transparent">
                       {currentSong()?.title}
                     </span>
                   </div>
@@ -411,7 +418,7 @@ function SingComponent() {
               <div class="relative flex grow flex-col">
                 <p class="text-xl">{currentSong()?.artist}</p>
                 <div class="max-w-200">
-                  <span class="gradient-sing bg-linear-to-b bg-clip-text font-bold text-6xl text-transparent">
+                  <span class="gradient-sing bg-linear-to-b bg-clip-text text-6xl font-bold text-transparent">
                     {currentSong()?.title}
                   </span>
                 </div>

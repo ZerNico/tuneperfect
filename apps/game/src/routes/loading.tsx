@@ -3,12 +3,13 @@ import type { Event } from "@tauri-apps/api/event";
 import { getMatches } from "@tauri-apps/plugin-cli";
 import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import * as v from "valibot";
+import IconLoaderCircle from "~icons/lucide/loader-circle";
+
 import { events, type ProgressEvent, type StartParsingEvent } from "~/bindings";
 import Layout from "~/components/layout";
 import { t } from "~/lib/i18n";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { songsStore } from "~/stores/songs";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 export const Route = createFileRoute("/loading")({
   component: LoadingComponent,
@@ -67,7 +68,7 @@ function LoadingComponent() {
 
   return (
     <Layout>
-      <div class="flex flex-grow flex-col items-center justify-center gap-8 p-4">
+      <div class="flex grow flex-col items-center justify-center gap-8 p-4">
         <div class="flex items-center justify-center">
           <IconLoaderCircle class="animate-spin text-6xl" />
         </div>
@@ -75,10 +76,12 @@ function LoadingComponent() {
         <div class="w-full max-w-200">
           <div class="mb-2 flex justify-between text-sm">
             <div class="flex min-w-0 flex-1 items-center">
-              <span class="flex-shrink-0">{t("loading.parsing")}&nbsp;</span>
-              <span class="min-w-0 truncate text-left" style="direction: rtl; unicode-bidi: plaintext;">{currentSong() || "..."}</span>
+              <span class="shrink-0">{t("loading.parsing")}&nbsp;</span>
+              <span class="min-w-0 truncate text-left" style={{ direction: "rtl", "unicode-bidi": "plaintext" }}>
+                {currentSong() || "..."}
+              </span>
             </div>
-            <span class="ml-2 flex-shrink-0">{progress()}%</span>
+            <span class="ml-2 shrink-0">{progress()}%</span>
           </div>
 
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/20">

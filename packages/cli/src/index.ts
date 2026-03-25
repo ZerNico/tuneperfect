@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { exists, mkdir } from "node:fs/promises";
+
 import { helpPlugin } from "@clerc/plugin-help";
 import { $ } from "bun";
 import { Clerc } from "clerc";
@@ -41,7 +42,7 @@ Clerc.create()
     const processes = [
       Bun.spawn(["caddy", "run"], { stderr: "inherit", stdout: "inherit" }),
       Bun.spawn(["bun", "--bun", "run", "dev", ...filter], { stderr: "inherit", stdout: "inherit" }),
-    ]
+    ];
 
     process.on("SIGINT", () => {
       processes.forEach((process) => {

@@ -1,6 +1,7 @@
 import { SQL } from "bun";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
+
 import { env } from "../../config/env";
 import { locked } from "../../utils/db";
 import { logger } from "../logger";

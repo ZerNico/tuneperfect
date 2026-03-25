@@ -70,7 +70,7 @@ function collectPhraseAnalysis(song: LocalSong): PhraseAnalysis[] {
     }
   }
 
-  return analysis.sort((a, b) => a.startTime - b.startTime);
+  return analysis.toSorted((a, b) => a.startTime - b.startTime);
 }
 
 function findBestPhrase(phrases: PhraseAnalysis[], scoreFn: (phrase: PhraseAnalysis) => number): PhraseAnalysis | null {

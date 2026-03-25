@@ -6,13 +6,14 @@ import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
 import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
 import { createHeartbeat, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
 import { createEffect, createMemo, createRoot, onCleanup, Show } from "solid-js";
+import IconLoaderCircle from "~icons/lucide/loader-circle";
+import IconWifiOff from "~icons/lucide/wifi-off";
+
 import Button from "~/components/ui/button";
 import { GameClientProvider } from "~/contexts/game-client";
 import { t } from "~/lib/i18n";
 import { appRouter } from "~/lib/webrtc/router";
 import { connectionStore } from "~/stores/connection";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
-import IconWifiOff from "~icons/lucide/wifi-off";
 
 async function waitForChannelsReady() {
   return new Promise<void>((resolve, reject) => {
@@ -167,7 +168,7 @@ function ConnectedLayout() {
 
 function ConnectionPendingUI() {
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col items-center justify-center p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col items-center justify-center p-4 sm:max-w-4xl">
       <div class="flex flex-col items-center gap-4">
         <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
         <p class="text-white/70">{t("songs.connecting")}</p>
@@ -184,7 +185,7 @@ function ConnectionErrorUI() {
   };
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col items-center justify-center p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col items-center justify-center p-4 sm:max-w-4xl">
       <div class="flex flex-col items-center gap-4">
         <IconWifiOff class="h-12 w-12 text-red-400" />
         <p class="text-white/70">{t("songs.connectionFailed")}</p>

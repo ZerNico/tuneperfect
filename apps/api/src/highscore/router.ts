@@ -1,5 +1,6 @@
 import { os } from "@orpc/server";
 import * as v from "valibot";
+
 import { base } from "../base";
 import { requireLobby } from "../lobby/middleware";
 import { lobbyService } from "../lobby/service";
@@ -52,10 +53,12 @@ export const highscoreRouter = os.prefix("/highscores").router({
         limit: 5000,
       },
     })
-    .input(v.object({ 
-      hash: v.string(),
-      difficulty: v.optional(v.picklist(["easy", "medium", "hard"]))
-    }))
+    .input(
+      v.object({
+        hash: v.string(),
+        difficulty: v.optional(v.picklist(["easy", "medium", "hard"])),
+      }),
+    )
     .handler(async ({ context, input }) => {
       return await highscoreService.getHighscoresForLobby(context.payload.sub, input.hash, input.difficulty);
     }),

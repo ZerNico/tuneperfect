@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import { createSignal, Show } from "solid-js";
 import * as v from "valibot";
+import IconPencilLine from "~icons/lucide/pencil-line";
+
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Card from "~/components/ui/card";
@@ -14,7 +16,6 @@ import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import IconPencilLine from "~icons/lucide/pencil-line";
 
 export const Route = createFileRoute("/_auth/edit-profile")({
   component: EditProfileComponent,
@@ -37,7 +38,7 @@ function EditProfileComponent() {
         client.user.updateMe.call({
           username: value.username,
           imageFile: file() ?? undefined,
-        })
+        }),
       );
 
       if (error) {
@@ -70,7 +71,7 @@ function EditProfileComponent() {
           v.string(),
           v.minLength(3, t("editProfile.usernameMinLength")),
           v.maxLength(20, t("editProfile.usernameMaxLength")),
-          v.regex(/^[a-zA-Z0-9_]+$/, t("editProfile.usernameInvalid"))
+          v.regex(/^[a-zA-Z0-9_]+$/, t("editProfile.usernameInvalid")),
         ),
       }),
     },
@@ -129,9 +130,9 @@ function EditProfileComponent() {
   };
 
   return (
-    <div class="flex flex-grow flex-col items-center justify-center p-2">
+    <div class="flex grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="font-semibold text-xl">{t("editProfile.title")}</h1>
+        <h1 class="text-xl font-semibold">{t("editProfile.title")}</h1>
         <div class="flex justify-center">
           <button
             class="relative cursor-pointer transition-opacity hover:opacity-75"
@@ -147,11 +148,13 @@ function EditProfileComponent() {
             />
             <Show
               when={file()}
-              fallback={<Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>}
+              fallback={
+                <Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>
+              }
             >
               <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />
             </Show>
-            <div class="absolute right-1 bottom-1 rounded-full bg-slate-800 p-1.5 text-white text-xs">
+            <div class="absolute right-1 bottom-1 rounded-full bg-slate-800 p-1.5 text-xs text-white">
               <IconPencilLine />
             </div>
           </button>
@@ -200,7 +203,12 @@ function EditProfileComponent() {
       <Show when={cropDialogOpen() && tempImageUrl()}>
         {(imageUrl) => (
           <Dialog onClose={handleCropCancel} title={t("editProfile.cropImage")}>
-            <ImageCrop imageUrl={imageUrl()} onCrop={handleCropComplete} onCancel={handleCropCancel} resolution={1024} />
+            <ImageCrop
+              imageUrl={imageUrl()}
+              onCrop={handleCropComplete}
+              onCancel={handleCropCancel}
+              resolution={1024}
+            />
           </Dialog>
         )}
       </Show>

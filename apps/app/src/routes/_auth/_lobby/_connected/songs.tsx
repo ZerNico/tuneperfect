@@ -1,15 +1,16 @@
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
-import { useGameClient } from "~/contexts/game-client";
-import { useSongSearch } from "~/hooks/use-song-search";
-import { songsQueryOptions } from "~/lib/game-query";
-import { t } from "~/lib/i18n";
 import IconChevronLeft from "~icons/lucide/chevron-left";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 import IconMusic from "~icons/lucide/music";
 import IconRefreshCw from "~icons/lucide/refresh-cw";
 import IconSearch from "~icons/lucide/search";
+
+import { useGameClient } from "~/contexts/game-client";
+import { useSongSearch } from "~/hooks/use-song-search";
+import { songsQueryOptions } from "~/lib/game-query";
+import { t } from "~/lib/i18n";
 
 export const Route = createFileRoute("/_auth/_lobby/_connected/songs")({
   component: SongsComponent,
@@ -37,14 +38,14 @@ function SongsComponent() {
   };
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6 flex items-start justify-between">
         <div>
           <Link to="/" class="mb-2 flex items-center gap-1 text-white/70 transition-colors hover:text-white">
             <IconChevronLeft class="h-5 w-5" />
             <span class="text-sm">{t("lobby.title")}</span>
           </Link>
-          <h1 class="font-bold text-3xl">{t("songs.title")}</h1>
+          <h1 class="text-3xl font-bold">{t("songs.title")}</h1>
         </div>
 
         {/* Refresh button */}
@@ -61,7 +62,7 @@ function SongsComponent() {
 
       {/* Loading state */}
       <Show when={songsQuery.isLoading}>
-        <div class="flex flex-grow flex-col items-center justify-center gap-4 py-12">
+        <div class="flex grow flex-col items-center justify-center gap-4 py-12">
           <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
           <p class="text-white/70">Loading songs...</p>
         </div>
@@ -69,10 +70,10 @@ function SongsComponent() {
 
       {/* Empty state */}
       <Show when={!songsQuery.isLoading && (songsQuery.data?.length ?? 0) === 0}>
-        <div class="flex flex-grow flex-col items-center justify-center gap-2 py-12">
+        <div class="flex grow flex-col items-center justify-center gap-2 py-12">
           <IconMusic class="h-12 w-12 text-white/40" />
           <h3 class="font-medium text-white">{t("songs.noSongs")}</h3>
-          <p class="text-white/60 text-sm">{t("songs.noSongsDescription")}</p>
+          <p class="text-sm text-white/60">{t("songs.noSongsDescription")}</p>
         </div>
       </Show>
 
@@ -96,7 +97,7 @@ function SongsComponent() {
             {(song) => (
               <div class="rounded-lg bg-white p-4 shadow-sm">
                 <div class="font-semibold text-slate-800">{song.title}</div>
-                <div class="text-slate-500 text-sm">{song.artist}</div>
+                <div class="text-sm text-slate-500">{song.artist}</div>
               </div>
             )}
           </For>

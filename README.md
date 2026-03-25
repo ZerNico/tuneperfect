@@ -23,7 +23,6 @@ A modern karaoke game that brings the party to your living room. Perfect your pi
 
 Download the game from [tuneperfect.org](https://tuneperfect.org).
 
-
 ## Development
 
 ### Prerequisites
@@ -36,25 +35,34 @@ Download the game from [tuneperfect.org](https://tuneperfect.org).
 ### Setup
 
 1. Add the following entries to your `/etc/hosts` file (required for local development):
+
 ```
 127.0.0.1 tuneperfect.localhost api.tuneperfect.localhost app.tuneperfect.localhost
 ```
+
 2. Install dependencies:
+
 ```bash
 bun install
 ```
+
 3. Start development services:
+
 ```bash
 docker compose -f docker-compose.dev.yml up -d
 ```
+
 4. Start the development environment (this will automatically):
    - Generate certificates if they don't exist
    - Start the Caddy reverse proxy
    - Start all apps in development mode
+
 ```bash
 bun run tuneperfect dev
 ```
+
 To run only specific apps:
+
 ```bash
 bun run tuneperfect dev --filter @tuneperfect/game
 ```

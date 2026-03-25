@@ -1,16 +1,18 @@
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
-import KeyHints from "~/components/key-hints";
-import Layout from "~/components/layout";
-import TitleBar from "~/components/title-bar";
-import { keyMode, useNavigation } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
-import { playSound } from "~/lib/sound";
 import IconMinus from "~icons/lucide/minus";
 import IconPlus from "~icons/lucide/plus";
 import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
+
+import KeyHints from "~/components/key-hints";
+import Layout from "~/components/layout";
+import TitleBar from "~/components/title-bar";
+import { keyMode, useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
+import { playSound } from "~/lib/sound";
+
 import Button from "./button";
 
 interface ImageCropProps {
@@ -263,13 +265,13 @@ export default function ImageCrop(props: ImageCropProps) {
       header={<TitleBar title={t("settings.sections.localPlayers.cropAvatar")} onBack={props.onCancel} />}
       footer={<KeyHints hints={["navigate", "back", "confirm"]} />}
     >
-      <div class="flex flex-grow flex-col items-center justify-center gap-6">
+      <div class="flex grow flex-col items-center justify-center gap-6">
         <div class="relative">
           <canvas
             ref={canvasRef}
             width={canvasSize()}
             height={canvasSize()}
-            class="aspect-square w-64 cursor-move select-none rounded-full"
+            class="aspect-square w-64 cursor-move rounded-full select-none"
             style={{ "touch-action": "none" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}

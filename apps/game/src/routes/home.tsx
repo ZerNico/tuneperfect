@@ -2,6 +2,11 @@ import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { type Component, createEffect, createSignal, For, on, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import IconMicVocal from "~icons/lucide/mic-vocal";
+import IconPartyPopper from "~icons/lucide/party-popper";
+import IconSettings from "~icons/lucide/settings";
+import IconUsers from "~icons/lucide/users";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Avatar from "~/components/ui/avatar";
@@ -14,10 +19,6 @@ import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
-import IconMicVocal from "~icons/lucide/mic-vocal";
-import IconPartyPopper from "~icons/lucide/party-popper";
-import IconSettings from "~icons/lucide/settings";
-import IconUsers from "~icons/lucide/users";
 
 export const Route = createFileRoute("/home")({
   component: HomeComponent,
@@ -117,7 +118,7 @@ function HomeComponent() {
     <Layout
       header={
         <div class="flex justify-between">
-          <h1 class="font-bold text-3xl">Tune Perfect</h1>
+          <h1 class="text-3xl font-bold">Tune Perfect</h1>
           <div class="flex gap-2">
             <For each={lobbyQuery.data?.users}>{(user) => <Avatar user={user} />}</For>
           </div>
@@ -125,15 +126,15 @@ function HomeComponent() {
       }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="flex flex-grow flex-col gap-[6cqh]">
-        <div class="flex flex-grow">
-          <div class="flex-grow" />
+      <div class="flex grow flex-col gap-[6cqh]">
+        <div class="flex grow">
+          <div class="grow" />
           <Show when={lobbyStore.lobby()}>
             {(lobby) => (
               <div class="flex items-end">
                 <div class="flex gap-8">
                   <div class="flex flex-col items-end justify-center">
-                    <span class="font-bold text-7xl">{lobby().lobby.id}</span>
+                    <span class="text-7xl font-bold">{lobby().lobby.id}</span>
                     <span class="text-sm">{import.meta.env.VITE_APP_URL}/join</span>
                   </div>
                   <Show when={qrcode()}>{(qrcode) => <img src={qrcode()} alt="" class="h-[25cqh] rounded-lg" />}</Show>
@@ -185,18 +186,18 @@ function ModeCard(props: ModeCardProps) {
         "opacity-50": !props.selected,
         "scale-95": props.active,
       }}
-      onMouseEnter={props.onMouseEnter}
-      onClick={props.onClick}
+      onMouseEnter={() => props.onMouseEnter?.()}
+      onClick={() => props.onClick?.()}
     >
-      <div class="font-semibold text-sm uppercase">{props.label}</div>
+      <div class="text-sm font-semibold uppercase">{props.label}</div>
       <div
-        class="flex w-full flex-grow flex-col shadow-xl"
+        class="flex w-full grow flex-col shadow-xl"
         classList={{
           "overflow-hidden rounded-lg": props.selected,
         }}
       >
         <div
-          class="flex items-center justify-center rounded-t-lg bg-gradient-to-b px-12 py-16 transition-all"
+          class="flex items-center justify-center rounded-t-lg bg-linear-to-b px-12 py-16 transition-all"
           classList={{
             [props.gradient || ""]: true,
             "rounded-b-lg": !props.selected,
@@ -205,7 +206,7 @@ function ModeCard(props: ModeCardProps) {
           <Dynamic class="text-6xl" component={props.icon} />
         </div>
         <div
-          class="flex-grow rounded-b-md bg-white px-8 py-4 text-left font-semibold text-base text-black transition-all"
+          class="grow rounded-b-md bg-white px-8 py-4 text-left text-base font-semibold text-black transition-all"
           classList={{
             "opacity-0": !props.selected,
           }}

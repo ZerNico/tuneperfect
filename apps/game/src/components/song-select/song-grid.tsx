@@ -1,6 +1,7 @@
 import { throttle } from "@solid-primitives/scheduled";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, type Ref } from "solid-js";
+
 import { useNavigation } from "~/hooks/navigation";
 import { type SearchFilter, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -41,7 +42,7 @@ export function SongGrid(props: SongGridProps) {
 
   const { filteredItems } = useSongFilter({
     items: () => props.items,
-    sort: () => props.sort,
+    sortOption: () => props.sort,
     searchQuery: () => props.searchQuery,
     searchFilter: () => props.searchFilter,
   });
@@ -237,7 +238,8 @@ export function SongGrid(props: SongGridProps) {
     () => ({ goToRandomSong }),
   );
 
-  const throttledNavigate = throttle(navigate, 100);
+  // oxlint-disable-next-line solid/reactivity
+  const throttledNavigate = throttle((direction: "left" | "right" | "up" | "down") => navigate(direction), 100);
 
   useNavigation({
     onKeydown: (event) => {
@@ -267,7 +269,7 @@ export function SongGrid(props: SongGridProps) {
 
             return (
               <div
-                class="absolute left-0 top-0 grid w-full grid-cols-5 gap-3 px-4"
+                class="absolute top-0 left-0 grid w-full grid-cols-5 gap-3 px-4"
                 style={{ transform: `translateY(${virtualRow.start + VERTICAL_PADDING}px)` }}
               >
                 <For each={rowItems()}>
@@ -302,7 +304,7 @@ function SongGridCard(props: SongGridCardProps) {
   return (
     <div
       class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg shadow-md transition-all duration-150 active:scale-95"
-      classList={{ "ring-4 ring-white scale-105": props.selected }}
+      classList={{ "scale-105 ring-4 ring-white": props.selected }}
     >
       <img class="h-full w-full object-cover" src={props.song.coverUrl ?? ""} alt={props.song.title} />
       <div class="absolute inset-0 -z-1 bg-black" />

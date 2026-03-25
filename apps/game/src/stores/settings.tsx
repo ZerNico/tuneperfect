@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import * as v from "valibot";
+
 import { createPersistentStore } from "../lib/utils/store";
 
 const settingsStoreSchema = v.object({

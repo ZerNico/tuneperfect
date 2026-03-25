@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Navigate, redirect, useNavigate } from "@tanstack/solid-router";
 import { Match, Switch } from "solid-js";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";

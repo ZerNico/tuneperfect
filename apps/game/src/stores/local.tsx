@@ -1,5 +1,7 @@
 import * as v from "valibot";
+
 import type { LocalUser } from "~/lib/types";
+
 import { createPersistentStore } from "../lib/utils/store";
 
 const difficultySchema = v.picklist(["easy", "medium", "hard"]);

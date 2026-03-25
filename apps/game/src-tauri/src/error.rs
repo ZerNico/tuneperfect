@@ -21,6 +21,9 @@ pub enum AppError {
 
     #[error("ultrastar error: {0}")]
     UltrastarError(String),
+
+    #[error("webrtc error: {0}")]
+    WebRTCError(String),
 }
 
 macro_rules! impl_from_errors {

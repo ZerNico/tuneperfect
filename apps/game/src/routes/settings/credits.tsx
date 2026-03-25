@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from "@tauri-apps/plugin-opener";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";

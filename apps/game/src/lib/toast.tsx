@@ -1,4 +1,5 @@
 import { toaster } from "@kobalte/core/toast";
+
 import Toast from "~/components/ui/toast";
 
 interface NotifyOptions {

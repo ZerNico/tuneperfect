@@ -3,15 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
-import Avatar from "~/components/ui/avatar";
-import Button from "~/components/ui/button";
-import Dialog from "~/components/ui/dialog";
-import DropdownMenu from "~/components/ui/dropdown-menu";
-import Input from "~/components/ui/input";
-import { sessionQueryOptions } from "~/lib/auth";
-import { useDialog } from "~/lib/dialog";
-import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
 import IconArrowLeft from "~icons/lucide/arrow-left";
 import IconCrown from "~icons/lucide/crown";
 import IconEdit from "~icons/lucide/edit";
@@ -23,6 +14,16 @@ import IconShieldPlus from "~icons/lucide/shield-plus";
 import IconTrash from "~icons/lucide/trash";
 import IconUserMinus from "~icons/lucide/user-minus";
 import IconUserPlus from "~icons/lucide/user-plus";
+
+import Avatar from "~/components/ui/avatar";
+import Button from "~/components/ui/button";
+import Dialog from "~/components/ui/dialog";
+import DropdownMenu from "~/components/ui/dropdown-menu";
+import Input from "~/components/ui/input";
+import { sessionQueryOptions } from "~/lib/auth";
+import { useDialog } from "~/lib/dialog";
+import { t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
 
 export const Route = createFileRoute("/_auth/clubs/$id")({
   component: ClubDetailComponent,
@@ -87,6 +88,39 @@ function getMemberMenuItems(
   }
 
   return items;
+}
+
+function MemberActions(props: {
+  member: { user?: { id: string; username: string | null } | null; role: string };
+  currentUserRole: string | undefined;
+  handlers: {
+    removeMember: (userId: string, username: string) => void;
+    transferOwnership: (userId: string, username: string) => void;
+    changeRole: (userId: string, username: string, role: "admin" | "member") => void;
+  };
+}) {
+  // oxlint-disable-next-line solid/reactivity
+  const menuItems = getMemberMenuItems(props.member, props.currentUserRole, props.handlers);
+
+  return (
+    <Show when={menuItems.length > 0}>
+      <DropdownMenu
+        trigger={
+          <DropdownMenu.Trigger class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-black/10">
+            <IconMoreVertical />
+          </DropdownMenu.Trigger>
+        }
+      >
+        <For each={menuItems}>
+          {(item) => (
+            <DropdownMenu.Item class={item.class} onClick={item.onClick}>
+              <item.icon class="mr-2 h-4 w-4" /> {item.label}
+            </DropdownMenu.Item>
+          )}
+        </For>
+      </DropdownMenu>
+    </Show>
+  );
 }
 
 function ClubDetailComponent() {
@@ -269,9 +303,9 @@ function ClubDetailComponent() {
   };
 
   return (
-    <div class="container mx-auto flex w-full flex-grow flex-col p-4 sm:max-w-4xl">
+    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6">
-        <Link to="/clubs" class="flex items-center gap-2 text-slate-300 text-sm transition-colors hover:text-slate-400">
+        <Link to="/clubs" class="flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-slate-400">
           <IconArrowLeft class="h-4 w-4" /> {t("clubs.detail.backToClubs")}
         </Link>
       </div>
@@ -280,7 +314,7 @@ function ClubDetailComponent() {
         {(club) => (
           <>
             <header class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-              <h1 class="font-bold text-3xl">{club().name}</h1>
+              <h1 class="text-3xl font-bold">{club().name}</h1>
               <div class="flex w-full shrink-0 items-center justify-end gap-2 md:w-auto">
                 <Show when={currentUserRole() === "owner" || currentUserRole() === "admin"}>
                   <Button intent="gradient" class="w-full md:w-auto" onClick={() => setDialog("invite")}>
@@ -311,20 +345,20 @@ function ClubDetailComponent() {
               </div>
             </header>
 
-            <h2 class="mb-4 font-semibold text-xl">{t("clubs.members", { count: club().members.length })}</h2>
+            <h2 class="mb-4 text-xl font-semibold">{t("clubs.members", { count: club().members.length })}</h2>
 
             <div class="flex flex-col gap-3">
               <For each={club().members}>
                 {(member) => (
                   <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
                     <div class="flex items-center gap-4">
-                      <Show when={member.user} fallback={<div class="h-10 w-10 rounded-full bg-gray-400" />}>
-                        {(user) => <Avatar class="flex-shrink-0" user={user()} />}
+                      <Show when={member.user} fallback={<div class="bg-gray-400 h-10 w-10 rounded-full" />}>
+                        {(user) => <Avatar class="shrink-0" user={user()} />}
                       </Show>
                       <div class="flex items-center gap-2">
                         <div>
                           <div class="font-semibold text-slate-800">{member.user?.username}</div>
-                          <div class="flex items-center gap-1.5 text-slate-500 text-sm">
+                          <div class="flex items-center gap-1.5 text-sm text-slate-500">
                             <Show when={member.role === "owner"}>
                               <IconCrown class="h-4 w-4 text-yellow-500" />
                               <span>{t("clubs.detail.roleOwner")}</span>
@@ -341,33 +375,15 @@ function ClubDetailComponent() {
                       </div>
                     </div>
                     <Show when={member.user?.id !== session.data?.id}>
-                      {(() => {
-                        const menuItems = getMemberMenuItems(member, currentUserRole(), {
+                      <MemberActions
+                        member={member}
+                        currentUserRole={currentUserRole()}
+                        handlers={{
                           removeMember: handleRemoveMember,
                           transferOwnership: handleTransferOwnership,
                           changeRole: handleChangeRole,
-                        });
-
-                        if (menuItems.length === 0) return null;
-
-                        return (
-                          <DropdownMenu
-                            trigger={
-                              <DropdownMenu.Trigger class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-black/10">
-                                <IconMoreVertical />
-                              </DropdownMenu.Trigger>
-                            }
-                          >
-                            <For each={menuItems}>
-                              {(item) => (
-                                <DropdownMenu.Item class={item.class} onClick={item.onClick}>
-                                  <item.icon class="mr-2 h-4 w-4" /> {item.label}
-                                </DropdownMenu.Item>
-                              )}
-                            </For>
-                          </DropdownMenu>
-                        );
-                      })()}
+                        }}
+                      />
                     </Show>
                   </div>
                 )}
@@ -376,7 +392,7 @@ function ClubDetailComponent() {
 
             <Show when={dialog() === "invite"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.inviteMember")}>
-                <p class="mt-2 text-slate-600 text-sm">{t("clubs.detail.inviteDescription")}</p>
+                <p class="mt-2 text-sm text-slate-600">{t("clubs.detail.inviteDescription")}</p>
                 <form
                   class="mt-4 flex flex-col gap-4"
                   onSubmit={(e) => {
@@ -418,7 +434,7 @@ function ClubDetailComponent() {
 
             <Show when={dialog() === "rename"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.rename")}>
-                <p class="mt-2 text-slate-600 text-sm">{t("clubs.detail.renameDescription")}</p>
+                <p class="mt-2 text-sm text-slate-600">{t("clubs.detail.renameDescription")}</p>
                 <form
                   class="mt-4 flex flex-col gap-4"
                   onSubmit={(e) => {

@@ -7,8 +7,8 @@ export function isPrintableKey(key: string | undefined): boolean {
   if (!key || key.length !== 1) {
     return false;
   }
-  
+
   // Check if the character is a printable character
   // This includes letters, numbers, punctuation, symbols, and whitespace
   return /^[a-zA-Z0-9\p{L}\p{N}\p{P}\p{S}\p{Z}]$/u.test(key);
-} 
+}

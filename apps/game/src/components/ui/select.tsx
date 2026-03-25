@@ -1,8 +1,9 @@
 import type { JSX, Ref } from "solid-js";
 import { twMerge } from "tailwind-merge";
-import { useNavigation } from "~/hooks/navigation";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
+import { useNavigation } from "~/hooks/navigation";
 
 interface SelectProps<T extends string | number> {
   selected?: boolean;
@@ -55,11 +56,10 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
   }));
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: This is a select
     <div
       ref={props.ref}
       class={twMerge("grid h-16 items-center overflow-hidden rounded-lg", props.class)}
-      onMouseEnter={props.onMouseEnter}
+      onMouseEnter={() => props.onMouseEnter?.()}
     >
       <div
         class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
@@ -69,12 +69,12 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
         }}
       />
       <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center font-bold text-xl">{props.label}</div>
+        <div class="text-center text-xl font-bold">{props.label}</div>
         <div class="flex items-center gap-8">
           <button class="cursor-pointer" type="button" onClick={() => changeOptions("left")}>
             <IconTriangleLeft />
           </button>
-          <div class="flex flex-grow flex-col items-center justify-center text-center font-bold text-xl">
+          <div class="flex grow flex-col items-center justify-center text-center text-xl font-bold">
             {props.renderValue ? props.renderValue(props.value) : props.value}
           </div>
           <button class="cursor-pointer" type="button" onClick={() => changeOptions("right")}>

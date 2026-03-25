@@ -2,18 +2,20 @@ import { safe } from "@orpc/client";
 import { createQuery } from "@tanstack/solid-query";
 import { useNavigate } from "@tanstack/solid-router";
 import { Show } from "solid-js";
-import { sessionQueryOptions } from "~/lib/auth";
-import { setLocale, t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
-import { notify } from "~/lib/toast";
-import { tryCatch } from "~/lib/utils/try-catch";
-import { queryClient } from "~/main";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 import IconBan from "~icons/lucide/ban";
 import IconEarth from "~icons/lucide/earth";
 import IconLogOut from "~icons/lucide/log-out";
 import IconUser from "~icons/lucide/user";
+
+import { sessionQueryOptions } from "~/lib/auth";
+import { setLocale, t } from "~/lib/i18n";
+import { client } from "~/lib/orpc";
+import { notify } from "~/lib/toast";
+import { tryCatch } from "~/lib/utils/try-catch";
+import { queryClient } from "~/main";
+
 import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
@@ -58,14 +60,14 @@ export default function Header() {
     <>
       <div class="h-16" />
       <header
-        class="fixed top-0 right-0 left-0 z-10 border-white/10 border-b bg-[#203141]/60 backdrop-blur-lg"
+        class="fixed top-0 right-0 left-0 z-10 border-b border-white/10 bg-[#203141]/60 backdrop-blur-lg"
         style={{ "margin-right": "var(--scrollbar-width, 0px)" }}
       >
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
-            <span class="font-bold text-lg">{t("header.appName")}</span>
+            <span class="text-lg font-bold">{t("header.appName")}</span>
           </div>
-          <div class="flex flex-grow justify-center">
+          <div class="flex grow justify-center">
             <Show when={sessionQuery.data}>
               <NavItems class="hidden md:flex" />
             </Show>

@@ -1,8 +1,4 @@
 import { createEffect, For, on, Show } from "solid-js";
-import { createLoop } from "~/hooks/loop";
-import { keyMode, useNavigation } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
-import type { LocalSong } from "~/lib/ultrastar/song";
 import IconX from "~icons/lucide/x";
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconF2Key from "~icons/sing/f2-key";
@@ -13,6 +9,11 @@ import IconPageUpKey from "~icons/sing/page-up-key";
 import IconTriangleDown from "~icons/sing/triangle-down";
 import IconTriangleUp from "~icons/sing/triangle-up";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
+
+import { createLoop } from "~/hooks/loop";
+import { keyMode, useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
+import type { LocalSong } from "~/lib/ultrastar/song";
 
 interface MedleyListProps {
   songs: LocalSong[];
@@ -106,7 +107,7 @@ export function MedleyList(props: MedleyListProps) {
     <div class="h-full w-80">
       <div class="flex h-full flex-col rounded-lg bg-black/30 p-4 backdrop-blur-md">
         <div class="mb-2 flex items-center justify-between">
-          <h2 class="font-bold text-2xl">Medley</h2>
+          <h2 class="text-2xl font-bold">Medley</h2>
           <div class="flex items-center gap-2">
             <UpKeyIcon />
             <button
@@ -143,7 +144,7 @@ export function MedleyList(props: MedleyListProps) {
                     />
                     <div class="z-2 col-start-1 row-start-1 flex items-center justify-between p-3">
                       <div>
-                        <div class="font-medium text-sm">{song.title}</div>
+                        <div class="text-sm font-medium">{song.title}</div>
                         <div class="text-xs opacity-80">{song.artist}</div>
                       </div>
 
@@ -158,7 +159,7 @@ export function MedleyList(props: MedleyListProps) {
                         </div>
                         <button
                           type="button"
-                          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-black/40 opacity-0 transition-all duration-250 hover:bg-black/60 active:scale-95 group-hover:opacity-100"
+                          class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-black/40 opacity-0 transition-all duration-250 group-hover:opacity-100 hover:bg-black/60 active:scale-95"
                           classList={{ "opacity-100": isSelected() }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -180,7 +181,7 @@ export function MedleyList(props: MedleyListProps) {
           <Show when={props.onStart}>
             <button
               type="button"
-              class="cursor-pointer rounded-lg bg-gradient-to-r from-green-400 to-teal-600 px-4 py-2 font-semibold text-sm transition-all hover:opacity-75 active:scale-95"
+              class="cursor-pointer rounded-lg bg-gradient-to-r from-green-400 to-teal-600 px-4 py-2 text-sm font-semibold transition-all hover:opacity-75 active:scale-95"
               onClick={() => props.onStart?.()}
             >
               {t("sing.menu.startMedley")}

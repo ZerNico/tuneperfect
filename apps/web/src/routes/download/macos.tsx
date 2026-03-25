@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/solid-router"
-import DownloadCard from "~/components/download-card";
-import { posthog } from "~/lib/posthog";
+import { createFileRoute } from "@tanstack/solid-router";
 import IconChip from "~icons/lucide/cpu";
 import IconApple from "~icons/sing/apple";
+
+import DownloadCard from "~/components/download-card";
+import { posthog } from "~/lib/posthog";
 
 export const Route = createFileRoute("/download/macos")({
   component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
         <div class="mb-6 flex items-center gap-4">
           <IconApple class="h-12 w-12 text-white" />
           <div>
-            <h1 class="font-bold text-4xl">Download for macOS</h1>
+            <h1 class="text-4xl font-bold">Download for macOS</h1>
             <p class="text-slate-400">Choose the version that matches your Mac</p>
           </div>
         </div>
@@ -70,11 +71,11 @@ function RouteComponent() {
           <h3 class="mb-4 font-semibold text-slate-200">Installation Instructions</h3>
           <div class="space-y-4">
             <div>
-              <h4 class="mb-2 font-medium text-slate-300 text-sm">First Launch:</h4>
-              <p class="mb-2 text-slate-300 text-sm">
+              <h4 class="mb-2 text-sm font-medium text-slate-300">First Launch:</h4>
+              <p class="mb-2 text-sm text-slate-300">
                 Since the app is not signed, you'll need to remove the quarantine attribute before first launch:
               </p>
-              <code class="block rounded bg-slate-900 p-2 text-slate-300 text-xs">
+              <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
                 xattr -d com.apple.quarantine "/Applications/Tune Perfect.app"
               </code>
             </div>
@@ -83,11 +84,11 @@ function RouteComponent() {
 
         <div class="mt-6 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
           <h3 class="mb-3 font-semibold text-slate-200">Not sure which version to choose?</h3>
-          <p class="mb-4 text-slate-300 text-sm">
+          <p class="mb-4 text-sm text-slate-300">
             Check your Mac's processor by clicking the Apple menu → About This Mac. If you see "Apple M1", "Apple M2",
             etc., choose Apple Silicon. If you see "Intel", choose the Intel version.
           </p>
-          <div class="space-y-2 text-slate-400 text-xs">
+          <div class="space-y-2 text-xs text-slate-400">
             <p>
               <strong>System Requirements:</strong>
             </p>

@@ -7,7 +7,7 @@ const MEDLEY_BUFFER_MS = 3000; // 3 seconds buffer before and after
 
 export function getMedleySong(song: LocalSong) {
   const medleyBeats = getMedleyBeats(song);
-  
+
   if (!medleyBeats) {
     // If no medley found, return original song
     return song;
@@ -18,10 +18,10 @@ export function getMedleySong(song: LocalSong) {
   const medleyEndMs = beatToMs(song, endBeat);
 
   // Filter phrases to only include those within the medley beat range
-  const filteredVoices = song.voices.map(voice => {
-    const filteredPhrases = (voice.phrases ?? []).filter(phrase => {
+  const filteredVoices = song.voices.map((voice) => {
+    const filteredPhrases = (voice.phrases ?? []).filter((phrase) => {
       // Include phrase if any of its notes fall within the medley range
-      return phrase.notes.some(note => {
+      return phrase.notes.some((note) => {
         const noteStartBeat = note.startBeat;
         const noteEndBeat = note.startBeat + note.length;
         // Phrase is included if it overlaps with the medley range
@@ -53,7 +53,7 @@ function getMedleyBeats(song: LocalSong) {
   }
 
   const phrases = getAllPhrases(song);
-  
+
   if (phrases.length === 0) {
     return null;
   }
@@ -83,7 +83,7 @@ function getMedleyBeats(song: LocalSong) {
   // Calculate beat positions
   const startPhrase = phrases[medleyStartLine];
   const endPhrase = phrases[medleyEndLine];
-  
+
   if (!startPhrase || !endPhrase) {
     return getFallbackMedleyBeats(song, phrases);
   }
@@ -91,14 +91,14 @@ function getMedleyBeats(song: LocalSong) {
   const firstNote = startPhrase.notes[0];
   const lastNoteStart = startPhrase.notes[startPhrase.notes.length - 1];
   const lastNoteEnd = endPhrase.notes[endPhrase.notes.length - 1];
-  
+
   if (!firstNote || !lastNoteStart || !lastNoteEnd) {
     return getFallbackMedleyBeats(song, phrases);
   }
 
   // Medley Start Beat: timestamp of the first note in the start line
   const medleyStartBeat = firstNote.startBeat;
-  
+
   // Medley End Beat: timestamp of the last note in the start line plus the duration of the last note in the end line
   let medleyEndBeat = lastNoteStart.startBeat + lastNoteEnd.length;
 
@@ -108,12 +108,7 @@ function getMedleyBeats(song: LocalSong) {
   const medleyDuration = medleyEndMs - medleyStartMs;
 
   if (medleyDuration < MEDLEY_MIN_DURATION_MS) {
-    medleyEndBeat = extendToMinimumDuration(
-      song,
-      phrases,
-      medleyStartBeat,
-      medleyEndBeat,
-    );
+    medleyEndBeat = extendToMinimumDuration(song, phrases, medleyStartBeat, medleyEndBeat);
   }
 
   return {
@@ -125,7 +120,7 @@ function getMedleyBeats(song: LocalSong) {
 function getFallbackMedleyBeats(song: LocalSong, phrases: Phrase[]) {
   const lastPhrase = phrases[phrases.length - 1];
   const lastNote = lastPhrase?.notes[lastPhrase.notes.length - 1];
-  
+
   if (!lastNote) {
     return null;
   }
@@ -152,40 +147,38 @@ function findRepeatedSections(phrases: Phrase[]) {
   for (let i = 0; i <= phrases.length - 2; i++) {
     const firstPhrase = phrases[i];
     if (!firstPhrase) continue;
-    
+
     const firstLine = normalizePhraseText(firstPhrase);
-    
+
     for (let j = i + 4; j <= phrases.length - 1; j++) {
       const secondPhrase = phrases[j];
       if (!secondPhrase) continue;
-      
+
       const secondLine = normalizePhraseText(secondPhrase);
-      
+
       if (firstLine === secondLine) {
         // Found a match, extend forward to find the full repeated block
         const tempMedleyStart = i;
         let tempMedleyEnd = i;
-        
-        const max = j + (j - i) - 1 > phrases.length - 1
-          ? phrases.length - j - 1
-          : j - i - 1;
-        
+
+        const max = j + (j - i) - 1 > phrases.length - 1 ? phrases.length - j - 1 : j - i - 1;
+
         for (let k = 1; k <= max; k++) {
           const firstPhraseExtended = phrases[i + k];
           const secondPhraseExtended = phrases[j + k];
-          
+
           if (!firstPhraseExtended || !secondPhraseExtended) break;
-          
+
           const firstLineExtended = normalizePhraseText(firstPhraseExtended);
           const secondLineExtended = normalizePhraseText(secondPhraseExtended);
-          
+
           if (firstLineExtended === secondLineExtended) {
             tempMedleyEnd = i + k;
           } else {
             break;
           }
         }
-        
+
         candidates.push({
           start: tempMedleyStart,
           end: tempMedleyEnd,
@@ -207,12 +200,12 @@ function findLongestCandidate(candidates: { start: number; end: number }[]) {
   for (let l = candidates.length - 1; l >= 0; l--) {
     const candidate = candidates[l];
     const longestCandidate = candidates[longestIndex];
-    
+
     if (!candidate || !longestCandidate) continue;
-    
+
     const candidateLength = candidate.end - candidate.start;
     const longestLength = longestCandidate.end - longestCandidate.start;
-    
+
     if (candidateLength >= longestLength) {
       longestIndex = l;
     }
@@ -224,12 +217,7 @@ function findLongestCandidate(candidates: { start: number; end: number }[]) {
 /**
  * Extends the medley end beat to meet the minimum duration requirement
  */
-function extendToMinimumDuration(
-  song: LocalSong,
-  phrases: Phrase[],
-  medleyStartBeat: number,
-  medleyEndBeat: number,
-) {
+function extendToMinimumDuration(song: LocalSong, phrases: Phrase[], medleyStartBeat: number, medleyEndBeat: number) {
   // Calculate approximate end beat needed for minimum duration
   const bpm = song.bpm * 4; // Convert to actual BPM
   const medleyMinBeats = (MEDLEY_MIN_DURATION_MS * bpm) / (1000 * 60);
@@ -260,9 +248,9 @@ function normalizePhraseText(phrase: Phrase) {
   if (!phrase.notes?.length) {
     return "";
   }
-  
+
   return phrase.notes
-    .map(note => note.text)
+    .map((note) => note.text)
     .join("")
     .toLowerCase()
     .replace(/[,.!?~ ]/g, "");
@@ -271,9 +259,7 @@ function normalizePhraseText(phrase: Phrase) {
 function getAllPhrases(song: LocalSong) {
   if (!song.voices?.length) return [];
 
-  const phrases = song.voices
-    .flatMap(voice => voice.phrases ?? [])
-    .filter(phrase => phrase.notes?.length > 0);
+  const phrases = song.voices.flatMap((voice) => voice.phrases ?? []).filter((phrase) => phrase.notes?.length > 0);
 
   // Sort by start beat
   phrases.sort((a, b) => {

@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "endOfLine": "lf",
+  "sortImports": {},
+  "ignorePatterns": [
+    "**/routeTree.gen.ts",
+    "**/styles.css",
+    "**/bindings.ts",
+    "**/.nitro/**",
+    "**/.tanstack-start/**",
+    "**/.output/**",
+    "**/drizzle/meta/**",
+    "**/drizzle/**/snapshot.json",
+    "helm/tuneperfect/templates/**"
+  ],
+  "overrides": [
+    {
+      "files": ["apps/app/src/**/*.{js,jsx,ts,tsx}"],
+      "options": {
+        "sortTailwindcss": {
+          "stylesheet": "./apps/app/src/styles.css",
+          "functions": ["cn", "cva"],
+          "attributes": ["classList"]
+        }
+      }
+    },
+    {
+      "files": ["apps/game/src/**/*.{js,jsx,ts,tsx}"],
+      "options": {
+        "sortTailwindcss": {
+          "stylesheet": "./apps/game/src/styles.css",
+          "functions": ["cn", "cva"],
+          "attributes": ["classList"]
+        }
+      }
+    },
+    {
+      "files": ["apps/web/src/**/*.{js,jsx,ts,tsx}"],
+      "options": {
+        "sortTailwindcss": {
+          "stylesheet": "./apps/web/src/styles.css",
+          "functions": ["cn", "cva"],
+          "attributes": ["classList"]
+        }
+      }
+    }
+  ]
+}

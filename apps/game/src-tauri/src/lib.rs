@@ -3,6 +3,7 @@ mod commands;
 mod error;
 mod media_server;
 mod ultrastar;
+mod webrtc;
 
 use std::{
     collections::HashMap,
@@ -39,13 +40,24 @@ pub fn run() {
             microphones::get_microphones,
             pitch::start_recording,
             pitch::stop_recording,
-            pitch::get_pitch,
+            pitch::get_pitches,
+            pitch::get_audio_levels,
             media_server::get_media_server_base_url,
             songs::parse_songs_from_paths,
+            webrtc::commands::webrtc_create_answer,
+            webrtc::commands::webrtc_add_ice_candidate,
+            webrtc::commands::webrtc_send_message,
+            webrtc::commands::webrtc_close_connection,
+            webrtc::commands::webrtc_close_all,
         ])
         .events(collect_events![
             songs::ProgressEvent,
-            songs::StartParsingEvent
+            songs::StartParsingEvent,
+            webrtc::host::IceCandidateEvent,
+            webrtc::host::ConnectionStateEvent,
+            webrtc::host::ChannelOpenEvent,
+            webrtc::host::ChannelCloseEvent,
+            webrtc::host::ChannelMessageEvent,
         ]);
 
     #[cfg(debug_assertions)]
@@ -100,6 +112,7 @@ pub fn run() {
             }
 
             app.manage(AppState::default());
+            app.manage(webrtc::host::create_shared_host());
             builder.mount_events(app);
 
             Ok(())

@@ -1,7 +1,10 @@
 import { createMemo, For, Show } from "solid-js";
+
 import { useGame } from "~/lib/game/game-context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { getColorVar } from "~/lib/utils/color";
+import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 const formatTime = (seconds: number): string => {
@@ -148,15 +151,18 @@ export default function Progress() {
       return "var(--color-white)";
     }
 
-    const microphone = settingsStore.microphones()[leadingPlayerIndex];
-    const color = microphone ? `var(--color-${microphone.color}-500)` : "var(--color-white)";
+    const players = roundStore.settings()?.songs[0]?.players || [];
+    const microphone = players[leadingPlayerIndex]?.microphone;
+    const color = microphone ? getColorVar(microphone.color, 500) : "var(--color-white)";
 
     return color;
   };
 
   return (
     <div class="grid h-full w-full grid-cols-[5cqw_1fr_5cqw] items-center justify-center gap-2">
-      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">{formatTime(timingInfo().elapsed)}</div>
+      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
+        {formatTime(timingInfo().elapsed)}
+      </div>
       <div class="relative h-1.5 w-full overflow-hidden rounded-full bg-white/20">
         <Show when={settingsStore.general().showNoteSegments}>
           <For each={noteSegments()}>
@@ -176,7 +182,9 @@ export default function Progress() {
           style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
         />
       </div>
-      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">{formatTime(timingInfo().remaining)}</div>
+      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
+        {formatTime(timingInfo().remaining)}
+      </div>
     </div>
   );
 }

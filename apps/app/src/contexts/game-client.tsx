@@ -1,5 +1,5 @@
 import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
-import { createContext, type JSX, useContext } from "solid-js";
+import { createContext, createMemo, type JSX, useContext } from "solid-js";
 
 interface GameClientContextType {
   client: GameClient;
@@ -8,7 +8,10 @@ interface GameClientContextType {
 const GameClientContext = createContext<GameClientContextType>();
 
 export function GameClientProvider(props: { client: GameClient; children: JSX.Element }) {
-  return <GameClientContext.Provider value={{ client: props.client }}>{props.children}</GameClientContext.Provider>;
+  const value = createMemo(() => ({ client: props.client }));
+
+  // oxlint-disable-next-line solid/reactivity
+  return <GameClientContext.Provider value={value()}>{props.children}</GameClientContext.Provider>;
 }
 
 export function useGameClient() {

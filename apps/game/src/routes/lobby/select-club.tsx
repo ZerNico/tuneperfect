@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import { createMemo } from "solid-js";
+import IconBuilding from "~icons/lucide/building";
+import IconCheck from "~icons/lucide/check";
+import IconX from "~icons/lucide/x";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -10,9 +14,6 @@ import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { availableClubsQueryOptions, lobbyQueryOptions } from "~/lib/queries";
-import IconBuilding from "~icons/lucide/building";
-import IconCheck from "~icons/lucide/check";
-import IconX from "~icons/lucide/x";
 
 export const Route = createFileRoute("/lobby/select-club")({
   component: SelectClubComponent,

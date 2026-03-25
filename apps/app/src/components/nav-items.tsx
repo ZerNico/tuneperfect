@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/solid-query";
 import { Link, type LinkProps } from "@tanstack/solid-router";
-import type { Component, JSX } from "solid-js";
-import { Dynamic, Show } from "solid-js/web";
-import { sessionQueryOptions } from "~/lib/auth";
-import { t } from "~/lib/i18n";
+import { Show, type Component, type JSX } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import IconUser from "~icons/lucide/user";
 import IconUserPlus from "~icons/lucide/user-plus";
 import IconUsers from "~icons/lucide/users";
 import IconUsersRound from "~icons/lucide/users-round";
+
+import { sessionQueryOptions } from "~/lib/auth";
+import { t } from "~/lib/i18n";
 
 interface NavItemsProps {
   class?: string;
@@ -55,10 +56,10 @@ interface NavItemProps {
 
 function NavItem(props: NavItemProps) {
   return (
-    <Link draggable={false} to={props.to} class="relative w-full select-none rounded-md px-3 hover:bg-white/10">
+    <Link draggable={false} to={props.to} class="relative w-full rounded-md px-3 select-none hover:bg-white/10">
       {({ isActive }) => (
         <>
-          <div class="flex flex-col items-center whitespace-nowrap break-keep py-2 md:flex-row md:gap-2">
+          <div class="flex flex-col items-center py-2 break-keep whitespace-nowrap md:flex-row md:gap-2">
             <Dynamic component={props.icon} />
             {props.children}
           </div>

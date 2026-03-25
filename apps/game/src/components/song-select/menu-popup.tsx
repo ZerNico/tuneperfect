@@ -1,12 +1,13 @@
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { Motion } from "solid-motionone";
+import IconF1Key from "~icons/sing/f1-key";
+import IconGamepadRT from "~icons/sing/gamepad-rt";
+import IconShiftKey from "~icons/sing/shift-key";
+
 import { createLoop } from "~/hooks/loop";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import IconF1Key from "~icons/sing/f1-key";
-import IconGamepadRT from "~icons/sing/gamepad-rt";
-import IconShiftKey from "~icons/sing/shift-key";
 
 interface MenuPopupProps {
   onClose: () => void;
@@ -27,7 +28,7 @@ export function MenuPopup(props: MenuPopupProps) {
           </div>
         </div>
       ),
-      action: props.onAddToMedley,
+      action: () => props.onAddToMedley(),
     },
     {
       label: (
@@ -36,13 +37,13 @@ export function MenuPopup(props: MenuPopupProps) {
           <div class="flex items-center gap-1">
             <Show when={keyMode() === "keyboard"}>
               <IconShiftKey class="text-sm" />
-              <span class="font-bold text-xs">+</span>
-              <span class="font-bold text-sm">D</span>
+              <span class="text-xs font-bold">+</span>
+              <span class="text-sm font-bold">D</span>
             </Show>
           </div>
         </div>
       ),
-      action: props.onStartRandomMedley,
+      action: () => props.onStartRandomMedley(),
     },
   ];
 

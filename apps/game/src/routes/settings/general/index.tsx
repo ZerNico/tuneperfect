@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
+import IconDe from "~icons/circle-flags/de";
+import IconEnUs from "~icons/circle-flags/en-us";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
@@ -7,8 +10,6 @@ import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { settingsStore } from "~/stores/settings";
-import IconDe from "~icons/circle-flags/de";
-import IconEnUs from "~icons/circle-flags/en-us";
 
 export const Route = createFileRoute("/settings/general/")({
   component: GeneralSettingsComponent,
@@ -34,14 +35,7 @@ function GeneralSettingsComponent() {
       value: () => general().language,
       options: ["en", "de"],
       onChange: (value) => setGeneral({ ...general(), language: value }),
-      renderValue: () => {
-        if (general().language === "en") {
-          return <IconEnUs />;
-        }
-        if (general().language === "de") {
-          return <IconDe />;
-        }
-      },
+      renderValue: () => (general().language === "en" ? <IconEnUs /> : general().language === "de" ? <IconDe /> : null),
     },
     {
       type: "select-string",

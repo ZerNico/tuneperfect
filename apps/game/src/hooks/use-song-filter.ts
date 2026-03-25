@@ -1,6 +1,7 @@
 import { debounce } from "@solid-primitives/scheduled";
 import MiniSearch from "minisearch";
 import { type Accessor, createEffect, createMemo, createSignal } from "solid-js";
+
 import type { LocalSong } from "~/lib/ultrastar/song";
 
 export type SortOption = "artist" | "title" | "year";
@@ -20,7 +21,7 @@ const normalizeText = (text: string) =>
 
 interface UseSongFilterOptions {
   items: Accessor<LocalSong[]>;
-  sort: Accessor<SortOption>;
+  sortOption: Accessor<SortOption>;
   searchQuery: Accessor<string>;
   searchFilter: Accessor<SearchFilter>;
 }
@@ -97,15 +98,15 @@ export function useSongFilter(options: UseSongFilterOptions): UseSongFilterResul
       return [];
     }
 
-    return [...songs].sort((a, b) => {
-      const sort = options.sort();
-      if (sort === "artist") {
+    return [...songs].toSorted((a, b) => {
+      const sortKey = options.sortOption();
+      if (sortKey === "artist") {
         return compare(a.artist, b.artist) || compare(a.title, b.title);
       }
-      if (sort === "title") {
+      if (sortKey === "title") {
         return compare(a.title, b.title);
       }
-      if (sort === "year") {
+      if (sortKey === "year") {
         return (a.year ?? 0) - (b.year ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
       }
       return 0;

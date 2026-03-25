@@ -1,14 +1,16 @@
 import { createEffect, onCleanup, onMount, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
-import { keyMode, useNavigation } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
 import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 import IconTriangleLeft from "~icons/sing/triangle-left";
 import IconTriangleRight from "~icons/sing/triangle-right";
+
+import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
+import { keyMode, useNavigation } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
+
 import type { SearchFilter } from "./song-scroller";
 
 interface SearchPopupProps {
@@ -113,7 +115,7 @@ export function SearchPopup(props: SearchPopupProps) {
 
             <div class="flex justify-center">
               <div class="rounded-md bg-white/10 px-3 py-1">
-                <span class="font-medium text-sm text-white">{currentFilterLabel()}</span>
+                <span class="text-sm font-medium text-white">{currentFilterLabel()}</span>
               </div>
             </div>
 
@@ -137,7 +139,7 @@ export function SearchPopup(props: SearchPopupProps) {
             ref={searchRef}
             type="text"
             placeholder={t("sing.search")}
-            class="focus:gradient-sing w-full rounded-md bg-white/10 px-3 py-2 text-white placeholder-gray-400 transition-all focus:bg-linear-to-r focus:outline-none"
+            class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>
 

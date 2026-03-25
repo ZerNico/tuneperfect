@@ -1,7 +1,9 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { createMemo } from "solid-js";
+
 import { commands } from "~/bindings";
 import type { LocalSong } from "~/lib/ultrastar/song";
+
 import { settings, updateSettings } from "./settings";
 
 function createSongsStore() {
@@ -50,7 +52,7 @@ function createSongsStore() {
       }
     }
 
-    return Array.from(songs.values()).sort((a, b) => a.artist.localeCompare(b.artist));
+    return Array.from(songs.values()).toSorted((a, b) => a.artist.localeCompare(b.artist));
   });
 
   return {

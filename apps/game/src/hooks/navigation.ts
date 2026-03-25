@@ -3,7 +3,9 @@ import { ReactiveMap } from "@solid-primitives/map";
 import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import mitt from "mitt";
 import { createEffect, createMemo, createRoot, createSignal, on, onCleanup } from "solid-js";
+
 import { isPrintableKey } from "~/lib/utils/keyboard";
+
 import { createGamepad, type GamepadButton } from "./gamepad";
 
 export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");

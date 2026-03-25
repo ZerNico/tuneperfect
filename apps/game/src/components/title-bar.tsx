@@ -9,9 +9,9 @@ interface TitleBarProps {
 
 export default function TitleBar(props: TitleBarProps) {
   return (
-    <div class="flex items-center gap-2 font-semibold text-base uppercase">
+    <div class="flex items-center gap-2 text-base font-semibold uppercase">
       <Show when={props.onBack}>
-        <button class="flex cursor-pointer items-center gap-2" onClick={props.onBack} type="button">
+        <button class="flex cursor-pointer items-center gap-2" onClick={() => props.onBack?.()} type="button">
           <IconChevronLeft />
         </button>
       </Show>

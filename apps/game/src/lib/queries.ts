@@ -1,6 +1,8 @@
 import { safe } from "@orpc/client";
 import { queryOptions } from "@tanstack/solid-query";
+
 import { lobbyStore } from "~/stores/lobby";
+
 import { client } from "./orpc";
 
 export const lobbyQueryOptions = () =>
@@ -20,7 +22,11 @@ export const lobbyQueryOptions = () =>
     },
   });
 
-export const highscoreQueryOptions = (hash: string, difficulty?: "easy" | "medium" | "hard", options?: { enabled: boolean }) =>
+export const highscoreQueryOptions = (
+  hash: string,
+  difficulty?: "easy" | "medium" | "hard",
+  options?: { enabled: boolean },
+) =>
   queryOptions({
     queryKey: ["highscore", hash, difficulty],
     queryFn: async () => {

@@ -16,6 +16,15 @@ const en = {
     },
     yes: "Yes",
     no: "No",
+    routeError: {
+      title: "Something went wrong",
+      tryAgain: "Try again",
+      goHome: "Go to home",
+      copyDetails: "Copy error details",
+      copied: "Error details copied to clipboard",
+      copyFailed: "Could not copy to clipboard",
+      detailsHeading: "Details",
+    },
   },
   home: {
     title: "Welcome",
@@ -62,6 +71,13 @@ const en = {
     selectedClub: "Selected Club",
     noClub: "No Club",
     recreateLobby: "Recreate Lobby",
+  },
+  select: {
+    title: "Select",
+    addPlayer: "Add Player",
+    start: "Start",
+    selectPlayer: "Select Player",
+    playerRequired: "Please select at least one player",
   },
   sing: {
     title: "Sing",
@@ -152,6 +168,7 @@ const en = {
         delay: "Delay",
         gain: "Gain",
         threshold: "Threshold",
+        level: "Level",
       },
       localPlayers: {
         title: "Local Players",
@@ -184,7 +201,7 @@ const en = {
       start: "Start",
       jokers: "Jokers",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
-      microphoneRequired: "You need 2 microphones to start a versus game.",
+      microphoneRequired: "You need at least 2 microphones to start a versus game.",
       exit: "Exit",
       continue: "Continue",
       restart: "Restart",

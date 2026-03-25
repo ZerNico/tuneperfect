@@ -1,7 +1,4 @@
 import { For, type JSX } from "solid-js";
-import { keyMode } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
-
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconEnterKey from "~icons/sing/enter-key";
 import IconEscKey from "~icons/sing/esc-key";
@@ -11,6 +8,9 @@ import IconGamepadDPad from "~icons/sing/gamepad-dpad";
 import IconLeftArrowKey from "~icons/sing/left-arrow-key";
 import IconRightArrowKey from "~icons/sing/right-arrow-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
+
+import { keyMode } from "~/hooks/navigation";
+import { t } from "~/lib/i18n";
 
 type HintType = "navigate" | "confirm" | "back" | "add-to-medley";
 

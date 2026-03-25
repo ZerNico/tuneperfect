@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
+import IconPlus from "~icons/lucide/plus";
+import IconUser from "~icons/lucide/user";
+
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
@@ -10,8 +13,6 @@ import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { localStore } from "~/stores/local";
-import IconPlus from "~icons/lucide/plus";
-import IconUser from "~icons/lucide/user";
 
 export const Route = createFileRoute("/settings/local-players/")({
   component: LocalPlayersComponent,
@@ -125,13 +126,13 @@ function LocalPlayersComponent() {
       }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="flex w-full flex-grow items-center justify-center gap-4">
+      <div class="flex w-full grow items-center justify-center gap-4">
         <div ref={scrollContainer} class="styled-scrollbars flex gap-4 overflow-y-auto py-2">
           <For each={buttons()}>
             {(button, index) => (
               <IconButton
                 ref={setButtonRef(index())}
-                class="flex-shrink-0"
+                class="shrink-0"
                 onClick={() => button.action?.()}
                 onMouseEnter={() => set(index())}
                 selected={position() === index()}

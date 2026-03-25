@@ -16,6 +16,15 @@ const de = {
     },
     yes: "Ja",
     no: "Nein",
+    routeError: {
+      title: "Etwas ist schiefgelaufen",
+      tryAgain: "Erneut versuchen",
+      goHome: "Zur Startseite",
+      copyDetails: "Fehlerdetails kopieren",
+      copied: "Fehlerdetails in die Zwischenablage kopiert",
+      copyFailed: "Kopieren in die Zwischenablage fehlgeschlagen",
+      detailsHeading: "Details",
+    },
   },
   home: {
     title: "Willkommen",
@@ -62,6 +71,13 @@ const de = {
     selectedClub: "Ausgewählter Club",
     noClub: "Kein Club",
     recreateLobby: "Lobby neu erstellen",
+  },
+  select: {
+    title: "Auswahl",
+    addPlayer: "Spieler hinzufügen",
+    start: "Starten",
+    selectPlayer: "Spieler auswählen",
+    playerRequired: "Bitte wähle mindestens einen Spieler aus",
   },
   sing: {
     title: "Singen",
@@ -152,6 +168,7 @@ const de = {
         delay: "Verzögerung",
         gain: "Verstärkung",
         threshold: "Schwellenwert",
+        level: "Pegel",
       },
       localPlayers: {
         title: "Lokale Spieler",

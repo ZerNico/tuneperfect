@@ -1,6 +1,7 @@
 import * as i18n from "@solid-primitives/i18n";
 import { makePersisted } from "@solid-primitives/storage";
 import { createMemo, createSignal } from "solid-js";
+
 import * as de from "~/i18n/de";
 import * as en from "~/i18n/en";
 
@@ -24,10 +25,13 @@ function getDefaultLocale() {
 
 const getDictionary = (locale: Locale): Dictionary => i18n.flatten(dictionaries[locale]) as Dictionary;
 
-const [locale, internalSetLocale] = makePersisted(createSignal<Locale>(getDefaultLocale()), {
+// oxlint-disable-next-line solid/reactivity
+const localeSignal = createSignal<Locale>(getDefaultLocale());
+const [locale, internalSetLocale] = makePersisted(localeSignal, {
   name: "locale",
 });
 const dict = createMemo(() => getDictionary(locale()));
+// oxlint-disable-next-line solid/reactivity
 const t = i18n.translator(dict, i18n.resolveTemplate);
 
 const setLocale = (lang: Locale) => {

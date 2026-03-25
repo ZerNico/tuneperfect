@@ -1,6 +1,7 @@
 import { createSignal, type JSX, type Ref } from "solid-js";
-import { useNavigation } from "~/hooks/navigation";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
+
+import { useNavigation } from "~/hooks/navigation";
 
 interface ButtonProps {
   selected?: boolean;
@@ -46,12 +47,12 @@ export default function Button(props: ButtonProps) {
         "scale-95": active(),
       }}
       type="button"
-      onClick={props.onClick}
-      onMouseEnter={props.onMouseEnter}
+      onClick={() => props.onClick?.()}
+      onMouseEnter={() => props.onMouseEnter?.()}
       disabled={props.loading}
     >
       <div
-        class="z-2 col-start-1 row-start-1 flex items-center justify-center gap-3 text-center font-bold text-xl transition-opacity"
+        class="z-2 col-start-1 row-start-1 flex items-center justify-center gap-3 text-center text-xl font-bold transition-opacity"
         classList={{
           "pointer-events-none opacity-0": props.loading,
         }}

@@ -29,10 +29,7 @@ export default function Input(props: InputProps) {
     <div class={props.class}>
       <Show when={props.label}>
         {(label) => (
-          <label 
-            for={props.name} 
-            class="block text-slate-800 text-sm"
-          >
+          <label for={props.name} class="block text-sm text-slate-800">
             {label()}
           </label>
         )}
@@ -45,13 +42,13 @@ export default function Input(props: InputProps) {
           name={props.name}
           autofocus={props.autofocus}
           ref={props.ref}
-          onChange={props.onChange}
-          onBlur={props.onBlur}
+          onChange={(event) => props.onChange?.(event)}
+          onBlur={(event) => props.onBlur?.(event)}
           autocomplete={props.autocomplete}
           maxLength={props.maxLength}
           type={type()}
-          onInput={props.onInput}
-          class="block w-full flex-grow rounded focus:outline-none"
+          onInput={(event) => props.onInput?.(event)}
+          class="block w-full grow rounded focus:outline-none"
           classList={{
             [props.inputClass || ""]: true,
           }}
@@ -73,11 +70,7 @@ export default function Input(props: InputProps) {
       </div>
       <div class="h-0.5 rounded-full bg-slate-800" />
       <Show when={props.errorMessage}>
-        <div 
-          id={`${props.name}-error`}
-          class="mt-1 text-red-600 text-sm"
-          role="alert"
-        >
+        <div id={`${props.name}-error`} class="mt-1 text-sm text-red-600" role="alert">
           {props.errorMessage}
         </div>
       </Show>

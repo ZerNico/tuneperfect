@@ -4,7 +4,9 @@ import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal, Suspense } from "solid-js";
+
 import PopupContainer from "~/components/popup-container";
+import { RouteError } from "~/components/route-error";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { useWebRTCAutoConnect } from "~/stores/webrtc";
@@ -17,6 +19,7 @@ const [initialized, setInitialized] = createSignal(false);
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
+  errorComponent: RouteError,
   beforeLoad: async () => {
     if (!initialized()) {
       setInitialized(true);
