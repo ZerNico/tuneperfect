@@ -1,15 +1,13 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/solid-start/plugin/vite";
-import { nitro } from 'nitro/vite'
+import { nitro } from "nitro/vite";
 import { FileSystemIconLoader } from "unplugin-icons/loaders";
 import icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 import viteSolid from "vite-plugin-solid";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
     tanstackStart(),
     nitro({ preset: "bun" }),
     viteSolid({ ssr: true }),
@@ -22,4 +20,7 @@ export default defineConfig({
 
     tailwindcss(),
   ],
+  resolve: {
+    tsconfigPaths: true,
+  },
 });

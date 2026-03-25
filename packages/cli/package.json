@@ -7,12 +7,12 @@
   "type": "module",
   "private": true,
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.0"
   },
   "dependencies": {
-    "@clerc/plugin-completions": "^0.44.0",
-    "@clerc/plugin-help": "^0.44.0",
-    "clerc": "^0.44.0"
+    "@clerc/plugin-completions": "^1.3.1",
+    "@clerc/plugin-help": "^1.3.1",
+    "clerc": "^1.3.1"
   },
   "devDependencies": {}
 }

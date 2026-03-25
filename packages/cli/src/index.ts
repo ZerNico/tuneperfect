@@ -41,7 +41,7 @@ Clerc.create()
     const processes = [
       Bun.spawn(["caddy", "run"], { stderr: "inherit", stdout: "inherit" }),
       Bun.spawn(["bun", "--bun", "run", "dev", ...filter], { stderr: "inherit", stdout: "inherit" }),
-    ]
+    ];
 
     process.on("SIGINT", () => {
       processes.forEach((process) => {
