@@ -3,7 +3,7 @@ import { createSignal } from "solid-js";
 
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import { type Song, isLocalSong } from "~/lib/ultrastar/song";
 
 import type { Microphone } from "./settings";
 
@@ -22,8 +22,8 @@ const TARGET_DURATION_MS: Record<RoundLength, number | null> = {
   short: 30_000,
 };
 
-interface QueuedSong {
-  song: LocalSong;
+export interface QueuedSong {
+  song: Song;
   players: PlayerSelection[];
   mode: RoundMode;
   length: RoundLength;
@@ -71,7 +71,8 @@ export function useRoundActions() {
   const startRound = (settings: RoundSettings) => {
     const songs = settings.songs.map((queued) => {
       const targetDurationMs = TARGET_DURATION_MS[queued.length];
-      if (targetDurationMs === null) {
+      // Only local songs can be trimmed to a medley; online songs play full.
+      if (targetDurationMs === null || !isLocalSong(queued.song)) {
         return queued;
       }
       return {

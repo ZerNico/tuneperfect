@@ -4,7 +4,7 @@ import { type Accessor, batch, createEffect, createSignal, type JSX } from "soli
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import type { Song } from "~/lib/ultrastar/song";
 import { roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -12,7 +12,7 @@ import { type GameContextValue, GameProvider } from "./game-context";
 
 export interface CreateGameOptions {
   songPlayerRef?: SongPlayerRef;
-  song?: LocalSong;
+  song?: Song;
 }
 
 export { useGame } from "./game-context";

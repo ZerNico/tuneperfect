@@ -2,7 +2,7 @@ import { createMemo, For, Show } from "solid-js";
 
 import { useGame } from "~/lib/game/game-context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import { isLocalSong, type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -129,7 +129,7 @@ export default function Progress() {
   const noteSegments = createMemo(() => {
     const song = game.song();
     const duration = game.duration();
-    return calculateNoteSegments(song, duration);
+    return calculateNoteSegments(song && isLocalSong(song) ? song : undefined, duration);
   });
 
   const leadingPlayer = createMemo(() => {

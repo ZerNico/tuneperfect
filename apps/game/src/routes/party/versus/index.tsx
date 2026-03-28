@@ -20,7 +20,7 @@ import Avatar from "~/components/ui/avatar";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import type { User } from "~/lib/types";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import { isLocalSong, type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { times } from "~/lib/utils/loop";
 import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
@@ -112,13 +112,15 @@ export const Route = createFileRoute("/party/versus/")({
     if (!lastResult) return;
 
     const song = lastResult.song.song;
+    // Versus mode only ever plays local songs.
+    if (!isLocalSong(song)) return;
     const voice = song.voices[0];
     const players = lastResult.song.players;
     const scores = lastResult.scores;
 
     versusStore.setState((state) => ({
       ...state,
-      playedSongs: [...state.playedSongs, lastResult.song.song],
+      playedSongs: [...state.playedSongs, song],
     }));
 
     if (scores.length !== 2 || !voice || players.length !== 2) {
