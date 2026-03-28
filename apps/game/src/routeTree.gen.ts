@@ -20,6 +20,9 @@ import { Route as PartyIndexRouteImport } from './routes/party/index'
 import { Route as LobbyIndexRouteImport } from './routes/lobby/index'
 import { Route as GameIndexRouteImport } from './routes/game/index'
 import { Route as SingSelectRouteImport } from './routes/sing/select'
+import { Route as SingOnlineLoadingRouteImport } from './routes/sing/online-loading'
+import { Route as SingOnlineRouteImport } from './routes/sing/online'
+import { Route as SettingsUsdbRouteImport } from './routes/settings/usdb'
 import { Route as SettingsCreditsRouteImport } from './routes/settings/credits'
 import { Route as LobbySelectClubRouteImport } from './routes/lobby/select-club'
 import { Route as LobbyAddLocalPlayerRouteImport } from './routes/lobby/add-local-player'
@@ -92,6 +95,21 @@ const GameIndexRoute = GameIndexRouteImport.update({
 const SingSelectRoute = SingSelectRouteImport.update({
   id: '/sing/select',
   path: '/sing/select',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingOnlineLoadingRoute = SingOnlineLoadingRouteImport.update({
+  id: '/sing/online-loading',
+  path: '/sing/online-loading',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingOnlineRoute = SingOnlineRouteImport.update({
+  id: '/sing/online',
+  path: '/sing/online',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsdbRoute = SettingsUsdbRouteImport.update({
+  id: '/settings/usdb',
+  path: '/settings/usdb',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsCreditsRoute = SettingsCreditsRouteImport.update({
@@ -200,6 +218,9 @@ export interface FileRoutesByFullPath {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
+  '/settings/usdb': typeof SettingsUsdbRoute
+  '/sing/online': typeof SingOnlineRoute
+  '/sing/online-loading': typeof SingOnlineLoadingRoute
   '/sing/select': typeof SingSelectRoute
   '/game/': typeof GameIndexRoute
   '/lobby/': typeof LobbyIndexRoute
@@ -231,6 +252,9 @@ export interface FileRoutesByTo {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
+  '/settings/usdb': typeof SettingsUsdbRoute
+  '/sing/online': typeof SingOnlineRoute
+  '/sing/online-loading': typeof SingOnlineLoadingRoute
   '/sing/select': typeof SingSelectRoute
   '/game': typeof GameIndexRoute
   '/lobby': typeof LobbyIndexRoute
@@ -263,6 +287,9 @@ export interface FileRoutesById {
   '/lobby/add-local-player': typeof LobbyAddLocalPlayerRoute
   '/lobby/select-club': typeof LobbySelectClubRoute
   '/settings/credits': typeof SettingsCreditsRoute
+  '/settings/usdb': typeof SettingsUsdbRoute
+  '/sing/online': typeof SingOnlineRoute
+  '/sing/online-loading': typeof SingOnlineLoadingRoute
   '/sing/select': typeof SingSelectRoute
   '/game/': typeof GameIndexRoute
   '/lobby/': typeof LobbyIndexRoute
@@ -296,6 +323,9 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
+    | '/settings/usdb'
+    | '/sing/online'
+    | '/sing/online-loading'
     | '/sing/select'
     | '/game/'
     | '/lobby/'
@@ -327,6 +357,9 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
+    | '/settings/usdb'
+    | '/sing/online'
+    | '/sing/online-loading'
     | '/sing/select'
     | '/game'
     | '/lobby'
@@ -358,6 +391,9 @@ export interface FileRouteTypes {
     | '/lobby/add-local-player'
     | '/lobby/select-club'
     | '/settings/credits'
+    | '/settings/usdb'
+    | '/sing/online'
+    | '/sing/online-loading'
     | '/sing/select'
     | '/game/'
     | '/lobby/'
@@ -390,6 +426,9 @@ export interface RootRouteChildren {
   LobbyAddLocalPlayerRoute: typeof LobbyAddLocalPlayerRoute
   LobbySelectClubRoute: typeof LobbySelectClubRoute
   SettingsCreditsRoute: typeof SettingsCreditsRoute
+  SettingsUsdbRoute: typeof SettingsUsdbRoute
+  SingOnlineRoute: typeof SingOnlineRoute
+  SingOnlineLoadingRoute: typeof SingOnlineLoadingRoute
   SingSelectRoute: typeof SingSelectRoute
   GameIndexRoute: typeof GameIndexRoute
   LobbyIndexRoute: typeof LobbyIndexRoute
@@ -486,6 +525,27 @@ declare module '@tanstack/solid-router' {
       path: '/sing/select'
       fullPath: '/sing/select'
       preLoaderRoute: typeof SingSelectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/online-loading': {
+      id: '/sing/online-loading'
+      path: '/sing/online-loading'
+      fullPath: '/sing/online-loading'
+      preLoaderRoute: typeof SingOnlineLoadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/online': {
+      id: '/sing/online'
+      path: '/sing/online'
+      fullPath: '/sing/online'
+      preLoaderRoute: typeof SingOnlineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/usdb': {
+      id: '/settings/usdb'
+      path: '/settings/usdb'
+      fullPath: '/settings/usdb'
+      preLoaderRoute: typeof SettingsUsdbRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/credits': {
@@ -630,6 +690,9 @@ const rootRouteChildren: RootRouteChildren = {
   LobbyAddLocalPlayerRoute: LobbyAddLocalPlayerRoute,
   LobbySelectClubRoute: LobbySelectClubRoute,
   SettingsCreditsRoute: SettingsCreditsRoute,
+  SettingsUsdbRoute: SettingsUsdbRoute,
+  SingOnlineRoute: SingOnlineRoute,
+  SingOnlineLoadingRoute: SingOnlineLoadingRoute,
   SingSelectRoute: SingSelectRoute,
   GameIndexRoute: GameIndexRoute,
   LobbyIndexRoute: LobbyIndexRoute,

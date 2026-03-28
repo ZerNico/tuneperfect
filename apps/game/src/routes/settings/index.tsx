@@ -62,6 +62,11 @@ function SettingsComponent() {
       },
       {
         type: "button",
+        label: t("settings.sections.usdb.title"),
+        action: () => navigate({ to: "/settings/usdb" }),
+      },
+      {
+        type: "button",
         label: t("settings.sections.credits.title"),
         action: () => navigate({ to: "/settings/credits" }),
       },

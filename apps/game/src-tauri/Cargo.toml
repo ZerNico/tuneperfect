@@ -56,6 +56,9 @@ chardetng = "0.1"
 num_cpus = "1.17"
 semver = "1.0"
 webrtc = "0.17"
+reqwest = { version = "0.12", features = ["cookies"] }
+scraper = "0.22"
+regex = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-cli = "2.4.1"

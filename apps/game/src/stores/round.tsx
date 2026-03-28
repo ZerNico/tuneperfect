@@ -3,7 +3,7 @@ import { createSignal } from "solid-js";
 
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import { type Song, isLocalSong } from "~/lib/ultrastar/song";
 
 import type { Microphone } from "./settings";
 
@@ -13,8 +13,8 @@ export interface PlayerSelection {
   microphone: Microphone;
 }
 
-interface QueuedSong {
-  song: LocalSong;
+export interface QueuedSong {
+  song: Song;
   players: PlayerSelection[];
   mode: "regular" | "medley";
 }
@@ -59,14 +59,14 @@ export function useRoundActions() {
   const navigate = useNavigate();
 
   const startRound = (settings: RoundSettings) => {
-    const songs = settings.songs.map((song) => {
-      if (song.mode === "medley") {
+    const songs = settings.songs.map((queued) => {
+      if (queued.mode === "medley" && isLocalSong(queued.song)) {
         return {
-          ...song,
-          song: getMedleySong(song.song),
+          ...queued,
+          song: getMedleySong(queued.song),
         };
       }
-      return song;
+      return queued;
     });
     roundStore.setSettings({ ...settings, songs });
     roundStore.setResults([]);

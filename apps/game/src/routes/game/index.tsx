@@ -3,6 +3,7 @@ import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show }
 
 import GameLayout from "~/components/game/game-layout";
 import Lyrics from "~/components/game/lyrics";
+import OnlineSongPlayer from "~/components/online-song-player";
 import PauseMenu from "~/components/game/pause-menu";
 import PlayerLane from "~/components/game/player-lane";
 import Progress from "~/components/game/progress";
@@ -10,6 +11,8 @@ import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
+import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
+import { notify } from "~/lib/toast";
 import { roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -25,6 +28,27 @@ function GameComponent() {
   const roundActions = useRoundActions();
 
   const roundSong = () => roundStore.settings()?.songs[0];
+  const isOnline = createMemo(() => {
+    const song = roundSong()?.song;
+    return song ? isUsdbSong(song) : false;
+  });
+
+  const localSong = createMemo(() => {
+    const song = roundSong()?.song;
+    return song && isLocalSong(song) ? song : null;
+  });
+
+  const usdbAudioYoutubeId = createMemo(() => {
+    const song = roundSong()?.song;
+    if (!song || !isUsdbSong(song)) return null;
+    return song.audioYoutubeId ?? song.videoYoutubeId ?? null;
+  });
+
+  const usdbVideoYoutubeId = createMemo(() => {
+    const song = roundSong()?.song;
+    if (!song || !isUsdbSong(song)) return null;
+    return song.videoYoutubeId ?? null;
+  });
 
   const {
     GameProvider,
@@ -99,6 +123,7 @@ function GameComponent() {
   };
 
   const handleError = () => {
+    notify({ message: "Failed to play song", intent: "error" });
     roundActions.returnRound();
   };
 
@@ -141,18 +166,35 @@ function GameComponent() {
                 }}
               >
                 <div class="absolute inset-0">
-                  <SongPlayer
-                    volume={settingsStore.getVolume("game")}
-                    onCanPlayThrough={() => setCanPlayThrough(true)}
-                    ref={setSongPlayerRef}
-                    playing={playing()}
-                    class="h-full w-full"
-                    song={roundSong()?.song}
-                    onEnded={handleEnded}
-                    onError={handleError}
-                    preferInstrumental={preferInstrumental()}
-                    mode={roundSong()?.mode}
-                  />
+                  <Show
+                    when={isOnline()}
+                    fallback={
+                      <SongPlayer
+                        volume={settingsStore.getVolume("game")}
+                        onCanPlayThrough={() => setCanPlayThrough(true)}
+                        ref={setSongPlayerRef}
+                        playing={playing()}
+                        class="h-full w-full"
+                        song={localSong()}
+                        onEnded={handleEnded}
+                        onError={handleError}
+                        preferInstrumental={preferInstrumental()}
+                        mode={roundSong()?.mode}
+                      />
+                    }
+                  >
+                    <OnlineSongPlayer
+                      volume={settingsStore.getVolume("game")}
+                      onCanPlayThrough={() => setCanPlayThrough(true)}
+                      ref={setSongPlayerRef}
+                      playing={playing()}
+                      class="h-full w-full"
+                      audioYoutubeId={usdbAudioYoutubeId()}
+                      videoYoutubeId={usdbVideoYoutubeId()}
+                      onEnded={handleEnded}
+                      onError={handleError}
+                    />
+                  </Show>
                 </div>
 
                 <div class="relative z-1 flex h-full grow flex-col">
@@ -217,7 +259,13 @@ function GameComponent() {
               >
                 <img
                   class="absolute inset-0 block h-full w-full scale-110 transform object-cover opacity-60 blur-xl"
-                  src={roundSong()?.song.coverUrl ?? roundSong()?.song.backgroundUrl ?? ""}
+                  src={(() => {
+                    const song = roundSong()?.song;
+                    if (!song) return "";
+                    if (isUsdbSong(song)) return song.coverUrl ?? "";
+                    if (isLocalSong(song)) return song.coverUrl ?? song.backgroundUrl ?? "";
+                    return "";
+                  })()}
                   alt=""
                 />
                 <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">

@@ -68,6 +68,7 @@
     "@tanstack/solid-router-devtools": "^1.166.11",
     "@tauri-apps/cli": "^2.10.1",
     "@types/howler": "^2.2.12",
+    "@types/youtube": "^0.1.2",
     "baseline-browser-mapping": "^2.10.10",
     "typescript": "^6.0.2",
     "unplugin-icons": "^23.0.1",

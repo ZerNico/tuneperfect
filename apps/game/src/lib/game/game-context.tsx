@@ -1,6 +1,6 @@
 import { type Accessor, createContext, createMemo, type JSX, type Setter, useContext } from "solid-js";
 
-import type { LocalSong } from "~/lib/ultrastar/song";
+import type { Song } from "~/lib/ultrastar/song";
 import type { Score } from "~/stores/round";
 
 export interface GameContextValue {
@@ -14,7 +14,7 @@ export interface GameContextValue {
   playing: Accessor<boolean>;
   ms: Accessor<number>;
   beat: Accessor<number>;
-  song: Accessor<LocalSong | undefined>;
+  song: Accessor<Song | undefined>;
   currentTime: Accessor<number>;
   duration: Accessor<number>;
   scores: Accessor<Score[]>;

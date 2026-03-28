@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { Motion } from "solid-motionone";
+import IconGlobe from "~icons/lucide/globe";
 import IconF1Key from "~icons/sing/f1-key";
 import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconShiftKey from "~icons/sing/shift-key";
@@ -13,6 +14,7 @@ interface MenuPopupProps {
   onClose: () => void;
   onStartRandomMedley: () => void;
   onAddToMedley: () => void;
+  onSearchUsdb: () => void;
 }
 
 export function MenuPopup(props: MenuPopupProps) {
@@ -44,6 +46,15 @@ export function MenuPopup(props: MenuPopupProps) {
         </div>
       ),
       action: () => props.onStartRandomMedley(),
+    },
+    {
+      label: (
+        <div class="flex w-full items-center justify-between">
+          <span>{t("sing.menu.searchUsdb")}</span>
+          <IconGlobe class="text-sm" />
+        </div>
+      ),
+      action: () => props.onSearchUsdb(),
     },
   ];
 

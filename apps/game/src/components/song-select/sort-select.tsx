@@ -11,21 +11,25 @@ import { t } from "~/lib/i18n";
 
 import type { SortOption } from "./song-scroller";
 
-const SORT_OPTIONS: SortOption[] = ["artist", "title", "year"];
+const DEFAULT_SORT_OPTIONS: SortOption[] = ["artist", "title", "year"];
 
 interface SortSelectProps {
   selected: SortOption;
   onSelect: (sort: SortOption) => void;
+  options?: SortOption[];
 }
 
 export function SortSelect(props: SortSelectProps) {
+  const sortOptions = () => props.options ?? DEFAULT_SORT_OPTIONS;
+
   const moveSorting = (direction: "left" | "right") => {
-    const currentIndex = SORT_OPTIONS.indexOf(props.selected);
+    const opts = sortOptions();
+    const currentIndex = opts.indexOf(props.selected);
     const newIndex =
       direction === "left"
-        ? (currentIndex - 1 + SORT_OPTIONS.length) % SORT_OPTIONS.length
-        : (currentIndex + 1) % SORT_OPTIONS.length;
-    props.onSelect(SORT_OPTIONS[newIndex] as SortOption);
+        ? (currentIndex - 1 + opts.length) % opts.length
+        : (currentIndex + 1) % opts.length;
+    props.onSelect(opts[newIndex] as SortOption);
   };
 
   return (
@@ -41,7 +45,7 @@ export function SortSelect(props: SortSelectProps) {
         <IconTriangleLeft />
       </button>
       <div>
-        <For each={SORT_OPTIONS}>
+        <For each={sortOptions()}>
           {(sortOption) => (
             <button
               type="button"

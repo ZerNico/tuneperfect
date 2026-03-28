@@ -24,6 +24,9 @@ pub enum AppError {
 
     #[error("webrtc error: {0}")]
     WebRTCError(String),
+
+    #[error("usdb error: {0}")]
+    UsdbError(String),
 }
 
 macro_rules! impl_from_errors {

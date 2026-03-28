@@ -328,6 +328,11 @@ function SingComponent() {
                   }
                   setMenuOpen(false);
                 }}
+                onSearchUsdb={() => {
+                  setMenuOpen(false);
+                  playSound("confirm");
+                  navigate({ to: "/sing/online-loading" });
+                }}
               />
             </Show>
           </div>

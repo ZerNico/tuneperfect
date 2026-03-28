@@ -100,6 +100,57 @@ async webrtcCloseAll() : Promise<Result<null, AppError>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async usdbLogin(username: string, password: string) : Promise<Result<boolean, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_login", { username, password }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async usdbLogout() : Promise<Result<null, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_logout") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async usdbIsLoggedIn() : Promise<Result<boolean, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_is_logged_in") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Full fetch if `last_mtime == 0`, otherwise incremental sync from the watermark.
+ */
+async usdbFetchCatalog(lastMtime: number, lastSongIds: number[]) : Promise<Result<UsdbSearchEntry[], AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_fetch_catalog", { lastMtime, lastSongIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async usdbGetSongPreview(songId: number) : Promise<Result<UsdbSongPreview, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_get_song_preview", { songId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async usdbGetSong(songId: number) : Promise<Result<UsdbSong, AppError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("usdb_get_song", { songId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -130,7 +181,7 @@ startParsingEvent: "start-parsing-event"
 
 /** user-defined types **/
 
-export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string }
+export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string } | { type: "UsdbError"; data: string }
 export type ChannelCloseEvent = { userId: string; label: string }
 export type ChannelMessageEvent = { userId: string; label: string; data: string }
 export type ChannelOpenEvent = { userId: string; label: string }
@@ -150,6 +201,30 @@ export type Phrase = { disappearBeat: number; notes: Note[] }
 export type ProgressEvent = { song: string }
 export type SongGroup = { path: string; songs: LocalSong[] }
 export type StartParsingEvent = { total_songs: number }
+/**
+ * Lightweight entry from USDB search results (no note data).
+ */
+export type UsdbSearchEntry = { songId: number; artist: string; title: string; genre: string; year: number | null; language: string; creator: string; edition: string; goldenNotes: boolean; rating: number; views: number; coverUrl: string | null; sampleUrl: string | null; 
+/**
+ * Unix timestamp from USDB's `data-lastchange` attribute.
+ */
+usdbMtime: number }
+/**
+ * Full USDB song with parsed note data, ready for gameplay.
+ */
+export type UsdbSong = ({ title: string; artist: string; bpm: number; gap: number; videoGap: number; start: number | null; end: number | null; hash: string; album: string | null; language: string[] | null; edition: string[] | null; genre: string[] | null; year: number | null; creator: string[] | null; relative: boolean | null; audio: string | null; instrumental: string | null; cover: string | null; video: string | null; background: string | null; p1: string | null; p2: string | null; previewStart: number | null; version: string | null; tags: string[] | null; medleyStartBeat: number | null; medleyEndBeat: number | null; medleyStart: number | null; medleyEnd: number | null; voices: Voice[] }) & { songId: number; 
+/**
+ * YouTube ID for audio playback (from `a=` tag). Notes/GAP are timed to this.
+ */
+audioYoutubeId: string | null; 
+/**
+ * YouTube ID for video (from `v=` tag). Shown as visual, muted if separate audio exists.
+ */
+videoYoutubeId: string | null; coverUrl: string | null }
+/**
+ * Preview info for the search UI (YouTube ID, BPM, etc. — no note data).
+ */
+export type UsdbSongPreview = { song: UsdbSearchEntry; youtubeId: string | null; videoUrl: string | null; bpm: number | null; gap: number | null }
 export type Voice = { phrases: Phrase[] }
 
 /** tauri-specta globals **/
