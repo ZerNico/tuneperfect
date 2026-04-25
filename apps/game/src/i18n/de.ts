@@ -94,6 +94,10 @@ const de = {
       language: "Sprache",
       edition: "Edition",
       creator: "Ersteller",
+      decade: "Jahrzehnt",
+      duet: "Duette",
+      solo: "Solo",
+      active: "Filter aktiv",
     },
     sort: {
       artist: "Künstler",

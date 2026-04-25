@@ -5,7 +5,7 @@ import { type Accessor, createEffect, createMemo, createSignal } from "solid-js"
 import type { LocalSong } from "~/lib/ultrastar/song";
 
 export type SortOption = "artist" | "title" | "year";
-export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
+export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator" | "decade" | "duet" | "solo";
 
 const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
@@ -71,11 +71,24 @@ export function useSongFilter(options: UseSongFilterOptions): UseSongFilterResul
   const filteredItems = createMemo(() => {
     let songs = options.items();
     const query = debouncedSearchQuery().trim();
+    const filter = options.searchFilter();
 
-    if (query) {
-      const filter = options.searchFilter();
-
-      if (filter === "year") {
+    // Duet/solo filters apply independently of search query
+    if (filter === "duet") {
+      songs = songs.filter((song) => song.p2 !== null);
+    } else if (filter === "solo") {
+      songs = songs.filter((song) => song.p2 === null);
+    } else if (query) {
+      if (filter === "decade") {
+        const decadeQuery = Number.parseInt(query, 10);
+        if (!Number.isNaN(decadeQuery)) {
+          // Support both "80" and "1980" as input
+          const decade = decadeQuery < 100 ? decadeQuery * 10 : Math.floor(decadeQuery / 10) * 10;
+          songs = songs.filter((song) => song.year !== null && Math.floor(song.year / 10) * 10 === decade);
+        } else {
+          songs = [];
+        }
+      } else if (filter === "year") {
         const yearQuery = Number.parseInt(query, 10);
         if (!Number.isNaN(yearQuery)) {
           songs = songs.filter((song) => song.year === yearQuery);
