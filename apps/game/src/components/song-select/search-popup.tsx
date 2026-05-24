@@ -1,7 +1,7 @@
 import { createEffect, onCleanup, onMount, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
+import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 import IconTriangleLeft from "~icons/sing/triangle-left";
@@ -9,40 +9,31 @@ import IconTriangleRight from "~icons/sing/triangle-right";
 
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import type { SearchFieldScope } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
-
-import type { SearchFilter } from "./song-scroller";
 
 interface SearchPopupProps {
   searchQuery: string;
-  searchFilter: SearchFilter;
+  searchFieldScope: SearchFieldScope;
   onSearchQuery: (query: string) => void;
-  onSearchFilter: (filter: SearchFilter) => void;
+  onSearchFieldScope: (scope: SearchFieldScope) => void;
   onClose: () => void;
 }
 
-// Filters that don't require a text query
-export const QUERY_FREE_FILTERS: SearchFilter[] = ["duet", "solo"];
-
-const FILTER_OPTIONS: { value: SearchFilter; label: () => string }[] = [
+const SCOPE_OPTIONS: { value: SearchFieldScope; label: () => string }[] = [
   { value: "all", label: () => t("sing.filter.all") },
   { value: "artist", label: () => t("sing.sort.artist") },
   { value: "title", label: () => t("sing.sort.title") },
   { value: "year", label: () => t("sing.sort.year") },
-  { value: "decade", label: () => t("sing.filter.decade") },
   { value: "genre", label: () => t("sing.filter.genre") },
   { value: "language", label: () => t("sing.filter.language") },
   { value: "edition", label: () => t("sing.filter.edition") },
   { value: "creator", label: () => t("sing.filter.creator") },
-  { value: "duet", label: () => t("sing.filter.duet") },
-  { value: "solo", label: () => t("sing.filter.solo") },
 ];
 
 export function SearchPopup(props: SearchPopupProps) {
   let searchRef: HTMLInputElement | undefined;
   let popupRef!: HTMLDivElement;
-
-  const isQueryFree = () => QUERY_FREE_FILTERS.includes(props.searchFilter);
 
   createEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,12 +52,12 @@ export function SearchPopup(props: SearchPopupProps) {
     props.onSearchQuery(e.currentTarget.value);
   };
 
-  const moveFilter = (direction: "left" | "right") => {
-    const currentIndex = FILTER_OPTIONS.findIndex((option) => option.value === props.searchFilter);
-    const newIndex = (currentIndex + (direction === "left" ? -1 : 1) + FILTER_OPTIONS.length) % FILTER_OPTIONS.length;
-    const newOption = FILTER_OPTIONS[newIndex];
+  const moveScope = (direction: "left" | "right") => {
+    const currentIndex = SCOPE_OPTIONS.findIndex((option) => option.value === props.searchFieldScope);
+    const newIndex = (currentIndex + (direction === "left" ? -1 : 1) + SCOPE_OPTIONS.length) % SCOPE_OPTIONS.length;
+    const newOption = SCOPE_OPTIONS[newIndex];
     if (newOption) {
-      props.onSearchFilter(newOption.value);
+      props.onSearchFieldScope(newOption.value);
     }
   };
 
@@ -76,9 +67,9 @@ export function SearchPopup(props: SearchPopupProps) {
       if (event.action === "back" || event.action === "search") {
         props.onClose();
       } else if (event.action === "filter-left") {
-        moveFilter("left");
+        moveScope("left");
       } else if (event.action === "filter-right") {
-        moveFilter("right");
+        moveScope("right");
       }
     },
 
@@ -95,8 +86,8 @@ export function SearchPopup(props: SearchPopupProps) {
     searchRef?.focus();
   });
 
-  const currentFilterLabel = () =>
-    FILTER_OPTIONS.find((option) => option.value === props.searchFilter)?.label() || t("sing.filter.all");
+  const currentScopeLabel = () =>
+    SCOPE_OPTIONS.find((option) => option.value === props.searchFieldScope)?.label() || t("sing.filter.all");
 
   return (
     <div class="absolute top-full left-0 z-20 mt-2" ref={popupRef}>
@@ -110,12 +101,12 @@ export function SearchPopup(props: SearchPopupProps) {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
-                <IconF5Key class="text-sm" />
+                <IconF6Key class="text-sm" />
               </Show>
               <button
                 type="button"
                 class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
-                onClick={() => moveFilter("left")}
+                onClick={() => moveScope("left")}
               >
                 <IconTriangleLeft class="text-xs" />
               </button>
@@ -123,7 +114,7 @@ export function SearchPopup(props: SearchPopupProps) {
 
             <div class="flex justify-center">
               <div class="rounded-md bg-white/10 px-3 py-1">
-                <span class="text-sm font-medium text-white">{currentFilterLabel()}</span>
+                <span class="text-sm font-medium text-white">{currentScopeLabel()}</span>
               </div>
             </div>
 
@@ -131,36 +122,24 @@ export function SearchPopup(props: SearchPopupProps) {
               <button
                 type="button"
                 class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
-                onClick={() => moveFilter("right")}
+                onClick={() => moveScope("right")}
               >
                 <IconTriangleRight class="text-xs" />
               </button>
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
-                <IconF6Key class="text-sm" />
+                <IconF7Key class="text-sm" />
               </Show>
             </div>
           </div>
 
-          <Show
-            when={!isQueryFree()}
-            fallback={
-              <div class="flex items-center justify-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm text-white/70">
-                <span>
-                  {currentFilterLabel()}
-                </span>
-                <span class="text-white/40">— {t("sing.filter.active")}</span>
-              </div>
-            }
-          >
-            <input
-              value={props.searchQuery}
-              onInput={onInput}
-              ref={searchRef}
-              type="text"
-              placeholder={t("sing.search")}
-              class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
-            />
-          </Show>
+          <input
+            value={props.searchQuery}
+            onInput={onInput}
+            ref={searchRef}
+            type="text"
+            placeholder={t("sing.search")}
+            class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
+          />
         </div>
 
         <Show when={keyMode() === "gamepad"}>

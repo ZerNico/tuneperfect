@@ -5,7 +5,35 @@ import { type Accessor, createEffect, createMemo, createSignal } from "solid-js"
 import type { LocalSong } from "~/lib/ultrastar/song";
 
 export type SortOption = "artist" | "title" | "year";
-export type SearchFilter = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator" | "decade" | "duet" | "solo";
+export type SearchFieldScope = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
+
+export type SongTypeFilter = "all" | "solo" | "duet";
+
+export interface SongFilters {
+  type: SongTypeFilter;
+  decade: number | null;
+  genre: string | null;
+  language: string | null;
+  edition: string | null;
+}
+
+export const DEFAULT_FILTERS: SongFilters = {
+  type: "all",
+  decade: null,
+  genre: null,
+  language: null,
+  edition: null,
+};
+
+export const countActiveFilters = (filters: SongFilters): number => {
+  let count = 0;
+  if (filters.type !== "all") count++;
+  if (filters.decade !== null) count++;
+  if (filters.genre !== null) count++;
+  if (filters.language !== null) count++;
+  if (filters.edition !== null) count++;
+  return count;
+};
 
 const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
@@ -19,11 +47,18 @@ const normalizeText = (text: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
+const includesIgnoreCase = (haystack: string[] | null, needle: string): boolean => {
+  if (!haystack) return false;
+  const normalized = normalizeText(needle);
+  return haystack.some((value) => normalizeText(value) === normalized);
+};
+
 interface UseSongFilterOptions {
   items: Accessor<LocalSong[]>;
   sortOption: Accessor<SortOption>;
   searchQuery: Accessor<string>;
-  searchFilter: Accessor<SearchFilter>;
+  searchFieldScope: Accessor<SearchFieldScope>;
+  filters: Accessor<SongFilters>;
 }
 
 interface UseSongFilterResult {
@@ -70,25 +105,36 @@ export function useSongFilter(options: UseSongFilterOptions): UseSongFilterResul
 
   const filteredItems = createMemo(() => {
     let songs = options.items();
+    const filters = options.filters();
     const query = debouncedSearchQuery().trim();
-    const filter = options.searchFilter();
+    const scope = options.searchFieldScope();
 
-    // Duet/solo filters apply independently of search query
-    if (filter === "duet") {
+    // Library filters apply independently of and before the text search
+    if (filters.type === "duet") {
       songs = songs.filter((song) => song.p2 !== null);
-    } else if (filter === "solo") {
+    } else if (filters.type === "solo") {
       songs = songs.filter((song) => song.p2 === null);
-    } else if (query) {
-      if (filter === "decade") {
-        const decadeQuery = Number.parseInt(query, 10);
-        if (!Number.isNaN(decadeQuery)) {
-          // Support both "80" and "1980" as input
-          const decade = decadeQuery < 100 ? decadeQuery * 10 : Math.floor(decadeQuery / 10) * 10;
-          songs = songs.filter((song) => song.year !== null && Math.floor(song.year / 10) * 10 === decade);
-        } else {
-          songs = [];
-        }
-      } else if (filter === "year") {
+    }
+
+    if (filters.decade !== null) {
+      const decade = filters.decade;
+      songs = songs.filter((song) => song.year !== null && Math.floor(song.year / 10) * 10 === decade);
+    }
+
+    if (filters.genre !== null) {
+      songs = songs.filter((song) => includesIgnoreCase(song.genre, filters.genre as string));
+    }
+
+    if (filters.language !== null) {
+      songs = songs.filter((song) => includesIgnoreCase(song.language, filters.language as string));
+    }
+
+    if (filters.edition !== null) {
+      songs = songs.filter((song) => includesIgnoreCase(song.edition, filters.edition as string));
+    }
+
+    if (query) {
+      if (scope === "year") {
         const yearQuery = Number.parseInt(query, 10);
         if (!Number.isNaN(yearQuery)) {
           songs = songs.filter((song) => song.year === yearQuery);
@@ -96,7 +142,7 @@ export function useSongFilter(options: UseSongFilterOptions): UseSongFilterResul
           songs = [];
         }
       } else {
-        const fields = filter === "all" ? undefined : [filter];
+        const fields = scope === "all" ? undefined : [scope];
         const searchResults = miniSearchInstance().search(query, {
           fields,
           fuzzy: 0.1,

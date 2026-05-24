@@ -1,6 +1,6 @@
 import { For, Show } from "solid-js";
-import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
+import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 import IconTriangleLeft from "~icons/sing/triangle-left";
@@ -31,7 +31,7 @@ export function SortSelect(props: SortSelectProps) {
   return (
     <div class="flex items-center gap-2">
       <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
-        <IconF5Key class="text-sm" />
+        <IconF6Key class="text-sm" />
       </Show>
       <button
         type="button"
@@ -63,7 +63,7 @@ export function SortSelect(props: SortSelectProps) {
       >
         <IconTriangleRight />
         <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
-          <IconF6Key class="text-sm" />
+          <IconF7Key class="text-sm" />
         </Show>
       </button>
     </div>

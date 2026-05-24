@@ -11,7 +11,7 @@ export type GamepadButton =
   | "RB"
   | "LT"
   | "RT"
-  | "BACK"
+  | "SELECT"
   | "START"
   | "LS"
   | "RS"
@@ -49,7 +49,7 @@ const BUTTON_MAPPINGS = new Map<number, GamepadButton>([
   [5, "RB"],
   [6, "LT"],
   [7, "RT"],
-  [8, "BACK"],
+  [8, "SELECT"],
   [9, "START"],
   [10, "LS"],
   [11, "RS"],
