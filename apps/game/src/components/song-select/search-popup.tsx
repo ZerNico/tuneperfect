@@ -21,20 +21,28 @@ interface SearchPopupProps {
   onClose: () => void;
 }
 
+// Filters that don't require a text query
+export const QUERY_FREE_FILTERS: SearchFilter[] = ["duet", "solo"];
+
 const FILTER_OPTIONS: { value: SearchFilter; label: () => string }[] = [
   { value: "all", label: () => t("sing.filter.all") },
   { value: "artist", label: () => t("sing.sort.artist") },
   { value: "title", label: () => t("sing.sort.title") },
   { value: "year", label: () => t("sing.sort.year") },
+  { value: "decade", label: () => t("sing.filter.decade") },
   { value: "genre", label: () => t("sing.filter.genre") },
   { value: "language", label: () => t("sing.filter.language") },
   { value: "edition", label: () => t("sing.filter.edition") },
   { value: "creator", label: () => t("sing.filter.creator") },
+  { value: "duet", label: () => t("sing.filter.duet") },
+  { value: "solo", label: () => t("sing.filter.solo") },
 ];
 
 export function SearchPopup(props: SearchPopupProps) {
-  let searchRef!: HTMLInputElement;
+  let searchRef: HTMLInputElement | undefined;
   let popupRef!: HTMLDivElement;
+
+  const isQueryFree = () => QUERY_FREE_FILTERS.includes(props.searchFilter);
 
   createEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -84,7 +92,7 @@ export function SearchPopup(props: SearchPopupProps) {
   });
 
   onMount(() => {
-    searchRef.focus();
+    searchRef?.focus();
   });
 
   const currentFilterLabel = () =>
@@ -133,14 +141,26 @@ export function SearchPopup(props: SearchPopupProps) {
             </div>
           </div>
 
-          <input
-            value={props.searchQuery}
-            onInput={onInput}
-            ref={searchRef}
-            type="text"
-            placeholder={t("sing.search")}
-            class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
-          />
+          <Show
+            when={!isQueryFree()}
+            fallback={
+              <div class="flex items-center justify-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm text-white/70">
+                <span>
+                  {currentFilterLabel()}
+                </span>
+                <span class="text-white/40">— {t("sing.filter.active")}</span>
+              </div>
+            }
+          >
+            <input
+              value={props.searchQuery}
+              onInput={onInput}
+              ref={searchRef}
+              type="text"
+              placeholder={t("sing.search")}
+              class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
+            />
+          </Show>
         </div>
 
         <Show when={keyMode() === "gamepad"}>

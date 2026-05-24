@@ -23,6 +23,9 @@ const FILTER_LABELS: Record<SearchFilter, () => string> = {
   language: () => t("sing.filter.language"),
   edition: () => t("sing.filter.edition"),
   creator: () => t("sing.filter.creator"),
+  decade: () => t("sing.filter.decade"),
+  duet: () => t("sing.filter.duet"),
+  solo: () => t("sing.filter.solo"),
 };
 
 export function SearchButton(props: SearchButtonProps) {
