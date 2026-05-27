@@ -160,6 +160,9 @@ const de = {
           coverflow: "Coverflow",
           grid: "Raster",
         },
+        outputLatency: "Audio-Ausgabelatenz",
+        outputLatencyPreviewStart: "Audio-Ausgabe-Sync testen",
+        outputLatencyPreviewStop: "Audio-Ausgabe-Test stoppen",
       },
       songs: {
         title: "Lieder",

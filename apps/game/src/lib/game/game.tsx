@@ -137,7 +137,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTime = opts.songPlayerRef.getCurrentTime();
     const duration = opts.songPlayerRef.getDuration();
-    const ms = currentTime * 1000;
+    const outputLatency = settingsStore.general().outputLatency;
+    const ms = currentTime * 1000 + outputLatency;
     const beat = msToBeat(opts.song, ms);
 
     batch(() => {

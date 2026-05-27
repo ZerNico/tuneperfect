@@ -13,6 +13,7 @@ const settingsStoreSchema = v.object({
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
     micPlaybackEnabled: v.fallback(v.boolean(), false),
     songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
+    outputLatency: v.fallback(v.number(), 0),
   }),
   volume: v.object({
     master: v.number(),
@@ -48,6 +49,7 @@ const defaultSettings: SettingsStore = {
     audioMode: "normal",
     micPlaybackEnabled: false,
     songSelectStyle: "coverflow",
+    outputLatency: 0,
   },
   volume: {
     master: 1,

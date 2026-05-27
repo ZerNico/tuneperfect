@@ -19,6 +19,7 @@ export type MenuItem =
       max: number;
       step: number;
       onInput: (value: number) => void;
+      renderValue?: (value: number) => JSX.Element;
     }
   | {
       type: "button";
@@ -60,7 +61,7 @@ export type MenuItem =
   | {
       type: "custom";
       interactive?: boolean;
-      render: () => JSX.Element;
+      render: (context: { selected: () => boolean; gradient: () => string }) => JSX.Element;
     };
 
 export interface MenuProps {
@@ -247,11 +248,25 @@ export default function Menu(props: MenuProps) {
                     }}
                     selected={actualIndex() === index()}
                     onMouseEnter={() => set(toInteractivePosition(index()))}
+                    renderValue={item().renderValue}
                   />
                 )}
               </Match>
               <Match when={item.type === "custom" && item}>
-                {(item) => <div class="shrink-0">{item().render()}</div>}
+                {(item) => (
+                  <div
+                    ref={setItemRef(index())}
+                    class="shrink-0"
+                    onMouseEnter={() =>
+                      item().interactive !== false ? set(toInteractivePosition(index())) : undefined
+                    }
+                  >
+                    {item().render({
+                      selected: () => actualIndex() === index(),
+                      gradient: () => props.gradient || "gradient-settings",
+                    })}
+                  </div>
+                )}
               </Match>
             </Switch>
           )}
