@@ -12,11 +12,11 @@ import {
 } from "solid-js";
 
 import { useNavigation } from "~/hooks/navigation";
-import { type SearchFilter, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
+import { type SearchFieldScope, type SongFilters, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
-export type { SortOption, SearchFilter };
+export type { SortOption, SearchFieldScope, SongFilters };
 
 export interface SongScrollerRef {
   goToRandomSong: () => LocalSong | null;
@@ -38,7 +38,8 @@ interface SongScrollerProps {
   items: LocalSong[];
   sort: SortOption;
   searchQuery: string;
-  searchFilter: SearchFilter;
+  searchFieldScope: SearchFieldScope;
+  filters: SongFilters;
   initialSong?: LocalSong;
   children: (item: LocalSong, index: number, scale: Accessor<number>) => JSX.Element;
   onCenteredItemChange?: (item: LocalSong | null, index: number) => void;
@@ -61,7 +62,8 @@ export function SongScroller(props: SongScrollerProps) {
     items: () => props.items,
     sortOption: () => props.sort,
     searchQuery: () => props.searchQuery,
-    searchFilter: () => props.searchFilter,
+    searchFieldScope: () => props.searchFieldScope,
+    filters: () => props.filters,
   });
 
   createEffect(() => {

@@ -21,6 +21,12 @@
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
   "rust-analyzer.linkedProjects": ["apps/game/src-tauri/Cargo.toml"],
   "rust-analyzer.cargo.extraEnv": {
     "MACOSX_DEPLOYMENT_TARGET": "10.13"

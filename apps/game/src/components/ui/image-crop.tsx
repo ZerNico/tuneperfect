@@ -1,8 +1,8 @@
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import IconMinus from "~icons/lucide/minus";
 import IconPlus from "~icons/lucide/plus";
-import IconF5Key from "~icons/sing/f5-key";
 import IconF6Key from "~icons/sing/f6-key";
+import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 
@@ -291,7 +291,7 @@ export default function ImageCrop(props: ImageCropProps) {
                 <IconPlus class="h-5 w-5 text-white" />
               </button>
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm text-white/70" />}>
-                <IconF6Key class="text-sm text-white/70" />
+                <IconF7Key class="text-sm text-white/70" />
               </Show>
             </div>
             <div class="flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function ImageCrop(props: ImageCropProps) {
                 <IconMinus class="h-5 w-5 text-white" />
               </button>
               <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm text-white/70" />}>
-                <IconF5Key class="text-sm text-white/70" />
+                <IconF6Key class="text-sm text-white/70" />
               </Show>
             </div>
           </div>

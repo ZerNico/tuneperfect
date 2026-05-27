@@ -3,11 +3,11 @@ import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, type Ref } from "solid-js";
 
 import { useNavigation } from "~/hooks/navigation";
-import { type SearchFilter, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
+import { type SearchFieldScope, type SongFilters, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
-export type { SortOption, SearchFilter };
+export type { SortOption, SearchFieldScope, SongFilters };
 
 export interface SongGridRef {
   goToRandomSong: () => LocalSong | null;
@@ -24,7 +24,8 @@ interface SongGridProps {
   items: LocalSong[];
   sort: SortOption;
   searchQuery: string;
-  searchFilter: SearchFilter;
+  searchFieldScope: SearchFieldScope;
+  filters: SongFilters;
   initialSong?: LocalSong;
   onSelectedItemChange?: (item: LocalSong | null, index: number) => void;
   onFilteredCountChange?: (count: number) => void;
@@ -44,7 +45,8 @@ export function SongGrid(props: SongGridProps) {
     items: () => props.items,
     sortOption: () => props.sort,
     searchQuery: () => props.searchQuery,
-    searchFilter: () => props.searchFilter,
+    searchFieldScope: () => props.searchFieldScope,
+    filters: () => props.filters,
   });
 
   const rowCount = createMemo(() => Math.ceil(filteredItems().length / COLUMNS));

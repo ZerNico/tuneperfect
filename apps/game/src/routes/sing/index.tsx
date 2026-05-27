@@ -5,15 +5,18 @@ import IconDices from "~icons/lucide/dices";
 import IconMenu from "~icons/lucide/menu";
 import IconMusic from "~icons/lucide/music";
 import IconDuet from "~icons/sing/duet";
-import IconF4Key from "~icons/sing/f4-key";
-import IconGamepadX from "~icons/sing/gamepad-x";
-import IconGamepadY from "~icons/sing/gamepad-y";
+import IconF5Key from "~icons/sing/f5-key";
+import IconGamepadSelect from "~icons/sing/gamepad-select";
+import IconGamepadStart from "~icons/sing/gamepad-start";
 import IconTabKey from "~icons/sing/tab-key";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import { DebouncedHighscoreList } from "~/components/song-select/debounced-highscore-list";
+import { FilterButton } from "~/components/song-select/filter-button";
+import { FilterChips } from "~/components/song-select/filter-chips";
+import { FilterPopup } from "~/components/song-select/filter-popup";
 import { MedleyList } from "~/components/song-select/medley-list";
 import { MenuPopup } from "~/components/song-select/menu-popup";
 import { SearchButton } from "~/components/song-select/search-button";
@@ -21,7 +24,8 @@ import { SearchPopup } from "~/components/song-select/search-popup";
 import { SongCard } from "~/components/song-select/song-card";
 import { SongGrid, type SongGridRef } from "~/components/song-select/song-grid";
 import {
-  type SearchFilter,
+  type SearchFieldScope,
+  type SongFilters,
   SongScroller,
   type SongScrollerRef,
   type SortOption,
@@ -29,6 +33,7 @@ import {
 import { SortSelect } from "~/components/song-select/sort-select";
 import TitleBar from "~/components/title-bar";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { countActiveFilters, DEFAULT_FILTERS } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -39,14 +44,20 @@ export const Route = createFileRoute("/sing/")({
   component: SingComponent,
 });
 
+type OpenPanel = "search" | "filter" | "menu";
+
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>(null);
 const [searchQuery, setSearchQuery] = createSignal("");
-const [searchFilter, setSearchFilter] = createSignal<SearchFilter>("all");
-const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
-const [menuOpen, setMenuOpen] = createSignal(false);
+const [searchFieldScope, setSearchFieldScope] = createSignal<SearchFieldScope>("all");
+const [filters, setFilters] = createSignal<SongFilters>({ ...DEFAULT_FILTERS });
+const [openPanel, setOpenPanel] = createSignal<OpenPanel | null>(null);
 const [sort, setSort] = createSignal<SortOption>("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(0);
 const [medleySongs, setMedleySongs] = createSignal<LocalSong[]>([]);
+
+const togglePanel = (panel: OpenPanel) => {
+  setOpenPanel((current) => (current === panel ? null : panel));
+};
 
 function SingComponent() {
   const navigate = useNavigate();
@@ -125,6 +136,12 @@ function SingComponent() {
       return;
     }
 
+    if (countActiveFilters(filters()) > 0) {
+      setFilters({ ...DEFAULT_FILTERS });
+      playSound("confirm");
+      return;
+    }
+
     playSound("confirm");
     navigate({ to: "/home" });
   };
@@ -195,11 +212,13 @@ function SingComponent() {
       if (event.action === "back") {
         onBack();
       } else if (event.action === "search") {
-        setSearchPopupOpen(!searchPopupOpen());
+        togglePanel("search");
+        playSound("select");
+      } else if (event.action === "filter") {
+        togglePanel("filter");
         playSound("select");
       } else if (event.action === "menu") {
-        setMenuOpen(!menuOpen());
-        setSearchPopupOpen(false);
+        togglePanel("menu");
         playSound("select");
       } else if (event.action === "random") {
         selectRandomSong();
@@ -247,8 +266,8 @@ function SingComponent() {
           <KeyHints hints={["back", "navigate", "confirm"]} />
           <div class="flex items-center gap-12">
             <div class="flex items-center gap-2">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadY class="text-sm" />}>
-                <IconF4Key class="text-sm" />
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadSelect class="text-sm" />}>
+                <IconF5Key class="text-sm" />
               </Show>
               <button
                 type="button"
@@ -269,19 +288,34 @@ function SingComponent() {
             <div class="relative flex items-center gap-4">
               <SearchButton
                 searchQuery={searchQuery()}
-                searchFilter={searchFilter()}
-                onClick={() => setSearchPopupOpen(true)}
+                searchFieldScope={searchFieldScope()}
+                onClick={() => setOpenPanel("search")}
               />
 
-              <Show when={searchPopupOpen()}>
+              <Show when={openPanel() === "search"}>
                 <SearchPopup
                   searchQuery={searchQuery()}
-                  searchFilter={searchFilter()}
+                  searchFieldScope={searchFieldScope()}
                   onSearchQuery={setSearchQuery}
-                  onSearchFilter={setSearchFilter}
-                  onClose={() => setSearchPopupOpen(false)}
+                  onSearchFieldScope={setSearchFieldScope}
+                  onClose={() => setOpenPanel(null)}
                 />
               </Show>
+
+              <div class="relative">
+                <FilterButton onClick={() => setOpenPanel("filter")} />
+
+                <Show when={openPanel() === "filter"}>
+                  <FilterPopup
+                    songs={songs()}
+                    filters={filters()}
+                    onChange={setFilters}
+                    onClose={() => setOpenPanel(null)}
+                  />
+                </Show>
+              </div>
+
+              <FilterChips filters={filters()} onChange={setFilters} />
 
               <div class="flex items-center gap-2 text-sm opacity-80">
                 <IconMusic />
@@ -305,20 +339,20 @@ function SingComponent() {
             <button
               type="button"
               class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
-              onClick={() => setMenuOpen(true)}
+              onClick={() => setOpenPanel("menu")}
             >
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadX class="text-sm" />}>
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="text-sm" />}>
                 <IconTabKey class="text-sm" />
               </Show>
               <IconMenu class="text-2xl" />
             </button>
 
-            <Show when={menuOpen()}>
+            <Show when={openPanel() === "menu"}>
               <MenuPopup
-                onClose={() => setMenuOpen(false)}
+                onClose={() => setOpenPanel(null)}
                 onStartRandomMedley={() => {
                   startRandomMedley();
-                  setMenuOpen(false);
+                  setOpenPanel(null);
                 }}
                 onAddToMedley={() => {
                   const song = currentSong();
@@ -326,7 +360,7 @@ function SingComponent() {
                     setMedleySongs((prev) => [...prev, song]);
                     playSound("select");
                   }
-                  setMenuOpen(false);
+                  setOpenPanel(null);
                 }}
               />
             </Show>
@@ -371,7 +405,8 @@ function SingComponent() {
                 items={songs()}
                 sort={sort()}
                 searchQuery={searchQuery()}
-                searchFilter={searchFilter()}
+                searchFieldScope={searchFieldScope()}
+                filters={filters()}
                 initialSong={currentSong() ?? undefined}
                 class="absolute inset-0"
                 onSelectedItemChange={handleCenteredItemChange}
@@ -447,7 +482,8 @@ function SingComponent() {
               items={songs()}
               sort={sort()}
               searchQuery={searchQuery()}
-              searchFilter={searchFilter()}
+              searchFieldScope={searchFieldScope()}
+              filters={filters()}
               initialSong={currentSong() ?? undefined}
               class="-mx-16 h-60 w-[calc(100%+8cqw)]"
               onCenteredItemChange={handleCenteredItemChange}

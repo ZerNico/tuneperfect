@@ -1,20 +1,19 @@
 import { Show } from "solid-js";
 import IconSearch from "~icons/lucide/search";
 import IconF3Key from "~icons/sing/f3-key";
-import IconGamepadStart from "~icons/sing/gamepad-start";
+import IconGamepadX from "~icons/sing/gamepad-x";
 
 import { keyMode } from "~/hooks/navigation";
+import type { SearchFieldScope } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
-
-import type { SearchFilter } from "./song-scroller";
 
 interface SearchButtonProps {
   searchQuery: string;
-  searchFilter: SearchFilter;
+  searchFieldScope: SearchFieldScope;
   onClick: () => void;
 }
 
-const FILTER_LABELS: Record<SearchFilter, () => string> = {
+const SCOPE_LABELS: Record<SearchFieldScope, () => string> = {
   all: () => t("sing.filter.all"),
   artist: () => t("sing.sort.artist"),
   title: () => t("sing.sort.title"),
@@ -23,13 +22,10 @@ const FILTER_LABELS: Record<SearchFilter, () => string> = {
   language: () => t("sing.filter.language"),
   edition: () => t("sing.filter.edition"),
   creator: () => t("sing.filter.creator"),
-  decade: () => t("sing.filter.decade"),
-  duet: () => t("sing.filter.duet"),
-  solo: () => t("sing.filter.solo"),
 };
 
 export function SearchButton(props: SearchButtonProps) {
-  const filterLabel = () => FILTER_LABELS[props.searchFilter]();
+  const scopeLabel = () => SCOPE_LABELS[props.searchFieldScope]();
 
   return (
     <button
@@ -41,10 +37,10 @@ export function SearchButton(props: SearchButtonProps) {
       <div class="flex w-full min-w-0 items-center gap-2">
         <span class="grow truncate text-start">{props.searchQuery || t("sing.search")}</span>
         <Show when={props.searchQuery}>
-          <span class="py-0.4 shrink-0 rounded-full bg-white/20 px-1.5 text-xs">{filterLabel()}</span>
+          <span class="py-0.4 shrink-0 rounded-full bg-white/20 px-1.5 text-xs">{scopeLabel()}</span>
         </Show>
       </div>
-      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="shrink-0 text-xs" />}>
+      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadX class="shrink-0 text-xs" />}>
         <IconF3Key class="shrink-0 text-xs" />
       </Show>
     </button>

@@ -90,6 +90,9 @@ const de = {
     random: "Zufällig",
     filter: {
       all: "Alle",
+      any: "Beliebig",
+      title: "Filter",
+      type: "Typ",
       genre: "Genre",
       language: "Sprache",
       edition: "Edition",
@@ -97,7 +100,7 @@ const de = {
       decade: "Jahrzehnt",
       duet: "Duette",
       solo: "Solo",
-      active: "Filter aktiv",
+      clearAll: "Alle Filter löschen",
     },
     sort: {
       artist: "Künstler",
