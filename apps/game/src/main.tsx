@@ -38,9 +38,15 @@ declare module "@tanstack/solid-router" {
   }
 }
 
+declare global {
+  var appRootDispose: (() => void) | undefined;
+}
+
+globalThis.appRootDispose?.();
+
 const rootElement = document.getElementById("app");
 if (rootElement) {
-  render(
+  globalThis.appRootDispose = render(
     () => (
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
