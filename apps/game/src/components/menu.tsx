@@ -19,6 +19,7 @@ export type MenuItem =
       max: number;
       step: number;
       onInput: (value: number) => void;
+      renderValue?: (value: number) => JSX.Element;
     }
   | {
       type: "button";
@@ -247,6 +248,7 @@ export default function Menu(props: MenuProps) {
                     }}
                     selected={actualIndex() === index()}
                     onMouseEnter={() => set(toInteractivePosition(index()))}
+                    renderValue={item().renderValue}
                   />
                 )}
               </Match>

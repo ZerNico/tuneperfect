@@ -87,6 +87,16 @@ function GeneralSettingsComponent() {
       renderValue: (value) => t(`settings.sections.general.songSelectStyleOptions.${value as "coverflow" | "grid"}`),
     },
     {
+      type: "slider",
+      label: t("settings.sections.general.outputLatency"),
+      value: () => general().outputLatency,
+      min: -750,
+      max: 750,
+      step: 10,
+      onInput: (value) => setGeneral({ ...general(), outputLatency: value }),
+      renderValue: (value) => `${value > 0 ? "+" : ""}${value} ms`,
+    },
+    {
       type: "button",
       label: t("settings.save"),
       action: saveGeneral,

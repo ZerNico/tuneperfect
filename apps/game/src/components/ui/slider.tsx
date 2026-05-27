@@ -18,6 +18,7 @@ interface SliderProps {
   onMouseEnter?: () => void;
   layer?: number;
   ref?: Ref<HTMLDivElement>;
+  renderValue?: (value: number) => JSX.Element;
 }
 
 export default function Slider(props: SliderProps) {
@@ -89,16 +90,17 @@ export default function Slider(props: SliderProps) {
               class="col-start-1 row-start-1 text-center text-sm font-bold text-white"
               style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
             >
-              {props.value}
+              {props.renderValue ? props.renderValue(props.value) : props.value}
             </div>
             <div
               class="col-start-1 row-start-1 text-center text-sm font-bold text-black"
               style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
             >
-              {props.value}
+              {props.renderValue ? props.renderValue(props.value) : props.value}
             </div>
             <input
               type="range"
+              aria-label={props.label}
               class="reset-range col-start-1 row-start-1 block h-full w-full opacity-0"
               min={props.min}
               max={props.max}

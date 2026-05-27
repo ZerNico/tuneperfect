@@ -206,7 +206,7 @@ function PlayerSelectionComponent() {
           {(song) => (
             <div class="flex flex-col items-center gap-3 text-center">
               <p class="text-2xl opacity-80">{song().artist}</p>
-              <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center font-bold text-5xl text-transparent">
+              <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
                 {song().title}
               </span>
               <Show when={isDuet(song())}>
@@ -333,7 +333,7 @@ function PlayerSlot(props: PlayerSlotProps) {
       <Show when={props.selection}>
         {(selection) => (
           <div class="flex w-full flex-col items-center gap-0.5 bg-black/20 px-4 py-3">
-            <span class="max-w-full truncate text-center font-semibold text-sm">{selection().player.username}</span>
+            <span class="max-w-full truncate text-center text-sm font-semibold">{selection().player.username}</span>
             <Show when={isDuet(props.song)}>
               <span class="text-center text-xs opacity-60">{getVoiceName(props.song ?? null, selection().voice)}</span>
             </Show>
@@ -392,9 +392,7 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
         value: () => selectedVoice(),
         onChange: (voice: number) => setSelectedVoice(voice),
         options: props.song?.voices.map((_, index) => index) ?? [],
-        renderValue: (voice: number | null) => (
-          <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>
-        ),
+        renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>,
       });
     }
 
