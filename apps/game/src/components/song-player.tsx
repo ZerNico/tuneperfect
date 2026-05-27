@@ -2,6 +2,7 @@ import { createEventListener } from "@solid-primitives/event-listener";
 import { platform } from "@tauri-apps/plugin-os";
 import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, type Ref, Show } from "solid-js";
 
+import { getAudioContext } from "~/lib/audio/context";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -70,17 +71,6 @@ const calculateReplayGainAdjustment = (gainDb: number | null, peak: number | nul
   }
 
   return gainMultiplier;
-};
-
-let sharedAudioContext: AudioContext | null = null;
-const getAudioContext = () => {
-  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
-    sharedAudioContext = new AudioContext();
-  }
-  if (sharedAudioContext.state === "suspended") {
-    sharedAudioContext.resume().catch((err) => console.warn("Failed to resume AudioContext:", err));
-  }
-  return sharedAudioContext;
 };
 
 export default function SongPlayer(props: SongPlayerProps) {

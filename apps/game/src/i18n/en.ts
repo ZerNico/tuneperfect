@@ -161,6 +161,8 @@ const en = {
           grid: "Grid",
         },
         outputLatency: "Audio Output Latency",
+        outputLatencyPreviewStart: "Test Audio Output Sync",
+        outputLatencyPreviewStop: "Stop Audio Output Test",
       },
       songs: {
         title: "Songs",

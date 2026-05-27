@@ -4,6 +4,7 @@ import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 
 import KeyHints from "~/components/key-hints";
+import LatencyCalibrationPreview from "~/components/latency-calibration-preview";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
@@ -95,6 +96,16 @@ function GeneralSettingsComponent() {
       step: 10,
       onInput: (value) => setGeneral({ ...general(), outputLatency: value }),
       renderValue: (value) => `${value > 0 ? "+" : ""}${value} ms`,
+    },
+    {
+      type: "custom",
+      render: (ctx) => (
+        <LatencyCalibrationPreview
+          outputLatency={() => general().outputLatency}
+          selected={ctx.selected}
+          gradient={ctx.gradient}
+        />
+      ),
     },
     {
       type: "button",
