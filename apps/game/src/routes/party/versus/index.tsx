@@ -348,7 +348,7 @@ function VersusComponent() {
       players.push({ player: player, voice: 0, microphone });
     }
 
-    roundActions.startRound({ songs: [{ song, players, mode: "regular" }], returnTo: "/party/versus" });
+    roundActions.startRound({ songs: [{ song, players, mode: "single", length: "full" }], returnTo: "/party/versus" });
   };
 
   const menuItems: MenuItem[] = [

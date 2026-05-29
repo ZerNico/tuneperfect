@@ -117,6 +117,12 @@ const de = {
       startRandomMedley: "Zufälliges Medley starten",
       startMedley: "Medley starten",
     },
+    length: {
+      label: "Länge",
+      full: "Ganzes Lied",
+      medium: "Mittel (~1 Min)",
+      short: "Kurz (~30 Sek)",
+    },
   },
   score: {
     title: "Punktzahl",
@@ -129,6 +135,7 @@ const de = {
     pause: {
       resume: "Fortsetzen",
       restart: "Neustart",
+      next: "Nächstes Lied",
       exit: "Beenden",
     },
   },

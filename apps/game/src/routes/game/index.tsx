@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show, untrack } from "solid-js";
 
 import GameLayout from "~/components/game/game-layout";
 import Lyrics from "~/components/game/lyrics";
@@ -64,25 +64,41 @@ function GameComponent() {
   }));
 
   createEffect(() => {
-    if (ready() && canPlayThrough()) {
-      start();
+    if (ready() && canPlayThrough() && !untrack(started)) {
+      untrack(() => start());
     }
   });
 
   onMount(() => {
-    const startTimeout = roundSong()?.mode === "medley" ? 1000 : 3000;
+    const startTimeout = roundSong()?.length === "full" ? 3000 : 1000;
     setTimeout(() => {
       setReady(true);
     }, startTimeout);
   });
 
   onCleanup(async () => {
-    stop();
+    await stop();
   });
 
   const handleEnded = () => {
     queueMicrotask(() => {
       roundActions.endRound(scores());
+    });
+  };
+
+  const handleNext = () => {
+    queueMicrotask(() => {
+      roundActions.endRound(scores());
+    });
+  };
+
+  const handleExit = () => {
+    queueMicrotask(() => {
+      if (roundSong()?.mode === "medley") {
+        roundActions.endMedley(scores());
+      } else {
+        roundActions.endRound(scores());
+      }
     });
   };
 
@@ -151,7 +167,8 @@ function GameComponent() {
                     onEnded={handleEnded}
                     onError={handleError}
                     preferInstrumental={preferInstrumental()}
-                    mode={roundSong()?.mode}
+                    mode="play"
+                    useFades={roundSong()?.length !== "full"}
                   />
                 </div>
 
@@ -203,7 +220,9 @@ function GameComponent() {
                 <PauseMenu
                   class="absolute inset-0"
                   onClose={resume}
-                  onExit={handleEnded}
+                  onExit={handleExit}
+                  onNext={handleNext}
+                  showNext={roundSong()?.mode === "medley" && (roundStore.settings()?.songs.length ?? 0) > 1}
                   onRestart={handleRestart}
                   gradient={gradient()}
                 />

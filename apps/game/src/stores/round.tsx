@@ -13,10 +13,20 @@ export interface PlayerSelection {
   microphone: Microphone;
 }
 
+export type RoundMode = "single" | "medley";
+export type RoundLength = "full" | "medium" | "short";
+
+const TARGET_DURATION_MS: Record<RoundLength, number | null> = {
+  full: null,
+  medium: 60_000,
+  short: 30_000,
+};
+
 interface QueuedSong {
   song: LocalSong;
   players: PlayerSelection[];
-  mode: "regular" | "medley";
+  mode: RoundMode;
+  length: RoundLength;
 }
 
 export interface Score {
@@ -59,14 +69,15 @@ export function useRoundActions() {
   const navigate = useNavigate();
 
   const startRound = (settings: RoundSettings) => {
-    const songs = settings.songs.map((song) => {
-      if (song.mode === "medley") {
-        return {
-          ...song,
-          song: getMedleySong(song.song),
-        };
+    const songs = settings.songs.map((queued) => {
+      const targetDurationMs = TARGET_DURATION_MS[queued.length];
+      if (targetDurationMs === null) {
+        return queued;
       }
-      return song;
+      return {
+        ...queued,
+        song: getMedleySong(queued.song, targetDurationMs),
+      };
     });
     roundStore.setSettings({ ...settings, songs });
     roundStore.setResults([]);
@@ -90,6 +101,16 @@ export function useRoundActions() {
     navigate({ to: "/game/score" });
   };
 
+  const endMedley = (scores: Score[]) => {
+    const song = roundStore.settings()?.songs[0];
+    if (!song) return;
+
+    roundStore.setResults((prev) => [...prev, { scores, song }]);
+    roundStore.setSettings((prev) => (prev ? { ...prev, songs: prev.songs.slice(0, 1) } : prev));
+
+    navigate({ to: "/game/score" });
+  };
+
   const returnRound = () => {
     navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
   };
@@ -97,6 +118,7 @@ export function useRoundActions() {
   return {
     startRound,
     endRound,
+    endMedley,
     returnRound,
   };
 }

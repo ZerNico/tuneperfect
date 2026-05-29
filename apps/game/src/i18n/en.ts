@@ -117,6 +117,12 @@ const en = {
       startRandomMedley: "Start Random Medley",
       startMedley: "Start Medley",
     },
+    length: {
+      label: "Length",
+      full: "Full Song",
+      medium: "Medium (~1 min)",
+      short: "Short (~30 sec)",
+    },
   },
   score: {
     title: "Score",
@@ -129,6 +135,7 @@ const en = {
     pause: {
       resume: "Resume",
       restart: "Restart",
+      next: "Next Song",
       exit: "Exit",
     },
   },

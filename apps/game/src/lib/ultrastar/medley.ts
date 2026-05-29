@@ -2,11 +2,11 @@ import { beatToMs } from "./bpm";
 import type { Phrase } from "./phrase";
 import type { LocalSong } from "./song";
 
-const MEDLEY_MIN_DURATION_MS = 30000; // 30 seconds
+const DEFAULT_TARGET_DURATION_MS = 30000; // 30 seconds
 const MEDLEY_BUFFER_MS = 3000; // 3 seconds buffer before and after
 
-export function getMedleySong(song: LocalSong) {
-  const medleyBeats = getMedleyBeats(song);
+export function getMedleySong(song: LocalSong, targetDurationMs: number = DEFAULT_TARGET_DURATION_MS) {
+  const medleyBeats = getMedleyBeats(song, targetDurationMs);
 
   if (!medleyBeats) {
     // If no medley found, return original song
@@ -43,12 +43,26 @@ export function getMedleySong(song: LocalSong) {
   };
 }
 
-function getMedleyBeats(song: LocalSong) {
+function getMedleyBeats(song: LocalSong, targetDurationMs: number) {
   // If medley beats are explicitly set, use them
   if (song.medleyStartBeat !== null && song.medleyEndBeat !== null) {
+    const medleyStartMs = beatToMs(song, song.medleyStartBeat);
+    const medleyEndMs = beatToMs(song, song.medleyEndBeat);
+    const explicitDuration = medleyEndMs - medleyStartMs;
+
+    // If the explicit window is already long enough, use it as-is
+    if (explicitDuration >= targetDurationMs) {
+      return {
+        startBeat: song.medleyStartBeat,
+        endBeat: song.medleyEndBeat,
+      };
+    }
+
+    // Otherwise extend it to meet the target
+    const phrases = getAllPhrases(song);
     return {
       startBeat: song.medleyStartBeat,
-      endBeat: song.medleyEndBeat,
+      endBeat: extendToMinimumDuration(song, phrases, song.medleyStartBeat, song.medleyEndBeat, targetDurationMs),
     };
   }
 
@@ -63,13 +77,13 @@ function getMedleyBeats(song: LocalSong) {
 
   // If no medley candidates found, fallback to middle estimate
   if (medleyCandidates.length === 0) {
-    return getFallbackMedleyBeats(song, phrases);
+    return getFallbackMedleyBeats(song, phrases, targetDurationMs);
   }
 
   // Find the longest medley candidate (backwards to take first longest, not last longest)
   const longestCandidate = findLongestCandidate(medleyCandidates);
   if (!longestCandidate) {
-    return getFallbackMedleyBeats(song, phrases);
+    return getFallbackMedleyBeats(song, phrases, targetDurationMs);
   }
 
   const { start: medleyStartLine, end: medleyEndLine } = longestCandidate;
@@ -77,7 +91,7 @@ function getMedleyBeats(song: LocalSong) {
 
   // Need at least 3 lines for a valid medley
   if (medleyLineCount <= 3) {
-    return getFallbackMedleyBeats(song, phrases);
+    return getFallbackMedleyBeats(song, phrases, targetDurationMs);
   }
 
   // Calculate beat positions
@@ -85,7 +99,7 @@ function getMedleyBeats(song: LocalSong) {
   const endPhrase = phrases[medleyEndLine];
 
   if (!startPhrase || !endPhrase) {
-    return getFallbackMedleyBeats(song, phrases);
+    return getFallbackMedleyBeats(song, phrases, targetDurationMs);
   }
 
   const firstNote = startPhrase.notes[0];
@@ -93,7 +107,7 @@ function getMedleyBeats(song: LocalSong) {
   const lastNoteEnd = endPhrase.notes[endPhrase.notes.length - 1];
 
   if (!firstNote || !lastNoteStart || !lastNoteEnd) {
-    return getFallbackMedleyBeats(song, phrases);
+    return getFallbackMedleyBeats(song, phrases, targetDurationMs);
   }
 
   // Medley Start Beat: timestamp of the first note in the start line
@@ -107,8 +121,8 @@ function getMedleyBeats(song: LocalSong) {
   const medleyEndMs = beatToMs(song, medleyEndBeat);
   const medleyDuration = medleyEndMs - medleyStartMs;
 
-  if (medleyDuration < MEDLEY_MIN_DURATION_MS) {
-    medleyEndBeat = extendToMinimumDuration(song, phrases, medleyStartBeat, medleyEndBeat);
+  if (medleyDuration < targetDurationMs) {
+    medleyEndBeat = extendToMinimumDuration(song, phrases, medleyStartBeat, medleyEndBeat, targetDurationMs);
   }
 
   return {
@@ -117,7 +131,7 @@ function getMedleyBeats(song: LocalSong) {
   };
 }
 
-function getFallbackMedleyBeats(song: LocalSong, phrases: Phrase[]) {
+function getFallbackMedleyBeats(song: LocalSong, phrases: Phrase[], targetDurationMs: number) {
   const lastPhrase = phrases[phrases.length - 1];
   const lastNote = lastPhrase?.notes[lastPhrase.notes.length - 1];
 
@@ -128,7 +142,7 @@ function getFallbackMedleyBeats(song: LocalSong, phrases: Phrase[]) {
   const songEndBeat = lastNote.startBeat + lastNote.length;
   const middleBeat = songEndBeat / 2;
   const bpm = song.bpm * 4;
-  const medleyMinBeats = (MEDLEY_MIN_DURATION_MS * bpm) / (1000 * 60);
+  const medleyMinBeats = (targetDurationMs * bpm) / (1000 * 60);
   const endBeat = middleBeat + medleyMinBeats;
 
   return {
@@ -217,10 +231,16 @@ function findLongestCandidate(candidates: { start: number; end: number }[]) {
 /**
  * Extends the medley end beat to meet the minimum duration requirement
  */
-function extendToMinimumDuration(song: LocalSong, phrases: Phrase[], medleyStartBeat: number, medleyEndBeat: number) {
+function extendToMinimumDuration(
+  song: LocalSong,
+  phrases: Phrase[],
+  medleyStartBeat: number,
+  medleyEndBeat: number,
+  targetDurationMs: number,
+) {
   // Calculate approximate end beat needed for minimum duration
   const bpm = song.bpm * 4; // Convert to actual BPM
-  const medleyMinBeats = (MEDLEY_MIN_DURATION_MS * bpm) / (1000 * 60);
+  const medleyMinBeats = (targetDurationMs * bpm) / (1000 * 60);
   const approximateEndBeat = medleyStartBeat + medleyMinBeats - 1;
 
   // Find the line that contains approximateEndBeat, set medleyEndBeat to last beat of this line

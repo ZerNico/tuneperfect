@@ -9,7 +9,6 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
-import Button from "~/components/ui/button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
@@ -23,7 +22,8 @@ import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
 import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
-import { type PlayerSelection, useRoundActions } from "~/stores/round";
+import { medleyStore } from "~/stores/medley";
+import { type PlayerSelection, type RoundLength, useRoundActions } from "~/stores/round";
 import { type Microphone, settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
@@ -31,9 +31,23 @@ export const Route = createFileRoute("/sing/select")({
   component: PlayerSelectionComponent,
   validateSearch: v.object({
     songs: v.array(v.string()),
-    mode: v.optional(v.picklist(["regular", "medley"]), "regular"),
+    mode: v.optional(v.picklist(["single", "medley"]), "single"),
+    length: v.optional(v.picklist(["full", "medium", "short"])),
   }),
 });
+
+const LENGTH_OPTIONS: RoundLength[] = ["full", "medium", "short"];
+
+const getLengthLabel = (length: RoundLength) => {
+  switch (length) {
+    case "full":
+      return t("sing.length.full");
+    case "medium":
+      return t("sing.length.medium");
+    case "short":
+      return t("sing.length.short");
+  }
+};
 
 interface Selection {
   player: User;
@@ -41,9 +55,10 @@ interface Selection {
 }
 
 const [slotSelections, setSlotSelections] = createSignal<(Selection | undefined)[]>([]);
+const [singleLength, setSingleLength] = createSignal<RoundLength>("full");
+const [medleyLength, setMedleyLength] = createSignal<RoundLength>("short");
 
 function PlayerSelectionComponent() {
-  const menuLoop = createLoop(2);
   const playerSlotLoop = createLoop(settingsStore.microphones().length);
   const roundActions = useRoundActions();
 
@@ -56,6 +71,27 @@ function PlayerSelectionComponent() {
       .map((hash) => songsStore.songs().find((song) => song.hash === hash))
       .filter((song): song is NonNullable<typeof song> => song !== undefined);
   });
+
+  const isMedley = createMemo(() => search().mode === "medley");
+
+  const selectedLength = () => (isMedley() ? medleyLength() : singleLength());
+  const setSelectedLength = (length: RoundLength) => {
+    if (isMedley()) {
+      setMedleyLength(length);
+    } else {
+      setSingleLength(length);
+    }
+  };
+
+  // Apply an explicit `length` from the URL once (overrides the persisted choice)
+  const initialSearch = search();
+  if (initialSearch.length) {
+    if (initialSearch.mode === "medley") {
+      setMedleyLength(initialSearch.length);
+    } else {
+      setSingleLength(initialSearch.length);
+    }
+  }
 
   const initializeSlotSelections = () => {
     const micCount = settingsStore.microphones().length;
@@ -110,30 +146,7 @@ function PlayerSelectionComponent() {
     navigate({ to: "/sing" });
   };
 
-  useNavigation(() => ({
-    layer: 0,
-    onKeydown(event) {
-      if (event.action === "back") {
-        onBack();
-      } else if (event.action === "left") {
-        if (menuLoop.position() === 0) {
-          playerSlotLoop.decrement();
-        }
-      } else if (event.action === "right") {
-        if (menuLoop.position() === 0) {
-          playerSlotLoop.increment();
-        }
-      } else if (event.action === "up") {
-        menuLoop.decrement();
-      } else if (event.action === "down") {
-        menuLoop.increment();
-      }
-    },
-  }));
-
   const hasAnyPlayer = createMemo(() => slotSelections().some((selection) => selection !== undefined));
-
-  const isMedley = createMemo(() => search().mode === "medley");
 
   const startGame = () => {
     if (!hasAnyPlayer()) {
@@ -152,6 +165,8 @@ function PlayerSelectionComponent() {
       }
     }
 
+    const length = selectedLength();
+
     if (isMedley()) {
       const queuedSongs = songs().map((song) => {
         const voiceCount = song.voices.length;
@@ -159,13 +174,14 @@ function PlayerSelectionComponent() {
           ...p,
           voice: i % voiceCount,
         }));
-        return { song, players: medleyPlayers, mode: "medley" as const };
+        return { song, players: medleyPlayers, mode: "medley" as const, length };
       });
       roundActions.startRound({ songs: queuedSongs });
+      medleyStore.clear();
     } else {
       const song = songs()[0];
       if (!song) return;
-      roundActions.startRound({ songs: [{ song, players, mode: "regular" }] });
+      roundActions.startRound({ songs: [{ song, players, mode: "single", length }] });
     }
   };
 
@@ -220,37 +236,81 @@ function PlayerSelectionComponent() {
           )}
         </Show>
 
-        <div class="flex flex-col items-center gap-6">
-          <div class="flex items-center justify-center gap-6">
-            <For each={settingsStore.microphones()}>
-              {(microphone, index) => (
-                <PlayerSlot
-                  microphone={microphone}
+        <Menu
+          class="h-auto w-full grow-0"
+          gradient="gradient-sing"
+          layer={0}
+          onBack={onBack}
+          items={[
+            {
+              type: "custom",
+              interactive: true,
+              render: (ctx) => (
+                <PlayerSlotsRow
+                  selected={ctx.selected()}
                   song={!isMedley() ? songs()[0] : null}
-                  selection={getSlotSelection(index())}
-                  onSelect={(selection) => setSlotSelection(index(), selection)}
-                  selected={playerSlotLoop.position() === index() && menuLoop.position() === 0}
-                  onMouseEnter={() => {
-                    playerSlotLoop.set(index());
-                    menuLoop.set(0);
-                  }}
+                  playerSlotLoop={playerSlotLoop}
+                  getSlotSelection={getSlotSelection}
+                  setSlotSelection={setSlotSelection}
                 />
-              )}
-            </For>
-          </div>
-
-          <Button
-            onClick={startGame}
-            gradient="gradient-sing"
-            class="w-full max-w-md"
-            onMouseEnter={() => menuLoop.set(1)}
-            selected={menuLoop.position() === 1}
-          >
-            {t("select.start")}
-          </Button>
-        </div>
+              ),
+            },
+            {
+              type: "select-string",
+              label: t("sing.length.label"),
+              value: () => selectedLength(),
+              options: LENGTH_OPTIONS,
+              onChange: (value) => setSelectedLength(value as RoundLength),
+              renderValue: (value) => <span>{value !== null ? getLengthLabel(value as RoundLength) : ""}</span>,
+            },
+            {
+              type: "button",
+              label: t("select.start"),
+              action: startGame,
+            },
+          ]}
+        />
       </div>
     </Layout>
+  );
+}
+
+interface PlayerSlotsRowProps {
+  selected: boolean;
+  song: LocalSong | null | undefined;
+  playerSlotLoop: ReturnType<typeof createLoop>;
+  getSlotSelection: (index: number) => Selection | null;
+  setSlotSelection: (index: number, selection: Selection | null) => void;
+}
+
+function PlayerSlotsRow(props: PlayerSlotsRowProps) {
+  useNavigation(() => ({
+    layer: 0,
+    enabled: props.selected,
+    onKeydown(event) {
+      if (event.action === "left") {
+        props.playerSlotLoop.decrement();
+      } else if (event.action === "right") {
+        props.playerSlotLoop.increment();
+      }
+    },
+  }));
+
+  return (
+    <div class="flex items-center justify-center gap-6 py-4">
+      <For each={settingsStore.microphones()}>
+        {(microphone, index) => (
+          <PlayerSlot
+            microphone={microphone}
+            song={props.song}
+            selection={props.getSlotSelection(index())}
+            onSelect={(selection) => props.setSlotSelection(index(), selection)}
+            selected={props.selected && props.playerSlotLoop.position() === index()}
+            onMouseEnter={() => props.playerSlotLoop.set(index())}
+          />
+        )}
+      </For>
+    </div>
   );
 }
 

@@ -24,7 +24,8 @@ interface SongPlayerProps {
   onCanPlayThrough?: () => void;
   onEnded?: () => void;
   onError?: () => void;
-  mode?: "regular" | "medley" | "preview";
+  mode?: "play" | "preview";
+  useFades?: boolean;
   preferInstrumental?: boolean;
 }
 
@@ -257,7 +258,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
   const applyFadeIn = () => {
     const song = props.song;
-    if (props.mode !== "medley" || !currentGainNode || !song) return;
+    if (!props.useFades || !currentGainNode || !song) return;
 
     const volume = props.volume ?? 1;
     const adjustment = calculateReplayGainAdjustment(song.replayGainTrackGain, song.replayGainTrackPeak);
@@ -270,7 +271,7 @@ export default function SongPlayer(props: SongPlayerProps) {
   };
 
   const applyFadeOut = () => {
-    if (props.mode !== "medley" || !currentGainNode) return;
+    if (!props.useFades || !currentGainNode) return;
 
     const fadeOutDuration = 3;
     const currentVolume = currentGainNode.gain.value;
@@ -284,7 +285,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     clearTimeout(fadeOutTimeout);
 
     const song = props.song;
-    if (props.mode !== "medley" || !song?.end) return;
+    if (!props.useFades || !song?.end) return;
 
     const mediaElement = currentAudioUrl() ? audioElementRef : videoActive() ? videoElementRef : undefined;
     if (!mediaElement) return;
