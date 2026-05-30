@@ -1,4 +1,6 @@
-use super::{device::DeviceManager, input::InputStreamManager, output::OutputMixer, types::MicrophoneOptions};
+use super::{
+    device::DeviceManager, input::InputStreamManager, output::OutputMixer, types::MicrophoneOptions,
+};
 use crate::error::AppError;
 use cpal::Stream;
 use std::{
@@ -19,7 +21,6 @@ impl Recorder {
     pub fn new(
         app_handle: AppHandle,
         options: Vec<MicrophoneOptions>,
-        samples_per_beat: usize,
         playback_enabled: bool,
         playback_volume: f32,
     ) -> Result<Self, AppError> {
@@ -30,7 +31,6 @@ impl Recorder {
                 app_handle,
                 options,
                 stop_rx,
-                samples_per_beat,
                 playback_enabled,
                 playback_volume,
             )
@@ -47,7 +47,6 @@ impl Recorder {
         app_handle: AppHandle,
         options: Vec<MicrophoneOptions>,
         stop_rx: mpsc::Receiver<()>,
-        samples_per_beat: usize,
         playback_enabled: bool,
         playback_volume: f32,
     ) -> Result<(), AppError> {
@@ -81,9 +80,7 @@ impl Recorder {
 
         let output_producers: HashMap<usize, _> = if let Some(mixer) = &output_mixer {
             (0..options.len())
-                .filter_map(|index| {
-                    mixer.get_producer(index).map(|producer| (index, producer))
-                })
+                .filter_map(|index| mixer.get_producer(index).map(|producer| (index, producer)))
                 .collect()
         } else {
             HashMap::new()
@@ -98,7 +95,6 @@ impl Recorder {
         let mut streams: Vec<Stream> = InputStreamManager::setup_input_streams(
             input_devices,
             &options,
-            samples_per_beat,
             app_handle,
             &output_producers,
             playback_enabled_atomic,
@@ -106,11 +102,14 @@ impl Recorder {
 
         if let Some(mixer) = output_mixer {
             let (output_device, output_config) = device_manager.get_output_config()?;
-            let output_stream = mixer.create_output_stream(output_device, output_config, playback_volume)?;
+            let output_stream =
+                mixer.create_output_stream(output_device, output_config, playback_volume)?;
             streams.push(output_stream);
         }
 
-        stop_rx.recv().map_err(|_| AppError::RecorderError("Stop channel closed".to_string()))?;
+        stop_rx
+            .recv()
+            .map_err(|_| AppError::RecorderError("Stop channel closed".to_string()))?;
 
         Ok(())
     }

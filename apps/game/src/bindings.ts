@@ -13,9 +13,9 @@ async getMicrophones() : Promise<Result<Microphone[], AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
-async startRecording(options: MicrophoneOptions[], samplesPerBeat: number, playbackEnabled: boolean, playbackVolume: number) : Promise<Result<null, AppError>> {
+async startRecording(options: MicrophoneOptions[], playbackEnabled: boolean, playbackVolume: number) : Promise<Result<null, AppError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("start_recording", { options, samplesPerBeat, playbackEnabled, playbackVolume }) };
+    return { status: "ok", data: await TAURI_INVOKE("start_recording", { options, playbackEnabled, playbackVolume }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -29,9 +29,9 @@ async stopRecording() : Promise<Result<null, AppError>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getPitches() : Promise<Result<number[], AppError>> {
+async getPitches(windowMs: number) : Promise<Result<number[], AppError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_pitches") };
+    return { status: "ok", data: await TAURI_INVOKE("get_pitches", { windowMs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -143,7 +143,12 @@ export type Microphone = { name: string; channels: number }
 /**
  * Configuration options for a microphone input
  */
-export type MicrophoneOptions = { name: string; channel: number; gain: number; threshold: number }
+export type MicrophoneOptions = { name: string; channel: number; gain: number; threshold: number; 
+/**
+ * Input latency in ms. The pitch window ends this far in the past so the
+ * detected pitch matches the audio sung for the current beat.
+ */
+delay: number }
 export type Note = { type: NoteType; startBeat: number; length: number; text: string; txtPitch: number; midiNote: number }
 export type NoteType = "Normal" | "Golden" | "Freestyle" | "Rap" | "RapGolden"
 export type Phrase = { disappearBeat: number; notes: Note[] }

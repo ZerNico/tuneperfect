@@ -16,6 +16,8 @@ export function getGapTolerance(difficulty: Difficulty): number {
   }
 }
 
+const NO_PITCH = -1;
+
 export class PitchProcessor {
   private hasJoker = false;
   private gapTolerance: number;
@@ -25,16 +27,16 @@ export class PitchProcessor {
   }
 
   public process(frequency: number, note: Note) {
-    const rawMidiNote = frequencyToMidi(frequency);
-    let midiNote = this.applyCorrection(rawMidiNote, note);
-    midiNote = this.applyJoker(midiNote, note);
+    const rawMidiNote = frequency > 0 ? frequencyToMidi(frequency) : NO_PITCH;
+    const correctedMidiNote = this.applyCorrection(rawMidiNote, note);
+    const midiNote = this.applyJoker(correctedMidiNote, note);
 
     return { midiNote, rawMidiNote };
   }
 
   private applyCorrection(detectedMidiNote: number, targetNote: Note) {
     if (detectedMidiNote <= 0) {
-      return Math.round(detectedMidiNote);
+      return NO_PITCH;
     }
 
     // Skip pitch correction for rap notes since exact pitch doesn't matter
@@ -49,17 +51,23 @@ export class PitchProcessor {
   }
 
   private applyJoker(detectedMidiNote: number, targetNote: Note) {
-    if (detectedMidiNote === 0 && this.hasJoker) {
-      this.hasJoker = false;
-      return targetNote.midiNote;
+    const isRap = targetNote.type === "Rap" || targetNote.type === "RapGolden";
+    const isCorrect = isRap ? detectedMidiNote > 0 : detectedMidiNote === targetNote.midiNote;
+    const isDropout = detectedMidiNote <= 0;
+
+    if (isCorrect) {
+      this.hasJoker = true;
+      return detectedMidiNote;
     }
 
-    // For rap notes, earn joker when singing correctly (not 0 or -1)
-    if (targetNote.type === "Rap" || targetNote.type === "RapGolden") {
-      this.hasJoker = detectedMidiNote > 0 && detectedMidiNote !== -1;
-    } else {
-      // For normal notes, earn joker on exact match
-      this.hasJoker = detectedMidiNote === targetNote.midiNote;
+    if (isDropout) {
+      this.hasJoker = false;
+      return detectedMidiNote;
+    }
+
+    if (this.hasJoker) {
+      this.hasJoker = false;
+      return targetNote.midiNote;
     }
 
     return detectedMidiNote;

@@ -7,6 +7,9 @@ pub struct MicrophoneOptions {
     pub channel: i32,
     pub gain: f32,
     pub threshold: f32,
+    /// Input latency in ms. The pitch window ends this far in the past so the
+    /// detected pitch matches the audio sung for the current beat.
+    pub delay: f32,
 }
 
 /// Default buffer size for audio ring buffers (~85ms at 48kHz)

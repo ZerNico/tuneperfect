@@ -24,25 +24,16 @@ impl AudioResampler {
             interpolation: rubato::SincInterpolationType::Linear,
         };
 
-        let resampler = SincFixedIn::<f32>::new(
-            output_rate as f64 / input_rate as f64,
-            2.0,
-            params,
-            1024,
-            1,
-        )
-        .map_err(|e| AppError::CpalError(format!("Failed to create resampler: {}", e)))?;
+        let resampler =
+            SincFixedIn::<f32>::new(output_rate as f64 / input_rate as f64, 2.0, params, 1024, 1)
+                .map_err(|e| AppError::CpalError(format!("Failed to create resampler: {}", e)))?;
 
         Ok(Some(Self {
             resampler: Some(Arc::new(Mutex::new(resampler))),
         }))
     }
 
-    pub fn resample(
-        &self,
-        consumer: &Arc<Mutex<HeapCons<f32>>>,
-        frame_size: usize,
-    ) -> Vec<f32> {
+    pub fn resample(&self, consumer: &Arc<Mutex<HeapCons<f32>>>, frame_size: usize) -> Vec<f32> {
         let mut mic_buffer = vec![0.0f32; DEFAULT_BUFFER_SIZE];
         let samples_read = if let Ok(mut c) = consumer.lock() {
             c.pop_slice(&mut mic_buffer)

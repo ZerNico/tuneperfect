@@ -111,10 +111,6 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     { note: Note; midiNote: number; rawMidiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }
   >();
 
-  const delayedFlooredBeat = createMemo(() => {
-    return Math.floor(delayedBeat());
-  });
-
   let correctBeats = 0;
   let totalBeats = 0;
 
@@ -133,7 +129,8 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     on(
       () => game.pitches(),
       (allPitches) => {
-        const flooredBeat = delayedFlooredBeat();
+        // Mic delay is compensated in Rust, so score against the undelayed beat.
+        const flooredBeat = Math.floor(game.beat());
 
         if (flooredBeat === lastProcessedBeat) {
           return;
@@ -151,34 +148,32 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         if (noteScore > 0) {
           totalBeats++;
 
-          const pitch = allPitches[options().index];
+          const pitch = allPitches[options().index] ?? -1;
 
-          if (pitch !== undefined && pitch > 0) {
-            const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
+          const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
 
-            const isRap = beatInfo.note.type.startsWith("Rap");
+          const isRap = beatInfo.note.type.startsWith("Rap");
 
-            const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
+          const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
 
-            if (isCorrect) {
-              correctBeats++;
+          if (isCorrect) {
+            correctBeats++;
 
-              if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
-                addScore("golden", noteScore);
-              } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
-                addScore("normal", noteScore);
-              }
+            if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
+              addScore("golden", noteScore);
+            } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
+              addScore("normal", noteScore);
             }
+          }
 
-            if (midiNote > 0) {
-              processedBeats.set(flooredBeat, {
-                note: beatInfo.note,
-                midiNote: isRap ? beatInfo.note.midiNote : midiNote,
-                rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
-                isFirstInPhrase: beatInfo.isFirstInPhrase,
-                isFirstInNote: beatInfo.isFirstInNote,
-              });
-            }
+          if (midiNote > 0) {
+            processedBeats.set(flooredBeat, {
+              note: beatInfo.note,
+              midiNote: isRap ? beatInfo.note.midiNote : midiNote,
+              rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
+              isFirstInPhrase: beatInfo.isFirstInPhrase,
+              isFirstInNote: beatInfo.isFirstInNote,
+            });
           }
         }
 

@@ -37,10 +37,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       throw new Error("No song provided");
     }
 
-    const samplesPerBeat = Math.floor((48000 * beatToMsWithoutGap(opts.song, 1)) / 1000);
     await commands.startRecording(
       roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
-      samplesPerBeat,
       settingsStore.general().micPlaybackEnabled,
       settingsStore.volume().micPlayback,
     );
@@ -155,8 +153,14 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     flooredBeat();
     if (!started() || !playing()) return;
 
+    const song = options().song;
+    if (!song) return;
+
+    // One beat as the analysis window; Rust converts to samples and clamps it.
+    const windowMs = beatToMsWithoutGap(song, 1);
+
     void (async () => {
-      const result = await commands.getPitches();
+      const result = await commands.getPitches(windowMs);
       if (result.status === "ok") {
         setPitches(result.data);
       }

@@ -30,10 +30,11 @@ impl OutputMixer {
             mic_consumers.push(Arc::new(Mutex::new(consumer)));
         }
 
-        let resamplers: Vec<Option<Arc<AudioResampler>>> = super::resampler::create_resamplers(input_sample_rates, output_sample_rate)?
-            .into_iter()
-            .map(|opt| opt.map(Arc::new))
-            .collect();
+        let resamplers: Vec<Option<Arc<AudioResampler>>> =
+            super::resampler::create_resamplers(input_sample_rates, output_sample_rate)?
+                .into_iter()
+                .map(|opt| opt.map(Arc::new))
+                .collect();
 
         Ok(Self {
             mic_producers,

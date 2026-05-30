@@ -6,9 +6,9 @@ use crate::ultrastar::song::LocalSong;
 use log;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri_plugin_fs::FsExt;
 use std::sync::{Arc, Mutex};
 use tauri::State;
+use tauri_plugin_fs::FsExt;
 use tauri_specta::Event;
 use tokio::task;
 

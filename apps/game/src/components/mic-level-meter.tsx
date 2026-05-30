@@ -28,8 +28,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       await commands.stopRecording().catch(() => {});
 
       const result = await commands.startRecording(
-        [{ name, channel: props.channel(), gain: props.gain(), threshold: 0 }],
-        2048,
+        [{ name, channel: props.channel(), gain: props.gain(), threshold: 0, delay: 0 }],
         false,
         0,
       );
