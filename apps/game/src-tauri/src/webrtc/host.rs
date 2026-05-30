@@ -136,9 +136,9 @@ impl PeerState {
 
             for (i, chunk) in chunks.iter().enumerate() {
                 let msg = format!("\x01CHUNK:{chunk_id}:{i}:{total}\n{chunk}");
-                dc.send_text(msg)
-                    .await
-                    .map_err(|e| format!("Failed to send chunk {}/{total} on '{label}': {e}", i + 1))?;
+                dc.send_text(msg).await.map_err(|e| {
+                    format!("Failed to send chunk {}/{total} on '{label}': {e}", i + 1)
+                })?;
             }
         }
 
@@ -168,11 +168,7 @@ fn setup_ice_candidate_callback(pc: &Arc<RTCPeerConnection>, user_id: &str, hand
     }));
 }
 
-fn setup_connection_state_callback(
-    pc: &Arc<RTCPeerConnection>,
-    user_id: &str,
-    handle: &AppHandle,
-) {
+fn setup_connection_state_callback(pc: &Arc<RTCPeerConnection>, user_id: &str, handle: &AppHandle) {
     let uid = user_id.to_string();
     let handle = handle.clone();
     pc.on_peer_connection_state_change(Box::new(move |state| {
@@ -360,13 +356,8 @@ impl WebRTCHost {
 
         let answer_sdp = answer.sdp;
 
-        self.peers.insert(
-            user_id,
-            Arc::new(PeerState {
-                pc,
-                data_channels,
-            }),
-        );
+        self.peers
+            .insert(user_id, Arc::new(PeerState { pc, data_channels }));
 
         Ok(answer_sdp)
     }

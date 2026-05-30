@@ -1,7 +1,7 @@
-use std::fs;
 use chardetng::EncodingDetector;
-use unicode_normalization::UnicodeNormalization;
 use semver::Version;
+use std::fs;
+use unicode_normalization::UnicodeNormalization;
 
 use crate::{
     error::AppError,
@@ -45,9 +45,8 @@ fn parse_us_bool(value: &str) -> bool {
 fn parse_version(value: &str) -> Result<String, AppError> {
     let version_str = value.trim().trim_start_matches('v').trim_start_matches('V');
     // Validate it's a valid semver version
-    Version::parse(version_str).map_err(|_| {
-        AppError::UltrastarError(format!("Invalid version format: {}", value))
-    })?;
+    Version::parse(version_str)
+        .map_err(|_| AppError::UltrastarError(format!("Invalid version format: {}", value)))?;
     Ok(version_str.to_string())
 }
 
@@ -63,7 +62,7 @@ fn parse_multi_value_field(value: &str, supports_multi_value: bool) -> Option<Ve
     if value.is_empty() {
         return None;
     }
-    
+
     if supports_multi_value {
         let values = parse_comma_separated_values(value);
         if values.is_empty() {
@@ -79,7 +78,11 @@ fn parse_multi_value_field(value: &str, supports_multi_value: bool) -> Option<Ve
 fn parse_time_value(value: &str, property: &str, uses_milliseconds: bool) -> Result<f64, AppError> {
     let parsed = parse_us_float(value, property)?;
     // Convert seconds to milliseconds for versions < 2.0.0
-    Ok(if uses_milliseconds { parsed } else { parsed * 1000.0 })
+    Ok(if uses_milliseconds {
+        parsed
+    } else {
+        parsed * 1000.0
+    })
 }
 
 pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
@@ -164,13 +167,25 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                 match property.as_str() {
                     "title" => song.title = value.to_string(),
                     "artist" => song.artist = value.to_string(),
-                    "language" => song.language = parse_multi_value_field(value, supports_multi_value),
-                    "edition" => song.edition = parse_multi_value_field(value, supports_multi_value),
+                    "language" => {
+                        song.language = parse_multi_value_field(value, supports_multi_value)
+                    }
+                    "edition" => {
+                        song.edition = parse_multi_value_field(value, supports_multi_value)
+                    }
                     "genre" => song.genre = parse_multi_value_field(value, supports_multi_value),
-                    "year" => song.year = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
+                    "year" => {
+                        song.year = if value.is_empty() {
+                            None
+                        } else {
+                            Some(parse_us_int(value, &property)?)
+                        }
+                    }
                     "bpm" => song.bpm = parse_us_float(value, &property)?,
                     "gap" => song.gap = parse_us_float(value, &property)?,
-                    "start" => song.start = Some(parse_time_value(value, &property, uses_milliseconds)?),
+                    "start" => {
+                        song.start = Some(parse_time_value(value, &property, uses_milliseconds)?)
+                    }
                     "end" => song.end = Some(parse_us_int(value, &property)?),
                     "mp3" | "audio" => song.audio = Some(value.to_string()),
                     "instrumental" => song.instrumental = Some(value.to_string()),
@@ -178,17 +193,48 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
                     "video" => song.video = Some(value.to_string()),
                     "background" => song.background = Some(value.to_string()),
                     "relative" => song.relative = Some(parse_us_bool(value)),
-                    "videogap" => song.video_gap = parse_time_value(value, &property, uses_milliseconds)?,
-                    "author" | "creator" => song.creator = parse_multi_value_field(value, supports_multi_value),
+                    "videogap" => {
+                        song.video_gap = parse_time_value(value, &property, uses_milliseconds)?
+                    }
+                    "author" | "creator" => {
+                        song.creator = parse_multi_value_field(value, supports_multi_value)
+                    }
                     "duetsingerp1" | "p1" => song.p1 = Some(value.to_string()),
                     "duetsingerp2" | "p2" => song.p2 = Some(value.to_string()),
-                    "preview" | "previewstart" => song.preview_start = Some(parse_time_value(value, &property, uses_milliseconds)?),
+                    "preview" | "previewstart" => {
+                        song.preview_start =
+                            Some(parse_time_value(value, &property, uses_milliseconds)?)
+                    }
                     "tags" => song.tags = parse_multi_value_field(value, supports_multi_value),
                     "version" => song.version = Some(parse_version(value)?),
-                    "medleystartbeat" => song.medley_start_beat = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
-                    "medleyendbeat" => song.medley_end_beat = if value.is_empty() { None } else { Some(parse_us_int(value, &property)?) },
-                    "medleystart" => song.medley_start = if value.is_empty() { None } else { Some(parse_time_value(value, &property, uses_milliseconds)?) },
-                    "medleyend" => song.medley_end = if value.is_empty() { None } else { Some(parse_time_value(value, &property, uses_milliseconds)?) },
+                    "medleystartbeat" => {
+                        song.medley_start_beat = if value.is_empty() {
+                            None
+                        } else {
+                            Some(parse_us_int(value, &property)?)
+                        }
+                    }
+                    "medleyendbeat" => {
+                        song.medley_end_beat = if value.is_empty() {
+                            None
+                        } else {
+                            Some(parse_us_int(value, &property)?)
+                        }
+                    }
+                    "medleystart" => {
+                        song.medley_start = if value.is_empty() {
+                            None
+                        } else {
+                            Some(parse_time_value(value, &property, uses_milliseconds)?)
+                        }
+                    }
+                    "medleyend" => {
+                        song.medley_end = if value.is_empty() {
+                            None
+                        } else {
+                            Some(parse_time_value(value, &property, uses_milliseconds)?)
+                        }
+                    }
                     _ => (),
                 }
             }

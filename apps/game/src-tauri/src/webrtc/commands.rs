@@ -62,9 +62,7 @@ pub async fn webrtc_close_connection(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn webrtc_close_all(
-    state: tauri::State<'_, SharedWebRTCHost>,
-) -> Result<(), AppError> {
+pub async fn webrtc_close_all(state: tauri::State<'_, SharedWebRTCHost>) -> Result<(), AppError> {
     let mut host = state.lock().await;
     host.close_all().await;
     Ok(())
