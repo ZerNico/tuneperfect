@@ -3,6 +3,7 @@ import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 
 import { DialogProvider } from "./lib/dialog.tsx";
+import { initPostHog } from "./lib/posthog";
 
 import "./styles.css";
 import { routeTree } from "./routeTree.gen";
@@ -31,6 +32,9 @@ declare module "@tanstack/solid-router" {
     router: typeof router;
   }
 }
+
+const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
+if (posthogToken) initPostHog(posthogToken);
 
 const rootElement = document.getElementById("app");
 if (rootElement) {

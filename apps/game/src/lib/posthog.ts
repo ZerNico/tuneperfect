@@ -14,7 +14,7 @@ export const initPostHog = (token: string) => {
     disable_surveys: true,
     mask_personal_data_properties: true,
   });
-  posthog.register({ app_name: "web" });
+  posthog.register({ app_name: "game" });
 };
 
 export { posthog };

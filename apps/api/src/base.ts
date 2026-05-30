@@ -4,6 +4,7 @@ import { db } from "./lib/db";
 import { logger } from "./lib/logger";
 import { init } from "./lib/orpc";
 import { rateLimit } from "./lib/orpc/rate-limit";
+import { captureException } from "./lib/posthog";
 
 const dbProvider = os.middleware(async ({ next }) => {
   return next({
@@ -17,13 +18,16 @@ export const base = init
   .use(rateLimit)
   .use(dbProvider)
   .use(
-    onError((error) => {
+    onError((error, { context }) => {
+      const distinctId = (context as { payload?: { sub?: string } }).payload?.sub;
       if (error instanceof ORPCError) {
         if (error.status === 500) {
           logger.error(error, "Internal server error");
+          captureException(error, distinctId);
         }
       } else {
         logger.error(error, "Internal server error");
+        captureException(error, distinctId);
       }
     }),
   )

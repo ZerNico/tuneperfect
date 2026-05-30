@@ -28,6 +28,7 @@
     "@tuneperfect/webrtc": "*",
     "cva": "^1.0.0-beta.4",
     "minisearch": "^7.2.0",
+    "posthog-js": "^1.363.5",
     "solid-js": "^1.9.12",
     "tailwindcss": "^4.2.2",
     "ufo": "^1.6.3",

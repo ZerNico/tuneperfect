@@ -33,15 +33,15 @@ services:
       - "3478:3478/udp"
       - "3478:3478/tcp"
       - "5349:5349/tcp"
-      - "49152-49200:49152-49200/udp"
+      - "40000-40048:40000-40048/udp"
     command:
       - --listening-port=3478
       - --tls-listening-port=5349
       - --realm=tuneperfect.localhost
       - --server-name=tuneperfect.localhost
       - --user=tuneperfect:tuneperfect
-      - --min-port=49152
-      - --max-port=49200
+      - --min-port=40000
+      - --max-port=40048
       - --no-cli
       - --no-multicast-peers
       - --verbose

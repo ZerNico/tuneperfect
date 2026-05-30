@@ -3,6 +3,7 @@ import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { error, warn } from "@tauri-apps/plugin-log";
 import { render } from "solid-js/web";
 
+import { initPostHog } from "./lib/posthog";
 import { forwardConsole } from "./lib/utils/console";
 import { routeTree } from "./routeTree.gen";
 
@@ -10,6 +11,9 @@ import "./styles.css";
 
 forwardConsole("warn", warn);
 forwardConsole("error", error);
+
+const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
+if (posthogToken) initPostHog(posthogToken);
 
 export const queryClient = new QueryClient({
   defaultOptions: {

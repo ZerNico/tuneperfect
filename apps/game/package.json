@@ -54,6 +54,7 @@
     "minisearch": "^7.2.0",
     "mitt": "^3.0.1",
     "p-limit": "^7.3.0",
+    "posthog-js": "^1.363.5",
     "qrcode": "^1.5.4",
     "solid-js": "^1.9.12",
     "solid-motionone": "^1.0.4",

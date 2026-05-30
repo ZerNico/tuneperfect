@@ -13,11 +13,30 @@ import { setupJobs } from "./lib/jobs";
 import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
+import { captureException, posthog } from "./lib/posthog";
 import { lobbyRouter } from "./lobby/router";
 import { signalingRouter } from "./signaling/router";
 import { updateRouter } from "./update/router";
 import { userRouter } from "./user/router";
 import { webrtcRouter } from "./webrtc/router";
+
+process.on("unhandledRejection", (reason) => {
+  logger.error(reason, "Unhandled promise rejection");
+  captureException(reason, undefined, { kind: "unhandledRejection" });
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error(error, "Uncaught exception");
+  captureException(error, undefined, { kind: "uncaughtException" });
+});
+
+const shutdown = async () => {
+  await posthog?.shutdown();
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 const router = {
   auth: authRouter,

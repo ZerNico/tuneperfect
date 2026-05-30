@@ -30,6 +30,7 @@ const ConfigSchema = v.object({
   TURN_URL: v.optional(v.string()),
   TURN_USERNAME: v.optional(v.string()),
   TURN_CREDENTIAL: v.optional(v.string()),
+  POSTHOG_TOKEN: v.optional(v.string()),
 });
 
 const result = v.safeParse(ConfigSchema, process.env);

@@ -104,6 +104,7 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.API_URL }}
           VITE_APP_URL: ${{ vars.APP_URL }}
+          VITE_POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: apps/game

@@ -30,6 +30,7 @@ secrets:
     googleClientSecret: ""
     discordClientId: ""
     discordClientSecret: ""
+    posthogToken: ""
 
 # PostgreSQL configuration
 postgresql:

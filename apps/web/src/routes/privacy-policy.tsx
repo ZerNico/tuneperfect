@@ -14,7 +14,7 @@ function PrivacyPolicyComponent() {
     <div class="mx-auto max-w-4xl px-4 py-12">
       <div class="mb-8">
         <h1 class="mb-4 text-3xl font-bold md:text-4xl">Privacy Policy</h1>
-        <p class="text-slate-300">Last updated: June 8th, 2025</p>
+        <p class="text-slate-300">Last updated: May 30th, 2026</p>
       </div>
 
       <div class="space-y-8 text-slate-200">
@@ -116,11 +116,11 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">4. Website Analytics with PostHog</h2>
+          <h2 class="mb-4 text-xl font-semibold text-white">4. Analytics with PostHog (Cookieless)</h2>
           <p>
-            We use PostHog, an open-source product analytics platform, to better understand how our users interact with
-            our website. This helps us improve our services and provide a better user experience. PostHog is configured
-            to respect your privacy and operates in a cookie-less mode.
+            We use PostHog, an open-source product analytics platform, in fully cookieless mode across our website,
+            companion app, and desktop game. PostHog Cloud EU (Frankfurt) is the data processor. We use this data to
+            understand aggregate usage patterns and improve our services.
           </p>
           <div class="mt-4 space-y-2">
             <p>
@@ -128,13 +128,26 @@ function PrivacyPolicyComponent() {
             </p>
             <ul class="list-disc space-y-2 pl-6">
               <li>
-                <strong>Pageviews and Events:</strong> We track which pages you visit and what actions you take, such as
-                starting a download. This includes information like your operating system, browser version, and screen
-                resolution.
+                <strong>Pageviews and page transitions:</strong> we count which pages are visited and how visitors move
+                between them.
               </li>
               <li>
-                <strong>Anonymized Data:</strong> We do not store your full IP address. User identification is managed
-                in-memory and does not persist across sessions, meaning we do not track you over time.
+                <strong>Aggregate event counts:</strong> we count occurrences of specific actions (such as starting a
+                download) without linking them to an individual.
+              </li>
+              <li>
+                <strong>Unhandled client-side errors:</strong> when the website or app crashes, the error message and
+                stack trace are captured so we can fix bugs.
+              </li>
+              <li>
+                <strong>No cookies, no localStorage, no device fingerprinting.</strong> We do not call PostHog's
+                identify() function, so analytics events are not linked to your user account. Autocapture and session
+                recording are disabled.
+              </li>
+              <li>
+                <strong>Server-side hash for unique counts:</strong> PostHog computes a privacy-preserving hash on its
+                servers from your IP address, user agent, and the hostname. The salt rotates daily and is deleted at day
+                end. The hash cannot be reversed to identify you. Your IP address itself is stripped before storage.
               </li>
             </ul>
           </div>
@@ -142,20 +155,52 @@ function PrivacyPolicyComponent() {
             <strong>Why do we collect this data?</strong>
           </p>
           <ul class="mt-2 list-disc space-y-2 pl-6">
-            <li>To analyze website traffic and user behavior to improve our content and offerings.</li>
-            <li>To identify which platforms (e.g., Windows, macOS, Linux) are most popular for downloads.</li>
-            <li>To monitor the performance and stability of our website.</li>
+            <li>To analyze aggregate website traffic to improve our content and offerings.</li>
+            <li>To understand which platforms (e.g., Windows, macOS, Linux) are most popular for downloads.</li>
+            <li>To monitor the performance and stability of our website and apps.</li>
+            <li>To diagnose and fix bugs that occur in the website, companion app, or desktop game.</li>
           </ul>
           <p class="mt-4">
-            The legal basis for this processing is our legitimate interest (Art. 6 para. 1 lit. f GDPR) in optimizing
-            and securing our website. For more information, please refer to{" "}
+            <strong>Legal basis:</strong> Because no information is stored on or read from your terminal device, Section
+            25(2) No. 2 TDDDG applies and consent is not required. For the processing of the resulting anonymous
+            aggregate data, we rely on our legitimate interest (Art. 6 para. 1 lit. f GDPR) in understanding usage and
+            improving our free open-source service. For more information, please refer to{" "}
             <a
               href="https://posthog.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
               class="text-blue-400 underline hover:text-blue-300"
             >
-              PostHog's Privacy Policy
+              the PostHog privacy policy
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
+          <h2 class="mb-4 text-xl font-semibold text-white">4b. Backend Error Tracking</h2>
+          <p>
+            We also use PostHog (Cloud EU) to capture unhandled errors that occur in our API server, so we can detect
+            and fix bugs in our backend.
+          </p>
+          <div class="mt-4 space-y-2">
+            <p>
+              <strong>What data do we collect?</strong>
+            </p>
+            <ul class="list-disc space-y-2 pl-6">
+              <li>Error message, stack trace, request path, and timestamp.</li>
+              <li>
+                If you are signed in at the time of the error, your account ID is attached so we can investigate the
+                specific case. No other personal data (email, password, etc.) is sent.
+              </li>
+              <li>Your IP address is not stored alongside backend errors.</li>
+            </ul>
+          </div>
+          <p class="mt-4">
+            <strong>Legal basis:</strong> Art. 6 para. 1 lit. f GDPR (legitimate interest in service reliability and
+            security). You may object to this processing at any time per Art. 21 GDPR by contacting{" "}
+            <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+              {supportEmail()}
             </a>
             .
           </p>
@@ -332,7 +377,8 @@ function PrivacyPolicyComponent() {
           <h2 class="mb-4 text-xl font-semibold text-white">12. Cookies</h2>
           <p>
             We use essential session cookies to maintain your login status and ensure the basic functionality of our
-            service. We do not use cookies for tracking or advertising purposes.
+            service. We do not use any cookies, localStorage, or similar storage for analytics, tracking, or advertising
+            purposes (see Section 4 above).
           </p>
         </section>
 
