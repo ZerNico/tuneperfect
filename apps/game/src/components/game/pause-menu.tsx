@@ -6,7 +6,9 @@ import Menu, { type MenuItem } from "../menu";
 interface PauseMenuProps {
   onClose?: () => void;
   onRestart?: () => void;
+  onNext?: () => void;
   onExit?: () => void;
+  showNext?: boolean;
   class?: string;
   gradient?: "gradient-sing" | "gradient-party";
 }
@@ -21,7 +23,7 @@ export default function PauseMenu(props: PauseMenuProps) {
     },
   });
 
-  const menuItems: MenuItem[] = [
+  const menuItems = (): MenuItem[] => [
     {
       type: "button",
       label: t("game.pause.resume"),
@@ -32,6 +34,15 @@ export default function PauseMenu(props: PauseMenuProps) {
       label: t("game.pause.restart"),
       action: () => props.onRestart?.(),
     },
+    ...(props.showNext
+      ? [
+          {
+            type: "button" as const,
+            label: t("game.pause.next"),
+            action: () => props.onNext?.(),
+          },
+        ]
+      : []),
     {
       type: "button",
       label: t("game.pause.exit"),
@@ -46,7 +57,7 @@ export default function PauseMenu(props: PauseMenuProps) {
         [props.class || ""]: true,
       }}
     >
-      <Menu items={menuItems} layer={1} gradient={props.gradient} />
+      <Menu items={menuItems()} layer={1} gradient={props.gradient} />
     </div>
   );
 }

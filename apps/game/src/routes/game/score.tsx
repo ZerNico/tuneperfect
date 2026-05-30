@@ -43,7 +43,7 @@ function ScoreComponent() {
   const results = () => roundStore.results();
   const shouldTrackHighscore = () => {
     const res = results();
-    return res.length === 1 && res[0]?.song.mode !== "medley";
+    return res.length === 1 && res[0]?.song.mode === "single" && res[0]?.song.length === "full";
   };
 
   const maxPossibleScore = () => results().length * MAX_POSSIBLE_SCORE;

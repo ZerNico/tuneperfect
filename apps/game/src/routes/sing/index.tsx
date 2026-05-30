@@ -37,6 +37,7 @@ import { countActiveFilters, DEFAULT_FILTERS } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { medleyStore } from "~/stores/medley";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
@@ -53,7 +54,6 @@ const [filters, setFilters] = createSignal<SongFilters>({ ...DEFAULT_FILTERS });
 const [openPanel, setOpenPanel] = createSignal<OpenPanel | null>(null);
 const [sort, setSort] = createSignal<SortOption>("artist");
 const [filteredSongCount, setFilteredSongCount] = createSignal(0);
-const [medleySongs, setMedleySongs] = createSignal<LocalSong[]>([]);
 
 const togglePanel = (panel: OpenPanel) => {
   setOpenPanel((current) => (current === panel ? null : panel));
@@ -122,7 +122,7 @@ function SingComponent() {
     }),
   );
 
-  const isMedley = createMemo(() => medleySongs().length > 0);
+  const isMedley = createMemo(() => medleyStore.songs().length > 0);
 
   let scrollerRef: SongScrollerRef | undefined;
   let gridRef: SongGridRef | undefined;
@@ -153,7 +153,7 @@ function SingComponent() {
 
   const startMedley = () => {
     playSound("confirm");
-    navigate({ to: "/sing/select", search: { songs: medleySongs().map((song) => song.hash), mode: "medley" } });
+    navigate({ to: "/sing/select", search: { songs: medleyStore.songs().map((song) => song.hash), mode: "medley" } });
   };
 
   const selectRandomSong = () => {
@@ -232,7 +232,7 @@ function SingComponent() {
       } else if (event.action === "add-to-medley") {
         const song = currentSong();
         if (song) {
-          setMedleySongs((prev) => [...prev, song]);
+          medleyStore.add(song);
           playSound("select");
         }
       } else if (event.action === "start-random-medley") {
@@ -357,7 +357,7 @@ function SingComponent() {
                 onAddToMedley={() => {
                   const song = currentSong();
                   if (song) {
-                    setMedleySongs((prev) => [...prev, song]);
+                    medleyStore.add(song);
                     playSound("select");
                   }
                   setOpenPanel(null);
@@ -434,9 +434,9 @@ function SingComponent() {
                 <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
                 <Show when={isMedley()}>
                   <MedleyList
-                    songs={medleySongs()}
+                    songs={medleyStore.songs()}
                     onRemove={(index) => {
-                      setMedleySongs((prev) => prev.filter((_, i) => i !== index));
+                      medleyStore.removeAt(index);
                       playSound("select");
                     }}
                     onStart={startMedley}
@@ -467,9 +467,9 @@ function SingComponent() {
                 <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
                 <Show when={isMedley()}>
                   <MedleyList
-                    songs={medleySongs()}
+                    songs={medleyStore.songs()}
                     onRemove={(index) => {
-                      setMedleySongs((prev) => prev.filter((_, i) => i !== index));
+                      medleyStore.removeAt(index);
                       playSound("select");
                     }}
                     onStart={startMedley}
