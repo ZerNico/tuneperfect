@@ -57,6 +57,7 @@ export type MenuItem =
       onInput: (value: string) => void;
       placeholder?: string;
       maxLength?: number;
+      inputType?: "text" | "password";
     }
   | {
       type: "custom";
@@ -168,6 +169,7 @@ export default function Menu(props: MenuProps) {
                     selected={actualIndex() === index()}
                     onMouseEnter={() => set(toInteractivePosition(index()))}
                     maxLength={item().maxLength}
+                    type={item().inputType}
                   />
                 )}
               </Match>

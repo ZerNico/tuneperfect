@@ -3,7 +3,7 @@ import MiniSearch from "minisearch";
 import { createRoot, createSignal } from "solid-js";
 import * as v from "valibot";
 
-import { commands, type UsdbSearchEntry } from "~/bindings";
+import { commands, events, type UsdbSearchEntry } from "~/bindings";
 import { createPersistentStore } from "~/lib/utils/store";
 
 export type { UsdbSearchEntry } from "~/bindings";
@@ -33,6 +33,8 @@ const usdbSettingsSchema = v.object({
     username: v.string(),
     password: v.string(),
   }),
+  loggedIn: v.optional(v.boolean(), false),
+  catalogCount: v.optional(v.number(), 0),
 });
 
 type UsdbSettings = v.InferOutput<typeof usdbSettingsSchema>;
@@ -43,6 +45,8 @@ const defaultUsdbSettings: UsdbSettings = {
     username: "",
     password: "",
   },
+  loggedIn: false,
+  catalogCount: 0,
 };
 
 const usdbSettingsStore = createPersistentStore({
@@ -88,7 +92,10 @@ function createUsdbStore() {
   const [searchIndex, setSearchIndex] = createSignal<MiniSearch<UsdbSearchEntry>>(
     new MiniSearch({ fields: [...SEARCH_FIELDS], idField: "songId" }),
   );
-  const [loggedIn, setLoggedIn] = createSignal(false);
+
+  const loggedIn = () => usdbSettingsStore.settings().loggedIn;
+  const setLoggedIn = (value: boolean) => usdbSettingsStore.updateSettings("loggedIn", value);
+  const [sessionActive, setSessionActive] = createSignal(false);
   const [syncing, setSyncing] = createSignal(false);
   const [syncProgress, setSyncProgress] = createSignal<{ fetched: number; total: number } | null>(null);
   const [initialized, setInitialized] = createSignal(false);
@@ -97,16 +104,23 @@ function createUsdbStore() {
   let lastMtime = 0;
   let lastSongIds: number[] = [];
 
+  const catalogCount = () => usdbSettingsStore.settings().catalogCount;
+
   const updateCatalog = (items: UsdbSearchEntry[]) => {
     setCatalog(items);
     setSearchIndex(buildSearchIndex(items));
+    usdbSettingsStore.updateSettings("catalogCount", items.length);
   };
 
   const credentials = () => usdbSettingsStore.settings().credentials;
 
   const setCredentials = (username: string, password: string) => {
     usdbSettingsStore.updateSettings("credentials", { username, password });
+    setLoggedIn(false);
+    setSessionActive(false);
   };
+
+  const initializeSettings = () => usdbSettingsStore.initialize();
 
   const initialize = async () => {
     await usdbSettingsStore.initialize();
@@ -127,13 +141,16 @@ function createUsdbStore() {
       const result = await commands.usdbLogin(username, password);
       if (result.status === "ok" && result.data) {
         setLoggedIn(true);
+        setSessionActive(true);
         return true;
       }
+      setLoggedIn(false);
     } catch (error) {
+      // Transport error — keep the persisted flag, creds may still be valid.
       console.error("USDB login failed:", error);
     }
 
-    setLoggedIn(false);
+    setSessionActive(false);
     return false;
   };
 
@@ -143,14 +160,19 @@ function createUsdbStore() {
     } catch {
       // Ignore
     }
-    setLoggedIn(false);
+    setCredentials("", "");
   };
 
   const syncCatalog = async (force = false) => {
-    if (syncing() || !loggedIn()) return;
+    if (syncing() || !sessionActive()) return;
 
     setSyncing(true);
     setSyncProgress(null);
+
+    // Rust emits this per fetched page.
+    const unlisten = await events.usdbSyncProgressEvent.listen((event) => {
+      setSyncProgress({ fetched: event.payload.fetched, total: event.payload.total });
+    });
 
     try {
       const isFullSync = force || lastMtime === 0;
@@ -195,6 +217,7 @@ function createUsdbStore() {
     } catch (error) {
       console.error("Catalog sync error:", error);
     } finally {
+      unlisten();
       setSyncing(false);
       setSyncProgress(null);
     }
@@ -211,11 +234,14 @@ function createUsdbStore() {
     credentials,
     setCredentials,
     loggedIn,
+    sessionActive,
     login,
     logout,
     catalog,
+    catalogCount,
     searchIndex,
     initialized,
+    initializeSettings,
     initialize,
     syncing,
     syncProgress,
@@ -225,4 +251,4 @@ function createUsdbStore() {
 }
 
 export const usdbStore = createRoot(() => createUsdbStore());
-export const initializeUsdbStore = () => usdbStore.initialize();
+export const initializeUsdbStore = () => usdbStore.initializeSettings();

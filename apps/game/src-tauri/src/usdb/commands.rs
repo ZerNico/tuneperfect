@@ -1,8 +1,18 @@
-use tauri::State;
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use tauri::{AppHandle, State};
+use tauri_specta::Event;
 
 use crate::error::AppError;
 use crate::usdb::models::{UsdbSearchEntry, UsdbSong, UsdbSongPreview};
 use crate::AppState;
+
+/// Emitted after each catalog page is fetched so the UI can show sync progress.
+#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
+pub struct UsdbSyncProgressEvent {
+    pub fetched: u32,
+    pub total: u32,
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -50,6 +60,7 @@ pub async fn usdb_is_logged_in(state: State<'_, AppState>) -> Result<bool, AppEr
 #[tauri::command]
 #[specta::specta]
 pub async fn usdb_fetch_catalog(
+    app_handle: AppHandle,
     state: State<'_, AppState>,
     last_mtime: i32,
     last_song_ids: Vec<u32>,
@@ -63,9 +74,11 @@ pub async fn usdb_fetch_catalog(
     };
 
     if last_mtime == 0 {
-        client.fetch_all_songs().await
+        client.fetch_all_songs(&app_handle).await
     } else {
-        client.fetch_updated_songs(last_mtime, &last_song_ids).await
+        client
+            .fetch_updated_songs(&app_handle, last_mtime, &last_song_ids)
+            .await
     }
 }
 

@@ -22,8 +22,8 @@ function OnlineLoadingComponent() {
       await usdbStore.initialize();
     }
 
-    // 2. Login if not already logged in
-    if (!usdbStore.loggedIn()) {
+    // 2. Establish a session for this process (cookies reset every launch).
+    if (!usdbStore.sessionActive()) {
       const { username, password } = usdbStore.credentials();
       if (!username || !password) {
         notify({ message: t("online.loginRequired"), intent: "error" });

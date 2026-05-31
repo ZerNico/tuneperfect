@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import * as v from "valibot";
 import IconPlus from "~icons/lucide/plus";
 
 import KeyHints from "~/components/key-hints";
@@ -17,23 +16,18 @@ import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import type { GuestUser, User } from "~/lib/types";
-import type { LocalSong } from "~/lib/ultrastar/song";
+import type { Song } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
 import { isGuestUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
 import { medleyStore } from "~/stores/medley";
 import { type PlayerSelection, type RoundLength, useRoundActions } from "~/stores/round";
+import { selectionStore } from "~/stores/selection";
 import { type Microphone, settingsStore } from "~/stores/settings";
-import { songsStore } from "~/stores/songs";
 
 export const Route = createFileRoute("/sing/select")({
   component: PlayerSelectionComponent,
-  validateSearch: v.object({
-    songs: v.array(v.string()),
-    mode: v.optional(v.picklist(["single", "medley"]), "single"),
-    length: v.optional(v.picklist(["full", "medium", "short"])),
-  }),
 });
 
 const LENGTH_OPTIONS: RoundLength[] = ["full", "medium", "short"];
@@ -64,15 +58,16 @@ function PlayerSelectionComponent() {
 
   const navigate = useNavigate();
 
-  const search = Route.useSearch();
-  const songs = createMemo(() => {
-    const songHashes = search().songs;
-    return songHashes
-      .map((hash) => songsStore.songs().find((song) => song.hash === hash))
-      .filter((song): song is NonNullable<typeof song> => song !== undefined);
+  const songs = createMemo(() => selectionStore.songs());
+
+  // No staged songs (e.g. refresh/deep-link) — go back.
+  createEffect(() => {
+    if (songs().length === 0) {
+      navigate({ to: "/sing", replace: true });
+    }
   });
 
-  const isMedley = createMemo(() => search().mode === "medley");
+  const isMedley = createMemo(() => selectionStore.mode() === "medley");
 
   const selectedLength = () => (isMedley() ? medleyLength() : singleLength());
   const setSelectedLength = (length: RoundLength) => {
@@ -82,16 +77,6 @@ function PlayerSelectionComponent() {
       setSingleLength(length);
     }
   };
-
-  // Apply an explicit `length` from the URL once (overrides the persisted choice)
-  const initialSearch = search();
-  if (initialSearch.length) {
-    if (initialSearch.mode === "medley") {
-      setMedleyLength(initialSearch.length);
-    } else {
-      setSingleLength(initialSearch.length);
-    }
-  }
 
   const initializeSlotSelections = () => {
     const micCount = settingsStore.microphones().length;
@@ -277,7 +262,7 @@ function PlayerSelectionComponent() {
 
 interface PlayerSlotsRowProps {
   selected: boolean;
-  song: LocalSong | null | undefined;
+  song: Song | null | undefined;
   playerSlotLoop: ReturnType<typeof createLoop>;
   getSlotSelection: (index: number) => Selection | null;
   setSlotSelection: (index: number, selection: Selection | null) => void;
@@ -316,7 +301,7 @@ function PlayerSlotsRow(props: PlayerSlotsRowProps) {
 
 interface PlayerSlotProps {
   microphone: Microphone;
-  song: LocalSong | null | undefined;
+  song: Song | null | undefined;
   selection: Selection | null;
   onSelect: (selection: Selection | null) => void;
   selected?: boolean;
@@ -409,7 +394,7 @@ interface SelectPlayerPopupProps {
   onClose: () => void;
   onSelect: (selection: Selection) => void;
   onRemove: () => void;
-  song: LocalSong | null;
+  song: Song | null;
 }
 
 function SelectPlayerPopup(props: SelectPlayerPopupProps) {

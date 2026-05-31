@@ -64,6 +64,7 @@ pub fn run() {
         .events(collect_events![
             songs::ProgressEvent,
             songs::StartParsingEvent,
+            usdb::commands::UsdbSyncProgressEvent,
             webrtc::host::IceCandidateEvent,
             webrtc::host::ConnectionStateEvent,
             webrtc::host::ChannelOpenEvent,

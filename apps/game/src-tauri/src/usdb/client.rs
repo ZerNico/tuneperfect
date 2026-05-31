@@ -2,15 +2,20 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use reqwest::{cookie::Jar, Client};
+use tauri::AppHandle;
+use tauri_specta::Event;
 
 use crate::error::AppError;
 use crate::ultrastar::parser::parse_ultrastar_txt;
+use crate::usdb::commands::UsdbSyncProgressEvent;
 use crate::usdb::models::{UsdbSearchEntry, UsdbSong, UsdbSongPreview};
 use crate::usdb::parser;
 
 const BASE_URL: &str = "https://usdb.animux.de";
 const SONGS_PER_PAGE: u32 = 100;
 const MAX_SONG_ID: u32 = 100_000;
+/// Progress-bar estimate; the real total is unknown until pagination finishes.
+const ESTIMATED_CATALOG_SIZE: u32 = 27_000;
 
 pub struct UsdbClient {
     client: Client,
@@ -118,7 +123,10 @@ impl UsdbClient {
     }
 
     /// Paginates through all USDB songs (100 per page, ordered by ID).
-    pub async fn fetch_all_songs(&self) -> Result<Vec<UsdbSearchEntry>, AppError> {
+    pub async fn fetch_all_songs(
+        &self,
+        app_handle: &AppHandle,
+    ) -> Result<Vec<UsdbSearchEntry>, AppError> {
         self.ensure_logged_in()?;
 
         let url = format!("{}/index.php?link=list", BASE_URL);
@@ -163,6 +171,13 @@ impl UsdbClient {
                 all_songs.len()
             );
 
+            let fetched = all_songs.len() as u32;
+            let _ = UsdbSyncProgressEvent {
+                fetched,
+                total: ESTIMATED_CATALOG_SIZE.max(fetched),
+            }
+            .emit(app_handle);
+
             if batch_len < SONGS_PER_PAGE as usize {
                 break;
             }
@@ -174,6 +189,7 @@ impl UsdbClient {
     /// Fetches songs changed since `last_mtime` (ordered by lastchange DESC, stops at watermark).
     pub async fn fetch_updated_songs(
         &self,
+        app_handle: &AppHandle,
         last_mtime: i32,
         last_song_ids: &[u32],
     ) -> Result<Vec<UsdbSearchEntry>, AppError> {
@@ -237,6 +253,14 @@ impl UsdbClient {
                 batch_len,
                 updated_songs.len()
             );
+
+            // Total unknown for incremental syncs, so keep the bar full.
+            let fetched = updated_songs.len() as u32;
+            let _ = UsdbSyncProgressEvent {
+                fetched,
+                total: fetched.max(1),
+            }
+            .emit(app_handle);
 
             if reached_watermark || batch_len < SONGS_PER_PAGE as usize {
                 break;

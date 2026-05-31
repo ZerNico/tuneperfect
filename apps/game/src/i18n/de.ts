@@ -127,7 +127,7 @@ const de = {
     },
   },
   online: {
-    title: "Auf USDB suchen",
+    title: "USDB",
     search: "Lieder suchen...",
     noResults: "Keine Lieder gefunden",
     loginRequired: "Melde dich in den Einstellungen bei USDB an, um nach Liedern zu suchen.",
@@ -143,6 +143,7 @@ const de = {
     goldenNotes: "Goldene Noten",
     noYoutubeVideo: "Kein YouTube-Video für dieses Lied verfügbar.",
     fetchingDetails: "Songdetails werden geladen...",
+    loadFailed: "Songdaten konnten nicht geladen werden",
     syncing: "USDB-Katalog wird synchronisiert...",
     syncProgress: "{{fetched}} / {{total}}",
     songsCached: "{{count}} Lieder",

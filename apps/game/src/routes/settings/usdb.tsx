@@ -68,6 +68,7 @@ function UsdbSettingsComponent() {
         value: () => usdbStore.credentials().password,
         onInput: (value) => usdbStore.setCredentials(usdbStore.credentials().username, value),
         placeholder: t("settings.sections.usdb.password"),
+        inputType: "password",
       },
     ];
 
@@ -85,10 +86,10 @@ function UsdbSettingsComponent() {
       });
     }
 
-    if (usdbStore.catalog().length > 0) {
+    if (usdbStore.catalogCount() > 0) {
       items.push({
         type: "button",
-        label: `${t("settings.sections.usdb.clearIndex")} (${usdbStore.catalog().length})`,
+        label: `${t("settings.sections.usdb.clearIndex")} (${usdbStore.catalogCount()})`,
         action: async () => {
           await usdbStore.clearCatalog();
           playSound("confirm");
@@ -118,8 +119,8 @@ function UsdbSettingsComponent() {
             >
               <div class="h-2 w-2 rounded-full bg-green-400" />
               <span class="opacity-60">{t("settings.sections.usdb.loggedInAs")}</span>
-              <Show when={usdbStore.catalog().length > 0}>
-                <span class="opacity-40">— {t("online.songsCached", { count: usdbStore.catalog().length })}</span>
+              <Show when={usdbStore.catalogCount() > 0}>
+                <span class="opacity-40">— {t("online.songsCached", { count: usdbStore.catalogCount() })}</span>
               </Show>
             </Show>
           </div>

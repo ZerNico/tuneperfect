@@ -21,6 +21,7 @@ interface InputProps {
   gradient?: string;
   onMouseEnter?: () => void;
   maxLength?: number;
+  type?: "text" | "password";
 }
 
 export default function Input(props: InputProps) {
@@ -111,7 +112,7 @@ export default function Input(props: InputProps) {
                 ref={mergeRefs(props.ref, (el) => {
                   inputRef = el;
                 })}
-                type="text"
+                type={props.type || "text"}
                 value={props.value || ""}
                 placeholder={props.placeholder}
                 maxLength={props.maxLength}

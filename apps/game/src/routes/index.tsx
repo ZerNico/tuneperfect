@@ -15,11 +15,17 @@ import { t } from "~/lib/i18n";
 import { initializeLobbySettings } from "~/stores/lobby";
 import { initializeLocalSettings } from "~/stores/local";
 import { initializeSettings } from "~/stores/settings";
+import { initializeUsdbStore } from "~/stores/usdb";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
   loader: async () => {
-    await Promise.all([initializeSettings(), initializeLocalSettings(), initializeLobbySettings()]);
+    await Promise.all([
+      initializeSettings(),
+      initializeLocalSettings(),
+      initializeLobbySettings(),
+      initializeUsdbStore(),
+    ]);
   },
 });
 

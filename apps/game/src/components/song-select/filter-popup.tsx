@@ -6,17 +6,18 @@ import IconTriangleRight from "~icons/sing/triangle-right";
 
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
-import { DEFAULT_FILTERS, type SongFilters, type SongTypeFilter } from "~/hooks/use-song-filter";
+import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import type { LocalSong } from "~/lib/ultrastar/song";
 import { formatDecade, getDecades, getEditions, getGenres, getLanguages } from "~/lib/utils/song-facets";
 
 interface FilterPopupProps {
-  songs: LocalSong[];
+  songs: SongLike[];
   filters: SongFilters;
   onChange: (filters: SongFilters) => void;
   onClose: () => void;
+  /** Whether to show the solo/duet type filter. Defaults to true (local library). */
+  showTypeFilter?: boolean;
 }
 
 type RowKind = "type" | "decade" | "genre" | "language" | "edition" | "clear";
@@ -87,16 +88,18 @@ export function FilterPopup(props: FilterPopupProps) {
 
   const rows = createMemo<RowDescriptor[]>(() => {
     const f = props.filters;
-    const list: RowDescriptor[] = [
-      {
+    const list: RowDescriptor[] = [];
+
+    if (props.showTypeFilter !== false) {
+      list.push({
         kind: "type",
         label: t("sing.filter.type"),
         valueLabel: typeLabel(f.type),
         active: f.type !== "all",
         onLeft: () => cycleType("left"),
         onRight: () => cycleType("right"),
-      },
-    ];
+      });
+    }
 
     if (facets().decades.length > 0) {
       list.push({

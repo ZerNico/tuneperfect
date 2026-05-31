@@ -1,6 +1,5 @@
-import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconGlobe from "~icons/lucide/globe";
 import IconF1Key from "~icons/sing/f1-key";
 import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconShiftKey from "~icons/sing/shift-key";
@@ -9,6 +8,7 @@ import { createLoop } from "~/hooks/loop";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
+import { usdbStore } from "~/stores/usdb";
 
 interface MenuPopupProps {
   onClose: () => void;
@@ -18,47 +18,53 @@ interface MenuPopupProps {
 }
 
 export function MenuPopup(props: MenuPopupProps) {
-  const options = [
-    {
-      label: (
-        <div class="flex w-full items-center justify-between">
-          <span>{t("sing.menu.addToMedley")}</span>
-          <div class="flex items-center gap-1">
-            <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRT class="text-sm" />}>
-              <IconF1Key class="text-sm" />
-            </Show>
+  const options = createMemo(() => {
+    const items = [
+      {
+        label: (
+          <div class="flex w-full items-center justify-between">
+            <span>{t("sing.menu.addToMedley")}</span>
+            <div class="flex items-center gap-1">
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRT class="text-sm" />}>
+                <IconF1Key class="text-sm" />
+              </Show>
+            </div>
           </div>
-        </div>
-      ),
-      action: () => props.onAddToMedley(),
-    },
-    {
-      label: (
-        <div class="flex w-full items-center justify-between">
-          <span>{t("sing.menu.startRandomMedley")}</span>
-          <div class="flex items-center gap-1">
-            <Show when={keyMode() === "keyboard"}>
-              <IconShiftKey class="text-sm" />
-              <span class="text-xs font-bold">+</span>
-              <span class="text-sm font-bold">D</span>
-            </Show>
+        ),
+        action: () => props.onAddToMedley(),
+      },
+      {
+        label: (
+          <div class="flex w-full items-center justify-between">
+            <span>{t("sing.menu.startRandomMedley")}</span>
+            <div class="flex items-center gap-1">
+              <Show when={keyMode() === "keyboard"}>
+                <IconShiftKey class="text-sm" />
+                <span class="text-xs font-bold">+</span>
+                <span class="text-sm font-bold">D</span>
+              </Show>
+            </div>
           </div>
-        </div>
-      ),
-      action: () => props.onStartRandomMedley(),
-    },
-    {
-      label: (
-        <div class="flex w-full items-center justify-between">
-          <span>{t("sing.menu.searchUsdb")}</span>
-          <IconGlobe class="text-sm" />
-        </div>
-      ),
-      action: () => props.onSearchUsdb(),
-    },
-  ];
+        ),
+        action: () => props.onStartRandomMedley(),
+      },
+    ];
 
-  const { position, increment, decrement, set } = createLoop(() => options.length);
+    if (usdbStore.loggedIn()) {
+      items.push({
+        label: (
+          <div class="flex w-full items-center justify-between">
+            <span>{t("sing.menu.searchUsdb")}</span>
+          </div>
+        ),
+        action: () => props.onSearchUsdb(),
+      });
+    }
+
+    return items;
+  });
+
+  const { position, increment, decrement, set } = createLoop(() => options().length);
   let popupRef!: HTMLDivElement;
 
   createEffect(() => {
@@ -95,7 +101,7 @@ export function MenuPopup(props: MenuPopupProps) {
     onKeyup(event) {
       if (event.action === "confirm") {
         setPressed(false);
-        options[position()]?.action();
+        options()[position()]?.action();
         props.onClose();
         playSound("confirm");
       }
@@ -111,7 +117,7 @@ export function MenuPopup(props: MenuPopupProps) {
         class="w-70 rounded-lg bg-black/30 p-2 shadow-xl backdrop-blur-md"
       >
         <div class="flex flex-col gap-1">
-          <For each={options}>
+          <For each={options()}>
             {(option, index) => {
               const isSelected = () => position() === index();
               const isActive = () => isSelected() && pressed();

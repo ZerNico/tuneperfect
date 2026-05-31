@@ -127,7 +127,7 @@ const en = {
     },
   },
   online: {
-    title: "Search on USDB",
+    title: "USDB",
     search: "Search songs...",
     noResults: "No songs found",
     loginRequired: "Log in to USDB in Settings to search for songs.",
@@ -143,6 +143,7 @@ const en = {
     goldenNotes: "Golden Notes",
     noYoutubeVideo: "No YouTube video available for this song.",
     fetchingDetails: "Loading song details...",
+    loadFailed: "Failed to load song data",
     syncing: "Syncing USDB catalog...",
     syncProgress: "{{fetched}} / {{total}}",
     songsCached: "{{count}} songs",

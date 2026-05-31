@@ -8,6 +8,8 @@ import { formatDecade } from "~/lib/utils/song-facets";
 interface FilterChipsProps {
   filters: SongFilters;
   onChange: (filters: SongFilters) => void;
+  /** Whether to show the solo/duet type chip. Defaults to true (local library). */
+  showTypeFilter?: boolean;
 }
 
 const typeLabel = (value: SongTypeFilter): string => {
@@ -22,12 +24,14 @@ interface ChipDef {
   reset: (f: SongFilters) => SongFilters;
 }
 
+const TYPE_CHIP: ChipDef = {
+  isActive: (f) => f.type !== "all",
+  label: (f) => typeLabel(f.type),
+  reset: (f) => ({ ...f, type: "all" }),
+};
+
 const CHIP_DEFS: ChipDef[] = [
-  {
-    isActive: (f) => f.type !== "all",
-    label: (f) => typeLabel(f.type),
-    reset: (f) => ({ ...f, type: "all" }),
-  },
+  TYPE_CHIP,
   {
     isActive: (f) => f.decade !== null,
     label: (f) => (f.decade === null ? "" : formatDecade(f.decade)),
@@ -51,7 +55,12 @@ const CHIP_DEFS: ChipDef[] = [
 ];
 
 export function FilterChips(props: FilterChipsProps) {
-  const activeChips = createMemo(() => CHIP_DEFS.filter((def) => def.isActive(props.filters)));
+  const activeChips = createMemo(() =>
+    CHIP_DEFS.filter((def) => {
+      if (def === TYPE_CHIP && props.showTypeFilter === false) return false;
+      return def.isActive(props.filters);
+    }),
+  );
 
   return (
     <div class="flex items-center gap-1.5">

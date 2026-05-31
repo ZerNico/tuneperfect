@@ -38,6 +38,7 @@ import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
 import { medleyStore } from "~/stores/medley";
+import { selectionStore } from "~/stores/selection";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
@@ -148,12 +149,14 @@ function SingComponent() {
 
   const startRegular = (song: LocalSong) => {
     playSound("confirm");
-    navigate({ to: "/sing/select", search: { songs: [song.hash] } });
+    selectionStore.set([song], "single");
+    navigate({ to: "/sing/select" });
   };
 
   const startMedley = () => {
     playSound("confirm");
-    navigate({ to: "/sing/select", search: { songs: medleyStore.songs().map((song) => song.hash), mode: "medley" } });
+    selectionStore.set(medleyStore.songs(), "medley");
+    navigate({ to: "/sing/select" });
   };
 
   const selectRandomSong = () => {
@@ -197,7 +200,8 @@ function SingComponent() {
     }
 
     playSound("confirm");
-    navigate({ to: "/sing/select", search: { songs: selectedSongs.map((song) => song.hash), mode: "medley" } });
+    selectionStore.set(selectedSongs, "medley");
+    navigate({ to: "/sing/select" });
   };
 
   const moveSorting = (direction: "left" | "right") => {

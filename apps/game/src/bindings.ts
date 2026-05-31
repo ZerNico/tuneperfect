@@ -164,7 +164,8 @@ channelOpenEvent: ChannelOpenEvent,
 connectionStateEvent: ConnectionStateEvent,
 iceCandidateEvent: IceCandidateEvent,
 progressEvent: ProgressEvent,
-startParsingEvent: StartParsingEvent
+startParsingEvent: StartParsingEvent,
+usdbSyncProgressEvent: UsdbSyncProgressEvent
 }>({
 channelCloseEvent: "channel-close-event",
 channelMessageEvent: "channel-message-event",
@@ -172,7 +173,8 @@ channelOpenEvent: "channel-open-event",
 connectionStateEvent: "connection-state-event",
 iceCandidateEvent: "ice-candidate-event",
 progressEvent: "progress-event",
-startParsingEvent: "start-parsing-event"
+startParsingEvent: "start-parsing-event",
+usdbSyncProgressEvent: "usdb-sync-progress-event"
 })
 
 /** user-defined constants **/
@@ -230,6 +232,10 @@ videoYoutubeId: string | null; coverUrl: string | null }
  * Preview info for the search UI (YouTube ID, BPM, etc. — no note data).
  */
 export type UsdbSongPreview = { song: UsdbSearchEntry; youtubeId: string | null; videoUrl: string | null; bpm: number | null; gap: number | null }
+/**
+ * Emitted after each catalog page is fetched so the UI can show sync progress.
+ */
+export type UsdbSyncProgressEvent = { fetched: number; total: number }
 export type Voice = { phrases: Phrase[] }
 
 /** tauri-specta globals **/

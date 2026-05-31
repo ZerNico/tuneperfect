@@ -53,7 +53,7 @@ const includesIgnoreCase = (haystack: string | string[] | null | undefined, need
 };
 
 /** Common shape for any song-like object that can be filtered/sorted. */
-interface SongLike {
+export interface SongLike {
   artist: string;
   title: string;
   year?: number | null;

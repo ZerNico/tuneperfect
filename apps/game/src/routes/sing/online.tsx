@@ -2,23 +2,35 @@ import { throttle } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
+import IconDices from "~icons/lucide/dices";
 import IconGlobe from "~icons/lucide/globe";
 import IconMusic from "~icons/lucide/music";
+import IconF5Key from "~icons/sing/f5-key";
+import IconGamepadSelect from "~icons/sing/gamepad-select";
 
 import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import { FilterButton } from "~/components/song-select/filter-button";
+import { FilterChips } from "~/components/song-select/filter-chips";
+import { FilterPopup } from "~/components/song-select/filter-popup";
 import { SearchButton } from "~/components/song-select/search-button";
 import { SearchPopup } from "~/components/song-select/search-popup";
 import { SortSelect } from "~/components/song-select/sort-select";
 import TitleBar from "~/components/title-bar";
-import { useNavigation } from "~/hooks/navigation";
-import { DEFAULT_FILTERS, type SearchFieldScope, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
+import { keyMode, useNavigation } from "~/hooks/navigation";
+import {
+  countActiveFilters,
+  DEFAULT_FILTERS,
+  type SearchFieldScope,
+  type SongFilters,
+  type SortOption,
+  useSongFilter,
+} from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
-import { useRoundActions } from "~/stores/round";
-import { settingsStore } from "~/stores/settings";
+import { selectionStore } from "~/stores/selection";
 import { type UsdbSearchEntry, usdbStore } from "~/stores/usdb";
 
 export const Route = createFileRoute("/sing/online")({
@@ -34,25 +46,28 @@ const ONLINE_SORT_OPTIONS: SortOption[] = ["views", "artist", "title", "year"];
 
 function OnlineSearchComponent() {
   const navigate = useNavigate();
-  const roundActions = useRoundActions();
 
   const [searchQuery, setSearchQuery] = createSignal("");
   const [searchFieldScope, setSearchFieldScope] = createSignal<SearchFieldScope>("all");
+  const [filters, setFilters] = createSignal<SongFilters>({ ...DEFAULT_FILTERS });
   const [sort, setSort] = createSignal<SortOption>("views");
-  const [searchPopupOpen, setSearchPopupOpen] = createSignal(false);
+  const [openPanel, setOpenPanel] = createSignal<"search" | "filter" | null>(null);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [startingGame, setStartingGame] = createSignal(false);
   const [rowHeight, setRowHeight] = createSignal(120);
 
   let containerRef!: HTMLDivElement;
 
+  const togglePanel = (panel: "search" | "filter") => {
+    setOpenPanel((current) => (current === panel ? null : panel));
+  };
+
   const { filteredItems } = useSongFilter<UsdbSearchEntry>({
     items: () => usdbStore.catalog(),
     sortOption: sort,
     searchQuery,
     searchFieldScope,
-    // Online search has no library-filter UI yet; only text/scope search applies.
-    filters: () => DEFAULT_FILTERS,
+    filters,
     idField: "songId",
     searchIndex: () => usdbStore.searchIndex(),
   });
@@ -208,19 +223,31 @@ function OnlineSearchComponent() {
       playSound("confirm");
       return;
     }
+
+    if (countActiveFilters(filters()) > 0) {
+      setFilters({ ...DEFAULT_FILTERS });
+      playSound("confirm");
+      return;
+    }
+
     playSound("confirm");
     navigate({ to: "/sing" });
+  };
+
+  const selectRandomSong = () => {
+    const items = filteredItems();
+    if (items.length === 0) return;
+
+    const randomIndex = Math.floor(Math.random() * items.length);
+    setSelectedIndex(randomIndex);
+    // Jump instantly instead of smooth-scrolling across a huge list.
+    scrollToIndex(randomIndex, false);
+    playSound("select");
   };
 
   const onPlay = async () => {
     const song = selectedSong();
     if (!song || startingGame()) return;
-
-    const microphones = settingsStore.microphones();
-    if (microphones.length === 0) {
-      notify({ message: "No microphones configured", intent: "error" });
-      return;
-    }
 
     setStartingGame(true);
     playSound("confirm");
@@ -229,38 +256,16 @@ function OnlineSearchComponent() {
       const result = await commands.usdbGetSong(song.songId);
 
       if (result.status !== "ok") {
-        notify({ message: "Failed to load song data", intent: "error" });
+        notify({ message: t("online.loadFailed"), intent: "error" });
         setStartingGame(false);
         return;
       }
 
-      const usdbSong = result.data;
-
-      const firstMic = microphones[0];
-      if (!firstMic) {
-        setStartingGame(false);
-        return;
-      }
-
-      roundActions.startRound({
-        songs: [
-          {
-            song: usdbSong,
-            players: [
-              {
-                player: { id: "guest", username: "Guest", type: "guest" },
-                voice: 0,
-                microphone: firstMic,
-              },
-            ],
-            mode: "single",
-            length: "full",
-          },
-        ],
-      });
+      selectionStore.set([result.data], "single");
+      navigate({ to: "/sing/select" });
     } catch (error) {
-      console.error("Failed to start online song:", error);
-      notify({ message: "Failed to start song", intent: "error" });
+      console.error("Failed to load online song:", error);
+      notify({ message: t("online.loadFailed"), intent: "error" });
       setStartingGame(false);
     }
   };
@@ -288,8 +293,13 @@ function OnlineSearchComponent() {
       } else if (event.action === "down") {
         gridNavigate("down");
       } else if (event.action === "search") {
-        setSearchPopupOpen(!searchPopupOpen());
+        togglePanel("search");
         playSound("select");
+      } else if (event.action === "filter") {
+        togglePanel("filter");
+        playSound("select");
+      } else if (event.action === "random") {
+        selectRandomSong();
       } else if (event.action === "sort-left") {
         moveSorting("left");
         playSound("select");
@@ -322,18 +332,34 @@ function OnlineSearchComponent() {
               <SearchButton
                 searchQuery={searchQuery()}
                 searchFieldScope={searchFieldScope()}
-                onClick={() => setSearchPopupOpen(true)}
+                onClick={() => setOpenPanel("search")}
               />
 
-              <Show when={searchPopupOpen()}>
+              <Show when={openPanel() === "search"}>
                 <SearchPopup
                   searchQuery={searchQuery()}
                   searchFieldScope={searchFieldScope()}
                   onSearchQuery={setSearchQuery}
                   onSearchFieldScope={setSearchFieldScope}
-                  onClose={() => setSearchPopupOpen(false)}
+                  onClose={() => setOpenPanel(null)}
                 />
               </Show>
+
+              <div class="relative">
+                <FilterButton onClick={() => setOpenPanel("filter")} />
+
+                <Show when={openPanel() === "filter"}>
+                  <FilterPopup
+                    songs={usdbStore.catalog()}
+                    filters={filters()}
+                    onChange={setFilters}
+                    onClose={() => setOpenPanel(null)}
+                    showTypeFilter={false}
+                  />
+                </Show>
+              </div>
+
+              <FilterChips filters={filters()} onChange={setFilters} showTypeFilter={false} />
 
               <div class="flex items-center gap-2 text-sm opacity-80">
                 <IconMusic />
@@ -356,7 +382,21 @@ function OnlineSearchComponent() {
       footer={
         <div class="flex justify-between">
           <KeyHints hints={["back", "navigate", "confirm"]} />
-          <SortSelect selected={sort()} onSelect={setSort} options={ONLINE_SORT_OPTIONS} />
+          <div class="flex items-center gap-12">
+            <div class="flex items-center gap-2">
+              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadSelect class="text-sm" />}>
+                <IconF5Key class="text-sm" />
+              </Show>
+              <button
+                type="button"
+                class="cursor-pointer text-2xl transition-all hover:opacity-75 active:scale-95"
+                onClick={selectRandomSong}
+              >
+                <IconDices />
+              </button>
+            </div>
+            <SortSelect selected={sort()} onSelect={setSort} options={ONLINE_SORT_OPTIONS} />
+          </div>
         </div>
       }
     >
