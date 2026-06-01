@@ -20,6 +20,11 @@ function PartyComponent() {
       label: t("party.versus.title"),
       action: () => navigate({ to: "/party/versus/settings" }),
     },
+    {
+      type: "button",
+      label: t("party.ticTacToe.title"),
+      action: () => navigate({ to: "/party/tic-tac-toe/settings" }),
+    },
   ];
   return (
     <Layout

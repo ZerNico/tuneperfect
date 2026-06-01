@@ -36,10 +36,12 @@ import { Route as SettingsMicrophonesIndexRouteImport } from './routes/settings/
 import { Route as SettingsLocalPlayersIndexRouteImport } from './routes/settings/local-players/index'
 import { Route as SettingsGeneralIndexRouteImport } from './routes/settings/general/index'
 import { Route as PartyVersusIndexRouteImport } from './routes/party/versus/index'
+import { Route as PartyTicTacToeIndexRouteImport } from './routes/party/tic-tac-toe/index'
 import { Route as SettingsSongsPathRouteImport } from './routes/settings/songs/$path'
 import { Route as SettingsMicrophonesIdRouteImport } from './routes/settings/microphones/$id'
 import { Route as SettingsLocalPlayersIdRouteImport } from './routes/settings/local-players/$id'
 import { Route as PartyVersusSettingsRouteImport } from './routes/party/versus/settings'
+import { Route as PartyTicTacToeSettingsRouteImport } from './routes/party/tic-tac-toe/settings'
 import { Route as LobbyLocalIdRouteImport } from './routes/lobby/local/$id'
 
 const QuitRoute = QuitRouteImport.update({
@@ -179,6 +181,11 @@ const PartyVersusIndexRoute = PartyVersusIndexRouteImport.update({
   path: '/party/versus/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartyTicTacToeIndexRoute = PartyTicTacToeIndexRouteImport.update({
+  id: '/party/tic-tac-toe/',
+  path: '/party/tic-tac-toe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsSongsPathRoute = SettingsSongsPathRouteImport.update({
   id: '/settings/songs/$path',
   path: '/settings/songs/$path',
@@ -197,6 +204,11 @@ const SettingsLocalPlayersIdRoute = SettingsLocalPlayersIdRouteImport.update({
 const PartyVersusSettingsRoute = PartyVersusSettingsRouteImport.update({
   id: '/party/versus/settings',
   path: '/party/versus/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyTicTacToeSettingsRoute = PartyTicTacToeSettingsRouteImport.update({
+  id: '/party/tic-tac-toe/settings',
+  path: '/party/tic-tac-toe/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LobbyLocalIdRoute = LobbyLocalIdRouteImport.update({
@@ -228,10 +240,12 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof SettingsIndexRoute
   '/sing/': typeof SingIndexRoute
   '/lobby/local/$id': typeof LobbyLocalIdRoute
+  '/party/tic-tac-toe/settings': typeof PartyTicTacToeSettingsRoute
   '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/local-players/$id': typeof SettingsLocalPlayersIdRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/tic-tac-toe/': typeof PartyTicTacToeIndexRoute
   '/party/versus/': typeof PartyVersusIndexRoute
   '/settings/general/': typeof SettingsGeneralIndexRoute
   '/settings/local-players/': typeof SettingsLocalPlayersIndexRoute
@@ -262,10 +276,12 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsIndexRoute
   '/sing': typeof SingIndexRoute
   '/lobby/local/$id': typeof LobbyLocalIdRoute
+  '/party/tic-tac-toe/settings': typeof PartyTicTacToeSettingsRoute
   '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/local-players/$id': typeof SettingsLocalPlayersIdRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/tic-tac-toe': typeof PartyTicTacToeIndexRoute
   '/party/versus': typeof PartyVersusIndexRoute
   '/settings/general': typeof SettingsGeneralIndexRoute
   '/settings/local-players': typeof SettingsLocalPlayersIndexRoute
@@ -297,10 +313,12 @@ export interface FileRoutesById {
   '/settings/': typeof SettingsIndexRoute
   '/sing/': typeof SingIndexRoute
   '/lobby/local/$id': typeof LobbyLocalIdRoute
+  '/party/tic-tac-toe/settings': typeof PartyTicTacToeSettingsRoute
   '/party/versus/settings': typeof PartyVersusSettingsRoute
   '/settings/local-players/$id': typeof SettingsLocalPlayersIdRoute
   '/settings/microphones/$id': typeof SettingsMicrophonesIdRoute
   '/settings/songs/$path': typeof SettingsSongsPathRoute
+  '/party/tic-tac-toe/': typeof PartyTicTacToeIndexRoute
   '/party/versus/': typeof PartyVersusIndexRoute
   '/settings/general/': typeof SettingsGeneralIndexRoute
   '/settings/local-players/': typeof SettingsLocalPlayersIndexRoute
@@ -333,10 +351,12 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/sing/'
     | '/lobby/local/$id'
+    | '/party/tic-tac-toe/settings'
     | '/party/versus/settings'
     | '/settings/local-players/$id'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/tic-tac-toe/'
     | '/party/versus/'
     | '/settings/general/'
     | '/settings/local-players/'
@@ -367,10 +387,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sing'
     | '/lobby/local/$id'
+    | '/party/tic-tac-toe/settings'
     | '/party/versus/settings'
     | '/settings/local-players/$id'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/tic-tac-toe'
     | '/party/versus'
     | '/settings/general'
     | '/settings/local-players'
@@ -401,10 +423,12 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/sing/'
     | '/lobby/local/$id'
+    | '/party/tic-tac-toe/settings'
     | '/party/versus/settings'
     | '/settings/local-players/$id'
     | '/settings/microphones/$id'
     | '/settings/songs/$path'
+    | '/party/tic-tac-toe/'
     | '/party/versus/'
     | '/settings/general/'
     | '/settings/local-players/'
@@ -436,10 +460,12 @@ export interface RootRouteChildren {
   SettingsIndexRoute: typeof SettingsIndexRoute
   SingIndexRoute: typeof SingIndexRoute
   LobbyLocalIdRoute: typeof LobbyLocalIdRoute
+  PartyTicTacToeSettingsRoute: typeof PartyTicTacToeSettingsRoute
   PartyVersusSettingsRoute: typeof PartyVersusSettingsRoute
   SettingsLocalPlayersIdRoute: typeof SettingsLocalPlayersIdRoute
   SettingsMicrophonesIdRoute: typeof SettingsMicrophonesIdRoute
   SettingsSongsPathRoute: typeof SettingsSongsPathRoute
+  PartyTicTacToeIndexRoute: typeof PartyTicTacToeIndexRoute
   PartyVersusIndexRoute: typeof PartyVersusIndexRoute
   SettingsGeneralIndexRoute: typeof SettingsGeneralIndexRoute
   SettingsLocalPlayersIndexRoute: typeof SettingsLocalPlayersIndexRoute
@@ -639,6 +665,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof PartyVersusIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/party/tic-tac-toe/': {
+      id: '/party/tic-tac-toe/'
+      path: '/party/tic-tac-toe'
+      fullPath: '/party/tic-tac-toe/'
+      preLoaderRoute: typeof PartyTicTacToeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/songs/$path': {
       id: '/settings/songs/$path'
       path: '/settings/songs/$path'
@@ -665,6 +698,13 @@ declare module '@tanstack/solid-router' {
       path: '/party/versus/settings'
       fullPath: '/party/versus/settings'
       preLoaderRoute: typeof PartyVersusSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/party/tic-tac-toe/settings': {
+      id: '/party/tic-tac-toe/settings'
+      path: '/party/tic-tac-toe/settings'
+      fullPath: '/party/tic-tac-toe/settings'
+      preLoaderRoute: typeof PartyTicTacToeSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lobby/local/$id': {
@@ -700,10 +740,12 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsIndexRoute: SettingsIndexRoute,
   SingIndexRoute: SingIndexRoute,
   LobbyLocalIdRoute: LobbyLocalIdRoute,
+  PartyTicTacToeSettingsRoute: PartyTicTacToeSettingsRoute,
   PartyVersusSettingsRoute: PartyVersusSettingsRoute,
   SettingsLocalPlayersIdRoute: SettingsLocalPlayersIdRoute,
   SettingsMicrophonesIdRoute: SettingsMicrophonesIdRoute,
   SettingsSongsPathRoute: SettingsSongsPathRoute,
+  PartyTicTacToeIndexRoute: PartyTicTacToeIndexRoute,
   PartyVersusIndexRoute: PartyVersusIndexRoute,
   SettingsGeneralIndexRoute: SettingsGeneralIndexRoute,
   SettingsLocalPlayersIndexRoute: SettingsLocalPlayersIndexRoute,

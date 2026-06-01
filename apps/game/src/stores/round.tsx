@@ -116,10 +116,22 @@ export function useRoundActions() {
     navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
   };
 
+  // The current song could not be played (e.g. unsupported media). Record an empty-score
+  // result so party modes can detect the failure (and e.g. swap the song) instead of
+  // navigating back with a stale or missing result, then return to the party screen.
+  const failRound = () => {
+    const song = roundStore.settings()?.songs[0];
+    if (song) {
+      roundStore.setResults((prev) => [...prev, { scores: [], song }]);
+    }
+    navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
+  };
+
   return {
     startRound,
     endRound,
     endMedley,
     returnRound,
+    failRound,
   };
 }

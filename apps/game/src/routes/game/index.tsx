@@ -140,7 +140,7 @@ function GameComponent() {
 
   const handleError = () => {
     notify({ message: "Failed to play song", intent: "error" });
-    roundActions.returnRound();
+    roundActions.failRound();
   };
 
   const players = createMemo(() => roundSong()?.players || []);
