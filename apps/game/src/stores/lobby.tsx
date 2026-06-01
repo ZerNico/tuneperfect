@@ -1,4 +1,3 @@
-import { createSignal } from "solid-js";
 import * as v from "valibot";
 
 import { t } from "~/lib/i18n";
@@ -19,6 +18,7 @@ const lobbyDataSchema = v.object({
 const lobbyStoreSchema = v.object({
   version: v.literal("1.0.0"),
   data: v.nullable(lobbyDataSchema),
+  localPlayerIds: v.optional(v.array(v.string()), []),
 });
 
 type LobbyStore = v.InferOutput<typeof lobbyStoreSchema>;
@@ -27,6 +27,7 @@ type LobbyData = v.InferOutput<typeof lobbyDataSchema>;
 const defaultLobbySettings: LobbyStore = {
   version: "1.0.0",
   data: null,
+  localPlayerIds: [],
 };
 
 const lobbyStoreInstance = createPersistentStore({
@@ -42,7 +43,9 @@ export const guestUser: GuestUser = {
 };
 
 function createLobbyStore() {
-  const [localPlayerIds, setLocalPlayerIds] = createSignal<string[]>([]);
+  // Persisted alongside the lobby so local players survive an app restart while the lobby exists.
+  const localPlayerIds = () => lobbyStoreInstance.settings().localPlayerIds;
+  const setLocalPlayerIds = (ids: string[]) => lobbyStoreInstance.updateSettings("localPlayerIds", ids);
 
   const lobby = () => {
     return lobbyStoreInstance.settings().data;
@@ -62,6 +65,7 @@ function createLobbyStore() {
     } catch (_) {
     } finally {
       setLobby(undefined);
+      setLocalPlayerIds([]);
     }
   };
 
