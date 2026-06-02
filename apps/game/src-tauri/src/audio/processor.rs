@@ -121,6 +121,7 @@ impl Processor {
         };
 
         let mut pitches: Vec<f32> = Vec::with_capacity(SUB_WINDOW_COUNT);
+        let mut had_signal = false;
 
         for i in 0..SUB_WINDOW_COUNT {
             let offset = step * i;
@@ -133,6 +134,7 @@ impl Processor {
             if !self.above_noise_threshold(start, window_samples) {
                 continue;
             }
+            had_signal = true;
 
             let pitch = self
                 .pitchtracker
@@ -144,9 +146,11 @@ impl Processor {
         }
 
         if pitches.is_empty() {
-            // Clear only when the whole beat was silent, so the tracker's
-            // dynamic confidence survives brief single-window gaps.
-            self.pitchtracker.clear_pitch_history();
+            // Only reset on true silence; keep history through unvoiced/breath
+            // gaps so brief mid-note dropouts don't make tracking jumpy.
+            if !had_signal {
+                self.pitchtracker.clear_pitch_history();
+            }
             return -1.0;
         }
 

@@ -2,12 +2,18 @@ use crate::error::AppError;
 use ringbuf::traits::Consumer;
 use ringbuf::HeapCons;
 use rubato::{Resampler, SincFixedIn, SincInterpolationParameters, WindowFunction};
-use std::sync::{Arc, Mutex};
 
-use super::types::DEFAULT_BUFFER_SIZE;
+/// Input frames per `process` call. `SincFixedIn` requires exactly this many,
+/// so partial reads are buffered in `pending_input` until a chunk is ready.
+const RESAMPLER_CHUNK: usize = 1024;
 
 pub struct AudioResampler {
-    resampler: Option<Arc<Mutex<SincFixedIn<f32>>>>,
+    resampler: SincFixedIn<f32>,
+    pending_input: Vec<f32>,
+    input_buffer: Vec<Vec<f32>>,
+    output_buffer: Vec<Vec<f32>>,
+    /// Resampled samples produced but not yet copied into the mix.
+    output_leftover: Vec<f32>,
 }
 
 impl AudioResampler {
@@ -24,74 +30,68 @@ impl AudioResampler {
             interpolation: rubato::SincInterpolationType::Linear,
         };
 
-        let resampler =
-            SincFixedIn::<f32>::new(output_rate as f64 / input_rate as f64, 2.0, params, 1024, 1)
-                .map_err(|e| AppError::CpalError(format!("Failed to create resampler: {}", e)))?;
+        let resampler = SincFixedIn::<f32>::new(
+            output_rate as f64 / input_rate as f64,
+            2.0,
+            params,
+            RESAMPLER_CHUNK,
+            1,
+        )
+        .map_err(|e| AppError::CpalError(format!("Failed to create resampler: {}", e)))?;
+
+        let input_buffer = vec![vec![0.0f32; RESAMPLER_CHUNK]];
+        let output_buffer = resampler.output_buffer_allocate(true);
+        let output_capacity = output_buffer.first().map(Vec::len).unwrap_or(RESAMPLER_CHUNK * 2);
 
         Ok(Some(Self {
-            resampler: Some(Arc::new(Mutex::new(resampler))),
+            resampler,
+            pending_input: Vec::with_capacity(RESAMPLER_CHUNK * 2),
+            input_buffer,
+            output_buffer,
+            output_leftover: Vec::with_capacity(output_capacity * 2),
         }))
     }
 
-    pub fn resample(&self, consumer: &Arc<Mutex<HeapCons<f32>>>, frame_size: usize) -> Vec<f32> {
-        let mut mic_buffer = vec![0.0f32; DEFAULT_BUFFER_SIZE];
-        let samples_read = if let Ok(mut c) = consumer.lock() {
-            c.pop_slice(&mut mic_buffer)
-        } else {
-            0
-        };
-
-        if samples_read == 0 {
-            return vec![0.0f32; frame_size];
+    /// Drain `consumer`, resample, and write up to `frame_size` samples into
+    /// `out` (zero-filling the remainder). Partial input/output is buffered
+    /// across calls so no audio is dropped and the steady state never allocates.
+    pub fn resample_into(&mut self, consumer: &mut HeapCons<f32>, frame_size: usize, out: &mut [f32]) {
+        let mut tmp = [0.0f32; RESAMPLER_CHUNK];
+        loop {
+            let n = consumer.pop_slice(&mut tmp);
+            if n == 0 {
+                break;
+            }
+            self.pending_input.extend_from_slice(&tmp[..n]);
         }
 
-        let mic_buffer = &mic_buffer[..samples_read];
+        while self.pending_input.len() >= RESAMPLER_CHUNK {
+            self.input_buffer[0].clear();
+            self.input_buffer[0].extend_from_slice(&self.pending_input[..RESAMPLER_CHUNK]);
 
-        if let Some(resampler) = &self.resampler {
-            if let Ok(mut r) = resampler.lock() {
-                let input = vec![mic_buffer.to_vec()];
-                match r.process(&input, None) {
-                    Ok(output) => {
-                        if let Some(channel) = output.first() {
-                            let mut resampled = channel.clone();
-                            if resampled.len() < frame_size {
-                                resampled.resize(frame_size, 0.0);
-                            } else if resampled.len() > frame_size {
-                                resampled.truncate(frame_size);
-                            }
-                            resampled
-                        } else {
-                            vec![0.0f32; frame_size]
-                        }
+            match self
+                .resampler
+                .process_into_buffer(&self.input_buffer, &mut self.output_buffer, None)
+            {
+                Ok((input_used, output_written)) => {
+                    if let Some(channel) = self.output_buffer.first() {
+                        self.output_leftover.extend_from_slice(&channel[..output_written]);
                     }
-                    Err(_) => {
-                        let mut buffer = mic_buffer.to_vec();
-                        if buffer.len() < frame_size {
-                            buffer.resize(frame_size, 0.0);
-                        } else if buffer.len() > frame_size {
-                            buffer.truncate(frame_size);
-                        }
-                        buffer
-                    }
+                    // Always advance by a full chunk to guarantee forward progress.
+                    let drained = input_used.max(RESAMPLER_CHUNK).min(self.pending_input.len());
+                    self.pending_input.drain(..drained);
                 }
-            } else {
-                let mut buffer = mic_buffer.to_vec();
-                if buffer.len() < frame_size {
-                    buffer.resize(frame_size, 0.0);
-                } else if buffer.len() > frame_size {
-                    buffer.truncate(frame_size);
+                Err(_) => {
+                    self.pending_input.drain(..RESAMPLER_CHUNK);
                 }
-                buffer
             }
-        } else {
-            let mut buffer = mic_buffer.to_vec();
-            if buffer.len() < frame_size {
-                buffer.resize(frame_size, 0.0);
-            } else if buffer.len() > frame_size {
-                buffer.truncate(frame_size);
-            }
-            buffer
         }
+
+        let out = &mut out[..frame_size];
+        let count = self.output_leftover.len().min(frame_size);
+        out[..count].copy_from_slice(&self.output_leftover[..count]);
+        out[count..].fill(0.0);
+        self.output_leftover.drain(..count);
     }
 }
 

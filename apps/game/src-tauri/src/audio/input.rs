@@ -24,7 +24,7 @@ impl InputStreamManager {
         devices: Vec<(Device, StreamConfig, Vec<usize>)>,
         options: &[MicrophoneOptions],
         app_handle: AppHandle,
-        output_producers: &HashMap<usize, Arc<Mutex<HeapProd<f32>>>>,
+        mut output_producers: HashMap<usize, HeapProd<f32>>,
         playback_enabled: Arc<AtomicBool>,
     ) -> Result<Vec<Stream>, AppError> {
         let mut streams = Vec::new();
@@ -56,13 +56,11 @@ impl InputStreamManager {
                 }
             }
 
-            let device_output_producers: HashMap<usize, Arc<Mutex<HeapProd<f32>>>> = mic_indices
+            // Move (not clone) each producer to the single input callback that
+            // writes to it; the ring buffer is lock-free SPSC.
+            let device_output_producers: HashMap<usize, HeapProd<f32>> = mic_indices
                 .iter()
-                .filter_map(|&index| {
-                    output_producers
-                        .get(&index)
-                        .map(|producer| (index, producer.clone()))
-                })
+                .filter_map(|&index| output_producers.remove(&index).map(|producer| (index, producer)))
                 .collect();
 
             let input_callback = Self::create_input_callback(
@@ -96,7 +94,7 @@ impl InputStreamManager {
         options: &[MicrophoneOptions],
         channels: usize,
         mut inputs: HashMap<usize, AudioInput>,
-        device_output_producers: HashMap<usize, Arc<Mutex<HeapProd<f32>>>>,
+        mut device_output_producers: HashMap<usize, HeapProd<f32>>,
         playback_enabled: Arc<AtomicBool>,
     ) -> impl FnMut(&[f32], &cpal::InputCallbackInfo) + Send + 'static {
         let options_map: HashMap<usize, MicrophoneOptions> = mic_indices
@@ -104,29 +102,33 @@ impl InputStreamManager {
             .map(|&index| (index, options[index].clone()))
             .collect();
 
+        // Reusable scratch buffers so the realtime input callback never allocates.
+        let mut channel_buffer: Vec<f32> = Vec::with_capacity(super::types::DEFAULT_BUFFER_SIZE);
+        let mut gained_buffer: Vec<f32> = Vec::with_capacity(super::types::DEFAULT_BUFFER_SIZE);
+
         move |data: &[f32], _: &cpal::InputCallbackInfo| {
             for (&index, option) in &options_map {
-                let buffer: Vec<f32> = data
-                    .iter()
-                    .skip(option.channel as usize)
-                    .step_by(channels)
-                    .copied()
-                    .collect();
+                channel_buffer.clear();
+                channel_buffer.extend(
+                    data.iter()
+                        .skip(option.channel as usize)
+                        .step_by(channels)
+                        .copied(),
+                );
 
                 if let Some(input) = inputs.get_mut(&index) {
-                    input.push_audio_data(&buffer);
+                    input.push_audio_data(&channel_buffer);
                 }
 
                 if playback_enabled.load(Ordering::Relaxed) {
-                    if let Some(producer) = device_output_producers.get(&index) {
-                        let gained: Vec<f32> = buffer
-                            .iter()
-                            .map(|&s| (s * option.gain).clamp(-1.0, 1.0))
-                            .collect();
-
-                        if let Ok(mut p) = producer.lock() {
-                            let _ = p.push_slice(&gained);
-                        }
+                    if let Some(producer) = device_output_producers.get_mut(&index) {
+                        gained_buffer.clear();
+                        gained_buffer.extend(
+                            channel_buffer
+                                .iter()
+                                .map(|&s| (s * option.gain).clamp(-1.0, 1.0)),
+                        );
+                        let _ = producer.push_slice(&gained_buffer);
                     }
                 }
             }

@@ -69,18 +69,28 @@ impl Recorder {
             Vec::new()
         };
 
-        let output_mixer: Option<OutputMixer> = if playback_enabled {
-            let (_, output_config) = device_manager.get_output_config()?;
-            let output_sample_rate = output_config.sample_rate.0;
-            let mixer = OutputMixer::new(options.len(), &input_sample_rates, output_sample_rate)?;
+        // Resolve the output config once (and reuse it for both the mixer and the
+        // output stream) so the mixer's resampler targets the exact rate the
+        // output stream runs at. Prefer matching the input rate to skip resampling.
+        let desired_output_rate = input_sample_rates.iter().copied().find(|&rate| rate != 0);
+        let output_config = if playback_enabled {
+            Some(device_manager.get_output_config(desired_output_rate)?)
+        } else {
+            None
+        };
+
+        let mut output_mixer: Option<OutputMixer> = if let Some((_, config)) = &output_config {
+            let mixer = OutputMixer::new(options.len(), &input_sample_rates, config.sample_rate.0)?;
             Some(mixer)
         } else {
             None
         };
 
-        let output_producers: HashMap<usize, _> = if let Some(mixer) = &output_mixer {
+        // Move each producer out of the mixer to the input side. The matching
+        // consumer stays in the mixer and is read by the output callback.
+        let output_producers: HashMap<usize, _> = if let Some(mixer) = &mut output_mixer {
             (0..options.len())
-                .filter_map(|index| mixer.get_producer(index).map(|producer| (index, producer)))
+                .filter_map(|index| mixer.take_producer(index).map(|producer| (index, producer)))
                 .collect()
         } else {
             HashMap::new()
@@ -96,12 +106,11 @@ impl Recorder {
             input_devices,
             &options,
             app_handle,
-            &output_producers,
+            output_producers,
             playback_enabled_atomic,
         )?;
 
-        if let Some(mixer) = output_mixer {
-            let (output_device, output_config) = device_manager.get_output_config()?;
+        if let (Some(mixer), Some((output_device, output_config))) = (output_mixer, output_config) {
             let output_stream =
                 mixer.create_output_stream(output_device, output_config, playback_volume)?;
             streams.push(output_stream);
