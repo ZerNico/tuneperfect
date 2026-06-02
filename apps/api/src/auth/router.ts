@@ -6,7 +6,7 @@ import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { userService } from "../user/service";
 import { defaultCookieOptions } from "../utils/cookie";
-import { executeWithConstantTime } from "../utils/security";
+import { executeWithConstantTime, isValidRedirectUrl } from "../utils/security";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
 
@@ -155,7 +155,8 @@ export const authRouter = os.prefix("/auth").router({
 
       await userService.updateUser(verificationToken.userId, { emailVerified: true });
 
-      context.resHeaders?.set("location", input.redirect || env.APP_URL);
+      const redirect = isValidRedirectUrl(input.redirect, [env.APP_URL]) ? input.redirect : env.APP_URL;
+      context.resHeaders?.set("location", redirect);
     }),
 
   requestPasswordReset: base
@@ -220,6 +221,7 @@ export const authRouter = os.prefix("/auth").router({
 
       const hashedPassword = await authService.hashPassword(input.password);
       await userService.updateUser(verificationToken.userId, { password: hashedPassword });
+      await authService.deleteAllRefreshTokensForUser(verificationToken.userId);
     }),
 
   providers: oauthRouter,

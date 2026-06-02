@@ -73,7 +73,9 @@ export class LobbyService {
   }
 
   async verifyLobbyToken(accessToken: string) {
-    const [error, decoded] = await tryCatch(() => jwt.verify(accessToken, env.JWT_SECRET));
+    const [error, decoded] = await tryCatch(() =>
+      jwt.verify(accessToken, env.JWT_SECRET, { issuer: env.API_URL, audience: env.API_URL }),
+    );
 
     if (error) {
       return null;

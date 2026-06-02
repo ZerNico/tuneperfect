@@ -151,6 +151,7 @@ apps:
       SUPPORT_EMAIL: "support@tuneperfect.localhost"
       COOKIE_DOMAIN: ".tuneperfect.localhost"
       EMAIL_FROM: "noreply@tuneperfect.localhost"
+      TRUSTED_PROXY_ENABLED: "true"
     envFrom:
       - secretRef:
           name: postgresql-credentials
