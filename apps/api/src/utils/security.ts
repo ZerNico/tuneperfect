@@ -25,7 +25,7 @@ export async function executeWithConstantTime<T>(fn: () => Promise<T>, targetTim
   }
 }
 
-export function isValidRedirectUrl(redirectUrl?: string, allowedDomains: string[] = []): boolean {
+export function isValidRedirectUrl(redirectUrl?: string, allowedDomains: string[] = []): redirectUrl is string {
   if (!redirectUrl || allowedDomains.length === 0) {
     return false;
   }

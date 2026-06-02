@@ -14,6 +14,7 @@ import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
 import { captureException, posthog } from "./lib/posthog";
+import { redis } from "./lib/redis";
 import { lobbyRouter } from "./lobby/router";
 import { signalingRouter } from "./signaling/router";
 import { updateRouter } from "./update/router";
@@ -29,14 +30,6 @@ process.on("uncaughtException", (error) => {
   logger.error(error, "Uncaught exception");
   captureException(error, undefined, { kind: "uncaughtException" });
 });
-
-const shutdown = async () => {
-  await posthog?.shutdown();
-  process.exit(0);
-};
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
 
 const router = {
   auth: authRouter,
@@ -132,5 +125,25 @@ const server = Bun.serve({
 });
 
 logger.info(`Server is running on ${server.url}`);
+
+let shuttingDown = false;
+const shutdown = async () => {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+
+  logger.info("Shutting down gracefully...");
+
+  // Stop accepting new connections and drain in-flight requests.
+  await server.stop();
+
+  await Promise.allSettled([posthog?.shutdown(), redis.quit()]);
+
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 export type Client = RouterClient<typeof router>;

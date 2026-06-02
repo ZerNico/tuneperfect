@@ -3,6 +3,7 @@ import { eventIterator, ORPCError, os } from "@orpc/server";
 import { requireUser } from "../auth/middleware";
 import { base } from "../base";
 import { requireLobby, requireLobbyOrUser } from "../lobby/middleware";
+import { lobbyService } from "../lobby/service";
 import { userService } from "../user/service";
 import { SendSignalInputSchema, SignalSchema } from "./models";
 import { signalingPublisher } from "./publisher";

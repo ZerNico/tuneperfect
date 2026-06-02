@@ -97,11 +97,17 @@ export class ClubService {
       throw new Error("User has a pending invite for this club");
     }
 
-    await db.insert(schema.clubInvites).values({
-      clubId,
-      inviterId,
-      inviteeId: userToInvite.id,
-    });
+    // The pre-checks above produce clean error messages, but onConflictDoNothing
+    // guards against a concurrent invite slipping past them (clubInvites has a
+    // composite PK on clubId+inviteeId) so it doesn't surface as a 500.
+    await db
+      .insert(schema.clubInvites)
+      .values({
+        clubId,
+        inviterId,
+        inviteeId: userToInvite.id,
+      })
+      .onConflictDoNothing();
   }
 
   private async isUserMemberOfClub(clubId: string, userId: string) {
@@ -154,11 +160,16 @@ export class ClubService {
     }
 
     await db.transaction(async (tx) => {
-      await tx.insert(schema.clubMembers).values({
-        clubId,
-        userId,
-        role: "member",
-      });
+      // onConflictDoNothing guards against a concurrent/duplicate accept where the
+      // user is already a member (clubMembers has a composite PK on clubId+userId).
+      await tx
+        .insert(schema.clubMembers)
+        .values({
+          clubId,
+          userId,
+          role: "member",
+        })
+        .onConflictDoNothing();
       await tx
         .delete(schema.clubInvites)
         .where(and(eq(schema.clubInvites.clubId, clubId), eq(schema.clubInvites.inviteeId, userId)));
