@@ -95,6 +95,32 @@ export class LobbyService {
         lobbyId,
       })
       .where(eq(schema.users.id, userId));
+
+    // If no club has been selected for the lobby yet, auto-select one of the
+    // joining user's clubs so additional scores are shown without manual selection.
+    await this.autoSelectClubForLobby(lobbyId, userId);
+  }
+
+  private async autoSelectClubForLobby(lobbyId: string, userId: string) {
+    const lobby = await db.query.lobbies.findFirst({
+      where: { id: lobbyId },
+      columns: { id: true, clubId: true },
+    });
+
+    if (!lobby || lobby.clubId) {
+      return;
+    }
+
+    const membership = await db.query.clubMembers.findFirst({
+      where: { userId },
+      columns: { clubId: true },
+    });
+
+    if (!membership) {
+      return;
+    }
+
+    await db.update(schema.lobbies).set({ clubId: membership.clubId }).where(eq(schema.lobbies.id, lobbyId));
   }
 
   async leaveLobby(userId: string) {
