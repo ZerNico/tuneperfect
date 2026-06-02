@@ -149,7 +149,7 @@ function EditProfileComponent() {
             <Show
               when={file()}
               fallback={
-                <Show when={sessionQuery.data}>{(session) => <Avatar class="h-30 w-30" user={session()} />}</Show>
+                <Show when={sessionQuery.data}>{(session) => <Avatar size="lg" user={session()} />}</Show>
               }
             >
               <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />

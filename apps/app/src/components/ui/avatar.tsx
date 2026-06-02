@@ -1,9 +1,24 @@
+import { cva, type VariantProps } from "cva";
 import { createEffect, createSignal, on, Show } from "solid-js";
 import { joinURL } from "ufo";
 
 import { config } from "~/lib/config";
 
-interface AvatarProps {
+const avatar = cva({
+  base: "grid",
+  variants: {
+    size: {
+      sm: "h-8 w-8 text-xs",
+      md: "h-10 w-10",
+      lg: "h-30 w-30 text-3xl",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});
+
+interface AvatarProps extends VariantProps<typeof avatar> {
   user: {
     image?: string | null;
     username?: string | null;
@@ -35,8 +50,8 @@ export default function Avatar(props: AvatarProps) {
 
   return (
     <div
-      class="grid h-10 w-10"
       classList={{
+        [avatar({ size: props.size })]: true,
         [props.class || ""]: !!props.class,
       }}
     >

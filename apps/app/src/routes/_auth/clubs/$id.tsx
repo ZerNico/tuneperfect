@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_auth/clubs/$id")({
 type MenuItem = {
   label: string;
   icon: typeof IconCrown;
-  onClick: () => void;
+  onSelect: () => void;
   class?: string;
 };
 
@@ -58,7 +58,7 @@ function getMemberMenuItems(
     items.push({
       label: t("clubs.detail.removeMember"),
       icon: IconUserMinus,
-      onClick: () => handlers.removeMember(userId, username),
+      onSelect: () => handlers.removeMember(userId, username),
       class: "text-red-500",
     });
   }
@@ -67,7 +67,7 @@ function getMemberMenuItems(
     items.push({
       label: t("clubs.detail.transferOwnership"),
       icon: IconCrown,
-      onClick: () => handlers.transferOwnership(userId, username),
+      onSelect: () => handlers.transferOwnership(userId, username),
     });
   }
 
@@ -75,7 +75,7 @@ function getMemberMenuItems(
     items.push({
       label: t("clubs.detail.makeAdmin"),
       icon: IconShieldPlus,
-      onClick: () => handlers.changeRole(userId, username, "admin"),
+      onSelect: () => handlers.changeRole(userId, username, "admin"),
     });
   }
 
@@ -83,7 +83,7 @@ function getMemberMenuItems(
     items.push({
       label: t("clubs.detail.removeAdmin"),
       icon: IconShieldMinus,
-      onClick: () => handlers.changeRole(userId, username, "member"),
+      onSelect: () => handlers.changeRole(userId, username, "member"),
     });
   }
 
@@ -113,7 +113,7 @@ function MemberActions(props: {
       >
         <For each={menuItems}>
           {(item) => (
-            <DropdownMenu.Item class={item.class} onClick={item.onClick}>
+            <DropdownMenu.Item class={item.class} onSelect={item.onSelect}>
               <item.icon class="mr-2 h-4 w-4" /> {item.label}
             </DropdownMenu.Item>
           )}
@@ -329,15 +329,15 @@ function ClubDetailComponent() {
                   }
                 >
                   <Show when={currentUserRole() === "owner"}>
-                    <DropdownMenu.Item onClick={() => setDialog("rename")}>
+                    <DropdownMenu.Item onSelect={() => setDialog("rename")}>
                       <IconEdit class="mr-2 h-4 w-4" /> {t("clubs.detail.rename")}
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item class="text-red-500" onClick={handleDeleteClub}>
+                    <DropdownMenu.Item class="text-red-500" onSelect={handleDeleteClub}>
                       <IconTrash class="mr-2 h-4 w-4" /> {t("clubs.detail.delete")}
                     </DropdownMenu.Item>
                   </Show>
                   <Show when={currentUserRole() !== "owner"}>
-                    <DropdownMenu.Item class="text-red-500" onClick={handleLeaveClub}>
+                    <DropdownMenu.Item class="text-red-500" onSelect={handleLeaveClub}>
                       <IconUserMinus class="mr-2 h-4 w-4" /> {t("clubs.detail.leave")}
                     </DropdownMenu.Item>
                   </Show>

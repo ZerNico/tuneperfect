@@ -82,15 +82,15 @@ export default function Header() {
                     </DropdownMenu.Trigger>
                   }
                 >
-                  <DropdownMenu.Item onClick={() => navigate({ to: "/edit-profile" })}>
+                  <DropdownMenu.Item onSelect={() => navigate({ to: "/edit-profile" })}>
                     <IconUser /> {t("header.editProfile")}
                   </DropdownMenu.Item>
                   <Show when={session().lobbyId !== null}>
-                    <DropdownMenu.Item onClick={leaveLobby}>
+                    <DropdownMenu.Item onSelect={leaveLobby}>
                       <IconBan /> {t("header.leaveLobby")}
                     </DropdownMenu.Item>
                   </Show>
-                  <DropdownMenu.Item onClick={logout}>
+                  <DropdownMenu.Item onSelect={logout}>
                     <IconLogOut /> {t("header.signOut")}
                   </DropdownMenu.Item>
                 </DropdownMenu>
@@ -104,10 +104,10 @@ export default function Header() {
                 </DropdownMenu.Trigger>
               }
             >
-              <DropdownMenu.Item onClick={() => setLocale("en")}>
+              <DropdownMenu.Item onSelect={() => setLocale("en")}>
                 <IconEnUs /> English
               </DropdownMenu.Item>
-              <DropdownMenu.Item onClick={() => setLocale("de")}>
+              <DropdownMenu.Item onSelect={() => setLocale("de")}>
                 <IconDe /> Deutsch
               </DropdownMenu.Item>
             </DropdownMenu>

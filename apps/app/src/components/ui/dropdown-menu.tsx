@@ -21,7 +21,7 @@ function DropdownMenuRoot(props: DropdownMenuProps) {
 
 interface DropdownMenuItemProps {
   children: JSX.Element;
-  onClick?: () => void;
+  onSelect?: () => void;
   class?: string;
 }
 
@@ -32,8 +32,7 @@ function DropdownMenuItem(props: DropdownMenuItemProps) {
       classList={{
         [props.class ?? ""]: true,
       }}
-      as="button"
-      onClick={props.onClick}
+      onSelect={props.onSelect}
     >
       {props.children}
     </KDropdownMenu.Item>
