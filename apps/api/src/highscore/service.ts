@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
@@ -59,15 +59,18 @@ export class HighscoreService {
       whereConditions.push(eq(highscores.difficulty, difficulty));
     }
 
+    // Exclude the password hash from the joined user to avoid leaking it in the response.
+    const { password: _password, ...userColumns } = getTableColumns(schema.users);
+
     const scores = await db
       .select({
         ...getTableColumns(schema.highscores),
-        user: schema.users,
+        user: userColumns,
       })
       .from(highscores)
       .innerJoin(schema.users, eq(highscores.userId, schema.users.id))
       .where(and(...whereConditions))
-      .orderBy(highscores.score);
+      .orderBy(desc(highscores.score));
 
     return scores;
   }

@@ -55,6 +55,15 @@ export const signalingRouter = os.prefix("/signaling").router({
         if (!to) {
           throw new ORPCError("BAD_REQUEST", { message: "Target user ID required when host sends signal" });
         }
+
+        // Ensure the target is actually a member of this lobby so a host cannot
+        // push signals into arbitrary users' guest channels.
+        const lobby = await lobbyService.getLobbyById(lobbyId);
+        const isMember = lobby?.users.some((user) => user.id === to) ?? false;
+        if (!isMember) {
+          throw new ORPCError("FORBIDDEN", { message: "Target user is not a member of this lobby" });
+        }
+
         const channel = `lobby:${lobbyId}:guest:${to}`;
         signalingPublisher.publish(channel, signal);
       } else {
