@@ -166,7 +166,7 @@ function ClubsIndexComponent() {
                         <For each={club.members.slice(0, 5)}>
                           {(member) => (
                             <div class="rounded-full border-2 border-white">
-                              <Show when={member.user}>{(user) => <Avatar user={user()} class="h-8 w-8" />}</Show>
+                              <Show when={member.user}>{(user) => <Avatar user={user()} size="sm" />}</Show>
                             </div>
                           )}
                         </For>
