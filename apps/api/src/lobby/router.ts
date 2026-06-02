@@ -69,6 +69,12 @@ export const lobbyRouter = os.prefix("/lobbies").router({
         status: 404,
       },
     })
+    .meta({
+      rateLimit: {
+        limit: 50,
+        windowMs: 1000 * 60 * 5,
+      },
+    })
     .input(
       v.object({
         lobbyId: v.string(),

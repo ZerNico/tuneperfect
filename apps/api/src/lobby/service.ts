@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { addDays, differenceInSeconds } from "date-fns";
 import { and, eq, inArray } from "drizzle-orm";
 import jwt from "jsonwebtoken";
@@ -50,7 +52,7 @@ export class LobbyService {
   private generateLobbyCode(length = 8) {
     const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    return Array.from({ length }, () => characters[Math.floor(Math.random() * characters.length)]).join("");
+    return Array.from({ length }, () => characters[crypto.randomInt(characters.length)]).join("");
   }
 
   public async generateLobbyToken(lobbyId: string) {
