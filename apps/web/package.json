@@ -10,25 +10,25 @@
   "dependencies": {
     "@fontsource/lato": "^5.2.7",
     "@iconify-json/circle-flags": "^1.2.10",
-    "@iconify-json/logos": "^1.2.10",
-    "@iconify-json/lucide": "^1.2.98",
+    "@iconify-json/logos": "^1.2.11",
+    "@iconify-json/lucide": "^1.2.111",
     "@kobalte/core": "^0.13.11",
-    "@tailwindcss/vite": "^4.2.2",
-    "@tanstack/solid-router": "^1.168.4",
-    "@tanstack/solid-start": "^1.167.7",
+    "@tailwindcss/vite": "^4.3.0",
+    "@tanstack/solid-router": "^1.170.10",
+    "@tanstack/solid-start": "^1.168.18",
     "clsx": "^2.1.1",
     "cva": "^1.0.0-beta.4",
-    "posthog-js": "^1.363.5",
-    "solid-js": "^1.9.12",
-    "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.2"
+    "posthog-js": "^1.378.1",
+    "solid-js": "^1.9.13",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
-    "@tanstack/solid-router-devtools": "^1.166.11",
+    "@tanstack/solid-router-devtools": "^1.167.0",
     "nitro": "^3.0.260311-beta",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "unplugin-icons": "^23.0.1",
-    "vite": "^8.0.2",
-    "vite-plugin-solid": "^2.11.11"
+    "vite": "^8.0.16",
+    "vite-plugin-solid": "^2.11.12"
   }
 }
