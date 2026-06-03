@@ -167,6 +167,13 @@ const de = {
       next: "Nächstes Lied",
       exit: "Beenden",
     },
+    phraseRating: {
+      perfect: "Perfekt",
+      great: "Super",
+      good: "Gut",
+      meh: "Naja",
+      boo: "Buh",
+    },
   },
   settings: {
     title: "Einstellungen",

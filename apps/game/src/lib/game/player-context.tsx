@@ -7,6 +7,7 @@ import type { Microphone } from "~/stores/settings";
 
 import type { User } from "../types";
 import type { Note } from "../ultrastar/note";
+import type { PhraseRating } from "../utils/score";
 export interface PlayerContextValue {
   index: Accessor<number>;
   phraseIndex: Accessor<number>;
@@ -22,6 +23,7 @@ export interface PlayerContextValue {
   score: Accessor<Score>;
   maxScore: Accessor<{ normal: number; golden: number; bonus: number }>;
   player: Accessor<User | null>;
+  phraseRating: Accessor<{ id: number; rating: PhraseRating } | null>;
 }
 
 export const PlayerContext = createContext<PlayerContextValue>();

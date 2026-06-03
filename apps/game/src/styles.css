@@ -38,6 +38,7 @@
   --animate-swipe-out: swipeOut 0.1s ease-in;
   --animate-scroll: scroll 10s linear infinite;
   --animate-sparkle: sparkle 2s ease-in-out infinite;
+  --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
 
   @keyframes hide {
     from {
@@ -83,6 +84,28 @@
     50% {
       opacity: 1;
       transform: scale(1) rotate(180deg);
+    }
+  }
+
+  @keyframes phraseRating {
+    0% {
+      opacity: 0;
+      transform: scale(0.6) translateY(0.5cqh);
+    }
+    15% {
+      opacity: 1;
+      transform: scale(1.1) translateY(0);
+    }
+    30% {
+      transform: scale(1) translateY(0);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-0.5cqh);
     }
   }
 }

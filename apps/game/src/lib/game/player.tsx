@@ -6,7 +6,7 @@ import { settingsStore } from "~/stores/settings";
 
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
 import type { Note } from "../ultrastar/note";
-import { getMaxScore, getNoteScore } from "../utils/score";
+import { getMaxScore, getNoteScore, getPhraseRating, type PhraseRating } from "../utils/score";
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
 import { type PlayerContextValue, PlayerProvider } from "./player-context";
@@ -114,9 +114,17 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   let correctBeats = 0;
   let totalBeats = 0;
 
+  const [phraseRating, setPhraseRating] = createSignal<{ id: number; rating: PhraseRating } | null>(null);
+  let phraseRatingId = 0;
+
   const awardBonus = () => {
     if (totalBeats > 0 && correctBeats / totalBeats > 0.9) {
       addScore("bonus", correctBeats);
+    }
+
+    const rating = getPhraseRating(correctBeats, totalBeats);
+    if (rating) {
+      setPhraseRating({ id: phraseRatingId++, rating });
     }
 
     correctBeats = 0;
@@ -203,6 +211,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     maxScore,
     player,
     score,
+    phraseRating,
   };
 
   const Provider = (props: { children: JSX.Element }) => (

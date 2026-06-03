@@ -5,6 +5,7 @@ import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 
 import Avatar from "../ui/avatar";
+import PhraseRating from "./phrase-rating";
 import Pitch from "./pitch";
 import Score from "./score";
 
@@ -58,6 +59,9 @@ export default function PlayerLane(props: PlayerLaneProps) {
           }}
         >
           <Pitch />
+        </div>
+        <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 right-20">
+          <PhraseRating />
         </div>
         <div
           class="absolute right-0 left-0 flex items-center justify-between px-20 py-4"

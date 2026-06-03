@@ -167,6 +167,13 @@ const en = {
       next: "Next Song",
       exit: "Exit",
     },
+    phraseRating: {
+      perfect: "Perfect",
+      great: "Great",
+      good: "Good",
+      meh: "Meh",
+      boo: "Boo",
+    },
   },
   settings: {
     title: "Settings",
