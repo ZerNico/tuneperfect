@@ -8,7 +8,7 @@ const settingsStoreSchema = v.object({
   general: v.object({
     language: v.string(),
     forceOfflineMode: v.boolean(),
-    showNoteSegments: v.fallback(v.boolean(), false),
+    showNoteSegments: v.fallback(v.boolean(), true),
     difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
     micPlaybackEnabled: v.fallback(v.boolean(), false),
