@@ -40,14 +40,14 @@ export function SortSelect(props: SortSelectProps) {
         class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
         onClick={() => moveSorting("left")}
       >
-        <IconTriangleLeft />
+        <IconTriangleLeft class="text-base" />
       </button>
       <div>
         <For each={sortOptions()}>
           {(sortOption) => (
             <button
               type="button"
-              class="gradient-sing text-md cursor-pointer rounded-full px-2 text-white capitalize transition-all hover:opacity-75 active:scale-95"
+              class="gradient-sing cursor-pointer rounded-full px-2 text-base text-white capitalize transition-all hover:opacity-75 active:scale-95"
               classList={{
                 "gradient-sing bg-linear-to-b shadow-xl": sortOption.toLowerCase() === props.selected,
               }}
@@ -63,7 +63,7 @@ export function SortSelect(props: SortSelectProps) {
         class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
         onClick={() => moveSorting("right")}
       >
-        <IconTriangleRight />
+        <IconTriangleRight class="text-base" />
         <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
           <IconF7Key class="text-sm" />
         </Show>

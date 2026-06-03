@@ -112,7 +112,7 @@ export default function HighscoreList(props: HighscoreListProps) {
             {(score) => (
               <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4 backdrop-blur-md">
                 <div
-                  class="flex h-full w-10 shrink-0 items-center justify-center text-center"
+                  class="flex h-full w-10 shrink-0 items-center justify-center text-center text-base"
                   classList={{
                     "bg-yellow-500": score.rank === 1,
                     "bg-white text-black": score.rank !== 1,
@@ -123,7 +123,7 @@ export default function HighscoreList(props: HighscoreListProps) {
 
                 <div class="flex grow items-center gap-2 overflow-hidden">
                   <Avatar user={score.user} class="h-6 w-6 shrink-0" />
-                  <span class="truncate">{score.user.username || "?"}</span>
+                  <span class="truncate text-base">{score.user.username || "?"}</span>
                 </div>
 
                 <div class="flex shrink-0 flex-row items-center gap-4">
