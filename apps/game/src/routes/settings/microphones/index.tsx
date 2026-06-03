@@ -3,8 +3,8 @@ import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid
 import IconMicVocal from "~icons/lucide/mic-vocal";
 import IconPlus from "~icons/lucide/plus";
 
-import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
@@ -89,7 +89,7 @@ function MicrophonesComponent() {
       header={
         <TitleBar title={t("settings.title")} description={t("settings.sections.microphones.title")} onBack={onBack} />
       }
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
+      footer={<SettingsFooter />}
     >
       <div class="flex w-full grow items-center justify-center gap-4">
         <For each={buttons()}>

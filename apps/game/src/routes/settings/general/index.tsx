@@ -3,11 +3,11 @@ import { createSignal } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 
-import KeyHints from "~/components/key-hints";
 import LatencyCalibrationPreview from "~/components/latency-calibration-preview";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { settingsStore } from "~/stores/settings";
@@ -120,7 +120,7 @@ function GeneralSettingsComponent() {
       header={
         <TitleBar title={t("settings.title")} description={t("settings.sections.general.title")} onBack={onBack} />
       }
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
+      footer={<SettingsFooter />}
     >
       <Menu items={menuItems} onBack={onBack} />
     </Layout>

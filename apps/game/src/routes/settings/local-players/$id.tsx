@@ -3,9 +3,9 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { createMemo, createSignal } from "solid-js";
 
-import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
+import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import ImageCrop from "~/components/ui/image-crop";
@@ -161,7 +161,7 @@ function LocalPlayerComponent() {
           onBack={onBack}
         />
       }
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
+      footer={<SettingsFooter />}
     >
       <Menu items={menuItems()} onBack={onBack} />
     </Layout>

@@ -13,7 +13,7 @@ forwardConsole("warn", warn);
 forwardConsole("error", error);
 
 const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
-if (posthogToken) initPostHog(posthogToken);
+if (posthogToken) void initPostHog(posthogToken);
 
 export const queryClient = new QueryClient({
   defaultOptions: {

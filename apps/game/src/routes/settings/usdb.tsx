@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createMemo, createSignal, Show } from "solid-js";
 
-import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
+import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
@@ -126,7 +126,7 @@ function UsdbSettingsComponent() {
           </div>
         </div>
       }
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
+      footer={<SettingsFooter />}
     >
       <Menu items={menuItems()} onBack={onBack} />
     </Layout>

@@ -1,6 +1,7 @@
+import { getVersion } from "@tauri-apps/api/app";
 import posthog from "posthog-js";
 
-export const initPostHog = (token: string) => {
+export const initPostHog = async (token: string) => {
   posthog.init(token, {
     api_host: "https://eu.i.posthog.com",
     defaults: "2025-05-24",
@@ -14,7 +15,9 @@ export const initPostHog = (token: string) => {
     disable_surveys: true,
     mask_personal_data_properties: true,
   });
-  posthog.register({ app_name: "game" });
+
+  const appVersion = await getVersion().catch(() => undefined);
+  posthog.register({ app_name: "game", app_version: appVersion });
 };
 
 export { posthog };

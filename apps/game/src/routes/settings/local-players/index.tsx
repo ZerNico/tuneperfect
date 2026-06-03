@@ -3,8 +3,8 @@ import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid
 import IconPlus from "~icons/lucide/plus";
 import IconUser from "~icons/lucide/user";
 
-import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import IconButton from "~/components/ui/icon-button";
@@ -124,7 +124,7 @@ function LocalPlayersComponent() {
       header={
         <TitleBar title={t("settings.title")} description={t("settings.sections.localPlayers.title")} onBack={onBack} />
       }
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
+      footer={<SettingsFooter />}
     >
       <div class="flex w-full grow items-center justify-center gap-4">
         <div ref={scrollContainer} class="styled-scrollbars flex gap-4 overflow-y-auto py-2">
