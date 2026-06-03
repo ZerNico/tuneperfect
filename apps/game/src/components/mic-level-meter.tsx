@@ -12,7 +12,7 @@ interface MicLevelMeterProps {
 }
 
 export default function MicLevelMeter(props: MicLevelMeterProps) {
-  const [level, setLevel] = createSignal(0);
+  const [rmsLevel, setRmsLevel] = createSignal(0);
   const [active, setActive] = createSignal(false);
 
   let restarting = false;
@@ -47,7 +47,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   const stopPreview = async () => {
     debouncedRestart.clear();
     setActive(false);
-    setLevel(0);
+    setRmsLevel(0);
     await commands.stopRecording().catch(() => {});
   };
 
@@ -79,9 +79,9 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     return Math.max(0, Math.min(1, (db - minDb) / -minDb));
   };
 
-  // Smooth out the meter — jumps up instantly but falls off gradually
-  let peakHold = 0;
-  const decay = 0.85;
+  // Light low-pass smoothing so the RMS bar reads steadily.
+  let rmsSmooth = 0;
+  const rmsSmoothing = 0.4;
 
   createEffect(() => {
     if (!active()) return;
@@ -90,9 +90,9 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const result = await commands.getAudioLevels();
       const value = result.status === "ok" ? result.data[0] : undefined;
       if (value !== undefined) {
-        const meter = ampToMeter(value);
-        peakHold = meter >= peakHold ? meter : peakHold * decay;
-        setLevel(peakHold);
+        const rmsMeter = ampToMeter(value);
+        rmsSmooth += (rmsMeter - rmsSmooth) * rmsSmoothing;
+        setRmsLevel(rmsSmooth);
       }
     }, 50);
 
@@ -103,9 +103,9 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     stopPreview();
   });
 
-  const percentage = () => level() * 100;
+  const rmsPercentage = () => rmsLevel() * 100;
 
-  // Matches the peak check in Rust's above_noise_threshold exactly
+  // Same scale as the RMS gate in Rust's above_noise_threshold.
   const thresholdPercentage = () => ampToMeter(props.threshold() / 100) * 100;
 
   return (
@@ -120,7 +120,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
               style={{
                 background:
                   "linear-gradient(to right, #155e75 0%, #10b981 50%, #10b981 75%, #fbbf24 90%, #ef4444 100%)",
-                "clip-path": `inset(0 ${100 - percentage()}% 0 0)`,
+                "clip-path": `inset(0 ${100 - rmsPercentage()}% 0 0)`,
               }}
             />
             <div

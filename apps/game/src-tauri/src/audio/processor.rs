@@ -157,7 +157,7 @@ impl Processor {
         median(&mut pitches)
     }
 
-    /// Peak level of the most recent window, for the audio-level meter.
+    /// RMS level of the most recent window, for the audio-level meter.
     pub fn get_level(&mut self) -> f32 {
         self.drain_into_window();
 
@@ -166,9 +166,9 @@ impl Processor {
             return 0.0;
         }
         let start = self.window.len() - window_size;
-        self.window[start..]
-            .iter()
-            .fold(0.0f32, |max, &s| max.max(s.abs()))
+        let samples = &self.window[start..];
+        let sum_sq: f32 = samples.iter().map(|&s| s * s).sum();
+        (sum_sq / window_size as f32).sqrt()
     }
 
     fn window_samples(&self, window_ms: f32) -> usize {
@@ -176,17 +176,20 @@ impl Processor {
         requested.clamp(SUB_WINDOW_COUNT, MAX_PITCH_SAMPLES)
     }
 
+    /// Whether the window carries signal above the noise floor. Uses RMS rather
+    /// than a single-sample peak so transient clicks don't trip the gate.
     fn above_noise_threshold(&self, start_sample: usize, window_samples: usize) -> bool {
         let min_threshold = self.options.threshold / 100.0;
         let end_sample = start_sample + window_samples;
 
-        if end_sample > self.window.len() {
+        if end_sample > self.window.len() || window_samples == 0 {
             return false;
         }
 
-        self.window[start_sample..end_sample]
-            .iter()
-            .any(|&sample| sample.abs() > min_threshold)
+        let samples = &self.window[start_sample..end_sample];
+        let sum_sq: f32 = samples.iter().map(|&s| s * s).sum();
+        let rms = (sum_sq / window_samples as f32).sqrt();
+        rms > min_threshold
     }
 }
 
