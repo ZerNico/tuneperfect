@@ -5,6 +5,8 @@ import { commands } from "~/bindings";
 import { t } from "~/lib/i18n";
 
 interface MicLevelMeterProps {
+  /** Stable device ID. Preferred over `name` for selecting the device. */
+  deviceId: () => string | undefined;
   name: () => string | null;
   channel: () => number;
   gain: () => number;
@@ -25,10 +27,14 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const name = props.name();
       if (!name) return;
 
+      // Prefer the stable device id; the backend falls back to name matching
+      // when no id is set (and name is always sent for that fallback).
+      const deviceId = props.deviceId();
+
       await commands.stopRecording().catch(() => {});
 
       const result = await commands.startRecording(
-        [{ name, channel: props.channel(), gain: props.gain(), threshold: 0, delay: 0 }],
+        [{ deviceId, name, channel: props.channel(), gain: props.gain(), threshold: 0, delay: 0 }],
         false,
         0,
       );
@@ -53,7 +59,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
 
   // Restart the recording stream when device or channel changes
   createEffect(
-    on([() => props.name(), () => props.channel()], () => {
+    on([() => props.deviceId(), () => props.name(), () => props.channel()], () => {
       debouncedRestart();
     }),
   );
@@ -89,7 +95,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     const interval = setInterval(async () => {
       const result = await commands.getAudioLevels();
       const value = result.status === "ok" ? result.data[0] : undefined;
-      if (value !== undefined) {
+      if (value !== undefined && value !== null) {
         const meter = ampToMeter(value);
         peakHold = meter >= peakHold ? meter : peakHold * decay;
         setLevel(peakHold);

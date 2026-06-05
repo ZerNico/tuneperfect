@@ -32,7 +32,7 @@ impl InputStreamManager {
 
         for (device, config, mic_indices) in devices {
             let channels = config.channels as usize;
-            let sample_rate = config.sample_rate.0;
+            let sample_rate = config.sample_rate;
 
             // Each mic gets a processor (reader side, behind the lock) and a
             // paired lock-free audio input (written by the callback).
@@ -60,7 +60,11 @@ impl InputStreamManager {
             // writes to it; the ring buffer is lock-free SPSC.
             let device_output_producers: HashMap<usize, HeapProd<f32>> = mic_indices
                 .iter()
-                .filter_map(|&index| output_producers.remove(&index).map(|producer| (index, producer)))
+                .filter_map(|&index| {
+                    output_producers
+                        .remove(&index)
+                        .map(|producer| (index, producer))
+                })
                 .collect();
 
             let input_callback = Self::create_input_callback(

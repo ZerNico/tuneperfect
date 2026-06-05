@@ -48,6 +48,7 @@ impl_from_errors!(
     (cpal::DefaultStreamConfigError, CpalError),
     (cpal::DevicesError, CpalError),
     (cpal::DeviceNameError, CpalError),
+    (cpal::DeviceIdError, CpalError),
     (cpal::BuildStreamError, CpalError),
     (cpal::PlayStreamError, CpalError)
 );

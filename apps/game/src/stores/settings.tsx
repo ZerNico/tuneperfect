@@ -24,6 +24,9 @@ const settingsStoreSchema = v.object({
   }),
   microphones: v.array(
     v.object({
+      // Stable device ID (cpal `DeviceId`). Optional so configs saved before ID
+      // support remain valid; the backend falls back to matching by `name`.
+      deviceId: v.optional(v.string()),
       name: v.string(),
       channel: v.number(),
       color: v.string(),

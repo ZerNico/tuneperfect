@@ -515,7 +515,6 @@ export default function SongPlayer(props: SongPlayerProps) {
   }
 
   const handleEnded = () => {
-    console.log("ended song");
     props.onEnded?.();
   };
 

@@ -1,6 +1,52 @@
 use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait};
-use cpal::{BufferSize, Device, SampleRate, StreamConfig, SupportedBufferSize};
+use cpal::{BufferSize, Device, StreamConfig, SupportedBufferSize};
+
+use super::types::MicrophoneOptions;
+
+/// Stable ID and human-readable name for a cpal device. Either may be missing if
+/// the backend fails to report it.
+struct DeviceIdentity {
+    id: Option<String>,
+    name: Option<String>,
+}
+
+/// Pick the most descriptive, user-facing name from a device description.
+///
+/// On Windows/WASAPI (cpal 0.17.x) `name()` returns the generic short
+/// `DeviceDesc` (e.g. "Mikrofon"/"Microphone"), which is identical for every
+/// device, while the unique `FriendlyName` (e.g. "Mikrofon (USB Audio Device)")
+/// is placed in the first `extended()` line. Prefer that friendly line when
+/// present, otherwise fall back to `name()`. On macOS/Linux `extended()` is
+/// empty, so this returns the regular name unchanged.
+pub fn device_display_name(desc: &cpal::DeviceDescription) -> String {
+    desc.extended()
+        .first()
+        .map(String::as_str)
+        .unwrap_or_else(|| desc.name())
+        .to_string()
+}
+
+/// Read a device's stable ID (as a `Display` string) and human-readable name.
+/// Both are optional because backends can fail to report either.
+fn device_identity(device: &Device) -> DeviceIdentity {
+    let id = device.id().ok().map(|id| id.to_string());
+    let name = device.description().ok().map(|desc| device_display_name(&desc));
+    DeviceIdentity { id, name }
+}
+
+/// Whether a stored microphone config refers to this physical device. Matches by
+/// stable ID first (preferred), then falls back to the human-readable name for
+/// configs saved before device IDs were persisted.
+fn mic_matches_device(mic: &MicrophoneOptions, identity: &DeviceIdentity) -> bool {
+    if let (Some(stored_id), Some(device_id)) = (mic.device_id.as_deref(), identity.id.as_deref()) {
+        if stored_id == device_id {
+            return true;
+        }
+    }
+
+    matches!(identity.name.as_deref(), Some(name) if name == mic.name)
+}
 
 /// Target buffer size (in frames) for input/output streams.
 ///
@@ -32,20 +78,22 @@ impl DeviceManager {
         Ok(Self { host })
     }
 
-    /// Find all input devices that match the given microphone names
+    /// Find all input devices that match the given microphone configs. Matching
+    /// prefers each mic's stable `device_id`, falling back to its `name` for
+    /// configs saved before IDs were persisted.
     pub fn find_input_devices(
         &self,
-        mic_names: &[String],
+        mics: &[MicrophoneOptions],
     ) -> Result<Vec<(Device, StreamConfig, Vec<usize>)>, AppError> {
         let devices = self.host.devices()?;
         let mut found_devices = Vec::new();
 
         for device in devices {
-            let device_name = device.name()?;
-            let mic_indices: Vec<usize> = mic_names
+            let identity = device_identity(&device);
+            let mic_indices: Vec<usize> = mics
                 .iter()
                 .enumerate()
-                .filter(|(_, name)| name.as_str() == device_name.as_str())
+                .filter(|(_, mic)| mic_matches_device(mic, &identity))
                 .map(|(idx, _)| idx)
                 .collect();
 
@@ -85,8 +133,9 @@ impl DeviceManager {
 
         // Try to match the desired (input) sample rate to avoid resampling.
         if let Some(rate) = desired_sample_rate {
-            if rate != config.sample_rate.0 && Self::supports_output_sample_rate(&output_device, rate) {
-                config.sample_rate = SampleRate(rate);
+            if rate != config.sample_rate && Self::supports_output_sample_rate(&output_device, rate)
+            {
+                config.sample_rate = rate;
             }
         }
 
@@ -101,7 +150,7 @@ impl DeviceManager {
         };
 
         configs.into_iter().any(|range| {
-            range.min_sample_rate().0 <= sample_rate && sample_rate <= range.max_sample_rate().0
+            range.min_sample_rate() <= sample_rate && sample_rate <= range.max_sample_rate()
         })
     }
 }

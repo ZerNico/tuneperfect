@@ -1,9 +1,13 @@
+use crate::audio::device::device_display_name;
 use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
 
 #[derive(Debug, Serialize, specta::Type)]
 pub struct Microphone {
+    /// Stable device ID (cpal `DeviceId` serialized via `Display`). Preferred for
+    /// persisting a mic selection. `None` if the backend can't report an ID.
+    id: Option<String>,
     name: String,
     channels: u16,
 }
@@ -14,15 +18,20 @@ pub fn get_microphones() -> Result<Vec<Microphone>, AppError> {
     let mut microphones = Vec::new();
 
     let host = cpal::default_host();
-    let devices = host.devices().unwrap();
-    for (_, device) in devices.enumerate() {
-        if let Ok(config) = device.default_input_config() {
-            let microphone = Microphone {
-                name: device.name().unwrap(),
-                channels: config.channels(),
-            };
-            microphones.push(microphone);
-        }
+    let devices = host.devices()?;
+    for device in devices {
+        let Ok(config) = device.default_input_config() else {
+            continue;
+        };
+        let Ok(description) = device.description() else {
+            continue;
+        };
+
+        microphones.push(Microphone {
+            id: device.id().ok().map(|id| id.to_string()),
+            name: device_display_name(&description),
+            channels: config.channels(),
+        });
     }
 
     Ok(microphones)

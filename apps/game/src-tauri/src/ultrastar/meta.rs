@@ -1,4 +1,9 @@
-use lofty::{file::FileType, file::TaggedFileExt, probe::Probe, tag::ItemKey};
+use lofty::{
+    file::FileType,
+    file::TaggedFileExt,
+    probe::Probe,
+    tag::{ItemKey, Tag, TagType},
+};
 use serde::Serialize;
 
 use crate::error::AppError;
@@ -43,21 +48,24 @@ pub fn get_replay_gain(path: &str) -> Result<ReplayGainInfo, AppError> {
 
     if file.file_type() == FileType::Opus {
         return Ok(ReplayGainInfo {
-            track_gain: parse_opus_r128_gain(
-                tag.get_string(&ItemKey::Unknown("R128_TRACK_GAIN".to_string())),
-            ),
+            track_gain: parse_opus_r128_gain(get_custom_string(tag, "R128_TRACK_GAIN")),
             track_peak: None,
-            album_gain: parse_opus_r128_gain(
-                tag.get_string(&ItemKey::Unknown("R128_ALBUM_GAIN".to_string())),
-            ),
+            album_gain: parse_opus_r128_gain(get_custom_string(tag, "R128_ALBUM_GAIN")),
             album_peak: None,
         });
     }
 
     Ok(ReplayGainInfo {
-        track_gain: parse_replay_gain(tag.get_string(&ItemKey::ReplayGainTrackGain)),
-        track_peak: parse_replay_gain(tag.get_string(&ItemKey::ReplayGainTrackPeak)),
-        album_gain: parse_replay_gain(tag.get_string(&ItemKey::ReplayGainAlbumGain)),
-        album_peak: parse_replay_gain(tag.get_string(&ItemKey::ReplayGainAlbumPeak)),
+        track_gain: parse_replay_gain(tag.get_string(ItemKey::ReplayGainTrackGain)),
+        track_peak: parse_replay_gain(tag.get_string(ItemKey::ReplayGainTrackPeak)),
+        album_gain: parse_replay_gain(tag.get_string(ItemKey::ReplayGainAlbumGain)),
+        album_peak: parse_replay_gain(tag.get_string(ItemKey::ReplayGainAlbumPeak)),
     })
+}
+
+/// Reads a non-standard tag value (e.g. Opus R128 gain) by its raw Vorbis
+/// comment key, which lofty does not expose as a typed [`ItemKey`].
+fn get_custom_string<'a>(tag: &'a Tag, key: &str) -> Option<&'a str> {
+    let item_key = ItemKey::from_key(TagType::VorbisComments, key)?;
+    tag.get_string(item_key)
 }

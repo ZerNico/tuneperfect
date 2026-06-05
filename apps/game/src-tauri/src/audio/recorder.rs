@@ -51,13 +51,12 @@ impl Recorder {
         playback_volume: f32,
     ) -> Result<(), AppError> {
         let device_manager = DeviceManager::new()?;
-        let mic_names: Vec<String> = options.iter().map(|opt| opt.name.clone()).collect();
-        let input_devices = device_manager.find_input_devices(&mic_names)?;
+        let input_devices = device_manager.find_input_devices(&options)?;
 
         let input_sample_rates: Vec<u32> = if playback_enabled {
             let mut rates = vec![0u32; options.len()];
             for (_, config, mic_indices) in &input_devices {
-                let sample_rate = config.sample_rate.0;
+                let sample_rate = config.sample_rate;
                 for &index in mic_indices {
                     if index < rates.len() {
                         rates[index] = sample_rate;
@@ -80,7 +79,7 @@ impl Recorder {
         };
 
         let mut output_mixer: Option<OutputMixer> = if let Some((_, config)) = &output_config {
-            let mixer = OutputMixer::new(options.len(), &input_sample_rates, config.sample_rate.0)?;
+            let mixer = OutputMixer::new(options.len(), &input_sample_rates, config.sample_rate)?;
             Some(mixer)
         } else {
             None

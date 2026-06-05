@@ -1,4 +1,4 @@
-use chardetng::EncodingDetector;
+use chardetng::{EncodingDetector, Iso2022JpDetection, Utf8Detection};
 use semver::Version;
 use std::fs;
 use unicode_normalization::UnicodeNormalization;
@@ -309,7 +309,7 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
             md5_context.consume(song.title.as_bytes());
             md5_context.consume(song.artist.as_bytes());
 
-            song.hash = format!("{:x}", md5_context.compute());
+            song.hash = format!("{:x}", md5_context.finalize());
             song.voices = voices;
             break;
         }
@@ -342,9 +342,9 @@ pub fn parse_local_txt_file(
     media_base_url: &str,
 ) -> Result<LocalSong, AppError> {
     let bytes = fs::read(txt)?;
-    let mut detector = EncodingDetector::new();
+    let mut detector = EncodingDetector::new(Iso2022JpDetection::Deny);
     detector.feed(&bytes, true);
-    let encoding = detector.guess(None, true);
+    let encoding = detector.guess(None, Utf8Detection::Allow);
     let (content, _, _) = encoding.decode(&bytes);
 
     let song = parse_ultrastar_txt(&content)?;
