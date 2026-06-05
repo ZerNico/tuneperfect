@@ -7,36 +7,36 @@ import { commands, events } from "~/bindings";
  * send/receive through Tauri IPC to a Rust-managed WebRTC peer connection.
  */
 export class RustDataChannel extends EventTarget {
-  private _readyState: RTCDataChannelState = "connecting";
-  private _label: string;
-  private _userId: string;
-  private _unlistenMessage: UnlistenFn | null = null;
-  private _unlistenClose: UnlistenFn | null = null;
+  #readyState: RTCDataChannelState = "connecting";
+  #label: string;
+  #userId: string;
+  #unlistenMessage: UnlistenFn | null = null;
+  #unlistenClose: UnlistenFn | null = null;
 
   constructor(userId: string, label: string) {
     super();
-    this._userId = userId;
-    this._label = label;
+    this.#userId = userId;
+    this.#label = label;
   }
 
   get label(): string {
-    return this._label;
+    return this.#label;
   }
 
   get readyState(): RTCDataChannelState {
-    return this._readyState;
+    return this.#readyState;
   }
 
   async startListening(): Promise<() => void> {
-    this._unlistenMessage = await events.channelMessageEvent.listen((event) => {
-      if (event.payload.userId === this._userId && event.payload.label === this._label) {
+    this.#unlistenMessage = await events.channelMessageEvent.listen((event) => {
+      if (event.payload.userId === this.#userId && event.payload.label === this.#label) {
         this.dispatchEvent(new MessageEvent("message", { data: event.payload.data }));
       }
     });
 
-    this._unlistenClose = await events.channelCloseEvent.listen((event) => {
-      if (event.payload.userId === this._userId && event.payload.label === this._label) {
-        this._readyState = "closed";
+    this.#unlistenClose = await events.channelCloseEvent.listen((event) => {
+      if (event.payload.userId === this.#userId && event.payload.label === this.#label) {
+        this.#readyState = "closed";
         this.dispatchEvent(new Event("close"));
       }
     });
@@ -45,33 +45,33 @@ export class RustDataChannel extends EventTarget {
   }
 
   markOpen(): void {
-    this._readyState = "open";
+    this.#readyState = "open";
     this.dispatchEvent(new Event("open"));
   }
 
   send(data: string | ArrayBuffer): void {
-    if (this._readyState !== "open") {
+    if (this.#readyState !== "open") {
       throw new DOMException("InvalidStateError: channel is not open");
     }
 
     const strData = typeof data === "string" ? data : new TextDecoder().decode(data);
 
-    commands.webrtcSendMessage(this._userId, this._label, strData).then((result) => {
+    commands.webrtcSendMessage(this.#userId, this.#label, strData).then((result) => {
       if (result.status === "error") {
-        console.error(`[RustDataChannel] Failed to send on '${this._label}':`, result.error);
+        console.error(`[RustDataChannel] Failed to send on '${this.#label}':`, result.error);
       }
     });
   }
 
   close(): void {
-    this._readyState = "closed";
+    this.#readyState = "closed";
     this.dispatchEvent(new Event("close"));
   }
 
   cleanup(): void {
-    this._unlistenMessage?.();
-    this._unlistenMessage = null;
-    this._unlistenClose?.();
-    this._unlistenClose = null;
+    this.#unlistenMessage?.();
+    this.#unlistenMessage = null;
+    this.#unlistenClose?.();
+    this.#unlistenClose = null;
   }
 }

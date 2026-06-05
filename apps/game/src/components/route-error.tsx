@@ -77,6 +77,7 @@ export function RouteError(props: ErrorComponentProps) {
             </span>
             <textarea
               readOnly
+              aria-label={t("common.routeError.detailsHeading")}
               spellcheck={false}
               class="styled-scrollbars min-h-[12rem] w-full min-w-0 resize-y rounded-lg border border-white/15 bg-black/35 p-3 font-mono text-xs leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-white/30"
               style={{ color: "rgb(244 244 245)" }}

@@ -85,6 +85,7 @@ function SongsComponent() {
           <input
             type="text"
             placeholder={t("songs.searchPlaceholder")}
+            aria-label={t("songs.searchPlaceholder")}
             value={searchQuery()}
             onInput={(e) => setSearchQuery(e.currentTarget.value)}
             class="w-full rounded-lg border border-slate-200 bg-white py-2 pr-4 pl-10 text-slate-800 focus:border-blue-500 focus:outline-none"

@@ -97,6 +97,7 @@ const Slider: Component<SliderProps> = (props) => {
           {(_, index) => (
             <button
               type="button"
+              aria-label={`Go to slide ${index() + 1}`}
               onClick={() => scrollToSlide(index())}
               class={cn("h-2 w-2 cursor-pointer rounded-full transition-all", {
                 "w-4 bg-white": currentIndex() === index(),

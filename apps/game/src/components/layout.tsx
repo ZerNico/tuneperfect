@@ -27,7 +27,7 @@ export default function Layout(props: LayoutProps) {
               <div class="absolute inset-0 h-full w-full">{props.background}</div>
               <div class="relative z-1 grid max-w-full grow grid-rows-[min-content_1fr_min-content] gap-6 p-16">
                 <div>{props.header}</div>
-                <div class="flex w-full min-h-0 min-w-0 flex-col">{props.children}</div>
+                <div class="flex min-h-0 w-full min-w-0 flex-col">{props.children}</div>
                 <div>{props.footer}</div>
               </div>
               <ToastRegion />

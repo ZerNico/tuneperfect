@@ -48,6 +48,7 @@ export default function Input(props: InputProps) {
           maxLength={props.maxLength}
           type={type()}
           onInput={(event) => props.onInput?.(event)}
+          aria-label={props.label}
           class="block w-full grow rounded focus:outline-none"
           classList={{
             [props.inputClass || ""]: true,

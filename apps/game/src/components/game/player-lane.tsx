@@ -60,7 +60,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
         >
           <Pitch />
         </div>
-        <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 right-20">
+        <div class="pointer-events-none absolute top-1/2 right-20 -translate-y-1/2">
           <PhraseRating />
         </div>
         <div

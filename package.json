@@ -10,8 +10,7 @@
     "tuneperfect": "bun run ./node_modules/@tuneperfect/cli/src/index.ts",
     "lint": "oxlint",
     "format": "oxfmt",
-    "format:check": "oxfmt --check",
-    "check": "bun run lint . && bun run format:check ."
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@tuneperfect/cli": "workspace:*"

@@ -144,13 +144,12 @@ function EditProfileComponent() {
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={handleFileChange}
+              aria-label={t("editProfile.title")}
               class="hidden"
             />
             <Show
               when={file()}
-              fallback={
-                <Show when={sessionQuery.data}>{(session) => <Avatar size="lg" user={session()} />}</Show>
-              }
+              fallback={<Show when={sessionQuery.data}>{(session) => <Avatar size="lg" user={session()} />}</Show>}
             >
               <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />
             </Show>

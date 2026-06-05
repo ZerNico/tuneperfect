@@ -1,4 +1,4 @@
-import { createEffect, createSignal, on } from "solid-js";
+import { createEffect, createMemo, createSignal, on } from "solid-js";
 import IconMinus from "~icons/lucide/minus";
 import IconPlus from "~icons/lucide/plus";
 
@@ -310,6 +310,7 @@ export default function ImageCrop(props: ImageCropProps) {
         <div class="relative">
           <canvas
             ref={canvasRef}
+            aria-label={t("editProfile.cropImage")}
             width={canvasSize()}
             height={canvasSize()}
             class="aspect-square w-full cursor-move rounded-lg border-2 border-slate-200 shadow-md select-none"

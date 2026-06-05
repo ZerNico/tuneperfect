@@ -57,6 +57,7 @@ function createYTPlayer(container: HTMLElement, videoId: string, opts?: { muted?
 
     const timeout = setTimeout(() => reject(new Error("YouTube player timed out")), 15000);
 
+    // oxlint-disable-next-line no-new
     new window.YT.Player(div, {
       videoId,
       host: "https://www.youtube-nocookie.com",

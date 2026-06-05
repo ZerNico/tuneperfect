@@ -138,6 +138,7 @@ export function SearchPopup(props: SearchPopupProps) {
             ref={searchRef}
             type="text"
             placeholder={t("sing.search")}
+            aria-label={t("sing.search")}
             class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>

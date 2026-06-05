@@ -269,6 +269,7 @@ export default function ImageCrop(props: ImageCropProps) {
         <div class="relative">
           <canvas
             ref={canvasRef}
+            aria-label={t("settings.sections.localPlayers.cropAvatar")}
             width={canvasSize()}
             height={canvasSize()}
             class="aspect-square w-64 cursor-move rounded-full select-none"

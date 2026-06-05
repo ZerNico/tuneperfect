@@ -115,6 +115,7 @@ export default function Input(props: InputProps) {
                 type={props.type || "text"}
                 value={props.value || ""}
                 placeholder={props.placeholder}
+                aria-label={props.label || props.placeholder}
                 maxLength={props.maxLength}
                 onInput={(event) => props.onInput?.(event)}
                 onFocus={handleFocus}

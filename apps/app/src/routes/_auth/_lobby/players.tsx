@@ -163,6 +163,7 @@ function PlayersComponent() {
                 {(club) => (
                   <button
                     type="button"
+                    aria-label={club.name}
                     class="flex w-full cursor-pointer items-center justify-between rounded-lg border-2 p-4 text-start transition-all hover:scale-[1.02] hover:shadow-md"
                     classList={{
                       "border-blue-500 bg-blue-50 shadow-md": selectedClubId() === club.id,
