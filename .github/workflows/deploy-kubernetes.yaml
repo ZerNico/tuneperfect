@@ -29,7 +29,7 @@ jobs:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         run: |
           mkdir -p $HOME/.kube
-          echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
+          echo "$KUBE_CONFIG_DATA" | tr -d '[:space:]' | base64 -d > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
 
       - name: Set up Helm
