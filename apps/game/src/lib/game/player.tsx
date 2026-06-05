@@ -81,6 +81,8 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return game.beat() - delayInBeats;
   });
 
+  const delayedFlooredBeat = createMemo(() => Math.floor(delayedBeat()));
+
   const beats = createMemo(() => {
     const beatMap = new Map<
       number,
@@ -137,8 +139,10 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     on(
       () => game.pitches(),
       (allPitches) => {
-        // Mic delay is compensated in Rust, so score against the undelayed beat.
-        const flooredBeat = Math.floor(game.beat());
+        // The processor always returns the most recent pitch; compensate for
+        // this mic's input delay by scoring it against the corresponding
+        // earlier beat.
+        const flooredBeat = delayedFlooredBeat();
 
         if (flooredBeat === lastProcessedBeat) {
           return;

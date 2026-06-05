@@ -44,18 +44,15 @@ pub struct Processor {
     pitchtracker: DywaPitchTracker,
     options: MicrophoneOptions,
     sample_rate: u32,
-    /// How far the analysis window is shifted into the past to compensate for
-    /// this microphone's input latency.
-    delay_samples: usize,
 }
 
 impl Processor {
     pub fn new(options: MicrophoneOptions, sample_rate: u32) -> (Self, AudioInput) {
-        let delay_samples = ms_to_samples(options.delay, sample_rate);
-
-        // Must cover the mic delay plus a full pitch window so the
-        // delay-compensated window is always available.
-        let capacity = delay_samples + MAX_PITCH_SAMPLES + WINDOW_HEADROOM_SAMPLES;
+        // Must cover a full pitch window plus headroom for overlapping
+        // sub-windows. Mic-delay compensation is applied per player on the
+        // TypeScript side (the analyzed beat is offset by the mic delay), so
+        // the processor always analyzes the most recent audio.
+        let capacity = MAX_PITCH_SAMPLES + WINDOW_HEADROOM_SAMPLES;
 
         let queue = HeapRb::<f32>::new(capacity);
         let (producer, consumer) = queue.split();
@@ -72,7 +69,6 @@ impl Processor {
             pitchtracker,
             options,
             sample_rate,
-            delay_samples,
         };
 
         let input = AudioInput { producer, gain };
@@ -99,19 +95,20 @@ impl Processor {
     }
 
     /// Median detected frequency (Hz) over the last `window_ms`, or `-1.0` if
-    /// no pitch was found. The window ends `delay_samples` in the past to
-    /// compensate for this mic's input latency.
+    /// no pitch was found. Always analyzes the most recent audio; per-player
+    /// mic-delay compensation is handled on the TypeScript side by scoring the
+    /// detected pitch against an earlier beat.
     pub fn get_pitch(&mut self, window_ms: f32) -> f32 {
         self.drain_into_window();
 
         let window_samples = self.window_samples(window_ms);
         let available = self.window.len();
 
-        if available < self.delay_samples + window_samples + SUB_WINDOW_COUNT {
+        if available < window_samples + SUB_WINDOW_COUNT {
             return -1.0;
         }
 
-        let window_end = available - self.delay_samples;
+        let window_end = available;
 
         // Spread overlapping sub-windows back from `window_end`.
         let step = if SUB_WINDOW_COUNT > 1 {
@@ -157,7 +154,7 @@ impl Processor {
         median(&mut pitches)
     }
 
-    /// RMS level of the most recent window, for the audio-level meter.
+    /// Peak level of the most recent window, for the audio-level meter.
     pub fn get_level(&mut self) -> f32 {
         self.drain_into_window();
 
@@ -166,9 +163,9 @@ impl Processor {
             return 0.0;
         }
         let start = self.window.len() - window_size;
-        let samples = &self.window[start..];
-        let sum_sq: f32 = samples.iter().map(|&s| s * s).sum();
-        (sum_sq / window_size as f32).sqrt()
+        self.window[start..]
+            .iter()
+            .fold(0.0f32, |max, &s| max.max(s.abs()))
     }
 
     fn window_samples(&self, window_ms: f32) -> usize {
@@ -176,20 +173,17 @@ impl Processor {
         requested.clamp(SUB_WINDOW_COUNT, MAX_PITCH_SAMPLES)
     }
 
-    /// Whether the window carries signal above the noise floor. Uses RMS rather
-    /// than a single-sample peak so transient clicks don't trip the gate.
     fn above_noise_threshold(&self, start_sample: usize, window_samples: usize) -> bool {
         let min_threshold = self.options.threshold / 100.0;
         let end_sample = start_sample + window_samples;
 
-        if end_sample > self.window.len() || window_samples == 0 {
+        if end_sample > self.window.len() {
             return false;
         }
 
-        let samples = &self.window[start_sample..end_sample];
-        let sum_sq: f32 = samples.iter().map(|&s| s * s).sum();
-        let rms = (sum_sq / window_samples as f32).sqrt();
-        rms > min_threshold
+        self.window[start_sample..end_sample]
+            .iter()
+            .any(|&sample| sample.abs() > min_threshold)
     }
 }
 
