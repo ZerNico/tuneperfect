@@ -1,3 +1,4 @@
+use crate::audio::device::device_display_name;
 use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
@@ -28,7 +29,7 @@ pub fn get_microphones() -> Result<Vec<Microphone>, AppError> {
 
         microphones.push(Microphone {
             id: device.id().ok().map(|id| id.to_string()),
-            name: description.name().to_string(),
+            name: device_display_name(&description),
             channels: config.channels(),
         });
     }

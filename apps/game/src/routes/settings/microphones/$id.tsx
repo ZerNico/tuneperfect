@@ -52,17 +52,27 @@ function MicrophoneComponent() {
       >
         <Show when={microphones()}>
           {(microphones) => {
-            const [microphone, setMicrophone] = createSignal(
-              settingsStore.microphones()[id()] || {
-                deviceId: microphones()[0]?.id ?? undefined,
-                name: microphones()[0]?.name || null,
-                channel: 0,
-                color: "sky",
-                delay: 200,
-                gain: 1,
-                threshold: 2,
-              },
-            );
+            const existing = settingsStore.microphones()[id()];
+            // Backfill the stable device id for configs saved before IDs existed
+            // (or whenever it's missing), so saving without changing the mic still
+            // persists the id. Match the stored name against the live devices.
+            const initialMicrophone = existing
+              ? {
+                  ...existing,
+                  deviceId:
+                    existing.deviceId ?? microphones().find((device) => device.name === existing.name)?.id ?? undefined,
+                }
+              : {
+                  deviceId: microphones()[0]?.id ?? undefined,
+                  name: microphones()[0]?.name || null,
+                  channel: 0,
+                  color: "sky",
+                  delay: 200,
+                  gain: 1,
+                  threshold: 2,
+                };
+
+            const [microphone, setMicrophone] = createSignal(initialMicrophone);
 
             const deleteMicrophone = () => {
               settingsStore.deleteMicrophone(id());

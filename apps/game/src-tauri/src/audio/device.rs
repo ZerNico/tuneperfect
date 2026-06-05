@@ -11,14 +11,27 @@ struct DeviceIdentity {
     name: Option<String>,
 }
 
+/// Pick the most descriptive, user-facing name from a device description.
+///
+/// On Windows/WASAPI (cpal 0.17.x) `name()` returns the generic short
+/// `DeviceDesc` (e.g. "Mikrofon"/"Microphone"), which is identical for every
+/// device, while the unique `FriendlyName` (e.g. "Mikrofon (USB Audio Device)")
+/// is placed in the first `extended()` line. Prefer that friendly line when
+/// present, otherwise fall back to `name()`. On macOS/Linux `extended()` is
+/// empty, so this returns the regular name unchanged.
+pub fn device_display_name(desc: &cpal::DeviceDescription) -> String {
+    desc.extended()
+        .first()
+        .map(String::as_str)
+        .unwrap_or_else(|| desc.name())
+        .to_string()
+}
+
 /// Read a device's stable ID (as a `Display` string) and human-readable name.
 /// Both are optional because backends can fail to report either.
 fn device_identity(device: &Device) -> DeviceIdentity {
     let id = device.id().ok().map(|id| id.to_string());
-    let name = device
-        .description()
-        .ok()
-        .map(|desc| desc.name().to_string());
+    let name = device.description().ok().map(|desc| device_display_name(&desc));
     DeviceIdentity { id, name }
 }
 
