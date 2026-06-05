@@ -54,6 +54,7 @@ function MicrophoneComponent() {
           {(microphones) => {
             const [microphone, setMicrophone] = createSignal(
               settingsStore.microphones()[id()] || {
+                deviceId: microphones()[0]?.id ?? undefined,
                 name: microphones()[0]?.name || null,
                 channel: 0,
                 color: "sky",
@@ -83,7 +84,10 @@ function MicrophoneComponent() {
                 label: t("settings.sections.microphones.microphone"),
                 value: () => microphone().name,
                 onChange: (name: string) => {
-                  setMicrophone((prev) => ({ ...prev, name }));
+                  // Persist the stable device id alongside the name so the mic can
+                  // still be matched if its name changes or collides.
+                  const deviceId = microphones().find((device) => device.name === name)?.id ?? undefined;
+                  setMicrophone((prev) => ({ ...prev, name, deviceId }));
                 },
                 options: microphones().map((microphone) => microphone.name),
               },
@@ -150,6 +154,7 @@ function MicrophoneComponent() {
                 interactive: false,
                 render: () => (
                   <MicLevelMeter
+                    deviceId={() => microphone().deviceId}
                     name={() => microphone().name}
                     channel={() => microphone().channel}
                     gain={() => microphone().gain}

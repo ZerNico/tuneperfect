@@ -36,6 +36,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     if (!opts.song) {
       throw new Error("No song provided");
     }
+    console.log(roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone));
 
     await commands.startRecording(
       roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],

@@ -94,12 +94,27 @@ export type LocalSong = {
 } & Song;
 
 export type Microphone = {
+	/**
+	 *  Stable device ID (cpal `DeviceId` serialized via `Display`). Preferred for
+	 *  persisting a mic selection. `None` if the backend can't report an ID.
+	 */
+	id: string | null,
 	name: string,
 	channels: number,
 };
 
 /**  Configuration options for a microphone input */
 export type MicrophoneOptions = {
+	/**
+	 *  Stable device ID (cpal `DeviceId`, serialized via `Display`). Preferred
+	 *  for matching. `None` for configs saved before ID support was added, which
+	 *  fall back to matching by `name`.
+	 */
+	deviceId?: string | null,
+	/**
+	 *  Human-readable device name. Used for display and as a fallback match when
+	 *  `device_id` is absent or the device's ID can't be read.
+	 */
 	name: string,
 	channel: number,
 	gain: number | null,
