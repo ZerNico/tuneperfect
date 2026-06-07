@@ -44,11 +44,5 @@ macro_rules! impl_from_errors {
 impl_from_errors!(
     (std::io::Error, IoError),
     (lofty::error::LoftyError, LoftyError),
-    (cpal::StreamError, CpalError),
-    (cpal::DefaultStreamConfigError, CpalError),
-    (cpal::DevicesError, CpalError),
-    (cpal::DeviceNameError, CpalError),
-    (cpal::DeviceIdError, CpalError),
-    (cpal::BuildStreamError, CpalError),
-    (cpal::PlayStreamError, CpalError)
+    (cpal::Error, CpalError)
 );

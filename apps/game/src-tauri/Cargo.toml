@@ -30,7 +30,7 @@ specta-typescript = "0.0.12"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 thiserror = "2"
 lofty = "0"
-cpal = "0.17.3"
+cpal = "0.18.1"
 ringbuf = "0"
 dywapitchtrack = "0.2.0"
 rubato = "3.0"
@@ -65,3 +65,6 @@ tauri-plugin-cli = "2.4.1"
 tauri-plugin-single-instance = "2.3.7"
 tauri-plugin-updater = "2.9.0"
 tauri-plugin-window-state = "2.4.1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-core = "0.61"

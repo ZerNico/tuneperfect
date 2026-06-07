@@ -21,8 +21,7 @@ struct DeviceIdentity {
 /// empty, so this returns the regular name unchanged.
 pub fn device_display_name(desc: &cpal::DeviceDescription) -> String {
     desc.extended()
-        .first()
-        .map(String::as_str)
+        .next()
         .unwrap_or_else(|| desc.name())
         .to_string()
 }
