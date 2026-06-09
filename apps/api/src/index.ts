@@ -53,7 +53,8 @@ const plugins = [
         return origin;
       }
 
-      return allowedOrigins[0];
+      // Unknown origins get no Access-Control-Allow-Origin header at all.
+      return null;
     },
     credentials: true,
     allowHeaders: ["Content-Type", "Authorization"],
