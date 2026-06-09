@@ -425,6 +425,15 @@ pub fn parse_local_txt_file(
 
     let replay_gain = audio_file.and_then(|file| get_replay_gain(&file.path).ok());
 
+    let created_at = fs::metadata(txt).ok().and_then(|metadata| {
+        metadata
+            .created()
+            .or_else(|_| metadata.modified())
+            .ok()
+            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|duration| duration.as_millis() as f64)
+    });
+
     Ok(LocalSong {
         song,
         audio_url,
@@ -434,5 +443,6 @@ pub fn parse_local_txt_file(
         background_url,
         replay_gain_track_gain: replay_gain.as_ref().and_then(|rg| rg.track_gain),
         replay_gain_track_peak: replay_gain.as_ref().and_then(|rg| rg.track_peak),
+        created_at,
     })
 }

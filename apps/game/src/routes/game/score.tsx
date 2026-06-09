@@ -159,6 +159,10 @@ function ScoreComponent() {
   });
 
   onMount(() => {
+    for (const result of results()) {
+      localStore.markSongPlayed(result.song.song.hash);
+    }
+
     updateHighscoresMutation.mutate();
 
     const totalAnimationTime = animatedStages().length * ANIMATION_DELAY;

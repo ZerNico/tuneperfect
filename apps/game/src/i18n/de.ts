@@ -106,7 +106,11 @@ const de = {
       artist: "Künstler",
       title: "Titel",
       year: "Jahr",
+      date: "Neueste",
       views: "Beliebt",
+    },
+    badge: {
+      new: "Neu",
     },
     songCount: {
       one: "{{count}} Lied",

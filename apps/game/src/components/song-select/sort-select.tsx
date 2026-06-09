@@ -11,7 +11,7 @@ import { t } from "~/lib/i18n";
 
 import type { SortOption } from "./song-scroller";
 
-const DEFAULT_SORT_OPTIONS: SortOption[] = ["artist", "title", "year"];
+const DEFAULT_SORT_OPTIONS: SortOption[] = ["artist", "title", "year", "date"];
 
 interface SortSelectProps {
   selected: SortOption;

@@ -23,6 +23,13 @@ const localStoreSchema1_1_0 = v.object({
       v.record(difficultySchema, v.optional(v.number())), // difficulty -> score
     ),
   ),
+  playedSongs: v.optional(
+    v.record(
+      v.string(), // songHash
+      v.number(), // last played timestamp (ms since epoch)
+    ),
+    {},
+  ),
 });
 
 // Migration schema from v1.0.0 to v1.1.0
@@ -42,6 +49,7 @@ const localStoreSchema1_0_0 = v.pipe(
     (data): v.InferInput<typeof localStoreSchema1_1_0> => ({
       version: "1.1.0",
       players: data.players,
+      playedSongs: {},
       scores: Object.fromEntries(
         Object.entries(data.scores).map(([userId, userScores]) => [
           userId,
@@ -62,6 +70,7 @@ const defaultLocalSettings: LocalStore = {
   version: "1.1.0",
   players: [],
   scores: {},
+  playedSongs: {},
 };
 
 const localStoreInstance = createPersistentStore({
@@ -138,6 +147,17 @@ function createLocalStore() {
     return localSettings().scores[userId]?.[songHash]?.[difficulty];
   };
 
+  const markSongPlayed = (songHash: string) => {
+    updateLocalSettings("playedSongs", (prev) => ({
+      ...prev,
+      [songHash]: Date.now(),
+    }));
+  };
+
+  const isSongPlayed = (songHash: string) => {
+    return localSettings().playedSongs[songHash] !== undefined;
+  };
+
   const getScoresForSong = (songHash: string, difficulty: Difficulty) => {
     const currentScores = localSettings().scores;
     const result: { user: LocalUser; score: number }[] = [];
@@ -165,6 +185,8 @@ function createLocalStore() {
     addScore,
     getScore,
     getScoresForSong,
+    markSongPlayed,
+    isSongPlayed,
   };
 }
 

@@ -94,4 +94,6 @@ pub struct LocalSong {
     pub replay_gain_track_gain: Option<f32>,
     #[serde(rename = "replayGainTrackPeak")]
     pub replay_gain_track_peak: Option<f32>,
+    #[serde(rename = "createdAt")]
+    pub created_at: Option<f64>,
 }

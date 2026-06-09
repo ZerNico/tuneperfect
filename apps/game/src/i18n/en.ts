@@ -106,7 +106,11 @@ const en = {
       artist: "Artist",
       title: "Title",
       year: "Year",
+      date: "Newest",
       views: "Popular",
+    },
+    badge: {
+      new: "New",
     },
     songCount: {
       one: "{{count}} song",

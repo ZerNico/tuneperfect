@@ -91,6 +91,7 @@ export type LocalSong = {
 	backgroundUrl: string | null,
 	replayGainTrackGain: number | null,
 	replayGainTrackPeak: number | null,
+	createdAt: number | null,
 } & Song;
 
 export type Microphone = {

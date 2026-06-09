@@ -37,6 +37,7 @@ import { countActiveFilters, DEFAULT_FILTERS } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { localStore } from "~/stores/local";
 import { medleyStore } from "~/stores/medley";
 import { selectionStore } from "~/stores/selection";
 import { settingsStore } from "~/stores/settings";
@@ -205,7 +206,7 @@ function SingComponent() {
   };
 
   const moveSorting = (direction: "left" | "right") => {
-    const SORT_OPTIONS: SortOption[] = ["artist", "title", "year"];
+    const SORT_OPTIONS: SortOption[] = ["artist", "title", "year", "date"];
     const currentIndex = SORT_OPTIONS.indexOf(sort());
     const newIndex = (currentIndex + (direction === "left" ? -1 : 1) + SORT_OPTIONS.length) % SORT_OPTIONS.length;
     setSort(SORT_OPTIONS[newIndex] || "artist");
@@ -432,9 +433,14 @@ function SingComponent() {
                       {currentSong()?.title}
                     </span>
                   </div>
-                  <div class="absolute top-full">
+                  <div class="absolute top-full flex items-center gap-2">
                     <Show when={(currentSong()?.voices.length || 0) > 1}>
                       <IconDuet />
+                    </Show>
+                    <Show when={currentSong() && !localStore.isSongPlayed(currentSong()!.hash)}>
+                      <span class="gradient-sing rounded-full bg-linear-to-b px-2.5 py-0.5 text-sm font-semibold text-white shadow-md">
+                        {t("sing.badge.new")}
+                      </span>
                     </Show>
                   </div>
                 </div>
@@ -466,9 +472,14 @@ function SingComponent() {
                     {currentSong()?.title}
                   </span>
                 </div>
-                <div class="absolute top-full">
+                <div class="absolute top-full flex items-center gap-2">
                   <Show when={(currentSong()?.voices.length || 0) > 1}>
                     <IconDuet />
+                  </Show>
+                  <Show when={currentSong() && !localStore.isSongPlayed(currentSong()!.hash)}>
+                    <span class="gradient-sing rounded-full bg-linear-to-b px-2.5 py-0.5 text-sm font-semibold text-white shadow-md">
+                      {t("sing.badge.new")}
+                    </span>
                   </Show>
                 </div>
               </div>

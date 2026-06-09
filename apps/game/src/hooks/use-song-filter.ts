@@ -2,7 +2,7 @@ import { debounce } from "@solid-primitives/scheduled";
 import MiniSearch from "minisearch";
 import { type Accessor, createEffect, createMemo, createSignal } from "solid-js";
 
-export type SortOption = "artist" | "title" | "year" | "views";
+export type SortOption = "artist" | "title" | "year" | "date" | "views";
 export type SearchFieldScope = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
 
 export type SongTypeFilter = "all" | "solo" | "duet";
@@ -58,6 +58,8 @@ export interface SongLike {
   title: string;
   year?: number | null;
   views?: number | null;
+  /** File creation date in ms since epoch. Present on LocalSong; absent on online entries. */
+  createdAt?: number | null;
   genre?: string | string[] | null;
   language?: string | string[] | null;
   edition?: string | string[] | null;
@@ -191,6 +193,9 @@ export function useSongFilter<T extends SongLike>(options: UseSongFilterOptions<
       }
       if (sortKey === "year") {
         return (a.year ?? 0) - (b.year ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
+      }
+      if (sortKey === "date") {
+        return (b.createdAt ?? 0) - (a.createdAt ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
       }
       if (sortKey === "views") {
         return (b.views ?? 0) - (a.views ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
