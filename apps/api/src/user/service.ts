@@ -38,6 +38,14 @@ export class UserService {
     });
   }
 
+  async getUserByIdWithPassword(id: string) {
+    return await db.query.users.findFirst({
+      where: {
+        id,
+      },
+    });
+  }
+
   async getUserByUsername(username: string) {
     return await db.query.users.findFirst({
       where: {

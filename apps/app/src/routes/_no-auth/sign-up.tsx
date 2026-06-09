@@ -36,7 +36,7 @@ function SignUpComponent() {
       confirmPassword: "",
     },
     onSubmit: async ({ value }) => {
-      const [error, _data, isDefined] = await safe(
+      const [error, _data, _isDefined] = await safe(
         client.auth.signUp.call({
           email: value.email,
           password: value.password,
@@ -45,13 +45,6 @@ function SignUpComponent() {
       );
 
       if (error) {
-        if (isDefined && error.code === "EMAIL_ALREADY_EXISTS") {
-          notify({
-            message: t("signUp.emailAlreadyExists"),
-            intent: "error",
-          });
-          return;
-        }
         notify({
           message: t("error.unknown"),
           intent: "error",

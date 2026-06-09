@@ -12,11 +12,6 @@ import { authService } from "./service";
 
 export const authRouter = os.prefix("/auth").router({
   signUp: base
-    .errors({
-      EMAIL_ALREADY_EXISTS: {
-        status: 400,
-      },
-    })
     .meta({
       rateLimit: {
         limit: 10,
@@ -31,23 +26,31 @@ export const authRouter = os.prefix("/auth").router({
       }),
     )
     .handler(async ({ input, errors }) => {
-      const existingUser = await userService.getUserByEmail(input.email);
+      // Respond identically whether the email is registered or not to prevent
+      // account enumeration. Existing unverified accounts get a fresh
+      // verification email; existing verified accounts receive nothing.
+      await executeWithConstantTime(async () => {
+        const existingUser = await userService.getUserByEmail(input.email);
 
-      if (existingUser) {
-        throw errors.EMAIL_ALREADY_EXISTS();
-      }
+        if (existingUser) {
+          if (!existingUser.emailVerified) {
+            await authService.sendVerificationEmail(existingUser, { redirect: input.redirect });
+          }
+          return;
+        }
 
-      const user = await userService.createUser(input.email, input.password);
+        const user = await userService.createUser(input.email, input.password);
 
-      if (!user) {
-        throw errors.INTERNAL_SERVER_ERROR();
-      }
+        if (!user) {
+          throw errors.INTERNAL_SERVER_ERROR();
+        }
 
-      try {
-        await authService.sendVerificationEmail(user, { redirect: input.redirect });
-      } catch (error) {
-        logger.warn(error, "Failed to send verification email");
-      }
+        try {
+          await authService.sendVerificationEmail(user, { redirect: input.redirect });
+        } catch (error) {
+          logger.warn(error, "Failed to send verification email");
+        }
+      }, 1000);
     }),
 
   signIn: base

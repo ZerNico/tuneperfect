@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 import { renderResetPassword, renderVerifyEmail } from "@tuneperfect/email";
 import { addDays, addHours, addMinutes, addYears, differenceInSeconds, isAfter, isBefore } from "date-fns";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { joinURL, withQuery } from "ufo";
 import * as v from "valibot";
@@ -195,13 +195,22 @@ class AuthService {
     await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, this.hashToken(refreshToken)));
   }
 
-  async deleteAllRefreshTokensForUser(userId: string) {
+  async deleteAllRefreshTokensForUser(userId: string, exceptToken?: string) {
+    if (exceptToken) {
+      await db
+        .delete(schema.refreshTokens)
+        .where(
+          and(eq(schema.refreshTokens.userId, userId), ne(schema.refreshTokens.token, this.hashToken(exceptToken))),
+        );
+      return;
+    }
+
     await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.userId, userId));
   }
 
   async verifyAccessToken(accessToken: string) {
     const [error, decoded] = await tryCatch(() =>
-      jwt.verify(accessToken, env.JWT_SECRET, { issuer: env.API_URL, audience: env.API_URL }),
+      jwt.verify(accessToken, env.JWT_SECRET, { issuer: env.API_URL, audience: env.API_URL, algorithms: ["HS256"] }),
     );
 
     if (error) {
