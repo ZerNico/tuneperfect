@@ -105,11 +105,14 @@ function getClientIp(headers?: Headers): string {
     return "unknown";
   }
 
-  // x-forwarded-for may be a list ("client, proxy1, proxy2"); the left-most
-  // entry is the originating client IP.
+  // x-forwarded-for may be a list ("client, proxy1, proxy2"). The right-most
+  // entry is the one appended by our trusted reverse proxy and therefore the
+  // only one that cannot be spoofed by the client. Using the left-most entry
+  // would let attackers get a fresh rate-limit bucket per request by sending
+  // arbitrary X-Forwarded-For headers.
   const forwardedFor = headers?.get("x-forwarded-for");
   if (forwardedFor) {
-    const clientIp = forwardedFor.split(",")[0]?.trim();
+    const clientIp = forwardedFor.split(",").at(-1)?.trim();
     if (clientIp) {
       return clientIp;
     }

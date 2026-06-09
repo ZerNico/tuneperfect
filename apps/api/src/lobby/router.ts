@@ -8,22 +8,29 @@ import { requireLobby, requireLobbyOrUser } from "./middleware";
 import { lobbyService } from "./service";
 
 export const lobbyRouter = os.prefix("/lobbies").router({
-  createLobby: base.handler(async ({ errors }) => {
-    const lobby = await lobbyService.createLobby();
+  createLobby: base
+    .meta({
+      rateLimit: {
+        limit: 10,
+        windowMs: 1000 * 60 * 5,
+      },
+    })
+    .handler(async ({ errors }) => {
+      const lobby = await lobbyService.createLobby();
 
-    if (!lobby) {
-      throw errors.INTERNAL_SERVER_ERROR({
-        message: "Failed to create lobby",
-      });
-    }
+      if (!lobby) {
+        throw errors.INTERNAL_SERVER_ERROR({
+          message: "Failed to create lobby",
+        });
+      }
 
-    const token = await lobbyService.generateLobbyToken(lobby.id);
+      const token = await lobbyService.generateLobbyToken(lobby.id);
 
-    return {
-      lobbyId: lobby.id,
-      token,
-    };
-  }),
+      return {
+        lobbyId: lobby.id,
+        token,
+      };
+    }),
 
   currentLobby: base
     .use(requireLobbyOrUser)
