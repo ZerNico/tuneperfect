@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build.ts",
+    "test": "bun test",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:up": "drizzle-kit up"

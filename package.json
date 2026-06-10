@@ -8,6 +8,7 @@
     "dev": "turbo run dev --parallel --force",
     "build": "turbo run build",
     "tuneperfect": "bun run ./node_modules/@tuneperfect/cli/src/index.ts",
+    "test": "turbo run test",
     "lint": "oxlint",
     "format": "oxfmt",
     "format:check": "oxfmt --check"

@@ -33,7 +33,7 @@ Local dev uses Caddy as reverse proxy with mkcert TLS:
 - **UI primitives**: Kobalte (headless SolidJS components)
 - **Icons**: `unplugin-icons` with Lucide + custom SVG collections
 - **i18n**: `@solid-primitives/i18n` with flat dictionary pattern (app & game)
-- **No tests** exist yet — no test framework is configured
+- **Tests**: `bun:test` unit tests in `apps/api` (colocated `src/**/*.test.ts`, preload mocks in `apps/api/test/setup.ts`) — run via `bun run test` (turbo) or `bun test` inside `apps/api`; frontends have no tests yet
 
 ## Security & Secrets
 

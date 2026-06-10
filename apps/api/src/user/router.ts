@@ -92,7 +92,13 @@ export const userRouter = os.prefix("/users").router({
         await authService.deleteAllRefreshTokensForUser(context.payload.sub, currentRefreshToken ?? undefined);
       }
 
-      return updatedUser;
+      if (!updatedUser) {
+        return updatedUser;
+      }
+
+      // Never return the password hash to the client.
+      const { password: _password, ...updatedUserWithoutPassword } = updatedUser;
+      return updatedUserWithoutPassword;
     }),
 
   getUserImage: base

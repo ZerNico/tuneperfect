@@ -1,0 +1,8 @@
+{
+  // The Bun VS Code extension runs tests from the workspace root, so it does not
+  // pick up apps/api/bunfig.toml (and therefore skips the test/setup.ts preload
+  // that sets env vars and mocks db/redis/email). Routing it through the package
+  // "test" script runs in apps/api with the correct bunfig. See:
+  // https://github.com/oven-sh/bun/issues/25797
+  "bun.test.customScript": "bun run test"
+}

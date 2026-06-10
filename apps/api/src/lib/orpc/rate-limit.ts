@@ -98,7 +98,7 @@ function applyRateLimitHeaders(
   context.resHeaders?.set("RateLimit-Policy", `${limit};w=${Math.ceil(windowMs / 1000)}`); // Policy with window size in seconds
 }
 
-function getClientIp(headers?: Headers): string {
+export function getClientIp(headers?: Headers): string {
   // Only trust forwarding headers when running behind a trusted reverse proxy.
   // Otherwise a client could spoof them to bypass rate limiting.
   if (!env.TRUSTED_PROXY_ENABLED) {

@@ -11,6 +11,7 @@
 ```bash
 bun --watch src/index.ts          # dev server (port 3002)
 bun build.ts                       # production build
+bun test                           # run unit tests (bun:test)
 bun run db:generate                # generate Drizzle migrations
 bun run db:studio                  # open Drizzle Studio GUI
 bun run db:up                      # apply pending migrations
@@ -73,6 +74,14 @@ export const myRouter = os.prefix("/things").router({
 - All env vars validated with Valibot in `src/config/env.ts`
 - Add new vars to both `src/config/env.ts` schema AND `.env.example`
 
+### Testing
+
+- **Runner**: `bun:test` (Vitest-compatible API) — run with `bun test`
+- Tests are **colocated**: `src/**/*.test.ts` next to the code under test
+- `test/setup.ts` (preloaded via `bunfig.toml`) sets test env vars and replaces side-effectful modules (`src/lib/db`, `src/lib/redis`, `src/lib/email`, `src/lib/posthog`) with stubs — never import these for real in unit tests
+- Override db behavior per-test: `(db.query.users.findFirst as Mock).mockResolvedValue(user)` — the stub returns stable, overridable mocks
+- New env vars must also be added to `test/setup.ts`
+
 ## Key Files
 
 | File                      | Purpose                                                    |
@@ -110,5 +119,5 @@ rg -n "Cron\|setupJobs" src/                   # find scheduled jobs
 ## Pre-PR Checks
 
 ```bash
-bun run lint apps/api && bun run format:check apps/api && cd apps/api && bun build.ts
+bun run lint apps/api && bun run format:check apps/api && cd apps/api && bun test && bun build.ts
 ```

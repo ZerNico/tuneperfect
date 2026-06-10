@@ -9,12 +9,13 @@ import { authRouter } from "./auth/router";
 import { clubRouter } from "./club/router";
 import { env } from "./config/env";
 import { highscoreRouter } from "./highscore/router";
+import { runMigrations } from "./lib/db";
 import { setupJobs } from "./lib/jobs";
 import { logger } from "./lib/logger";
 import { CookiesPlugin } from "./lib/orpc/cookies";
 import { CsrfProtectionPlugin } from "./lib/orpc/csrf-protection";
 import { captureException, posthog } from "./lib/posthog";
-import { redis } from "./lib/redis";
+import { connectRedis, redis } from "./lib/redis";
 import { lobbyRouter } from "./lobby/router";
 import { signalingRouter } from "./signaling/router";
 import { updateRouter } from "./update/router";
@@ -37,11 +38,12 @@ const router = {
   lobby: lobbyRouter,
   highscore: highscoreRouter,
   update: updateRouter,
-  club: clubRouter,
   signaling: signalingRouter,
   webrtc: webrtcRouter,
 };
 
+await runMigrations();
+await connectRedis();
 setupJobs();
 
 const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost", "http://tauri.localhost"];
