@@ -51,12 +51,12 @@ export default function PhraseRating() {
     <Show when={current()} keyed>
       {(rating) => (
         <div
-          class="animate-phrase-rating rounded-full px-[1.4cqw] py-[0.5cqh] font-bold text-white uppercase shadow-md backdrop-blur-sm"
+          class="relative animate-phrase-rating overflow-hidden rounded-full px-[1.4cqw] py-[0.5cqh] font-bold text-white uppercase shadow-md backdrop-blur-sm"
           classList={{
             "text-3xl": !isCompact(),
             "text-2xl": isCompact(),
             // Perfect is fully golden with a glow; Boo is muted.
-            "scale-110 shadow-[0_0_1.5cqw_rgba(251,191,36,0.85)]": rating.tier === "perfect",
+            "scale-110 shadow-[0_0_2cqw_rgba(251,191,36,0.95)]": rating.tier === "perfect",
             "opacity-70": rating.tier === "boo",
           }}
           style={{
@@ -64,7 +64,18 @@ export default function PhraseRating() {
             "text-shadow": "0 0.1cqh 0.2cqh rgba(0, 0, 0, 0.4)",
           }}
         >
-          {t(`game.phraseRating.${rating.tier}`)}
+          <Show when={rating.tier === "perfect"}>
+            <div
+              class="pointer-events-none absolute inset-0 animate-shimmer"
+              style={{
+                "background-image":
+                  "linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%)",
+                "animation-delay": "0.2s",
+              }}
+              aria-hidden="true"
+            />
+          </Show>
+          <span class="relative">{t(`game.phraseRating.${rating.tier}`)}</span>
         </div>
       )}
     </Show>

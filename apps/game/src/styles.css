@@ -40,6 +40,7 @@
   --animate-sparkle: sparkle 2s ease-in-out infinite;
   --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
   --animate-score-pop: scorePop 0.2s ease-out;
+  --animate-shimmer: shimmer 0.8s ease-in-out both;
 
   @keyframes hide {
     from {
@@ -97,6 +98,15 @@
     }
     100% {
       transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
     }
   }
 
