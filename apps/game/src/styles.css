@@ -39,6 +39,7 @@
   --animate-scroll: scroll 10s linear infinite;
   --animate-sparkle: sparkle 2s ease-in-out infinite;
   --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
+  --animate-score-pop: scorePop 0.2s ease-out;
 
   @keyframes hide {
     from {
@@ -84,6 +85,18 @@
     50% {
       opacity: 1;
       transform: scale(1) rotate(180deg);
+    }
+  }
+
+  @keyframes scorePop {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.08);
+    }
+    100% {
+      transform: scale(1);
     }
   }
 
