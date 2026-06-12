@@ -32,36 +32,45 @@ export const users = p.pgTable(
   (table) => [
     uniqueIndex("email_unique_index").on(lower(table.email)),
     uniqueIndex("username_unique_index").on(lower(table.username)),
+    p.index("users_lobby_id_index").on(table.lobbyId),
   ],
 );
 
-export const refreshTokens = p.pgTable("refresh_tokens", {
-  token: p.text("token").primaryKey(),
-  userId: p
-    .uuid("user_id")
-    .references(() => users.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    })
-    .notNull(),
-  userAgent: p.text("user_agent").notNull(),
-  expires: p.timestamp("expires").notNull(),
-  ...timestampColumns,
-});
+export const refreshTokens = p.pgTable(
+  "refresh_tokens",
+  {
+    token: p.text("token").primaryKey(),
+    userId: p
+      .uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
+      .notNull(),
+    userAgent: p.text("user_agent").notNull(),
+    expires: p.timestamp("expires").notNull(),
+    ...timestampColumns,
+  },
+  (table) => [p.index("refresh_tokens_user_id_index").on(table.userId)],
+);
 
-export const verificationTokens = p.pgTable("verification_tokens", {
-  token: p.text("token").primaryKey(),
-  userId: p
-    .uuid("user_id")
-    .references(() => users.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    })
-    .notNull(),
-  type: p.text("type", { enum: ["email_verification", "password_reset"] }).notNull(),
-  expires: p.timestamp("expires").notNull(),
-  ...timestampColumns,
-});
+export const verificationTokens = p.pgTable(
+  "verification_tokens",
+  {
+    token: p.text("token").primaryKey(),
+    userId: p
+      .uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
+      .notNull(),
+    type: p.text("type", { enum: ["email_verification", "password_reset"] }).notNull(),
+    expires: p.timestamp("expires").notNull(),
+    ...timestampColumns,
+  },
+  (table) => [p.index("verification_tokens_user_id_index").on(table.userId)],
+);
 
 export const oauthAccounts = p.pgTable(
   "oauth_accounts",
@@ -77,14 +86,18 @@ export const oauthAccounts = p.pgTable(
   (table) => [p.primaryKey({ columns: [table.provider, table.providerAccountId] })],
 );
 
-export const lobbies = p.pgTable("lobbies", {
-  id: p.varchar("id").primaryKey().unique(),
-  clubId: p.uuid("club_id").references(() => clubs.id, {
-    onDelete: "set null",
-    onUpdate: "cascade",
-  }),
-  ...timestampColumns,
-});
+export const lobbies = p.pgTable(
+  "lobbies",
+  {
+    id: p.varchar("id").primaryKey().unique(),
+    clubId: p.uuid("club_id").references(() => clubs.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    ...timestampColumns,
+  },
+  (table) => [p.index("lobbies_club_id_index").on(table.clubId)],
+);
 
 export const highscores = p.pgTable(
   "highscores",
@@ -136,7 +149,10 @@ export const clubMembers = p.pgTable(
       .default("member"),
     ...timestampColumns,
   },
-  (table) => [p.primaryKey({ columns: [table.clubId, table.userId] })],
+  (table) => [
+    p.primaryKey({ columns: [table.clubId, table.userId] }),
+    p.index("club_members_user_id_index").on(table.userId),
+  ],
 );
 
 export const clubInvites = p.pgTable(
@@ -165,5 +181,8 @@ export const clubInvites = p.pgTable(
       }),
     ...timestampColumns,
   },
-  (table) => [p.primaryKey({ columns: [table.clubId, table.inviteeId] })],
+  (table) => [
+    p.primaryKey({ columns: [table.clubId, table.inviteeId] }),
+    p.index("club_invites_invitee_id_index").on(table.inviteeId),
+  ],
 );
