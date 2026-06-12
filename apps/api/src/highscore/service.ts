@@ -59,13 +59,14 @@ export class HighscoreService {
       whereConditions.push(eq(highscores.difficulty, difficulty));
     }
 
-    // Exclude the password hash from the joined user to avoid leaking it in the response.
-    const { password: _password, ...userColumns } = getTableColumns(schema.users);
-
     const scores = await db
       .select({
         ...getTableColumns(schema.highscores),
-        user: userColumns,
+        user: {
+          id: schema.users.id,
+          username: schema.users.username,
+          image: schema.users.image,
+        },
       })
       .from(highscores)
       .innerJoin(schema.users, eq(highscores.userId, schema.users.id))

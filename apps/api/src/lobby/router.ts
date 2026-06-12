@@ -116,8 +116,23 @@ export const lobbyRouter = os.prefix("/lobbies").router({
 
   updateSelectedClub: base
     .use(requireLobby)
+    .errors({
+      FORBIDDEN: {
+        status: 403,
+      },
+    })
     .input(v.object({ clubId: v.nullable(v.string()) }))
-    .handler(async ({ context, input }) => {
+    .handler(async ({ context, errors, input }) => {
+      if (input.clubId !== null) {
+        const availableClubs = await lobbyService.getAvailableClubsForLobby(context.payload.sub);
+
+        if (!availableClubs.some((club) => club.id === input.clubId)) {
+          throw errors.FORBIDDEN({
+            message: "Club is not available for this lobby",
+          });
+        }
+      }
+
       return await lobbyService.updateLobbySelectedClub(context.payload.sub, input.clubId);
     }),
 
