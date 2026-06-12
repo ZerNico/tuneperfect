@@ -5,7 +5,7 @@ import * as v from "valibot";
 import { base } from "../../base";
 import { env } from "../../config/env";
 import { logger } from "../../lib/logger";
-import { defaultCookieOptions } from "../../utils/cookie";
+import { cookieMaxAge, defaultCookieOptions } from "../../utils/cookie";
 import { isValidRedirectUrl } from "../../utils/security";
 import { tryCatch } from "../../utils/try-catch";
 import { authService } from "../service";
@@ -126,11 +126,11 @@ export const oauthRouter = os.prefix("/providers").router({
 
       context.setCookie?.("access_token", accessToken.token, {
         ...defaultCookieOptions,
-        maxAge: accessToken.expires.getTime() - Date.now(),
+        maxAge: cookieMaxAge(accessToken.expires),
       });
       context.setCookie?.("refresh_token", refreshToken.token, {
         ...defaultCookieOptions,
-        maxAge: refreshToken.expires.getTime() - Date.now(),
+        maxAge: cookieMaxAge(refreshToken.expires),
       });
       context.resHeaders?.append("location", storedRedirect ?? "/");
     }),

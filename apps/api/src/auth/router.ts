@@ -5,7 +5,7 @@ import { base } from "../base";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { userService } from "../user/service";
-import { defaultCookieOptions } from "../utils/cookie";
+import { cookieMaxAge, defaultCookieOptions } from "../utils/cookie";
 import { executeWithConstantTime, isValidRedirectUrl } from "../utils/security";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
@@ -93,11 +93,11 @@ export const authRouter = os.prefix("/auth").router({
 
         context.setCookie?.("access_token", accessToken.token, {
           ...defaultCookieOptions,
-          maxAge: accessToken.expires.getTime() - Date.now(),
+          maxAge: cookieMaxAge(accessToken.expires),
         });
         context.setCookie?.("refresh_token", refreshToken.token, {
           ...defaultCookieOptions,
-          maxAge: refreshToken.expires.getTime() - Date.now(),
+          maxAge: cookieMaxAge(refreshToken.expires),
         });
       }, 500);
     }),
@@ -256,11 +256,11 @@ export const authRouter = os.prefix("/auth").router({
 
       context.setCookie?.("access_token", accessToken.token, {
         ...defaultCookieOptions,
-        maxAge: accessToken.expires.getTime() - Date.now(),
+        maxAge: cookieMaxAge(accessToken.expires),
       });
       context.setCookie?.("refresh_token", newRefreshToken.token, {
         ...defaultCookieOptions,
-        maxAge: newRefreshToken.expires.getTime() - Date.now(),
+        maxAge: cookieMaxAge(newRefreshToken.expires),
       });
     }),
 

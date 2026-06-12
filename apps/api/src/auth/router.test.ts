@@ -74,6 +74,29 @@ describe("refreshToken", () => {
     const refreshCall = setCookie.mock.calls.find((c) => c[0] === "refresh_token");
     expect(refreshCall?.[1]).toBe("rotated-refresh-token");
   });
+
+  it("sets cookie Max-Age in seconds, not milliseconds", async () => {
+    const user = makeUser();
+    const { context, setCookie } = cookieContext({ refresh_token: "valid-token" });
+    spyOn(authService, "verifyAndRotateRefreshToken").mockResolvedValue({
+      token: "rotated-refresh-token",
+      expires: new Date(Date.now() + 1000 * 60 * 60),
+      user: { ...user, password: null },
+    });
+
+    await call(authRouter.refreshToken, undefined, { context });
+
+    const refreshCall = setCookie.mock.calls.find((c) => c[0] === "refresh_token");
+    const maxAge = (refreshCall?.[2] as Bun.CookieInit).maxAge ?? 0;
+    expect(maxAge).toBeGreaterThan(3500);
+    expect(maxAge).toBeLessThanOrEqual(3600);
+
+    const accessCall = setCookie.mock.calls.find((c) => c[0] === "access_token");
+    const accessMaxAge = (accessCall?.[2] as Bun.CookieInit).maxAge ?? 0;
+    // access tokens live 5 minutes
+    expect(accessMaxAge).toBeGreaterThan(290);
+    expect(accessMaxAge).toBeLessThanOrEqual(300);
+  });
 });
 
 describe("signOut", () => {
