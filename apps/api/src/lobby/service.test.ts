@@ -1,11 +1,24 @@
-import { describe, expect, it } from "bun:test";
+import { type Mock, describe, expect, it } from "bun:test";
 
 import jwt from "jsonwebtoken";
 
 import { authService } from "../auth/service";
 import { env } from "../config/env";
+import { db } from "../lib/db";
 import type { User } from "../types";
 import { LobbyService, lobbyService } from "./service";
+
+describe("getLobbyById", () => {
+  it("never selects the password column for lobby users", async () => {
+    await lobbyService.getLobbyById("LOBBY123");
+
+    const findFirst = db.query.lobbies.findFirst as Mock<typeof db.query.lobbies.findFirst>;
+    const args = findFirst.mock.calls.at(-1)?.[0] as Record<string, any>;
+
+    expect(args.with.users).toEqual({ columns: { password: false } });
+    expect(args.with.selectedClub.with.members.with.user.columns.password).toBe(false);
+  });
+});
 
 describe("lobby codes", () => {
   it("generates 8 character codes from the unambiguous charset", () => {

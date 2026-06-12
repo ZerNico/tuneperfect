@@ -18,7 +18,11 @@ export class LobbyService {
         id,
       },
       with: {
-        users: true,
+        users: {
+          columns: {
+            password: false,
+          },
+        },
         selectedClub: {
           with: {
             members: {
