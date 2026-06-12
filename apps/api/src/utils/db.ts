@@ -20,7 +20,7 @@ export async function locked<T>(client: BunSQL, lockId: number, callback: () => 
     try {
       await reservedClient`SELECT pg_advisory_unlock(${lockId})`;
     } catch (error) {
-      logger.warn(`Failed to release advisory lock ${lockId}:`, error);
+      logger.warn(error, `Failed to release advisory lock ${lockId}`);
     }
 
     reservedClient.release();

@@ -6,13 +6,12 @@ import { env } from "../../config/env";
 import { locked } from "../../utils/db";
 import { logger } from "../logger";
 import { relations } from "./relations";
-import * as schema from "./schema";
 
 // Client creation is lazy (no I/O until the first query), so importing this
 // module is side-effect free. Migrations run explicitly via runMigrations()
 // from the server entry point.
 const client = new SQL(env.POSTGRES_URL);
-export const db = drizzle({ client, schema, relations });
+export const db = drizzle({ client, relations });
 export type DB = typeof db;
 
 const MIGRATION_LOCK_ID = 3898613124;
