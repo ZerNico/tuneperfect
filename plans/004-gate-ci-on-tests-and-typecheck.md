@@ -61,12 +61,13 @@ jobs:
 - `apps/api/package.json` scripts: `dev`, `build`, `test`, `db:generate`, `db:studio`, `db:up` — no `typecheck`. devDependencies do **not** include `typescript` (tsc resolves via the monorepo root/bunx).
 - `apps/api` tests need **no** Postgres/Redis services: `apps/api/test/setup.ts` (preloaded via `bunfig.toml`) stubs `src/lib/db`, `src/lib/redis`, `src/lib/email`, `src/lib/posthog` and sets test env vars. `cd apps/api && bun test` runs standalone after `bun install`.
 - The two pre-existing typecheck errors (`cd apps/api && bunx tsc --noEmit`):
-
   1. `src/utils/db.ts:23` — pino called with `(string, unknown)`; pino's signature is `(obj, msg)`:
+
      ```ts
-     logger.warn(`Failed to release advisory lock ${lockId}:`, error);  // wrong arg order
+     logger.warn(`Failed to release advisory lock ${lockId}:`, error); // wrong arg order
      ```
-     Fix: `logger.warn(error, \`Failed to release advisory lock ${lockId}\`);` — this matches the repo convention used everywhere else (e.g. `apps/api/src/auth/service.ts:70` `logger.error(error, "Failed to send verification email")`).
+
+     Fix: `logger.warn(error, \`Failed to release advisory lock ${lockId}\`);`— this matches the repo convention used everywhere else (e.g.`apps/api/src/auth/service.ts:70` `logger.error(error, "Failed to send verification email")`).
 
   2. `src/lib/db/index.ts:15` — `drizzle({ client, schema, relations })` doesn't match the drizzle-orm 1.0-rc overloads (the rc config type appears not to accept `schema` alongside `relations`):
      ```ts
@@ -77,22 +78,24 @@ jobs:
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Tests | `cd apps/api && bun test` | exit 0, 137+ pass |
-| Typecheck | `cd apps/api && bunx tsc --noEmit` | exit 0 **after** Step 2 (2 errors before) |
-| Lint + format | `bun run lint . && bun run format:check .` (repo root) | exit 0 |
-| CI syntax check | `bunx yaml-lint .github/workflows/ci.yaml` or visually diff against the existing job | valid YAML |
+| Purpose         | Command                                                                              | Expected on success                       |
+| --------------- | ------------------------------------------------------------------------------------ | ----------------------------------------- |
+| Tests           | `cd apps/api && bun test`                                                            | exit 0, 137+ pass                         |
+| Typecheck       | `cd apps/api && bunx tsc --noEmit`                                                   | exit 0 **after** Step 2 (2 errors before) |
+| Lint + format   | `bun run lint . && bun run format:check .` (repo root)                               | exit 0                                    |
+| CI syntax check | `bunx yaml-lint .github/workflows/ci.yaml` or visually diff against the existing job | valid YAML                                |
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `.github/workflows/ci.yaml`
 - `apps/api/package.json` (add `typecheck` script only)
 - `apps/api/src/utils/db.ts` (pino arg order only)
 - `apps/api/src/lib/db/index.ts` (drizzle config typing only)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - Other workspaces' test/typecheck wiring (`apps/app`, `apps/game`, `apps/web`, `packages/*`) — this plan gates `apps/api` only; a turbo-wide `test` pipeline is a separate decision.
 - `turbo.json` / root `package.json` — not needed for a per-directory CI job.
 - Upgrading or downgrading `drizzle-orm`/`drizzle-kit` versions.
@@ -111,22 +114,22 @@ jobs:
 In `.github/workflows/ci.yaml`, add a job alongside `lint-and-format`, reusing its checkout/setup/install steps verbatim:
 
 ```yaml
-  test-api:
-    name: API tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Run API tests
-        working-directory: apps/api
-        run: bun test
+test-api:
+  name: API tests
+  runs-on: ubuntu-latest
+  timeout-minutes: 15
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: package.json
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+    - name: Run API tests
+      working-directory: apps/api
+      run: bun test
 ```
 
 **Verify**: `cd apps/api && bun test` → exit 0 (proves the command the job runs is green locally).
@@ -145,9 +148,9 @@ If fix A still fails typecheck, use the `@ts-expect-error` variant from Current 
 In `apps/api/package.json` scripts, add: `"typecheck": "tsc --noEmit"`. Append to the `test-api` job in `ci.yaml`:
 
 ```yaml
-      - name: Typecheck
-        working-directory: apps/api
-        run: bunx tsc --noEmit
+- name: Typecheck
+  working-directory: apps/api
+  run: bunx tsc --noEmit
 ```
 
 **Verify**: `cd apps/api && bun run typecheck` → exit 0.

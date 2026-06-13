@@ -58,20 +58,22 @@ export const users = p.pgTable(
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Generate migration | `cd apps/api && bunx drizzle-kit generate --name fk_indexes` | new dir under `drizzle/` |
-| Tests | `cd apps/api && bun test` | all pass |
-| Lint + format | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0 |
-| Build | `cd apps/api && bun build.ts` | exit 0 |
+| Purpose            | Command                                                              | Expected on success      |
+| ------------------ | -------------------------------------------------------------------- | ------------------------ |
+| Generate migration | `cd apps/api && bunx drizzle-kit generate --name fk_indexes`         | new dir under `drizzle/` |
+| Tests              | `cd apps/api && bun test`                                            | all pass                 |
+| Lint + format      | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0                   |
+| Build              | `cd apps/api && bun build.ts`                                        | exit 0                   |
 
 ## Scope
 
 **In scope** (the only files you should modify/create):
+
 - `apps/api/src/lib/db/schema.ts`
 - `apps/api/drizzle/**` (generated — do not hand-edit beyond what drizzle-kit emits)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `apps/api/src/lib/db/relations.ts` — relations are unaffected by indexes.
 - Existing migration directories — never edit applied migrations.
 - `highscores` — its composite PK `(hash, userId, difficulty)` already serves the leaderboard query (`WHERE hash = ? AND userId IN (...)`) via the leading column; `userId` cascade scans can reuse... they cannot, but score rows are only deleted with their user and the table is append-mostly. Deliberately skipped; revisit if user deletion ships (see plan index / direction findings).

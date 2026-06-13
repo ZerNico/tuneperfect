@@ -71,21 +71,23 @@ const scores = await db
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Tests | `cd apps/api && bun test` | all pass |
-| Tests (one file) | `cd apps/api && bun test src/lobby/router.test.ts` | all pass |
-| Lint + format | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0 |
-| Build | `cd apps/api && bun build.ts` | exit 0 |
+| Purpose          | Command                                                              | Expected on success |
+| ---------------- | -------------------------------------------------------------------- | ------------------- |
+| Tests            | `cd apps/api && bun test`                                            | all pass            |
+| Tests (one file) | `cd apps/api && bun test src/lobby/router.test.ts`                   | all pass            |
+| Lint + format    | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0              |
+| Build            | `cd apps/api && bun build.ts`                                        | exit 0              |
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `apps/api/src/lobby/router.ts`
 - `apps/api/src/lobby/router.test.ts` (create)
 - `apps/api/src/highscore/service.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `apps/api/src/lobby/service.ts` — `updateLobbySelectedClub` stays a dumb write; the authorization check lives in the router like every other route in this repo. (Plan 001 edits this file's `getLobbyById`; avoid conflicts by not touching it here.)
 - `apps/api/src/highscore/router.ts` — `setHighscore`'s lobby-membership check is correct as is.
 - Client apps (`apps/app`, `apps/game`) — the payload change was verified compatible; do not "fix" clients.
