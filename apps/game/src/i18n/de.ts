@@ -236,6 +236,12 @@ const de = {
         changeAvatar: "Avatar ändern",
         removeAvatar: "Avatar entfernen",
         cropAvatar: "Avatar zuschneiden",
+        importScores: "Spielstände importieren",
+        exportScores: "Spielstände exportieren",
+        importSuccess: "Spielstände erfolgreich importiert!",
+        importFailed: "Fehler beim Importieren der Spielstände. Ungültiges Dateiformat.",
+        exportSuccess: "Spielstände erfolgreich exportiert!",
+        exportFailed: "Fehler beim Exportieren der Spielstände.",
       },
       volume: {
         title: "Lautstärke",

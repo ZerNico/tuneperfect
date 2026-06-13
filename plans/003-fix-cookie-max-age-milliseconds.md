@@ -37,11 +37,11 @@ The cookie `Max-Age` attribute is defined in **seconds** (RFC 6265), and `Bun.Co
 // apps/api/src/auth/router.ts:94-101 (signIn) — same pattern at all six sites
 context.setCookie?.("access_token", accessToken.token, {
   ...defaultCookieOptions,
-  maxAge: accessToken.expires.getTime() - Date.now(),   // <-- milliseconds
+  maxAge: accessToken.expires.getTime() - Date.now(), // <-- milliseconds
 });
 context.setCookie?.("refresh_token", refreshToken.token, {
   ...defaultCookieOptions,
-  maxAge: refreshToken.expires.getTime() - Date.now(),  // <-- milliseconds
+  maxAge: refreshToken.expires.getTime() - Date.now(), // <-- milliseconds
 });
 ```
 
@@ -51,22 +51,24 @@ context.setCookie?.("refresh_token", refreshToken.token, {
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Tests | `cd apps/api && bun test` | all pass |
-| Tests (one file) | `cd apps/api && bun test src/auth/router.test.ts` | all pass |
-| Lint + format | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0 |
-| Build | `cd apps/api && bun build.ts` | exit 0 |
+| Purpose          | Command                                                              | Expected on success |
+| ---------------- | -------------------------------------------------------------------- | ------------------- |
+| Tests            | `cd apps/api && bun test`                                            | all pass            |
+| Tests (one file) | `cd apps/api && bun test src/auth/router.test.ts`                    | all pass            |
+| Lint + format    | `bun run lint apps/api && bun run format:check apps/api` (repo root) | exit 0              |
+| Build            | `cd apps/api && bun build.ts`                                        | exit 0              |
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `apps/api/src/utils/cookie.ts`
 - `apps/api/src/auth/router.ts`
 - `apps/api/src/auth/oauth/router.ts`
 - `apps/api/src/auth/router.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `apps/api/src/lib/orpc/cookies.ts` — the plugin passes options through to `Bun.Cookie` correctly; the bug is at the call sites.
 - The literal-seconds cookies (`state`, `codeVerifier`, `redirect`) in the OAuth authorize route — already correct.
 - JWT `expiresIn` values in `apps/api/src/auth/service.ts` / `src/lobby/service.ts` — those are seconds already (via `differenceInSeconds`) and unrelated.

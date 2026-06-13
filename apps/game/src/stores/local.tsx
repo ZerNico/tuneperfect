@@ -63,6 +63,24 @@ const localStoreSchema1_0_0 = v.pipe(
 
 const localStoreSchema = v.union([localStoreSchema1_0_0, localStoreSchema1_1_0]);
 
+const importedScoresSchema = v.object({
+  players: v.array(
+    v.object({
+      id: v.string(),
+      username: v.string(),
+      image: v.optional(v.string()),
+      type: v.literal("local"),
+    }),
+  ),
+  scores: v.record(
+    v.string(), // userId
+    v.record(
+      v.string(), // songHash
+      v.record(difficultySchema, v.optional(v.number())), // difficulty -> score
+    ),
+  ),
+});
+
 export type LocalStore = v.InferOutput<typeof localStoreSchema>;
 export type Difficulty = v.InferOutput<typeof difficultySchema>;
 
@@ -176,6 +194,65 @@ function createLocalStore() {
     return result;
   };
 
+  const importScoresAndPlayers = (importedData: unknown) => {
+    const result = v.safeParse(importedScoresSchema, importedData);
+    if (!result.success) {
+      throw new Error("Invalid import format");
+    }
+
+    const { players: importedPlayers, scores: importedScores } = result.output;
+    const playerIdMap = new Map<string, string>();
+    const currentPlayers = localSettings().players;
+
+    for (const impPlayer of importedPlayers) {
+      // 1. Check if same ID exists
+      const existingById = currentPlayers.find((p) => p.id === impPlayer.id);
+      if (existingById) {
+        playerIdMap.set(impPlayer.id, existingById.id);
+        if (impPlayer.image && !existingById.image) {
+          updatePlayer(existingById.id, { image: impPlayer.image });
+        }
+        continue;
+      }
+
+      // 2. Check if same username exists case-insensitively
+      const existingByName = currentPlayers.find((p) => p.username.toLowerCase() === impPlayer.username.toLowerCase());
+      if (existingByName) {
+        playerIdMap.set(impPlayer.id, existingByName.id);
+        if (impPlayer.image && !existingByName.image) {
+          updatePlayer(existingByName.id, { image: impPlayer.image });
+        }
+        continue;
+      }
+
+      // 3. Otherwise add as new player and keep their original ID
+      const newPlayer: LocalUser = {
+        id: impPlayer.id,
+        username: impPlayer.username,
+        image: impPlayer.image,
+        type: "local",
+      };
+      updateLocalSettings("players", (prev) => [...prev, newPlayer]);
+      playerIdMap.set(impPlayer.id, impPlayer.id);
+    }
+
+    // Step 2: Merge scores
+    for (const [impUserId, songScores] of Object.entries(importedScores)) {
+      const localUserId = playerIdMap.get(impUserId);
+      if (!localUserId) continue;
+
+      for (const [songHash, diffScores] of Object.entries(songScores)) {
+        for (const [difficulty, score] of Object.entries(diffScores)) {
+          if (score !== undefined && score !== null) {
+            addScore(localUserId, songHash, difficulty as Difficulty, score);
+          }
+        }
+      }
+    }
+
+    return importedPlayers.length;
+  };
+
   return {
     players: () => localSettings().players,
     addPlayer,
@@ -187,6 +264,7 @@ function createLocalStore() {
     getScoresForSong,
     markSongPlayed,
     isSongPlayed,
+    importScoresAndPlayers,
   };
 }
 

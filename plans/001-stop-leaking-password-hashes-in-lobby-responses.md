@@ -67,21 +67,23 @@ async getLobbyById(id: string) {
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Tests | `cd apps/api && bun test` | all pass (137 before this plan, more after) |
-| Tests (one file) | `cd apps/api && bun test src/lobby/service.test.ts` | all pass |
-| Lint | `bun run lint apps/api` (from repo root) | exit 0 |
-| Format | `bun run format:check apps/api` (from repo root) | exit 0 |
-| Build | `cd apps/api && bun build.ts` | exit 0 |
+| Purpose          | Command                                             | Expected on success                         |
+| ---------------- | --------------------------------------------------- | ------------------------------------------- |
+| Tests            | `cd apps/api && bun test`                           | all pass (137 before this plan, more after) |
+| Tests (one file) | `cd apps/api && bun test src/lobby/service.test.ts` | all pass                                    |
+| Lint             | `bun run lint apps/api` (from repo root)            | exit 0                                      |
+| Format           | `bun run format:check apps/api` (from repo root)    | exit 0                                      |
+| Build            | `cd apps/api && bun build.ts`                       | exit 0                                      |
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `apps/api/src/lobby/service.ts`
 - `apps/api/src/lobby/service.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `apps/api/src/lobby/router.ts` — no router change is needed; the fix is at the query site.
 - `apps/api/src/highscore/service.ts` — its leaderboard query has its own user-column issue handled by plan 002. Do not fix it here.
 - Removing `email` from the lobby users payload — the clients may render emails for lobby members; trimming beyond `password` is a product decision deferred to maintenance notes.

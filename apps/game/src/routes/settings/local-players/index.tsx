@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
+import IconDownload from "~icons/lucide/download";
 import IconPlus from "~icons/lucide/plus";
+import IconUpload from "~icons/lucide/upload";
 import IconUser from "~icons/lucide/user";
 
 import Layout from "~/components/layout";
@@ -12,7 +16,8 @@ import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import { localStore } from "~/stores/local";
+import { notify } from "~/lib/toast";
+import { localSettings, localStore } from "~/stores/local";
 
 export const Route = createFileRoute("/settings/local-players/")({
   component: LocalPlayersComponent,
@@ -23,6 +28,70 @@ function LocalPlayersComponent() {
   const navigate = useNavigate();
   let scrollContainer: HTMLDivElement | undefined;
   const buttonRefs: (HTMLButtonElement | undefined)[] = [];
+
+  const importScores = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [
+          {
+            name: "JSON",
+            extensions: ["json"],
+          },
+        ],
+      });
+
+      if (selected) {
+        const fileText = await readTextFile(selected);
+        const data = JSON.parse(fileText);
+        localStore.importScoresAndPlayers(data);
+        notify({
+          message: t("settings.sections.localPlayers.importSuccess"),
+          intent: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Import failed", error);
+      notify({
+        message: t("settings.sections.localPlayers.importFailed"),
+        intent: "error",
+      });
+    }
+  };
+
+  const exportScores = async () => {
+    try {
+      const selected = await save({
+        filters: [
+          {
+            name: "JSON",
+            extensions: ["json"],
+          },
+        ],
+        defaultPath: "tuneperfect_scores.json",
+      });
+
+      if (selected) {
+        const state = localSettings();
+        const exportData = {
+          version: state.version,
+          players: state.players,
+          scores: state.scores,
+        };
+        await writeTextFile(selected, JSON.stringify(exportData, null, 2));
+        notify({
+          message: t("settings.sections.localPlayers.exportSuccess"),
+          intent: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Export failed", error);
+      notify({
+        message: t("settings.sections.localPlayers.exportFailed"),
+        intent: "error",
+      });
+    }
+  };
 
   const onBack = () => {
     playSound("confirm");
@@ -69,6 +138,18 @@ function LocalPlayersComponent() {
           },
         });
       },
+    });
+
+    buttons.push({
+      label: t("settings.sections.localPlayers.importScores"),
+      icon: <IconDownload class="text-6xl" />,
+      action: importScores,
+    });
+
+    buttons.push({
+      label: t("settings.sections.localPlayers.exportScores"),
+      icon: <IconUpload class="text-6xl" />,
+      action: exportScores,
     });
 
     return buttons;

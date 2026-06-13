@@ -236,6 +236,12 @@ const en = {
         changeAvatar: "Change Avatar",
         removeAvatar: "Remove Avatar",
         cropAvatar: "Crop Avatar",
+        importScores: "Import Scores",
+        exportScores: "Export Scores",
+        importSuccess: "Scores imported successfully!",
+        importFailed: "Failed to import scores. Invalid file format.",
+        exportSuccess: "Scores exported successfully!",
+        exportFailed: "Failed to export scores.",
       },
       volume: {
         title: "Volume",
