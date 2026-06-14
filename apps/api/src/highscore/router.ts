@@ -11,9 +11,9 @@ export const highscoreRouter = os.prefix("/highscores").router({
     .use(requireLobby)
     .input(
       v.object({
-        hash: v.string(),
+        hash: v.pipe(v.string(), v.nonEmpty(), v.maxLength(256)),
         userId: v.string(),
-        score: v.number(),
+        score: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100_000)),
         difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
       }),
     )
