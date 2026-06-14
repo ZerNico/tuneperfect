@@ -35,6 +35,7 @@ process.on("uncaughtException", (error) => {
 const router = {
   auth: authRouter,
   user: userRouter,
+  club: clubRouter,
   lobby: lobbyRouter,
   highscore: highscoreRouter,
   update: updateRouter,
