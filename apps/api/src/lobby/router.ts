@@ -100,6 +100,11 @@ export const lobbyRouter = os.prefix("/lobbies").router({
     }),
 
   leaveLobby: base.use(requireLobbyOrUser).handler(async ({ context }) => {
+    if (context.payload.type === "lobby") {
+      await lobbyService.deleteLobby(context.payload.sub);
+      return;
+    }
+
     await lobbyService.leaveLobby(context.payload.sub);
   }),
 

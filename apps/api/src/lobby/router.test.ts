@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { call } from "@orpc/server";
 
-import { expectORPCError, lobbyContext } from "../../test/helpers";
+import { authedContext, expectORPCError, lobbyContext, makeUser } from "../../test/helpers";
 import { lobbyRouter } from "./router";
 import { lobbyService } from "./service";
 
@@ -70,5 +70,28 @@ describe("updateSelectedClub", () => {
 
     expect(availableSpy).not.toHaveBeenCalled();
     expect(updateSpy).toHaveBeenCalledWith(LOBBY_ID, null);
+  });
+});
+
+describe("leaveLobby", () => {
+  it("detaches the user when called with a user (access) token", async () => {
+    const user = makeUser();
+    const leaveSpy = spyOn(lobbyService, "leaveLobby").mockResolvedValue();
+    const deleteSpy = spyOn(lobbyService, "deleteLobby").mockResolvedValue();
+
+    await call(lobbyRouter.leaveLobby, undefined, { context: await authedContext(user) });
+
+    expect(leaveSpy).toHaveBeenCalledWith(user.id);
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
+  it("deletes the lobby when called with a lobby (host) token", async () => {
+    const leaveSpy = spyOn(lobbyService, "leaveLobby").mockResolvedValue();
+    const deleteSpy = spyOn(lobbyService, "deleteLobby").mockResolvedValue();
+
+    await call(lobbyRouter.leaveLobby, undefined, { context: await lobbyContext(LOBBY_ID) });
+
+    expect(deleteSpy).toHaveBeenCalledWith(LOBBY_ID);
+    expect(leaveSpy).not.toHaveBeenCalled();
   });
 });
