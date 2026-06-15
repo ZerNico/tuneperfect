@@ -44,6 +44,21 @@ export function getRelativeScore(score: Score, maxScore: Score) {
   return relativeScore;
 }
 
+/** Floored, comparable total for one player's raw score against a voice. */
+export function getRoundTotalScore(score: Score, voice: Voice): number {
+  const relative = getRelativeScore(score, getMaxScore(voice));
+  return Math.floor(relative.normal + relative.golden + relative.bonus);
+}
+
+/** Floored totals for every player's score in a single-voice round. */
+export function getRoundTotalScores(scores: Score[], voice: Voice): number[] {
+  const maxScore = getMaxScore(voice);
+  return scores.map((score) => {
+    const relative = getRelativeScore(score, maxScore);
+    return Math.floor(relative.normal + relative.golden + relative.bonus);
+  });
+}
+
 export function getNoteScore(note: Note) {
   switch (note.type) {
     case "Normal":

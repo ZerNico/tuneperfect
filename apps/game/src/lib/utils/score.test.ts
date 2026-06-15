@@ -4,7 +4,15 @@ import type { Note } from "~/bindings";
 import type { Score } from "~/stores/round";
 
 import type { Voice } from "../ultrastar/voice";
-import { getMaxScore, getNoteScore, getPhraseRating, getRelativeScore, MAX_POSSIBLE_SCORE } from "./score";
+import {
+  getMaxScore,
+  getNoteScore,
+  getPhraseRating,
+  getRelativeScore,
+  getRoundTotalScore,
+  getRoundTotalScores,
+  MAX_POSSIBLE_SCORE,
+} from "./score";
 
 function makeNote(partial: Partial<Note> & Pick<Note, "type" | "length">): Note {
   return {
@@ -113,5 +121,38 @@ describe("getMaxScore", () => {
 
   it("returns all zeros for a voice with no notes", () => {
     expect(getMaxScore({ phrases: [] })).toEqual({ normal: 0, golden: 0, bonus: 0 });
+  });
+});
+
+describe("getRoundTotalScores", () => {
+  // Anchor voice: max = { normal: 30, golden: 40, bonus: 5 }, total = 75.
+  const voice = makeVoice([makeNote({ type: "Normal", length: 3 }), makeNote({ type: "Golden", length: 2 })]);
+
+  it("floors each player's total against the shared voice max", () => {
+    const perfect: Score = { normal: 30, golden: 40, bonus: 5 };
+    const zero: Score = { normal: 0, golden: 0, bonus: 0 };
+    // A perfect score uses the full 75/75 of the max -> MAX_POSSIBLE_SCORE.
+    expect(getRoundTotalScores([perfect, zero], voice)).toEqual([MAX_POSSIBLE_SCORE, 0]);
+  });
+
+  it("returns an empty array for no players", () => {
+    expect(getRoundTotalScores([], voice)).toEqual([]);
+  });
+
+  it("returns 0 for an all-zero score", () => {
+    expect(getRoundTotalScores([{ normal: 0, golden: 0, bonus: 0 }], voice)).toEqual([0]);
+  });
+});
+
+describe("getRoundTotalScore", () => {
+  it("matches the corresponding entry of getRoundTotalScores", () => {
+    const voice = makeVoice([makeNote({ type: "Normal", length: 4 }), makeNote({ type: "Golden", length: 1 })]);
+    const scores: Score[] = [
+      { normal: 20, golden: 10, bonus: 3 },
+      { normal: 40, golden: 20, bonus: 5 },
+    ];
+    const totals = getRoundTotalScores(scores, voice);
+    expect(getRoundTotalScore(scores[0]!, voice)).toBe(totals[0]);
+    expect(getRoundTotalScore(scores[1]!, voice)).toBe(totals[1]);
   });
 });

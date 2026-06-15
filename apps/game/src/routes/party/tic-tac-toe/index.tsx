@@ -16,7 +16,7 @@ import { t } from "~/lib/i18n";
 import type { User } from "~/lib/types";
 import { isLocalSong, type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
-import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { getRoundTotalScores } from "~/lib/utils/score";
 import { getCurrentSinger, getTeam, type Mark, type Team, ticTacToeStore } from "~/stores/party/tic-tac-toe";
 import { type PlayerSelection, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -61,11 +61,7 @@ export const Route = createFileRoute("/party/tic-tac-toe/")({
       return;
     }
 
-    const totalScores = scores.map((score) => {
-      const maxScore = getMaxScore(voice);
-      const relativeScore = getRelativeScore(score, maxScore);
-      return Math.floor(relativeScore.normal + relativeScore.golden + relativeScore.bonus);
-    });
+    const totalScores = getRoundTotalScores(scores, voice);
 
     const xScore = totalScores[0] ?? 0;
     const oScore = totalScores[1] ?? 0;

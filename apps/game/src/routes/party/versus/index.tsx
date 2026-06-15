@@ -23,7 +23,7 @@ import type { User } from "~/lib/types";
 import { isLocalSong, type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { times } from "~/lib/utils/loop";
-import { getMaxScore, getRelativeScore } from "~/lib/utils/score";
+import { getRoundTotalScores } from "~/lib/utils/score";
 import { type Round, versusStore } from "~/stores/party/versus";
 import { type PlayerSelection, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
@@ -128,11 +128,7 @@ export const Route = createFileRoute("/party/versus/")({
       return;
     }
 
-    const totalScores = scores.map((score) => {
-      const maxScore = getMaxScore(voice);
-      const relativeScore = getRelativeScore(score, maxScore);
-      return Math.floor(relativeScore.normal + relativeScore.golden + relativeScore.bonus);
-    });
+    const totalScores = getRoundTotalScores(scores, voice);
 
     if (totalScores.every((score) => score === 0)) {
       console.warn("All scores are zero, skipping round result processing.");
