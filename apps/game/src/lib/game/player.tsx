@@ -10,6 +10,7 @@ import { getMaxScore, getNoteScore, getPhraseRating, type PhraseRating } from ".
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
 import { type PlayerContextValue, PlayerProvider } from "./player-context";
+import { beatsToProcess } from "./score-loop";
 
 interface CreatePlayerOptions {
   index: number;
@@ -133,6 +134,50 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     totalBeats = 0;
   };
 
+  const processBeat = (beatNumber: number, pitch: number) => {
+    const beatInfo = beats().get(beatNumber);
+
+    if (!beatInfo) {
+      return;
+    }
+
+    const noteScore = getNoteScore(beatInfo.note);
+
+    if (noteScore > 0) {
+      totalBeats++;
+
+      const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
+
+      const isRap = beatInfo.note.type.startsWith("Rap");
+
+      const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
+
+      if (isCorrect) {
+        correctBeats++;
+
+        if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
+          addScore("golden", noteScore);
+        } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
+          addScore("normal", noteScore);
+        }
+      }
+
+      if (midiNote > 0) {
+        processedBeats.set(beatNumber, {
+          note: beatInfo.note,
+          midiNote: isRap ? beatInfo.note.midiNote : midiNote,
+          rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
+          isFirstInPhrase: beatInfo.isFirstInPhrase,
+          isFirstInNote: beatInfo.isFirstInNote,
+        });
+      }
+    }
+
+    if (beatInfo.isLastInPhrase) {
+      awardBonus();
+    }
+  };
+
   let lastProcessedBeat = -1;
 
   createEffect(
@@ -144,54 +189,25 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         // earlier beat.
         const flooredBeat = delayedFlooredBeat();
 
-        if (flooredBeat === lastProcessedBeat) {
+        if (flooredBeat <= lastProcessedBeat) {
           return;
         }
+
+        // First update: start at the current beat instead of back-filling from
+        // the song start (e.g. when a player joins mid-song).
+        if (lastProcessedBeat === -1) {
+          lastProcessedBeat = flooredBeat - 1;
+        }
+
+        // Only the latest pitch sample exists, so every back-filled beat is
+        // scored against it.
+        const pitch = allPitches[options().index] ?? -1;
+
+        for (const beatNumber of beatsToProcess(lastProcessedBeat, flooredBeat)) {
+          processBeat(beatNumber, pitch);
+        }
+
         lastProcessedBeat = flooredBeat;
-
-        const beatInfo = beats().get(flooredBeat);
-
-        if (!beatInfo) {
-          return;
-        }
-
-        const noteScore = getNoteScore(beatInfo.note);
-
-        if (noteScore > 0) {
-          totalBeats++;
-
-          const pitch = allPitches[options().index] ?? -1;
-
-          const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
-
-          const isRap = beatInfo.note.type.startsWith("Rap");
-
-          const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
-
-          if (isCorrect) {
-            correctBeats++;
-
-            if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
-              addScore("golden", noteScore);
-            } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
-              addScore("normal", noteScore);
-            }
-          }
-
-          if (midiNote > 0) {
-            processedBeats.set(flooredBeat, {
-              note: beatInfo.note,
-              midiNote: isRap ? beatInfo.note.midiNote : midiNote,
-              rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
-              isFirstInPhrase: beatInfo.isFirstInPhrase,
-              isFirstInNote: beatInfo.isFirstInNote,
-            });
-          }
-        }
-
-        if (beatInfo.isLastInPhrase) {
-          awardBonus();
-        }
       },
     ),
   );
