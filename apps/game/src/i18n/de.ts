@@ -10,6 +10,7 @@ const de = {
       navigate: "Navigieren",
       confirm: "Bestätigen",
       back: "Zurück",
+      "add-to-medley": "Zu Medley hinzufügen",
     },
     players: {
       guest: "Gast",

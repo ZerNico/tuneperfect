@@ -6,7 +6,7 @@ import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
 import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
 import { type ChannelTracker, createChannelTracker, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
 
-import { commands, events, type IceServerConfig } from "~/bindings";
+import { commands, events, type IceServerConfig_Deserialize } from "~/bindings";
 
 import { type GameRouterContext, gameRouter } from "./router";
 import { RustDataChannel } from "./rust-data-channel";
@@ -130,11 +130,11 @@ export function createHostConnection(
 
   const initPromise = initChannels().then(() => setupEventListeners());
 
-  const convertIceServers = (servers: RTCIceServer[]): IceServerConfig[] =>
+  const convertIceServers = (servers: RTCIceServer[]): IceServerConfig_Deserialize[] =>
     servers.map((server) => ({
       urls: server.urls,
-      username: server.username || undefined,
-      credential: typeof server.credential === "string" ? server.credential : undefined,
+      username: server.username || null,
+      credential: typeof server.credential === "string" ? server.credential : null,
     }));
 
   const isDataChannelOpen = (): boolean => channelTracker.allOpen;

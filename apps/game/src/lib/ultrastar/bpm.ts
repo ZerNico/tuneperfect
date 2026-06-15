@@ -1,7 +1,7 @@
 import type { Song } from "./song";
 
 export function msToBeat(song: Song, ms: number) {
-  return msToBeatWithoutGap(song, ms - song.gap);
+  return msToBeatWithoutGap(song, ms - (song.gap ?? 0));
 }
 
 export function msToBeatWithoutGap(song: Song, ms: number) {
@@ -10,7 +10,7 @@ export function msToBeatWithoutGap(song: Song, ms: number) {
 }
 
 export function beatToMs(song: Song, beat: number) {
-  return beatToMsWithoutGap(song, beat) + song.gap;
+  return beatToMsWithoutGap(song, beat) + (song.gap ?? 0);
 }
 
 export function beatToMsWithoutGap(song: Song, beat: number) {
@@ -20,5 +20,5 @@ export function beatToMsWithoutGap(song: Song, beat: number) {
 
 function getBpm(song: Song) {
   // Multiply by 4 because UltraStar songs use bars per minute instead of beats per minute
-  return song.bpm * 4;
+  return (song.bpm ?? 0) * 4;
 }

@@ -141,7 +141,7 @@ function getFallbackMedleyBeats(song: LocalSong, phrases: Phrase[], targetDurati
 
   const songEndBeat = lastNote.startBeat + lastNote.length;
   const middleBeat = songEndBeat / 2;
-  const bpm = song.bpm * 4;
+  const bpm = (song.bpm ?? 0) * 4;
   const medleyMinBeats = (targetDurationMs * bpm) / (1000 * 60);
   const endBeat = middleBeat + medleyMinBeats;
 
@@ -239,7 +239,7 @@ function extendToMinimumDuration(
   targetDurationMs: number,
 ) {
   // Calculate approximate end beat needed for minimum duration
-  const bpm = song.bpm * 4; // Convert to actual BPM
+  const bpm = (song.bpm ?? 0) * 4; // Convert to actual BPM
   const medleyMinBeats = (targetDurationMs * bpm) / (1000 * 60);
   const approximateEndBeat = medleyStartBeat + medleyMinBeats - 1;
 

@@ -28,7 +28,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [preferInstrumental, setPreferInstrumental] = createSignal(
     settingsStore.general().audioMode === "preferInstrumental",
   );
-  const [pitches, setPitches] = createSignal<number[]>([]);
+  const [pitches, setPitches] = createSignal<(number | null)[]>([]);
 
   const start = async () => {
     const opts = options();

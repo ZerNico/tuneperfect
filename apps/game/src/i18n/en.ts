@@ -10,6 +10,7 @@ const en = {
       navigate: "Navigate",
       confirm: "Confirm",
       back: "Back",
+      "add-to-medley": "Add to Medley",
     },
     players: {
       guest: "Guest",

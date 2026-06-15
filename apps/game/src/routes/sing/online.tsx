@@ -485,7 +485,7 @@ function OnlineSearchComponent() {
                     </div>
 
                     <div class="flex items-center gap-2">
-                      <RatingStars rating={song().rating} />
+                      <RatingStars rating={song().rating ?? 0} />
                     </div>
                   </div>
                 </div>

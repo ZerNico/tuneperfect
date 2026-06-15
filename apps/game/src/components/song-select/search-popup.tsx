@@ -32,7 +32,7 @@ const SCOPE_OPTIONS: { value: SearchFieldScope; label: () => string }[] = [
 ];
 
 export function SearchPopup(props: SearchPopupProps) {
-  let searchRef: HTMLInputElement | undefined;
+  let searchRef!: HTMLInputElement;
   let popupRef!: HTMLDivElement;
 
   createEffect(() => {

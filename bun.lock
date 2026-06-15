@@ -96,6 +96,7 @@
         "@kobalte/core": "^0.13.11",
         "@orpc/client": "^1.14.4",
         "@orpc/server": "^1.14.4",
+        "@orpc/tanstack-query": "^1.14.4",
         "@solid-primitives/event-listener": "^2.4.5",
         "@solid-primitives/i18n": "^2.2.1",
         "@solid-primitives/keyed": "^1.5.3",
@@ -149,6 +150,7 @@
         "@tanstack/solid-router-devtools": "^1.167.0",
         "@tauri-apps/cli": "^2.11.2",
         "@types/howler": "^2.2.13",
+        "@types/qrcode": "^1.5.6",
         "@types/youtube": "^0.1.2",
         "baseline-browser-mapping": "^2.10.33",
         "typescript": "^6.0.3",
@@ -1074,6 +1076,8 @@
     "@types/node": ["@types/node@25.0.3", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA=="],
 
     "@types/nodemailer": ["@types/nodemailer@7.0.11", "", { "dependencies": { "@types/node": "*" } }, "sha512-E+U4RzR2dKrx+u3N4DlsmLaDC6mMZOM/TPROxA0UAPiTgI0y4CEFBmZE+coGWTjakDriRsXG368lNk1u9Q0a2g=="],
+
+    "@types/qrcode": ["@types/qrcode@1.5.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-te7NQcV2BOvdj2b1hCAHzAoMNuj65kNBMz0KBaxM6c3VGBOhU0dURQKOtH8CFNI/dsKkwlv32p26qYQTWoB5bw=="],
 
     "@types/react": ["@types/react@19.2.16", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-esJiCAnl0kfpNdE69f3So4WJUXy95dLZydX0KwK46riIHDzHM7O9Vtf9xCHW0PXIqvgqNrswl522kA/5yx+F4w=="],
 
