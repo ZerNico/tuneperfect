@@ -8,6 +8,8 @@
     "dev:vite": "vite",
     "build:vite": "vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -77,6 +79,7 @@
     "typescript": "^6.0.3",
     "unplugin-icons": "^23.0.1",
     "vite": "^8.0.16",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.9"
   }
 }
