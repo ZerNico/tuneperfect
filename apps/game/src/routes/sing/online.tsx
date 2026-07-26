@@ -254,7 +254,6 @@ function OnlineSearchComponent() {
 
     try {
       const result = await commands.usdbGetSong(song.songId);
-
       if (result.status !== "ok") {
         notify({ message: t("online.loadFailed"), intent: "error" });
         setStartingGame(false);

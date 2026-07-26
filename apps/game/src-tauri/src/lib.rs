@@ -1,7 +1,7 @@
 mod audio;
 mod commands;
 mod error;
-mod media_server;
+mod local_server;
 mod ultrastar;
 mod usdb;
 mod webrtc;
@@ -14,7 +14,7 @@ use tokio::sync::Mutex as TokioMutex;
 
 use audio::{processor::Processor, recorder::Recorder};
 use commands::*;
-use media_server::create_media_server_plugin;
+use local_server::create_local_server_plugin;
 use specta_typescript::Typescript;
 use tauri::Manager;
 use tauri_plugin_cli::CliExt;
@@ -47,7 +47,7 @@ pub fn run() {
             pitch::stop_recording,
             pitch::get_pitches,
             pitch::get_audio_levels,
-            media_server::get_media_server_base_url,
+            local_server::get_local_server_base_url,
             songs::parse_songs_from_paths,
             webrtc::commands::webrtc_create_answer,
             webrtc::commands::webrtc_add_ice_candidate,
@@ -72,10 +72,13 @@ pub fn run() {
             webrtc::host::ChannelMessageEvent,
         ]);
 
+    // Path is relative to the working directory, so this only succeeds when run from
+    // `src-tauri` (e.g. `tauri dev`). Don't panic when a bundled debug build is launched
+    // from elsewhere — the bindings simply aren't regenerated.
     #[cfg(debug_assertions)]
-    builder
-        .export(Typescript::default(), "../src/bindings.ts")
-        .expect("Failed to export typescript bindings");
+    if let Err(error) = builder.export(Typescript::default(), "../src/bindings.ts") {
+        eprintln!("Skipping typescript bindings export: {error}");
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
@@ -101,7 +104,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(create_media_server_plugin())
+        .plugin(create_local_server_plugin())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             let fs_scope = app.fs_scope();

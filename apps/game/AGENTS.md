@@ -44,7 +44,7 @@ src-tauri/
 │   ├── audio/            # Rust audio pipeline (device, input, output, recorder)
 │   ├── commands/         # Tauri commands (songs, microphones, pitch)
 │   ├── ultrastar/        # UltraStar parser + filesystem scanner (Rust)
-│   └── media_server.rs   # Local media file server for songs
+│   └── local_server.rs   # Local HTTP server: /media/* song files, /embed/* static pages
 ```
 
 ### SolidJS patterns
@@ -117,7 +117,7 @@ rg -n "export const use" src/hooks/                                # find hooks
 
 - `src/routeTree.gen.ts` and `src/bindings.ts` are **auto-generated** — never edit them
 - The game uses `VITE_API_URL` and `VITE_APP_URL` env vars (client-side, `VITE_` prefix required)
-- Song files live on-disk and are served via a local Tauri media server, not fetched from the API
+- Song files live on-disk, not fetched from the API — served via the `asset://` protocol, or the local server on Linux
 - Audio processing happens in Rust — TS only handles UI rendering of pitch/score data
 - The `~/` import alias resolves to `src/` — always prefer it over relative paths
 

@@ -100,10 +100,7 @@ pub async fn usdb_get_song_preview(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn usdb_get_song(
-    state: State<'_, AppState>,
-    song_id: u32,
-) -> Result<UsdbSong, AppError> {
+pub async fn usdb_get_song(state: State<'_, AppState>, song_id: u32) -> Result<UsdbSong, AppError> {
     let client = {
         let usdb = state.usdb_client.lock().await;
         usdb.as_ref()

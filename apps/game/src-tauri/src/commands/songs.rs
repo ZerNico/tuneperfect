@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::media_server::MediaServerState;
+use crate::local_server::LocalServerState;
 use crate::ultrastar::filesystem::traverse_and_find_txt_files;
 use crate::ultrastar::parser::parse_local_txt_file;
 use crate::ultrastar::song::LocalSong;
@@ -28,13 +28,28 @@ pub struct SongGroup {
     pub songs: Vec<LocalSong>,
 }
 
-fn get_media_base_url(media_server_state: &State<Arc<Mutex<Option<MediaServerState>>>>) -> String {
-    if let Ok(state) = media_server_state.lock() {
-        if let Some(server_state) = state.as_ref() {
-            let base_url = server_state.get_base_url();
+/// Base URL that song media files are addressed through.
+///
+/// The local server runs on every platform because the YouTube embed page needs an HTTP
+/// origin, but only Linux serves *song files* through it — the asset protocol is unreliable
+/// for media playback there. Everywhere else keeps the asset protocol, so this is gated on
+/// the target rather than on whether the server happens to be running.
+fn get_media_base_url(local_server_state: &State<Arc<Mutex<Option<LocalServerState>>>>) -> String {
+    // Compiled on every target so the Linux path keeps type-checking here, then discarded
+    // by the `serves_song_files` constant below on platforms that use the asset protocol.
+    let served_locally = local_server_state
+        .lock()
+        .ok()
+        .and_then(|state| state.as_ref().map(LocalServerState::get_media_base_url));
+
+    let serves_song_files = cfg!(target_os = "linux");
+
+    if serves_song_files {
+        if let Some(base_url) = served_locally {
             return base_url;
         }
     }
+
     #[cfg(any(windows, target_os = "android"))]
     let base = "http://asset.localhost";
     #[cfg(not(any(windows, target_os = "android")))]
@@ -48,9 +63,9 @@ fn get_media_base_url(media_server_state: &State<Arc<Mutex<Option<MediaServerSta
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
     app_handle: tauri::AppHandle,
-    media_server_state: State<'_, Arc<Mutex<Option<MediaServerState>>>>,
+    local_server_state: State<'_, Arc<Mutex<Option<LocalServerState>>>>,
 ) -> Result<Vec<SongGroup>, AppError> {
-    let media_base_url = get_media_base_url(&media_server_state);
+    let media_base_url = get_media_base_url(&local_server_state);
 
     let fs_scope = app_handle.fs_scope();
 

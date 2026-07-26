@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>player</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+      }
+      #player,
+      iframe {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="player"></div>
+    <script>
+      // Host page for a YouTube embed, served over http://127.0.0.1 by the media server.
+      //
+      // The app document itself is served from `tauri://localhost`. macOS WKWebView will not
+      // attach a `Referer` to a cross-origin subframe whose parent uses a non-HTTP scheme, and
+      // YouTube's embed rejects that with error 153. Nesting the embed inside this page gives it
+      // an HTTP parent, so the referrer/origin pair YouTube requires is present.
+      //
+      // The app drives the player through postMessage because the embed is now cross-origin to it.
+      (function () {
+        var player = null;
+        var parentWin = null;
+        var ticker = null;
+
+        // Replies go to the app's exact origin (passed in the query string) rather than "*",
+        // since any local process can reach this port.
+        var appOrigin = new URLSearchParams(location.search).get("parentOrigin") || "";
+
+        function post(msg) {
+          msg.source = "tp-yt";
+          if (!appOrigin) return;
+          (parentWin || window.parent).postMessage(msg, appOrigin);
+        }
+
+        function snapshot() {
+          try {
+            return { time: player.getCurrentTime(), duration: player.getDuration() };
+          } catch (_) {
+            return { time: 0, duration: 0 };
+          }
+        }
+
+        var lastPostedTime = -1;
+
+        function startTicker() {
+          stopTicker();
+          // YouTube advances getCurrentTime() only ~4x/sec. Sampling faster and posting only on
+          // change pinpoints the moment it actually advanced, which the app anchors its clock to.
+          // Posting every tick would hand it stale values with no way to tell how old they are.
+          ticker = setInterval(function () {
+            if (!player) return;
+            var s = snapshot();
+            if (s.time !== lastPostedTime) {
+              lastPostedTime = s.time;
+              post({ type: "time", time: s.time, duration: s.duration });
+            }
+          }, 25);
+        }
+
+        function stopTicker() {
+          if (ticker) {
+            clearInterval(ticker);
+            ticker = null;
+          }
+        }
+
+        function create(videoId, muted) {
+          player = new YT.Player("player", {
+            videoId: videoId,
+            host: "https://www.youtube-nocookie.com",
+            width: "100%",
+            height: "100%",
+            playerVars: {
+              autoplay: 0,
+              controls: 0,
+              disablekb: 1,
+              fs: 0,
+              modestbranding: 1,
+              rel: 0,
+              iv_load_policy: 3,
+              playsinline: 1,
+            },
+            events: {
+              onReady: function (e) {
+                if (muted) e.target.mute();
+                var s = snapshot();
+                post({ type: "ready", duration: s.duration });
+                startTicker();
+              },
+              onError: function (e) {
+                post({ type: "error", code: e.data });
+              },
+              onStateChange: function (e) {
+                var s = snapshot();
+                post({ type: "state", state: e.data, time: s.time, duration: s.duration });
+                if (e.data === YT.PlayerState.ENDED) stopTicker();
+              },
+            },
+          });
+        }
+
+        function handle(msg) {
+          if (msg.type === "init") {
+            if (window.YT && window.YT.Player) {
+              create(msg.videoId, msg.muted);
+            } else {
+              window.onYouTubeIframeAPIReady = function () {
+                create(msg.videoId, msg.muted);
+              };
+              var tag = document.createElement("script");
+              tag.src = "https://www.youtube.com/iframe_api";
+              document.head.appendChild(tag);
+            }
+            return;
+          }
+
+          if (!player) return;
+
+          try {
+            switch (msg.type) {
+              case "play":
+                player.playVideo();
+                startTicker();
+                break;
+              case "pause":
+                player.pauseVideo();
+                break;
+              case "seek":
+                player.seekTo(msg.time, true);
+                // Force the next sample to post even if it lands on the same value.
+                lastPostedTime = -1;
+                break;
+              case "volume":
+                player.setVolume(msg.value * 100);
+                break;
+              case "mute":
+                player.mute();
+                break;
+              case "unmute":
+                player.unMute();
+                break;
+              case "destroy":
+                stopTicker();
+                player.destroy();
+                player = null;
+                break;
+            }
+          } catch (_) {
+            /* player not ready for this command yet */
+          }
+        }
+
+        window.addEventListener("message", function (e) {
+          // Only accept commands from the embedding app window, and only from its origin.
+          if (e.source !== window.parent) return;
+          if (appOrigin && e.origin !== appOrigin) return;
+          var d = e.data;
+          if (!d || d.source !== "tp-host") return;
+          parentWin = e.source;
+          handle(d);
+        });
+
+        post({ type: "boot" });
+      })();
+    </script>
+  </body>
+</html>

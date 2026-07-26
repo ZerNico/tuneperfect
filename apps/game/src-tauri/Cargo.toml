@@ -36,10 +36,12 @@ dywapitchtrack = "0.2.0"
 rubato = "3.0"
 tauri-plugin-shell = "2.3.4"
 tauri-plugin-process = "2.3.1"
-http = "1.4"
-http-range = "0.1"
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+tower-http = { version = "0.6", features = ["fs"] }
+tower = "0.5"
 percent-encoding = "2.3"
-tauri-utils = "2.8.1"
 tauri-plugin-store = "2.4.2"
 tauri-plugin-log = "2.8.0"
 log = "0.4"

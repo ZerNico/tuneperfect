@@ -7,8 +7,7 @@ use crate::usdb::models::UsdbSearchEntry;
 
 static YT_ID_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9_-]{11}$").unwrap());
-static VIMEO_ID_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\d{2,10}$").unwrap());
+static VIMEO_ID_PATTERN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d{2,10}$").unwrap());
 /// From <https://regexr.com/531i0>.
 static YT_URL_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
@@ -99,7 +98,11 @@ pub fn parse_song_list(html: &str) -> Vec<UsdbSearchEntry> {
         let rating = full_stars + half_stars;
 
         let views_str = get_td_text(&tds[11]);
-        let views: u32 = views_str.replace(",", "").replace(".", "").parse().unwrap_or(0);
+        let views: u32 = views_str
+            .replace(",", "")
+            .replace(".", "")
+            .parse()
+            .unwrap_or(0);
 
         songs.push(UsdbSearchEntry {
             song_id,

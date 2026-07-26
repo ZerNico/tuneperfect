@@ -155,7 +155,10 @@ impl UsdbClient {
                 })?;
 
             let body = response.text().await.map_err(|e| {
-                AppError::UsdbError(format!("Failed to read catalog page at offset {}: {}", start, e))
+                AppError::UsdbError(format!(
+                    "Failed to read catalog page at offset {}: {}",
+                    start, e
+                ))
             })?;
 
             self.check_login_error(&body)?;
@@ -238,8 +241,7 @@ impl UsdbClient {
             let mut reached_watermark = false;
             for song in &batch {
                 if song.usdb_mtime > last_mtime
-                    || (song.usdb_mtime >= last_mtime
-                        && !last_song_ids.contains(&song.song_id))
+                    || (song.usdb_mtime >= last_mtime && !last_song_ids.contains(&song.song_id))
                 {
                     updated_songs.push(song.clone());
                 } else {
@@ -481,9 +483,7 @@ fn extract_audio_video_ids(value: &str) -> (Option<String>, Option<String>) {
 }
 
 /// Injects a dummy #AUDIO tag so the parser doesn't reject songs without audio/video.
-fn parse_ultrastar_txt_relaxed(
-    content: &str,
-) -> Result<crate::ultrastar::song::Song, AppError> {
+fn parse_ultrastar_txt_relaxed(content: &str) -> Result<crate::ultrastar::song::Song, AppError> {
     let mut modified_content = String::new();
     let mut has_audio = false;
     let mut has_video = false;

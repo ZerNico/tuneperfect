@@ -30,7 +30,10 @@ pub fn device_display_name(desc: &cpal::DeviceDescription) -> String {
 /// Both are optional because backends can fail to report either.
 fn device_identity(device: &Device) -> DeviceIdentity {
     let id = device.id().ok().map(|id| id.to_string());
-    let name = device.description().ok().map(|desc| device_display_name(&desc));
+    let name = device
+        .description()
+        .ok()
+        .map(|desc| device_display_name(&desc));
     DeviceIdentity { id, name }
 }
 
