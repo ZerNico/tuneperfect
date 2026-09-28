@@ -16,10 +16,12 @@ export const electronBuildOptions: BuildOptions = {
   external: ["electron"],
   sourcemap: true,
   logLevel: "info",
-  // Update configuration is fixed at build time; see `electron/updater.ts`.
+  // Fixed at build time: update configuration (`electron/updater.ts`) and the API origin.
   define: {
     "process.env.TUNEPERFECT_UPDATE_ENDPOINT": JSON.stringify(process.env.TUNEPERFECT_UPDATE_ENDPOINT ?? ""),
     "process.env.TUNEPERFECT_UPDATE_PUBKEY": JSON.stringify(process.env.TUNEPERFECT_UPDATE_PUBKEY ?? ""),
+    // The renderer's API, allowed by the CSP (`electron/csp.ts`).
+    "process.env.TUNEPERFECT_API_URL": JSON.stringify(process.env.VITE_API_URL ?? ""),
   },
 };
 

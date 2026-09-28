@@ -181,12 +181,13 @@ async function start() {
   app.on("before-quit", (event) => {
     stores.flushSync();
     if (quitting) return;
-    // Stop capture before the addon is torn down with the process.
+    // Stop capture before the addon is torn down with the process, and let the log catch up.
     quitting = true;
     event.preventDefault();
     void native
       .stopRecording()
       .catch(() => {})
+      .then(() => logger.flush())
       .finally(() => app.quit());
   });
 

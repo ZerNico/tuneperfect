@@ -85,7 +85,7 @@ function stage() {
     productName,
     version,
     description: "Karaoke game",
-    author: { name: PRODUCT_NAME, email: "hello@tuneperfect.org" },
+    author: { name: PRODUCT_NAME, email: "support@tuneperfect.org" },
     homepage: "https://tuneperfect.org",
     main: "dist-electron/main.cjs",
   };
