@@ -1,75 +1,57 @@
 import { os } from "@orpc/server";
-import semver from "semver";
 import * as v from "valibot";
 
 import { base } from "../base";
 import { env } from "../config/env";
 import { updateService } from "./service";
 
+const updateInput = v.object({
+  target: v.string(),
+  arch: v.string(),
+  currentVersion: v.string(),
+});
+
+async function respond(input: v.InferOutput<typeof updateInput>, releaseVersion: string | undefined) {
+  if (!releaseVersion) return { status: 204 };
+  const update = await updateService.resolveUpdate({ githubRepo: env.GITHUB_REPO, releaseVersion, ...input });
+  return update ? { status: 200, body: update } : { status: 204 };
+}
+
 export const updateRouter = os.prefix("/updates").router({
+  /**
+   * Polled by installed Tauri versions of the game. Serves only `TAURI_VERSION` (the last
+   * Tauri release, eventually the one that migrates to Electron) and nothing when it's
+   * unset, so these installs never update straight into an Electron build.
+   */
   getUpdate: base
     .route({
       path: "/{target}/{arch}/{currentVersion}",
       method: "GET",
       outputStructure: "detailed",
     })
-    .input(
-      v.object({
-        target: v.string(),
-        arch: v.string(),
-        currentVersion: v.string(),
-      }),
-    )
-    .handler(async ({ input }) => {
-      const githubRepo = env.GITHUB_REPO;
+    .input(updateInput)
+    .handler(({ input }) => respond(input, env.TAURI_VERSION)),
 
-      if (!githubRepo) {
-        return {
-          status: 204,
-        };
-      }
-
-      const currentVersion = semver.coerce(input.currentVersion);
-      const latestVersion = semver.coerce(env.VERSION);
-
-      if (!currentVersion || !latestVersion) {
-        return {
-          status: 204,
-        };
-      }
-
-      if (semver.gte(currentVersion, latestVersion)) {
-        return {
-          status: 204,
-        };
-      }
-
-      const releaseName = await updateService.getReleaseName(input.target, input.arch, latestVersion.version);
-
-      if (!releaseName) {
-        return {
-          status: 204,
-        };
-      }
-
-      const url = `https://github.com/${githubRepo}/releases/download/v${latestVersion.version}/${releaseName}`;
-
-      const signatureFileUrl = `${url}.sig`;
-      const signature = await updateService.downloadSignatureFile(signatureFileUrl);
-
-      if (!signature) {
-        return {
-          status: 204,
-        };
-      }
-
-      return {
-        status: 200,
-        body: {
-          version: env.VERSION,
-          url,
-          signature,
-        },
-      };
+  /**
+   * Asked by the last Tauri release before it moves the install to Electron. Controlled
+   * by `TAURI_MIGRATION_ENABLED`, so the rollout can go per platform and be switched off.
+   */
+  getTauriMigration: base
+    .route({ path: "/tauri-migration/{target}", method: "GET" })
+    .input(v.object({ target: v.string() }))
+    .output(v.object({ enabled: v.boolean() }))
+    .handler(({ input }) => {
+      const enabled = env.TAURI_MIGRATION_ENABLED;
+      return { enabled: enabled.includes("all") || enabled.includes(input.target.toLowerCase()) };
     }),
+
+  /** Polled by the Electron app. */
+  getElectronUpdate: base
+    .route({
+      path: "/electron/{target}/{arch}/{currentVersion}",
+      method: "GET",
+      outputStructure: "detailed",
+    })
+    .input(updateInput)
+    .handler(({ input }) => respond(input, env.VERSION)),
 });

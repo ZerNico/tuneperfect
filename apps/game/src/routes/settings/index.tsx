@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { getMatches } from "@tauri-apps/plugin-cli";
 import { createMemo } from "solid-js";
 
 import Layout from "~/components/layout";
@@ -7,19 +6,15 @@ import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
+import { native } from "~/lib/native/client";
 import { tryCatch } from "~/lib/utils/try-catch";
 
 export const Route = createFileRoute("/settings/")({
   component: SettingsComponent,
   loader: async () => {
-    const [_error, matches] = await tryCatch(getMatches());
-    if (matches?.args.songpath && Array.isArray(matches.args.songpath.value)) {
-      return {
-        songpaths: matches.args.songpath.value,
-      };
-    }
+    const [_error, songpaths] = await tryCatch(native.app.songPaths());
     return {
-      songpaths: [],
+      songpaths: songpaths ?? [],
     };
   },
 });

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/download/linux")({
 
 function RouteComponent() {
   const context = Route.useRouteContext();
-  const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
+  const version = () => context()?.config?.DOWNLOAD_VERSION?.replace(/^v/, "") || "";
   const githubRepo = () => context()?.config?.GITHUB_REPO || "";
 
   const handleDownload = (architecture: string, extension: string) => {
@@ -105,20 +105,14 @@ function RouteComponent() {
               <div>
                 <h4 class="mb-2 text-sm font-medium text-slate-300">Debian/Ubuntu (.deb):</h4>
                 <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
-                  sudo apt update && sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
-                  <br />
-                  sudo dpkg -i Tune.Perfect_{version()}_amd64.deb
-                  <br />
-                  sudo apt-get install -f # If dependencies are missing
+                  sudo apt install ./Tune.Perfect_{version()}_amd64.deb
                 </code>
               </div>
 
               <div>
                 <h4 class="mb-2 text-sm font-medium text-slate-300">Red Hat/Fedora (.rpm):</h4>
                 <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
-                  sudo dnf install libwebkit2gtk-4.1-0 libgtk-3-0
-                  <br />
-                  sudo dnf install Tune.Perfect-{version()}-1.x86_64.rpm
+                  sudo dnf install ./Tune.Perfect-{version()}-1.x86_64.rpm
                 </code>
               </div>
             </div>

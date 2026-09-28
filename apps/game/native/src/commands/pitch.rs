@@ -1,0 +1,134 @@
+use crate::{
+    audio::{recorder::Recorder, MicrophoneOptions},
+    error::AppError,
+    state::state,
+};
+use futures::future::join_all;
+
+pub fn start_recording(
+    options: Vec<MicrophoneOptions>,
+    playback_enabled: bool,
+    playback_volume: f32,
+) -> Result<(), AppError> {
+    let state = state();
+    let mut recorder = state
+        .recorder
+        .write()
+        .map_err(|_| AppError::RecorderError("Failed to acquire recorder lock".to_string()))?;
+
+    if recorder.is_some() {
+        let mut processors = state.processors.write().map_err(|_| {
+            AppError::ProcessorError("Failed to acquire processors lock".to_string())
+        })?;
+        processors.clear();
+
+        recorder.take();
+    }
+
+    *recorder = Some(Recorder::new(
+        state.processors.clone(),
+        options,
+        playback_enabled,
+        playback_volume,
+    )?);
+    Ok(())
+}
+
+pub fn stop_recording() -> Result<(), AppError> {
+    let state = state();
+    let mut recorder = state
+        .recorder
+        .write()
+        .map_err(|_| AppError::RecorderError("Failed to acquire recorder lock".to_string()))?;
+
+    if recorder.is_none() {
+        return Err(AppError::RecorderError("recorder not started".to_string()));
+    }
+
+    let mut processors = state
+        .processors
+        .write()
+        .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
+    processors.clear();
+
+    recorder.take();
+    Ok(())
+}
+
+pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
+    let futures = {
+        let processors = state().processors.read().map_err(|_| {
+            AppError::ProcessorError("Failed to acquire processors lock".to_string())
+        })?;
+
+        let mut processor_refs: Vec<_> = Vec::new();
+        let mut index = 0;
+        while let Some(processor) = processors.get(&index) {
+            processor_refs.push((index, processor.clone()));
+            index += 1;
+        }
+
+        processor_refs
+            .into_iter()
+            .map(|(idx, processor)| {
+                tokio::task::spawn_blocking(move || match processor.lock() {
+                    Ok(mut p) => (idx, p.get_pitch(window_ms)),
+                    Err(poisoned) => {
+                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
+                        (idx, poisoned.into_inner().get_pitch(window_ms))
+                    }
+                })
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let mut results: Vec<(usize, f32)> = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|r: Result<(usize, f32), _>| r.ok())
+        .collect();
+
+    results.sort_by_key(|(idx, _)| *idx);
+    let pitches: Vec<f32> = results.into_iter().map(|(_, pitch)| pitch).collect();
+
+    Ok(pitches)
+}
+
+pub async fn get_audio_levels() -> Result<Vec<f32>, AppError> {
+    let futures = {
+        let processors = state().processors.read().map_err(|_| {
+            AppError::ProcessorError("Failed to acquire processors lock".to_string())
+        })?;
+
+        let mut processor_refs: Vec<_> = Vec::new();
+        let mut index = 0;
+        while let Some(processor) = processors.get(&index) {
+            processor_refs.push((index, processor.clone()));
+            index += 1;
+        }
+
+        processor_refs
+            .into_iter()
+            .map(|(idx, processor)| {
+                tokio::task::spawn_blocking(move || match processor.lock() {
+                    Ok(mut p) => (idx, p.get_level()),
+                    Err(poisoned) => {
+                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
+                        (idx, poisoned.into_inner().get_level())
+                    }
+                })
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let mut results: Vec<(usize, f32)> = join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(|r: Result<(usize, f32), _>| r.ok())
+        .collect();
+
+    results.sort_by_key(|(idx, _)| *idx);
+    let levels: Vec<f32> = results.into_iter().map(|(_, level)| level).collect();
+
+    Ok(levels)
+}

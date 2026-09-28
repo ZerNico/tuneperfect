@@ -8,7 +8,7 @@
   "ignorePatterns": [
     "**/routeTree.gen.ts",
     "**/styles.css",
-    "**/bindings.ts",
+    "**/native/types.gen.ts",
     "**/.nitro/**",
     "**/.tanstack-start/**",
     "**/.output/**",

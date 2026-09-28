@@ -1,5 +1,6 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["electron", "scripts", "native", "dist", "dist-electron", "node_modules"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "preserve",

@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { openUrl } from "@tauri-apps/plugin-opener";
 
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -18,7 +17,8 @@ function CreditsComponent() {
     {
       type: "button",
       label: "UltraStar Play",
-      action: () => openUrl("https://ultrastar-play.com"),
+      // Opens in the browser; the app window never navigates away.
+      action: () => window.open("https://ultrastar-play.com"),
     },
     {
       type: "button",

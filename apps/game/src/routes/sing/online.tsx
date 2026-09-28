@@ -8,7 +8,6 @@ import IconMusic from "~icons/lucide/music";
 import IconF5Key from "~icons/sing/f5-key";
 import IconGamepadSelect from "~icons/sing/gamepad-select";
 
-import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import { FilterButton } from "~/components/song-select/filter-button";
@@ -28,6 +27,7 @@ import {
   useSongFilter,
 } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
+import { native, safe } from "~/lib/native/client";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { selectionStore } from "~/stores/selection";
@@ -253,14 +253,14 @@ function OnlineSearchComponent() {
     playSound("confirm");
 
     try {
-      const result = await commands.usdbGetSong(song.songId);
-      if (result.status !== "ok") {
+      const [error, usdbSong] = await safe(native.usdb.getSong({ songId: song.songId }));
+      if (error) {
         notify({ message: t("online.loadFailed"), intent: "error" });
         setStartingGame(false);
         return;
       }
 
-      selectionStore.set([result.data], "single");
+      selectionStore.set([usdbSong], "single");
       navigate({ to: "/sing/select" });
     } catch (error) {
       console.error("Failed to load online song:", error);

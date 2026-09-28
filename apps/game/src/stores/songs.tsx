@@ -1,7 +1,8 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { createMemo } from "solid-js";
 
-import { commands } from "~/bindings";
+import { native } from "~/lib/native/client";
+import type { ParseSongsEvent } from "~/lib/native/contract";
 import type { LocalSong } from "~/lib/ultrastar/song";
 
 import { settings, updateSettings } from "./settings";
@@ -20,19 +21,18 @@ function createSongsStore() {
     localSongs.delete(path);
   };
 
-  const updateLocalSongs = async (paths: string[]) => {
+  /** Parses the given folders that aren't loaded yet. `onProgress` sees every parse event. */
+  const updateLocalSongs = async (paths: string[], onProgress?: (event: ParseSongsEvent) => void) => {
     try {
       const pathsToUpdate = paths.filter((path: string) => !localSongs.has(path));
 
-      const result = await commands.parseSongsFromPaths(pathsToUpdate);
-
-      if (result.status === "error") {
-        console.error("Failed to update local songs:", result.error);
-        return;
-      }
-
-      for (const group of result.data) {
-        localSongs.set(group.path, group.songs);
+      for await (const event of await native.songs.parse({ paths: pathsToUpdate })) {
+        onProgress?.(event);
+        if (event.type === "done") {
+          for (const group of event.groups) {
+            localSongs.set(group.path, group.songs);
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to update local songs:", error);

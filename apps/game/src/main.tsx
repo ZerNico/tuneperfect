@@ -1,16 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
-import { error, warn } from "@tauri-apps/plugin-log";
 import { render } from "solid-js/web";
 
+import { native } from "./lib/native/client";
 import { initPostHog } from "./lib/posthog";
 import { forwardConsole } from "./lib/utils/console";
 import { routeTree } from "./routeTree.gen";
 
 import "./styles.css";
 
-forwardConsole("warn", warn);
-forwardConsole("error", error);
+forwardConsole("warn", (message) => native.app.log({ level: "warn", message }));
+forwardConsole("error", (message) => native.app.log({ level: "error", message }));
 
 const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
 if (posthogToken) void initPostHog(posthogToken);

@@ -3,7 +3,7 @@
 ## Project Snapshot
 
 - **Monorepo** (Bun workspaces + Turborepo) — karaoke/singing game platform
-- **Stack**: TypeScript (SolidJS, Vite), Rust (Tauri), Bun runtime, PostgreSQL, Redis
+- **Stack**: TypeScript (SolidJS, Vite), Electron + Rust (napi-rs), Bun runtime, PostgreSQL, Redis
 - **Linter/Formatter**: Oxc (`.oxlintrc.json`, `.oxfmtrc.json`)
 - Sub-packages have their own `AGENTS.md` — always check the nearest one first
 
@@ -46,12 +46,12 @@ Local dev uses Caddy as reverse proxy with mkcert TLS:
 
 ### Apps
 
-| App         | Purpose                             | Port | AGENTS.md                                  |
-| ----------- | ----------------------------------- | ---- | ------------------------------------------ |
-| `apps/api`  | Bun HTTP API (oRPC + OpenAPI)       | 3002 | [apps/api/AGENTS.md](apps/api/AGENTS.md)   |
-| `apps/game` | Tauri desktop game (SolidJS + Rust) | 1420 | [apps/game/AGENTS.md](apps/game/AGENTS.md) |
-| `apps/app`  | Companion web app (SolidJS SPA)     | 3001 | [apps/app/AGENTS.md](apps/app/AGENTS.md)   |
-| `apps/web`  | Marketing website (SolidStart SSR)  | 3000 | [apps/web/AGENTS.md](apps/web/AGENTS.md)   |
+| App         | Purpose                                | Port | AGENTS.md                                  |
+| ----------- | -------------------------------------- | ---- | ------------------------------------------ |
+| `apps/api`  | Bun HTTP API (oRPC + OpenAPI)          | 3002 | [apps/api/AGENTS.md](apps/api/AGENTS.md)   |
+| `apps/game` | Electron desktop game (SolidJS + Rust) | 1420 | [apps/game/AGENTS.md](apps/game/AGENTS.md) |
+| `apps/app`  | Companion web app (SolidJS SPA)        | 3001 | [apps/app/AGENTS.md](apps/app/AGENTS.md)   |
+| `apps/web`  | Marketing website (SolidStart SSR)     | 3000 | [apps/web/AGENTS.md](apps/web/AGENTS.md)   |
 
 ### Packages
 
@@ -76,3 +76,14 @@ rg -n "createRootRouteWithContext\|createRoute\|createFileRoute" apps/*/src  # f
 2. TypeScript compiles without errors
 3. Relevant app builds successfully: `bun run build --filter @tuneperfect/<app>`
 4. `.env.example` updated if new env vars added
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

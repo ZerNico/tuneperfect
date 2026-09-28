@@ -3,3 +3,8 @@ node_modules
 dist
 dist-ssr
 *.local
+
+# Electron main/preload bundles and packaging output
+dist-electron
+release
+.electron-app

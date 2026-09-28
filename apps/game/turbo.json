@@ -1,0 +1,9 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**", "dist-electron/**", "native/*.node", "native/index.cjs", "native/index.d.ts"]
+    }
+  }
+}

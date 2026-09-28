@@ -7,6 +7,13 @@ on:
         description: "The Git tag to deploy (e.g., v1.0.0)"
         required: true
         type: string
+  # Redeploys a released tag, e.g. after changing TAURI_VERSION or TAURI_MIGRATION_ENABLED.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The released Git tag to redeploy (e.g., v1.0.0)"
+        required: true
+        type: string
 
 env:
   HELM_CHART_PATH: ./helm/tuneperfect
@@ -23,6 +30,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Set up Kubeconfig
         env:
@@ -52,6 +61,14 @@ jobs:
         env:
           DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
           IMAGE_TAG: ${{ inputs.tag }}
+          # Repository variables. The last Tauri release, the only one installed Tauri versions are
+          # offered (none when empty), and the platforms whose Tauri installs move to Electron
+          # ("darwin,linux", "all"; off when empty).
+          TAURI_VERSION: ${{ vars.TAURI_VERSION }}
+          TAURI_MIGRATION_ENABLED: ${{ vars.TAURI_MIGRATION_ENABLED }}
+          # The release the website's download pages link to while it isn't the deployed one
+          # (the last Tauri release, until installs move to Electron); empty = the deployed tag.
+          DOWNLOAD_VERSION: ${{ vars.DOWNLOAD_VERSION }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -85,6 +102,7 @@ jobs:
             --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
             --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME \
             --set apps.web.env.VERSION=$IMAGE_TAG \
+            --set-string apps.web.env.DOWNLOAD_VERSION="$DOWNLOAD_VERSION" \
             --set apps.web.env.GITHUB_REPO=${{ github.repository }} \
             --set apps.web.env.SUPPORT_EMAIL=support@$DOMAIN_NAME \
             --set apps.web.env.VITE_POSTHOG_TOKEN=$POSTHOG_TOKEN \
@@ -106,6 +124,8 @@ jobs:
             --set apps.api.env.EMAIL_FROM="Tune Perfect <noreply@$DOMAIN_NAME>" \
             --set apps.api.env.VERSION=$IMAGE_TAG \
             --set apps.api.env.GITHUB_REPO=${{ github.repository }} \
+            --set-string apps.api.env.TAURI_VERSION="$TAURI_VERSION" \
+            --set-string apps.api.env.TAURI_MIGRATION_ENABLED="${TAURI_MIGRATION_ENABLED//,/\\,}" \
             --set coturn.enabled=true \
             --set coturn.realm=$DOMAIN_NAME \
             --set coturn.stunUrl=stun:stun.$DOMAIN_NAME:3478 \

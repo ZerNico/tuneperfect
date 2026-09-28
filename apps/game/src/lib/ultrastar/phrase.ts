@@ -1,1 +1,1 @@
-export type { Phrase } from "~/bindings";
+export type { Phrase } from "~/lib/native/types.gen";

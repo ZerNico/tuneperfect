@@ -1,7 +1,7 @@
 import { createEffect, createSignal, on, onCleanup, onMount, type Ref } from "solid-js";
 
-import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
+import { native } from "~/lib/native/client";
 import { createRefContent } from "~/lib/utils/ref";
 
 interface OnlineSongPlayerProps {
@@ -256,8 +256,7 @@ export default function OnlineSongPlayer(props: OnlineSongPlayerProps) {
     hasSeparateVideo = !!(audioId && videoId && audioId !== videoId);
 
     try {
-      const baseUrlResult = await commands.getLocalServerBaseUrl();
-      const baseUrl = baseUrlResult.status === "ok" ? baseUrlResult.data : null;
+      const baseUrl = await native.localServer.baseUrl();
 
       if (!baseUrl) {
         throw new Error("Local server unavailable for YouTube playback");
