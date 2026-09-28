@@ -26,6 +26,12 @@ const appOrigin = new URL(appUrl).origin;
 const rendererDir = path.join(__dirname, "../dist");
 
 app.setName(PRODUCT_NAME);
+// Chromium's own storage (local storage, cache, cookies) and the single-instance lock live
+// in userData, which Electron names after the app. Give development builds their own so
+// they don't share it with an installed release.
+if (!app.isPackaged) {
+  app.setPath("userData", path.join(app.getPath("appData"), `${PRODUCT_NAME} Dev`));
+}
 // Every renderer is sandboxed, including any created later.
 app.enableSandbox();
 
