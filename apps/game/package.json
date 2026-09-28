@@ -12,11 +12,12 @@
     "build:electron": "bun scripts/build-electron.ts",
     "native:build": "napi build --platform --manifest-path native/Cargo.toml --output-dir native --js index.cjs --dts index.d.ts",
     "native:build:release": "bun run native:build --release",
-    "package:dir": "bun run build && bun scripts/package.ts --dir",
-    "typecheck": "tsc --noEmit",
+    "package:dir": "bun scripts/package.ts --dir",
+    "typecheck": "tsc --noEmit -p electron/tsconfig.json && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package": "bun run build && bun scripts/package.ts"
+    "package": "bun scripts/package.ts",
+    "native:types": "cargo test --manifest-path native/Cargo.toml typescript"
   },
   "dependencies": {
     "@fontsource/lato": "^5.3.0",

@@ -80,10 +80,14 @@ jobs:
         working-directory: apps/game
         run: bun run test
 
-      - name: Typecheck the Electron main process
-        working-directory: apps/game
-        run: bunx tsc --noEmit -p electron/tsconfig.json
-
       - name: Run native tests
         working-directory: apps/game/native
         run: cargo test
+
+      - name: Check generated TypeScript types are up to date
+        run: git diff --exit-code -- apps/game/src/lib/native/types.gen.ts
+
+      - name: Typecheck the Electron main process
+        working-directory: apps/game
+        # Needs the addon's generated type declarations.
+        run: bun run native:build && bunx tsc --noEmit -p electron/tsconfig.json

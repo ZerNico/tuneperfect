@@ -1,9 +1,11 @@
 /**
- * Packages the built app with electron-builder for the current platform:
+ * Builds and packages the app with electron-builder for the current platform — the same
+ * steps locally and in CI:
  *   bun scripts/package.ts [--arch arm64|x64] [--dir]
- * Expects `vite build`, `build:electron` and a native build for the target arch to have
- * run. `--dir` only produces the unpacked app. The version comes from
- * `TUNEPERFECT_VERSION` (set by CI from the release tag) or package.json.
+ * Builds the renderer, the main process and a release native addon for the target arch
+ * (cross-compiling if it differs from the host), then packages. `--dir` only produces the
+ * unpacked app. The version comes from `TUNEPERFECT_VERSION` (set by CI from the release
+ * tag) or package.json.
  *
  * Release files keep the names the Tauri builds used, since the website's download pages
  * and the API's update endpoint refer to them.
@@ -29,6 +31,25 @@ const dirOnly = args.includes("--dir");
 
 const version = (process.env.TUNEPERFECT_VERSION ?? packageJson.version).replace(/^v/, "");
 const productName = "Tune Perfect";
+
+/** The Rust target and the addon file the napi build produces for it. */
+const native = (() => {
+  const targets: Record<string, { rustTarget: string; addon: string }> = {
+    "darwin-arm64": { rustTarget: "aarch64-apple-darwin", addon: "tuneperfect-native.darwin-arm64.node" },
+    "darwin-x64": { rustTarget: "x86_64-apple-darwin", addon: "tuneperfect-native.darwin-x64.node" },
+    "win32-arm64": { rustTarget: "aarch64-pc-windows-msvc", addon: "tuneperfect-native.win32-arm64-msvc.node" },
+    "win32-x64": { rustTarget: "x86_64-pc-windows-msvc", addon: "tuneperfect-native.win32-x64-msvc.node" },
+    "linux-arm64": { rustTarget: "aarch64-unknown-linux-gnu", addon: "tuneperfect-native.linux-arm64-gnu.node" },
+    "linux-x64": { rustTarget: "x86_64-unknown-linux-gnu", addon: "tuneperfect-native.linux-x64-gnu.node" },
+  };
+  const target = targets[`${process.platform}-${archName}`];
+  if (!target) throw new Error(`Unsupported platform: ${process.platform}-${archName}`);
+  return target;
+})();
+
+function run(command: string, commandArgs: string[]) {
+  execFileSync(command, commandArgs, { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
+}
 const electronVersion: string = (await import("electron/package.json")).default.version;
 
 /** Arch spellings the Tauri release files used, per platform and format. */
@@ -51,10 +72,9 @@ function stage() {
     fs.cpSync(path.join(root, dir), path.join(stageDir, dir), { recursive: true });
   }
 
+  // Only the addon for this target; builds for other architectures may sit next to it.
   const nativeDir = path.join(root, "native");
-  const addons = fs.readdirSync(nativeDir).filter((file) => file.endsWith(".node"));
-  if (addons.length === 0) throw new Error("No native addon found; run the native build first");
-  for (const file of ["index.cjs", ...addons]) {
+  for (const file of ["index.cjs", native.addon]) {
     fs.copyFileSync(path.join(nativeDir, file), path.join(stageDir, "native", file));
   }
 
@@ -127,6 +147,9 @@ const config: Configuration = {
 const platform =
   process.platform === "darwin" ? Platform.MAC : process.platform === "win32" ? Platform.WINDOWS : Platform.LINUX;
 
+run("bun", ["run", "build:vite"]);
+run("bun", ["run", "build:electron"]);
+run("bun", ["run", "native:build:release", "--target", native.rustTarget]);
 stage();
 // Building from the staging directory keeps the workspace's node_modules out of the app.
 await build({ projectDir: stageDir, targets: platform.createTarget(null, arch), config });
