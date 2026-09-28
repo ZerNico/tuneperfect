@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { type FuseV1Config, FuseV1Options, FuseVersion } from "@electron/fuses";
 import { Arch, build, type Configuration, Platform } from "electron-builder";
 
+import { APP_ID, PRODUCT_NAME } from "../electron/identity";
 import packageJson from "../package.json";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -31,7 +32,7 @@ const arch = archName === "arm64" ? Arch.arm64 : Arch.x64;
 const dirOnly = args.includes("--dir");
 
 const version = (process.env.TUNEPERFECT_VERSION ?? packageJson.version).replace(/^v/, "");
-const productName = "Tune Perfect";
+const productName = PRODUCT_NAME;
 
 /** The Rust target and the addon file the napi build produces for it. */
 const native = (() => {
@@ -84,7 +85,7 @@ function stage() {
     productName,
     version,
     description: "Karaoke game",
-    author: { name: "Tune Perfect", email: "hello@tuneperfect.org" },
+    author: { name: PRODUCT_NAME, email: "hello@tuneperfect.org" },
     homepage: "https://tuneperfect.org",
     main: "dist-electron/main.cjs",
   };
@@ -111,7 +112,7 @@ const fuses: FuseV1Config = {
 };
 
 const config: Configuration = {
-  appId: "org.tuneperfect.game",
+  appId: APP_ID,
   productName,
   electronVersion,
   directories: { output: outputDir, buildResources: path.join(root, "resources") },

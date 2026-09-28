@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { PRODUCT_NAME } from "./identity";
+
 /** Rotate by starting over once the file grows past this, like Tauri's "keep one" strategy. */
 const MAX_FILE_SIZE = 1_000_000;
 
@@ -17,11 +19,11 @@ function timestamp(): string {
 }
 
 /**
- * Writes `[date][time][target][LEVEL] message` lines to `<dir>/Tune Perfect.log` and to the
+ * Writes `[date][time][target][LEVEL] message` lines to `<dir>/<product name>.log` and to the
  * console, the format and place the Tauri version used.
  */
 export function createLogger(dir: string): Logger {
-  const file = path.join(dir, "Tune Perfect.log");
+  const file = path.join(dir, `${PRODUCT_NAME}.log`);
   let size = 0;
   let available = true;
 

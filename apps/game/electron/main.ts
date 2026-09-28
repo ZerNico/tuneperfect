@@ -6,6 +6,7 @@ import { app, BrowserWindow, net, protocol, session, shell, webContents } from "
 
 import { SongFolderAccess } from "./allowlist";
 import { CONTENT_SECURITY_POLICY } from "./csp";
+import { PRODUCT_NAME } from "./identity";
 import { createLogger } from "./logger";
 import { setApplicationMenu } from "./menu";
 import { native } from "./native";
@@ -24,7 +25,7 @@ const appOrigin = new URL(appUrl).origin;
 
 const rendererDir = path.join(__dirname, "../dist");
 
-app.setName("Tune Perfect");
+app.setName(PRODUCT_NAME);
 // Every renderer is sandboxed, including any created later.
 app.enableSandbox();
 
@@ -86,7 +87,7 @@ function createWindow(): BrowserWindow {
   const saved = loadWindowState(configDir());
 
   const window = new BrowserWindow({
-    title: "Tune Perfect",
+    title: PRODUCT_NAME,
     // Tauri's defaults; the saved state usually replaces them.
     width: 800,
     height: 600,

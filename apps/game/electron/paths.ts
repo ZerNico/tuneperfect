@@ -3,16 +3,16 @@ import path from "node:path";
 
 import { app } from "electron";
 
+import { APP_ID, DEV_APP_ID } from "./identity";
+
 /**
  * The directories the Tauri version used (its `app_data_dir`, `app_config_dir` and
  * `app_log_dir`), so existing settings, players, scores and window state are picked up
  * as-is and logs keep landing where they did.
  */
 
-// Release builds were bundled under the production identifier, local builds under the
-// development one.
 function identifier(): string {
-  return app.isPackaged ? "org.tuneperfect.game" : "localhost.tuneperfect.game";
+  return app.isPackaged ? APP_ID : DEV_APP_ID;
 }
 
 const home = os.homedir();
