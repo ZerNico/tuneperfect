@@ -10,8 +10,9 @@ import { electronBuildOptions } from "./build-electron";
 
 /**
  * Development loop: starts Vite, bundles the main process in watch mode, rebuilds the native
- * addon when its Rust sources change, and (re)starts Electron whenever the main process or
- * the addon changed. Arguments are passed on to the app, e.g. `-- --songpath <dir>`.
+ * addon when its Rust sources change (regenerating `src/lib/native/types.gen.ts` too), and
+ * (re)starts Electron whenever the main process or the addon changed. Arguments are passed
+ * on to the app, e.g. `-- --songpath <dir>`.
  */
 const DEV_SERVER_URL = "http://localhost:1420";
 
@@ -19,6 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nativeDir = path.join(root, "native");
 /** Builds land here first; see `buildNative`. */
 const nativeBuildDir = path.join(nativeDir, ".build");
+const typesFile = path.join(root, "src/lib/native/types.gen.ts");
 
 function run(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -58,10 +60,16 @@ async function buildNative() {
     "index.cjs",
     "--dts",
     "index.d.ts",
+    "--features",
+    "typegen",
   ]);
   for (const file of fs.readdirSync(nativeBuildDir)) {
     fs.renameSync(path.join(nativeBuildDir, file), path.join(nativeDir, file));
   }
+
+  // The dev build exports the renderer's types itself, so this needs no second compile.
+  // A fresh process loads the new addon; the file is only rewritten if the types changed.
+  await run("bun", ["-e", `require("./native/index.cjs").exportTypescriptTypes(${JSON.stringify(typesFile)})`]);
 }
 
 await buildNative();

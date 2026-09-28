@@ -71,6 +71,13 @@ pub fn set_log_sink(
     }));
 }
 
+/// Writes the renderer's TypeScript types (development builds with the `typegen` feature).
+#[cfg(feature = "typegen")]
+#[napi]
+pub fn export_typescript_types(path: String) -> Result<()> {
+    crate::typescript::export(std::path::Path::new(&path)).map_err(Error::from_reason)
+}
+
 /// Starts the loopback media server and returns its origin. Idempotent.
 #[napi]
 pub async fn start_local_server(frame_ancestors: Vec<String>) -> Result<String> {

@@ -17,5 +17,5 @@ mod state;
 mod ultrastar;
 mod usdb;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "typegen"))]
 mod typescript;

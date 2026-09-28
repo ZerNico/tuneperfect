@@ -44,6 +44,12 @@ semver = "1.0"
 reqwest = { version = "0.13", features = ["cookies", "form"] }
 scraper = "0.27"
 regex = "1"
+specta-serde = { version = "0.0.12", optional = true }
+specta-typescript = { version = "0.0.12", optional = true }
+
+[features]
+# Exports `exportTypescriptTypes`, used by the dev loop to regenerate the renderer's types.
+typegen = ["dep:specta-serde", "dep:specta-typescript"]
 
 [dev-dependencies]
 specta-serde = "0.0.12"
