@@ -3,6 +3,7 @@ import { createEffect, createSignal, on, onCleanup } from "solid-js";
 
 import { commands } from "~/bindings";
 import { t } from "~/lib/i18n";
+import { timeCall } from "~/lib/perf";
 
 interface MicLevelMeterProps {
   /** Stable device ID. Preferred over `name` for selecting the device. */
@@ -93,7 +94,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     if (!active()) return;
 
     const interval = setInterval(async () => {
-      const result = await commands.getAudioLevels();
+      const result = await timeCall("getAudioLevels", () => commands.getAudioLevels());
       const value = result.status === "ok" ? result.data[0] : undefined;
       if (value !== undefined && value !== null) {
         const meter = ampToMeter(value);

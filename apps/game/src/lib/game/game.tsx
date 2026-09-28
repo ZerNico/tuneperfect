@@ -3,6 +3,7 @@ import { type Accessor, batch, createEffect, createSignal, type JSX } from "soli
 
 import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
+import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
 import { roundStore, type Score } from "~/stores/round";
@@ -51,6 +52,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const stop = async () => {
     await commands.stopRecording();
+    logPerfReport();
   };
 
   const pause = () => {
@@ -128,6 +130,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   };
 
   const [_, startLoop, stopLoop] = createRAF(() => {
+    recordFrame();
     const opts = options();
     if (!opts.songPlayerRef || !opts.song) {
       return;
@@ -160,7 +163,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const windowMs = beatToMsWithoutGap(song, 1);
 
     void (async () => {
-      const result = await commands.getPitches(windowMs);
+      const result = await timeCall("getPitches", () => commands.getPitches(windowMs));
       if (result.status === "ok") {
         setPitches(result.data);
       }
@@ -176,6 +179,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       startLoop();
     } else {
       stopLoop();
+      pauseFrames();
     }
   });
 
