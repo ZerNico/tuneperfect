@@ -1,14 +1,13 @@
 use super::{
     device::DeviceManager, input::InputStreamManager, output::OutputMixer, types::MicrophoneOptions,
 };
-use crate::error::AppError;
+use crate::{error::AppError, state::ProcessorMap};
 use cpal::Stream;
 use std::{
     collections::HashMap,
     sync::{mpsc, Arc},
     thread,
 };
-use tauri::AppHandle;
 
 /// Manages audio recording and playback
 pub struct Recorder {
@@ -19,7 +18,7 @@ pub struct Recorder {
 impl Recorder {
     /// Create a new recorder and start the recording loop
     pub fn new(
-        app_handle: AppHandle,
+        processors: ProcessorMap,
         options: Vec<MicrophoneOptions>,
         playback_enabled: bool,
         playback_volume: f32,
@@ -28,7 +27,7 @@ impl Recorder {
 
         let thread_handle = thread::spawn(move || {
             Self::run_recording_loop(
-                app_handle,
+                processors,
                 options,
                 stop_rx,
                 playback_enabled,
@@ -44,7 +43,7 @@ impl Recorder {
 
     /// Main recording loop that sets up and manages all audio streams
     fn run_recording_loop(
-        app_handle: AppHandle,
+        processors: ProcessorMap,
         options: Vec<MicrophoneOptions>,
         stop_rx: mpsc::Receiver<()>,
         playback_enabled: bool,
@@ -104,7 +103,7 @@ impl Recorder {
         let mut streams: Vec<Stream> = InputStreamManager::setup_input_streams(
             input_devices,
             &options,
-            app_handle,
+            processors,
             output_producers,
             playback_enabled_atomic,
         )?;

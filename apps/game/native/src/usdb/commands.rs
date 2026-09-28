@@ -1,41 +1,34 @@
 use serde::{Deserialize, Serialize};
-use specta::Type;
-use tauri::{AppHandle, State};
-use tauri_specta::Event;
 
 use crate::error::AppError;
+use crate::state::state;
 use crate::usdb::models::{UsdbSearchEntry, UsdbSong, UsdbSongPreview};
-use crate::AppState;
 
-/// Emitted after each catalog page is fetched so the UI can show sync progress.
-#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
+/// Reported after each catalog page is fetched so the UI can show sync progress.
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UsdbSyncProgressEvent {
     pub fetched: u32,
     pub total: u32,
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn usdb_login(
-    state: State<'_, AppState>,
-    username: String,
+pub type UsdbProgressSink = dyn Fn(UsdbSyncProgressEvent) + Send + Sync;
+
+pub async fn usdb_login(username: String,
     password: String,
 ) -> Result<bool, AppError> {
     let mut client = crate::usdb::client::UsdbClient::new();
     let success = client.login(&username, &password).await?;
 
     if success {
-        let mut usdb = state.usdb_client.lock().await;
+        let mut usdb = state().usdb_client.lock().await;
         *usdb = Some(client);
     }
 
     Ok(success)
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn usdb_logout(state: State<'_, AppState>) -> Result<(), AppError> {
-    let mut usdb = state.usdb_client.lock().await;
+pub async fn usdb_logout() -> Result<(), AppError> {
+    let mut usdb = state().usdb_client.lock().await;
 
     if let Some(ref mut client) = *usdb {
         client.logout().await?;
@@ -45,10 +38,8 @@ pub async fn usdb_logout(state: State<'_, AppState>) -> Result<(), AppError> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn usdb_is_logged_in(state: State<'_, AppState>) -> Result<bool, AppError> {
-    let usdb = state.usdb_client.lock().await;
+pub async fn usdb_is_logged_in() -> Result<bool, AppError> {
+    let usdb = state().usdb_client.lock().await;
 
     match &*usdb {
         Some(client) => client.is_logged_in().await,
@@ -57,39 +48,32 @@ pub async fn usdb_is_logged_in(state: State<'_, AppState>) -> Result<bool, AppEr
 }
 
 /// Full fetch if `last_mtime == 0`, otherwise incremental sync from the watermark.
-#[tauri::command]
-#[specta::specta]
 pub async fn usdb_fetch_catalog(
-    app_handle: AppHandle,
-    state: State<'_, AppState>,
+    on_progress: &UsdbProgressSink,
     last_mtime: i32,
     last_song_ids: Vec<u32>,
 ) -> Result<Vec<UsdbSearchEntry>, AppError> {
     // Clone + drop lock so other commands aren't blocked during the long fetch
     let client = {
-        let usdb = state.usdb_client.lock().await;
+        let usdb = state().usdb_client.lock().await;
         usdb.as_ref()
             .ok_or_else(|| AppError::UsdbError("Not logged in to USDB".to_string()))?
             .clone()
     };
 
     if last_mtime == 0 {
-        client.fetch_all_songs(&app_handle).await
+        client.fetch_all_songs(on_progress).await
     } else {
         client
-            .fetch_updated_songs(&app_handle, last_mtime, &last_song_ids)
+            .fetch_updated_songs(on_progress, last_mtime, &last_song_ids)
             .await
     }
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn usdb_get_song_preview(
-    state: State<'_, AppState>,
-    song_id: u32,
+pub async fn usdb_get_song_preview(song_id: u32,
 ) -> Result<UsdbSongPreview, AppError> {
     let client = {
-        let usdb = state.usdb_client.lock().await;
+        let usdb = state().usdb_client.lock().await;
         usdb.as_ref()
             .ok_or_else(|| AppError::UsdbError("Not logged in to USDB".to_string()))?
             .clone()
@@ -98,11 +82,9 @@ pub async fn usdb_get_song_preview(
     client.get_song_preview(song_id).await
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn usdb_get_song(state: State<'_, AppState>, song_id: u32) -> Result<UsdbSong, AppError> {
+pub async fn usdb_get_song(song_id: u32) -> Result<UsdbSong, AppError> {
     let client = {
-        let usdb = state.usdb_client.lock().await;
+        let usdb = state().usdb_client.lock().await;
         usdb.as_ref()
             .ok_or_else(|| AppError::UsdbError("Not logged in to USDB".to_string()))?
             .clone()

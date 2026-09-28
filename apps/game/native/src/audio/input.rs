@@ -2,7 +2,7 @@ use super::{
     processor::{AudioInput, Processor},
     types::MicrophoneOptions,
 };
-use crate::{error::AppError, AppState};
+use crate::{error::AppError, state::ProcessorMap};
 use cpal::traits::{DeviceTrait, StreamTrait};
 use cpal::{Device, Stream, StreamConfig};
 use ringbuf::{traits::Producer, HeapProd};
@@ -13,7 +13,6 @@ use std::{
         Arc, Mutex,
     },
 };
-use tauri::{AppHandle, Manager};
 
 /// Manages input stream setup and audio routing
 pub struct InputStreamManager;
@@ -23,7 +22,7 @@ impl InputStreamManager {
     pub fn setup_input_streams(
         devices: Vec<(Device, StreamConfig, Vec<usize>)>,
         options: &[MicrophoneOptions],
-        app_handle: AppHandle,
+        processor_map: ProcessorMap,
         mut output_producers: HashMap<usize, HeapProd<f32>>,
         playback_enabled: Arc<AtomicBool>,
     ) -> Result<Vec<Stream>, AppError> {
@@ -45,8 +44,7 @@ impl InputStreamManager {
                 inputs.insert(index, input);
             }
 
-            let state = app_handle.state::<AppState>();
-            match state.processors.write() {
+            match processor_map.write() {
                 Ok(mut processors_state) => {
                     processors_state.extend(processors.clone());
                 }

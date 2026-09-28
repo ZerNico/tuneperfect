@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::AppError;
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize)]
 pub struct ReplayGainInfo {
     pub track_gain: Option<f32>,
     pub track_peak: Option<f32>,

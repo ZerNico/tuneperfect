@@ -3,7 +3,7 @@ use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize)]
 pub struct Microphone {
     /// Stable device ID (cpal `DeviceId` serialized via `Display`). Preferred for
     /// persisting a mic selection. `None` if the backend can't report an ID.
@@ -12,8 +12,6 @@ pub struct Microphone {
     channels: u16,
 }
 
-#[tauri::command]
-#[specta::specta]
 pub fn get_microphones() -> Result<Vec<Microphone>, AppError> {
     let mut microphones = Vec::new();
 

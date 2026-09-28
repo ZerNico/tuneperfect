@@ -1,10 +1,9 @@
 use serde::{Deserialize, Serialize};
-use specta::Type;
 
 use crate::ultrastar::song::Song;
 
 /// Lightweight entry from USDB search results (no note data).
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsdbSearchEntry {
     #[serde(rename = "songId")]
     pub song_id: u32,
@@ -29,7 +28,7 @@ pub struct UsdbSearchEntry {
 }
 
 /// Preview info for the search UI (YouTube ID, BPM, etc. — no note data).
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsdbSongPreview {
     pub song: UsdbSearchEntry,
     #[serde(rename = "youtubeId")]
@@ -41,7 +40,7 @@ pub struct UsdbSongPreview {
 }
 
 /// Full USDB song with parsed note data, ready for gameplay.
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsdbSong {
     #[serde(rename = "songId")]
     pub song_id: u32,

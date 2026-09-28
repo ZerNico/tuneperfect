@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, TcpListener as StdTcpListener};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use http_body_util::combinators::UnsyncBoxBody;
 use http_body_util::{BodyExt, Empty, Full};
@@ -11,12 +11,6 @@ use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use serde::{Deserialize, Serialize};
-use specta::Type;
-use tauri::{
-    plugin::{Builder as PluginBuilder, TauriPlugin},
-    Manager, Runtime, State,
-};
-use tauri_plugin_fs::FsExt;
 use tokio::net::TcpListener;
 use tower::ServiceExt;
 use tower_http::services::ServeFile;
@@ -37,7 +31,7 @@ const STATIC_ASSETS: &[(&str, &str, &str)] = &[(
 /// Unsync because that is what `ServeFile` produces; hyper only needs `Send`.
 type ResponseBody = UnsyncBoxBody<Bytes, std::io::Error>;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalServerConfig {
     pub port: u16,
     pub host: String,
@@ -66,15 +60,6 @@ impl LocalServerState {
             MEDIA_PREFIX.trim_end_matches('/')
         )
     }
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn get_local_server_base_url(
-    state: State<'_, Arc<Mutex<Option<LocalServerState>>>>,
-) -> Result<Option<String>, String> {
-    let state = state.lock().map_err(|e| e.to_string())?;
-    Ok(state.as_ref().map(|s| s.get_base_url()))
 }
 
 /// Listeners covering every loopback address `localhost` can resolve to, plus the port
@@ -170,16 +155,10 @@ fn static_response(
         .expect("static response is well formed")
 }
 
-/// Decides whether a decoded path may be served. Implemented by Tauri's fs scope in the
-/// app; tests substitute their own so serving can be exercised without a mock app.
-trait PathPolicy: Send + Sync + 'static {
+/// Decides whether a decoded path may be served. Implemented by the app's path allowlist;
+/// tests substitute their own so serving can be exercised without real folders.
+pub trait PathPolicy: Send + Sync + 'static {
     fn is_allowed(&self, path: &str) -> bool;
-}
-
-impl PathPolicy for tauri::scope::fs::Scope {
-    fn is_allowed(&self, path: &str) -> bool {
-        tauri::scope::fs::Scope::is_allowed(self, path)
-    }
 }
 
 /// Serves a song file after checking it against the fs scope.
@@ -256,24 +235,6 @@ async fn handle_request(
     Ok(response)
 }
 
-/// `frame-ancestors` value restricting who may frame the static assets.
-///
-/// Every origin the app document can legitimately have is listed rather than one derived
-/// per platform: the webview scheme differs by OS (`tauri://localhost`, and
-/// `http://tauri.localhost` on Windows) and dev builds load from the Vite server. Guessing
-/// a single value wrong would break the embed in bundled builds while dev kept working,
-/// which is a far worse outcome than listing a few extra loopback origins — this only
-/// needs to keep *remote* pages out, and the server is loopback-only regardless.
-fn app_frame_ancestors() -> String {
-    let mut origins = vec!["tauri://localhost", "http://tauri.localhost"];
-
-    if cfg!(debug_assertions) {
-        origins.push("http://localhost:1420");
-    }
-
-    origins.join(" ")
-}
-
 /// `policy_for_request` is called per request so newly allowed song folders are picked up
 /// without restarting the server.
 async fn accept_loop<F>(listener: TcpListener, policy_for_request: F, frame_ancestors: Arc<String>)
@@ -305,59 +266,44 @@ where
     }
 }
 
-pub fn create_local_server_plugin<R: Runtime>() -> TauriPlugin<R> {
-    PluginBuilder::new("local-server")
-        .setup(|app, _api| {
-            let (port, listeners) =
-                bind_loopback_listeners(24000).ok_or("No available port found")?;
+/// Binds the loopback listeners and starts serving on the current tokio runtime.
+///
+/// `frame_ancestors` lists the origins the app document can have (the packaged app scheme,
+/// plus the Vite dev server in development); only they may frame the static assets. This
+/// only needs to keep *remote* pages out, and the server is loopback-only regardless.
+pub fn start(
+    frame_ancestors: Vec<String>,
+    policy: Arc<dyn PathPolicy>,
+) -> Result<LocalServerState, String> {
+    let (port, listeners) = bind_loopback_listeners(24000).ok_or("No available port found")?;
 
-            // Advertise `localhost` rather than `127.0.0.1`: YouTube refuses to embed for an
-            // origin of `http://127.0.0.1:*` (error 150) while allowing `http://localhost:*`.
-            let config = LocalServerConfig {
-                port,
-                host: "localhost".to_string(),
-            };
+    // Advertise `localhost` rather than `127.0.0.1`: YouTube refuses to embed for an
+    // origin of `http://127.0.0.1:*` (error 150) while allowing `http://localhost:*`.
+    let config = LocalServerConfig {
+        port,
+        host: "localhost".to_string(),
+    };
 
-            let server_state = LocalServerState::new(config);
-            app.manage(Arc::new(Mutex::new(Some(server_state))));
+    let frame_ancestors = Arc::new(frame_ancestors.join(" "));
 
-            let app_handle = app.app_handle().clone();
-            let frame_ancestors = Arc::new(app_frame_ancestors());
+    log::info!("Local server listening on localhost:{}", port);
 
-            println!("Local server listening on localhost:{}", port);
+    // One task per bound address.
+    for listener in listeners {
+        listener
+            .set_nonblocking(true)
+            .map_err(|e| format!("Failed to set listener non-blocking: {e}"))?;
+        // Adopting the listener registers it with the tokio reactor, so the caller must be
+        // running inside the runtime.
+        let listener =
+            TcpListener::from_std(listener).map_err(|e| format!("Failed to adopt listener: {e}"))?;
 
-            // One task per bound address, on the runtime Tauri already provides.
-            for listener in listeners {
-                let app_handle = app_handle.clone();
-                let frame_ancestors = frame_ancestors.clone();
+        let policy = policy.clone();
+        let policy_for_request = move || policy.clone();
+        tokio::spawn(accept_loop(listener, policy_for_request, frame_ancestors.clone()));
+    }
 
-                if let Err(e) = listener.set_nonblocking(true) {
-                    eprintln!("Failed to set listener non-blocking: {}", e);
-                    continue;
-                }
-
-                tauri::async_runtime::spawn(async move {
-                    // Adopting the listener registers it with the tokio reactor, so it has
-                    // to happen inside the runtime — `setup` runs on the main thread with
-                    // no reactor in context and would panic.
-                    let listener = match TcpListener::from_std(listener) {
-                        Ok(listener) => listener,
-                        Err(e) => {
-                            eprintln!("Failed to adopt listener: {}", e);
-                            return;
-                        }
-                    };
-
-                    let policy_for_request =
-                        move || Arc::new(app_handle.fs_scope()) as Arc<dyn PathPolicy>;
-                    accept_loop(listener, policy_for_request, frame_ancestors).await;
-                });
-            }
-
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![get_local_server_base_url])
-        .build()
+    Ok(LocalServerState::new(config))
 }
 
 #[cfg(test)]

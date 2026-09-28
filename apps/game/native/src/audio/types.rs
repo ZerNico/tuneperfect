@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Configuration options for a microphone input
-#[derive(Debug, Serialize, Deserialize, specta::Type, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MicrophoneOptions {
     /// Stable device ID (cpal `DeviceId`, serialized via `Display`). Preferred
     /// for matching. `None` for configs saved before ID support was added, which

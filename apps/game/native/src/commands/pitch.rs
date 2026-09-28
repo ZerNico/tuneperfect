@@ -1,20 +1,16 @@
 use crate::{
     audio::{recorder::Recorder, MicrophoneOptions},
     error::AppError,
-    AppState,
+    state::state,
 };
 use futures::future::join_all;
-use tauri::{AppHandle, Manager, State};
 
-#[tauri::command]
-#[specta::specta]
 pub fn start_recording(
-    app_handle: AppHandle,
     options: Vec<MicrophoneOptions>,
     playback_enabled: bool,
     playback_volume: f32,
 ) -> Result<(), AppError> {
-    let state = app_handle.state::<AppState>();
+    let state = state();
     let mut recorder = state
         .recorder
         .write()
@@ -30,7 +26,7 @@ pub fn start_recording(
     }
 
     *recorder = Some(Recorder::new(
-        app_handle.clone(),
+        state.processors.clone(),
         options,
         playback_enabled,
         playback_volume,
@@ -38,9 +34,8 @@ pub fn start_recording(
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn stop_recording(state: State<'_, AppState>) -> Result<(), AppError> {
+pub fn stop_recording() -> Result<(), AppError> {
+    let state = state();
     let mut recorder = state
         .recorder
         .write()
@@ -60,11 +55,9 @@ pub fn stop_recording(state: State<'_, AppState>) -> Result<(), AppError> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn get_pitches(state: State<'_, AppState>, window_ms: f32) -> Result<Vec<f32>, AppError> {
+pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
     let futures = {
-        let processors = state.processors.read().map_err(|_| {
+        let processors = state().processors.read().map_err(|_| {
             AppError::ProcessorError("Failed to acquire processors lock".to_string())
         })?;
 
@@ -101,11 +94,9 @@ pub async fn get_pitches(state: State<'_, AppState>, window_ms: f32) -> Result<V
     Ok(pitches)
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn get_audio_levels(state: State<'_, AppState>) -> Result<Vec<f32>, AppError> {
+pub async fn get_audio_levels() -> Result<Vec<f32>, AppError> {
     let futures = {
-        let processors = state.processors.read().map_err(|_| {
+        let processors = state().processors.read().map_err(|_| {
             AppError::ProcessorError("Failed to acquire processors lock".to_string())
         })?;
 

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use specta::Type;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NoteType {
     Normal,
     Golden,
@@ -10,7 +9,7 @@ pub enum NoteType {
     RapGolden,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Note {
     #[serde(rename = "type")]
     pub note_type: NoteType,
@@ -24,19 +23,19 @@ pub struct Note {
     pub midi_note: i32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Phrase {
     #[serde(rename = "disappearBeat")]
     pub disappear_beat: i32,
     pub notes: Vec<Note>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Voice {
     pub phrases: Vec<Phrase>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Song {
     pub title: String,
     pub artist: String,
@@ -76,7 +75,7 @@ pub struct Song {
     pub voices: Vec<Voice>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalSong {
     #[serde(flatten)]
     pub song: Song,

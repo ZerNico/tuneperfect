@@ -1,78 +1,50 @@
 use crate::error::AppError;
-use crate::local_server::LocalServerState;
+use crate::state::state;
 use crate::ultrastar::filesystem::traverse_and_find_txt_files;
 use crate::ultrastar::parser::parse_local_txt_file;
 use crate::ultrastar::song::LocalSong;
 use log;
 use serde::{Deserialize, Serialize};
-use specta::Type;
-use std::sync::{Arc, Mutex};
-use tauri::State;
-use tauri_plugin_fs::FsExt;
-use tauri_specta::Event;
+use std::sync::Arc;
 use tokio::task;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
-pub struct ProgressEvent {
-    pub song: String,
+/// Reported while parsing, in order: one `Start`, then one `Progress` per song file.
+#[derive(Serialize, Debug, Clone)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum ParseEvent {
+    Start { total: usize },
+    Progress { song: String },
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
-pub struct StartParsingEvent {
-    pub total_songs: i32,
-}
+pub type ParseEventSink = Arc<dyn Fn(ParseEvent) + Send + Sync>;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SongGroup {
     pub path: String,
     pub songs: Vec<LocalSong>,
 }
 
-/// Base URL that song media files are addressed through.
-///
-/// The local server runs on every platform because the YouTube embed page needs an HTTP
-/// origin, but only Linux serves *song files* through it — the asset protocol is unreliable
-/// for media playback there. Everywhere else keeps the asset protocol, so this is gated on
-/// the target rather than on whether the server happens to be running.
-fn get_media_base_url(local_server_state: &State<Arc<Mutex<Option<LocalServerState>>>>) -> String {
-    // Compiled on every target so the Linux path keeps type-checking here, then discarded
-    // by the `serves_song_files` constant below on platforms that use the asset protocol.
-    let served_locally = local_server_state
-        .lock()
-        .ok()
-        .and_then(|state| state.as_ref().map(LocalServerState::get_media_base_url));
-
-    let serves_song_files = cfg!(target_os = "linux");
-
-    if serves_song_files {
-        if let Some(base_url) = served_locally {
-            return base_url;
-        }
-    }
-
-    #[cfg(any(windows, target_os = "android"))]
-    let base = "http://asset.localhost";
-    #[cfg(not(any(windows, target_os = "android")))]
-    let base = "asset://localhost";
-
-    base.to_string()
+/// Base URL that song media files are addressed through: the loopback media server,
+/// which serves them to the webview on every platform.
+fn get_media_base_url() -> Result<String, AppError> {
+    state()
+        .local_server
+        .get()
+        .map(|server| server.get_media_base_url())
+        .ok_or_else(|| AppError::IoError("local media server is not running".to_string()))
 }
 
-#[tauri::command]
-#[specta::specta]
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
-    app_handle: tauri::AppHandle,
-    local_server_state: State<'_, Arc<Mutex<Option<LocalServerState>>>>,
+    on_event: ParseEventSink,
 ) -> Result<Vec<SongGroup>, AppError> {
-    let media_base_url = get_media_base_url(&local_server_state);
-
-    let fs_scope = app_handle.fs_scope();
+    let media_base_url = get_media_base_url()?;
+    let allowlist = &state().allowlist;
 
     let allowed_paths: Vec<String> = paths
         .into_iter()
         .filter(|path| {
-            if !fs_scope.is_allowed(path) {
+            if !allowlist.is_allowed(path) {
                 log::warn!("Skipping disallowed path: {}", path);
                 false
             } else {
@@ -85,11 +57,9 @@ pub async fn parse_songs_from_paths(
 
     let mut song_groups = Vec::new();
 
-    StartParsingEvent {
-        total_songs: txt_files_map.len() as i32,
-    }
-    .emit(&app_handle)
-    .unwrap();
+    on_event(ParseEvent::Start {
+        total: txt_files_map.len(),
+    });
 
     let num_workers = num_cpus::get();
 
@@ -120,7 +90,7 @@ pub async fn parse_songs_from_paths(
         let mut batch_tasks = Vec::new();
         for batch in batches {
             let media_base_url = media_base_url.clone();
-            let app_handle = app_handle.clone();
+            let on_event = on_event.clone();
 
             let batch_task = task::spawn_blocking(move || {
                 let mut batch_results = Vec::new();
@@ -136,8 +106,7 @@ pub async fn parse_songs_from_paths(
                         }
                     }
 
-                    // Emit progress event for each song
-                    ProgressEvent { song: txt_path }.emit(&app_handle).unwrap();
+                    on_event(ParseEvent::Progress { song: txt_path });
                 }
 
                 batch_results

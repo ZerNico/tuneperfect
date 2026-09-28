@@ -2,12 +2,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use reqwest::{cookie::Jar, Client};
-use tauri::AppHandle;
-use tauri_specta::Event;
 
 use crate::error::AppError;
 use crate::ultrastar::parser::parse_ultrastar_txt;
-use crate::usdb::commands::UsdbSyncProgressEvent;
+use crate::usdb::commands::{UsdbProgressSink, UsdbSyncProgressEvent};
 use crate::usdb::models::{UsdbSearchEntry, UsdbSong, UsdbSongPreview};
 use crate::usdb::parser;
 
@@ -125,7 +123,7 @@ impl UsdbClient {
     /// Paginates through all USDB songs (100 per page, ordered by ID).
     pub async fn fetch_all_songs(
         &self,
-        app_handle: &AppHandle,
+        on_progress: &UsdbProgressSink,
     ) -> Result<Vec<UsdbSearchEntry>, AppError> {
         self.ensure_logged_in()?;
 
@@ -175,11 +173,10 @@ impl UsdbClient {
             );
 
             let fetched = all_songs.len() as u32;
-            let _ = UsdbSyncProgressEvent {
+            on_progress(UsdbSyncProgressEvent {
                 fetched,
                 total: ESTIMATED_CATALOG_SIZE.max(fetched),
-            }
-            .emit(app_handle);
+            });
 
             if batch_len < SONGS_PER_PAGE as usize {
                 break;
@@ -192,7 +189,7 @@ impl UsdbClient {
     /// Fetches songs changed since `last_mtime` (ordered by lastchange DESC, stops at watermark).
     pub async fn fetch_updated_songs(
         &self,
-        app_handle: &AppHandle,
+        on_progress: &UsdbProgressSink,
         last_mtime: i32,
         last_song_ids: &[u32],
     ) -> Result<Vec<UsdbSearchEntry>, AppError> {
@@ -258,11 +255,10 @@ impl UsdbClient {
 
             // Total unknown for incremental syncs, so keep the bar full.
             let fetched = updated_songs.len() as u32;
-            let _ = UsdbSyncProgressEvent {
+            on_progress(UsdbSyncProgressEvent {
                 fetched,
                 total: fetched.max(1),
-            }
-            .emit(app_handle);
+            });
 
             if reached_watermark || batch_len < SONGS_PER_PAGE as usize {
                 break;
