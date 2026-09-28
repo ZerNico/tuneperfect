@@ -156,12 +156,79 @@ pub async fn install_migration(
         Ok(())
     }
 
-    // The bundle or AppImage is replaced in place, like with any update. Restarting reads the
-    // new bundle's Info.plist, so it finds the Electron binary.
-    #[cfg(not(target_os = "windows"))]
+    // The bundle is replaced in place, like with any update. Restarting reads the new
+    // bundle's Info.plist, so it finds the Electron binary.
+    #[cfg(target_os = "macos")]
     {
         update.install(bytes)?;
         app.restart();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        update.install(bytes)?;
+        relaunch_appimage()?;
+        app.exit(0);
+        Ok(())
+    }
+}
+
+/// Starts the replaced AppImage the way a launcher would. Tauri's restart would hand the
+/// Electron app this image's descriptors (the AppImage runtime holds its mount through one)
+/// and its environment, keeping the old image mounted for as long as the new app runs.
+#[cfg(target_os = "linux")]
+fn relaunch_appimage() -> std::io::Result<()> {
+    use std::process::{Command, Stdio};
+
+    let appimage = std::env::var_os("APPIMAGE")
+        .ok_or_else(|| std::io::Error::other("not running as an AppImage"))?;
+    // Bash closes every descriptor above stderr before it starts the new image; `exec {n}>&-`
+    // closes descriptors above 9, which dash can't.
+    let script = r#"for fd in /proc/$$/fd/*; do n=${fd##*/}; [ "$n" -gt 2 ] && exec {n}>&-; done 2>/dev/null; exec "$@""#;
+    let mut command = Command::new("/bin/bash");
+    command
+        .args(["-c", script, "bash"])
+        .arg(appimage)
+        .args(std::env::args_os().skip(1))
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    clear_appimage_environment(&mut command);
+    command.spawn()?;
+    Ok(())
+}
+
+/// The AppImage runtime and its GTK hook point variables (GTK_PATH, GIO_MODULE_DIR,
+/// GSETTINGS_SCHEMA_DIR, XDG_DATA_DIRS, …) into this image's mount. Once it's unmounted they
+/// point nowhere, and GLib aborts without its schemas, so they go: variables into the mount
+/// are dropped, path lists keep their other entries. The new image's runtime sets its own.
+#[cfg(target_os = "linux")]
+fn clear_appimage_environment(command: &mut std::process::Command) {
+    use std::os::unix::ffi::OsStrExt;
+
+    for name in ["APPDIR", "APPIMAGE", "ARGV0", "OWD", "GTK_THEME"] {
+        command.env_remove(name);
+    }
+    let Some(appdir) = std::env::var_os("APPDIR") else {
+        return;
+    };
+    let appdir = appdir.as_bytes();
+    let inside = |entry: &[u8]| entry.starts_with(appdir);
+
+    for (name, value) in std::env::vars_os() {
+        let bytes = value.as_bytes();
+        if !bytes.windows(appdir.len()).any(|window| window == appdir) {
+            continue;
+        }
+        let kept: Vec<&[u8]> = bytes
+            .split(|&byte| byte == b':')
+            .filter(|entry| !entry.is_empty() && !inside(entry))
+            .collect();
+        if kept.is_empty() {
+            command.env_remove(&name);
+        } else {
+            command.env(&name, std::ffi::OsStr::from_bytes(&kept.join(&b':')));
+        }
     }
 }
 
