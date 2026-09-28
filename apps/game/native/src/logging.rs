@@ -18,12 +18,19 @@ pub type LogSink = Box<dyn Fn(LogRecord) + Send + Sync>;
 
 static SINK: OnceLock<LogSink> = OnceLock::new();
 
+/// Dependencies whose warnings are noise here: lofty reports every tag it doesn't
+/// understand in a song library, and the HTML parser behind the USDB scraper reports
+/// malformed markup it copes with anyway.
+const QUIET_TARGETS: &[&str] = &["lofty", "html5ever", "selectors"];
+
 struct Logger;
 
 impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        // lofty reports every tag it doesn't understand, which is noise for song libraries.
-        metadata.level() <= Level::Info && !metadata.target().starts_with("lofty")
+        metadata.level() <= Level::Info
+            && !QUIET_TARGETS
+                .iter()
+                .any(|target| metadata.target().starts_with(target))
     }
 
     fn log(&self, record: &Record) {
