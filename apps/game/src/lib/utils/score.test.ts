@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Note } from "~/lib/native/types";
+import type { Note } from "~/lib/native/types.gen";
 import type { Score } from "~/stores/round";
 
 import type { Voice } from "../ultrastar/voice";

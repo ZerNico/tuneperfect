@@ -74,7 +74,7 @@ pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
                 tokio::task::spawn_blocking(move || match processor.lock() {
                     Ok(mut p) => (idx, p.get_pitch(window_ms)),
                     Err(poisoned) => {
-                        eprintln!("Mutex poisoned for processor {}, attempting recovery", idx);
+                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
                         (idx, poisoned.into_inner().get_pitch(window_ms))
                     }
                 })
@@ -113,7 +113,7 @@ pub async fn get_audio_levels() -> Result<Vec<f32>, AppError> {
                 tokio::task::spawn_blocking(move || match processor.lock() {
                     Ok(mut p) => (idx, p.get_level()),
                     Err(poisoned) => {
-                        eprintln!("Mutex poisoned for processor {}, attempting recovery", idx);
+                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
                         (idx, poisoned.into_inner().get_level())
                     }
                 })

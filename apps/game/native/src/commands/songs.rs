@@ -9,16 +9,16 @@ use std::sync::Arc;
 use tokio::task;
 
 /// Reported while parsing, in order: one `Start`, then one `Progress` per song file.
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ParseEvent {
-    Start { total: usize },
+    Start { total: u32 },
     Progress { song: String },
 }
 
 pub type ParseEventSink = Arc<dyn Fn(ParseEvent) + Send + Sync>;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, specta::Type)]
 pub struct SongGroup {
     pub path: String,
     pub songs: Vec<LocalSong>,
@@ -58,7 +58,7 @@ pub async fn parse_songs_from_paths(
     let mut song_groups = Vec::new();
 
     on_event(ParseEvent::Start {
-        total: txt_files_map.len(),
+        total: txt_files_map.len() as u32,
     });
 
     let num_workers = num_cpus::get();

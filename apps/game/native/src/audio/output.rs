@@ -136,7 +136,7 @@ impl OutputMixer {
         let stream = device.build_output_stream(
             config,
             output_callback,
-            |err| eprintln!("Output stream error: {}", err),
+            |err| log::error!("Output stream error: {}", err),
             None,
         )?;
 

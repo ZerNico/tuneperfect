@@ -1,1 +1,1 @@
-export type { Note } from "~/lib/native/types";
+export type { Note } from "~/lib/native/types.gen";

@@ -1,7 +1,15 @@
 import { eventIterator, oc, type } from "@orpc/contract";
 import * as v from "valibot";
 
-import type { Microphone, SongGroup, UsdbSearchEntry, UsdbSong, UsdbSongPreview } from "./types";
+import type {
+  Microphone,
+  ParseEvent,
+  SongGroup,
+  UsdbSearchEntry,
+  UsdbSong,
+  UsdbSongPreview,
+  UsdbSyncProgressEvent,
+} from "./types.gen";
 
 /**
  * The contract between the renderer and Electron's main process, served over a
@@ -24,13 +32,10 @@ const microphoneOptionsSchema = v.object({
   delay: v.number(),
 });
 
-export type ParseSongsEvent =
-  | { type: "start"; total: number }
-  | { type: "progress"; song: string }
-  | { type: "done"; groups: SongGroup[] };
+export type ParseSongsEvent = ParseEvent | { type: "done"; groups: SongGroup[] };
 
 export type UsdbCatalogEvent =
-  | { type: "progress"; fetched: number; total: number }
+  | ({ type: "progress" } & UsdbSyncProgressEvent)
   | { type: "done"; catalog: UsdbSearchEntry[] };
 
 export type UpdateInstallEvent = { type: "progress"; downloaded: number; total: number | null };
@@ -109,7 +114,8 @@ export const contract = {
   app: {
     /** Song folders passed with `--songpath`/`-s`, or `null` when none were given. */
     songPaths: base.output(type<string[] | null>()),
-    exit: base.input(v.object({ code: v.optional(v.number()) })),
+    /** Quits the app (pending settings are saved first). */
+    exit: base,
     openUrl: base.input(v.object({ url: v.pipe(v.string(), v.url()) })),
     log: base.input(v.object({ level: v.picklist(["warn", "error"]), message: v.string() })),
   },

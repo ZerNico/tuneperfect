@@ -77,7 +77,7 @@ impl InputStreamManager {
             let stream = device.build_input_stream(
                 config,
                 input_callback,
-                |err| eprintln!("Input stream error: {}", err),
+                |err| log::error!("Input stream error: {}", err),
                 None,
             )?;
 

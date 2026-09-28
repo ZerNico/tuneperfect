@@ -10,8 +10,12 @@ mod audio;
 mod commands;
 mod error;
 mod local_server;
+mod logging;
 mod napi_api;
 mod path_allowlist;
 mod state;
 mod ultrastar;
 mod usdb;
+
+#[cfg(test)]
+mod typescript;

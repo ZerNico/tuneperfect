@@ -1,1 +1,1 @@
-export type { Voice } from "~/lib/native/types";
+export type { Voice } from "~/lib/native/types.gen";

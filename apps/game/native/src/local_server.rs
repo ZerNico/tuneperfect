@@ -207,7 +207,7 @@ async fn serve_scoped_file(
             Response::from_parts(parts, body.boxed_unsync())
         }
         Err(error) => {
-            eprintln!("Local server failed to serve {}: {}", file_path, error);
+            log::warn!("Local server failed to serve {}: {}", file_path, error);
             status_response(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -245,7 +245,7 @@ where
         let (stream, _addr) = match listener.accept().await {
             Ok(accepted) => accepted,
             Err(e) => {
-                eprintln!("Error accepting connection: {}", e);
+                log::warn!("Error accepting connection: {}", e);
                 continue;
             }
         };
@@ -260,7 +260,8 @@ where
             });
 
             if let Err(e) = http1::Builder::new().serve_connection(io, service).await {
-                eprintln!("Error serving connection: {}", e);
+                // Clients routinely drop connections, e.g. when a media element seeks.
+                log::debug!("Error serving connection: {}", e);
             }
         });
     }

@@ -23,6 +23,8 @@ use crate::usdb::commands as usdb;
 
 /// A JS callback that receives one JSON value per call and whose return value is ignored.
 type JsonCallback = ThreadsafeFunction<Value, (), Value, Status, false>;
+/// Like `JsonCallback`, but doesn't keep the process alive on its own.
+type WeakJsonCallback = ThreadsafeFunction<Value, (), Value, Status, false, true>;
 
 impl From<AppError> for Error {
     fn from(error: AppError) -> Self {
@@ -52,6 +54,21 @@ where
 
 fn widen(values: Vec<f32>) -> Vec<f64> {
     values.into_iter().map(f64::from).collect()
+}
+
+/// Receives the addon's log records (`{level, target, message}`, info and above) so the
+/// host can write them to its log file.
+#[napi]
+pub fn set_log_sink(
+    #[napi(ts_arg_type = "(record: { level: string; target: string; message: string }) => void")]
+    on_record: WeakJsonCallback,
+) {
+    crate::state::state();
+    crate::logging::set_sink(Box::new(move |record| {
+        if let Ok(value) = serde_json::to_value(record) {
+            on_record.call(value, ThreadsafeFunctionCallMode::NonBlocking);
+        }
+    }));
 }
 
 /// Starts the loopback media server and returns its origin. Idempotent.

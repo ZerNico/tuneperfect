@@ -3,11 +3,11 @@ import { createRoot, createSignal } from "solid-js";
 import * as v from "valibot";
 
 import { native, safe } from "~/lib/native/client";
-import type { UsdbSearchEntry } from "~/lib/native/types";
+import type { UsdbSearchEntry } from "~/lib/native/types.gen";
 import { load } from "~/lib/platform/store";
 import { createPersistentStore } from "~/lib/utils/store";
 
-export type { UsdbSearchEntry } from "~/lib/native/types";
+export type { UsdbSearchEntry } from "~/lib/native/types.gen";
 
 const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 

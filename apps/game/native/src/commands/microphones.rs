@@ -3,7 +3,7 @@ use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct Microphone {
     /// Stable device ID (cpal `DeviceId` serialized via `Display`). Preferred for
     /// persisting a mic selection. `None` if the backend can't report an ID.

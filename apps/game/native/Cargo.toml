@@ -15,6 +15,8 @@ napi = { version = "3.13", default-features = false, features = ["napi8", "tokio
 napi-derive = "3.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# TypeScript types for the renderer are generated from these (see src/typescript.rs).
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 thiserror = "2"
 lofty = "0.25"
 cpal = "0.18.2"
@@ -28,7 +30,6 @@ tower-http = { version = "0.7", features = ["fs"] }
 tower = "0.5"
 percent-encoding = "2.3"
 log = "0.4"
-env_logger = "0.11"
 md5 = "0.8"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
@@ -43,6 +44,10 @@ semver = "1.0"
 reqwest = { version = "0.13", features = ["cookies", "form"] }
 scraper = "0.27"
 regex = "1"
+
+[dev-dependencies]
+specta-serde = "0.0.12"
+specta-typescript = "0.0.12"
 
 # Pitch detection and resampling run per audio callback; keep dependencies optimized in
 # debug builds so dev performance is representative.

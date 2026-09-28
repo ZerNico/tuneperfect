@@ -5,7 +5,7 @@ use crate::state::state;
 use crate::usdb::models::{UsdbSearchEntry, UsdbSong, UsdbSongPreview};
 
 /// Reported after each catalog page is fetched so the UI can show sync progress.
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, specta::Type)]
 pub struct UsdbSyncProgressEvent {
     pub fetched: u32,
     pub total: u32,

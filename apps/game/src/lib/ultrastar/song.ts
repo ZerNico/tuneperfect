@@ -1,6 +1,6 @@
-export type { LocalSong, UsdbSong } from "~/lib/native/types";
+export type { LocalSong, UsdbSong } from "~/lib/native/types.gen";
 
-import type { LocalSong, UsdbSong } from "~/lib/native/types";
+import type { LocalSong, UsdbSong } from "~/lib/native/types.gen";
 
 export type Song = LocalSong | UsdbSong;
 

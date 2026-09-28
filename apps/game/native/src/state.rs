@@ -26,8 +26,7 @@ pub struct AppState {
 }
 
 static STATE: LazyLock<AppState> = LazyLock::new(|| {
-    // The host process has no logger for the `log` macros, so install one on first use.
-    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info,lofty=off")).try_init();
+    crate::logging::init();
 
     AppState {
         recorder: RwLock::new(None),
