@@ -5,19 +5,13 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::AppHandle;
 use tauri_specta::Event;
-use tokio::sync::Mutex;
-use webrtc::api::interceptor_registry::register_default_interceptors;
-use webrtc::api::media_engine::MediaEngine;
-use webrtc::api::APIBuilder;
-use webrtc::data_channel::data_channel_message::DataChannelMessage;
-use webrtc::data_channel::RTCDataChannel;
-use webrtc::ice_transport::ice_candidate::RTCIceCandidateInit;
-use webrtc::ice_transport::ice_server::RTCIceServer;
-use webrtc::interceptor::registry::Registry;
-use webrtc::peer_connection::configuration::RTCConfiguration;
-use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
-use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
-use webrtc::peer_connection::RTCPeerConnection;
+use tokio::sync::{watch, Mutex};
+use webrtc::data_channel::{DataChannel, DataChannelEvent};
+use webrtc::peer_connection::{
+    register_default_interceptors, MediaEngine, PeerConnection, PeerConnectionBuilder,
+    PeerConnectionEventHandler, RTCConfigurationBuilder, RTCIceCandidateInit, RTCIceServer,
+    RTCPeerConnectionIceEvent, RTCPeerConnectionState, RTCSessionDescription, Registry,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type, Event)]
 #[serde(rename_all = "camelCase")]
@@ -83,14 +77,159 @@ impl IceServerConfig {
             urls,
             username: self.username.clone().unwrap_or_default(),
             credential: self.credential.clone().unwrap_or_default(),
-            ..Default::default()
         }
     }
 }
 
+/// State shared between a peer's handle, its event handler and its data channel tasks.
+struct PeerContext {
+    user_id: String,
+    handle: AppHandle,
+    data_channels: Mutex<HashMap<String, Arc<dyn DataChannel>>>,
+    /// Flipped to `true` when the host closes the peer. Data channel tasks stop on it,
+    /// since `DataChannel::poll` is not guaranteed to return once the connection is gone.
+    closed: watch::Sender<bool>,
+}
+
+impl PeerContext {
+    fn emit_channel_close(&self, label: String) {
+        log::debug!(
+            "[WebRTC] Data channel '{label}' closed for user {}",
+            self.user_id
+        );
+        let _ = ChannelCloseEvent {
+            user_id: self.user_id.clone(),
+            label,
+        }
+        .emit(&self.handle);
+    }
+
+    /// Stops all data channel tasks and emits the close events right away, so they reach the
+    /// frontend before a replacement connection for the same user can open its channels.
+    async fn close(&self) {
+        self.closed.send_replace(true);
+        let labels: Vec<String> = self
+            .data_channels
+            .lock()
+            .await
+            .drain()
+            .map(|(label, _)| label)
+            .collect();
+        for label in labels {
+            self.emit_channel_close(label);
+        }
+    }
+
+    async fn run_data_channel(self: Arc<Self>, dc: Arc<dyn DataChannel>) {
+        let uid = &self.user_id;
+        let label = match dc.label().await {
+            Ok(label) => label,
+            Err(e) => {
+                log::warn!("[WebRTC] Failed to read data channel label for user {uid}: {e}");
+                return;
+            }
+        };
+        log::debug!("[WebRTC] Data channel '{label}' created for user {uid}");
+
+        let mut closed = self.closed.subscribe();
+        {
+            // Checked under the lock so a concurrent `close` can't miss this channel.
+            let mut channels = self.data_channels.lock().await;
+            if *closed.borrow() {
+                return;
+            }
+            channels.insert(label.clone(), Arc::clone(&dc));
+        }
+
+        loop {
+            let event = tokio::select! {
+                biased;
+                _ = closed.wait_for(|closed| *closed) => return,
+                event = dc.poll() => event,
+            };
+
+            match event {
+                Some(DataChannelEvent::OnOpen) => {
+                    log::debug!("[WebRTC] Data channel '{label}' opened for user {uid}");
+                    let _ = ChannelOpenEvent {
+                        user_id: uid.clone(),
+                        label: label.clone(),
+                    }
+                    .emit(&self.handle);
+                }
+                Some(DataChannelEvent::OnMessage(msg)) => {
+                    let data = String::from_utf8(msg.data.to_vec()).unwrap_or_default();
+                    let _ = ChannelMessageEvent {
+                        user_id: uid.clone(),
+                        label: label.clone(),
+                        data,
+                    }
+                    .emit(&self.handle);
+                }
+                Some(DataChannelEvent::OnClose) | None => break,
+                Some(_) => {}
+            }
+        }
+
+        // Only emit if `close` hasn't already drained (and announced) this channel.
+        let removed = {
+            let mut channels = self.data_channels.lock().await;
+            match channels.get(&label) {
+                Some(current) if Arc::ptr_eq(current, &dc) => channels.remove(&label).is_some(),
+                _ => false,
+            }
+        };
+        if removed {
+            self.emit_channel_close(label);
+        }
+    }
+}
+
+struct PeerHandler {
+    ctx: Arc<PeerContext>,
+}
+
+#[async_trait::async_trait]
+impl PeerConnectionEventHandler for PeerHandler {
+    async fn on_ice_candidate(&self, event: RTCPeerConnectionIceEvent) {
+        let json = match event.candidate.to_json() {
+            Ok(init) => serde_json::to_string(&init).unwrap_or_default(),
+            Err(_) => return,
+        };
+        let _ = IceCandidateEvent {
+            user_id: self.ctx.user_id.clone(),
+            candidate: json,
+        }
+        .emit(&self.ctx.handle);
+    }
+
+    async fn on_connection_state_change(&self, state: RTCPeerConnectionState) {
+        let uid = &self.ctx.user_id;
+        let state_str = match state {
+            RTCPeerConnectionState::New => "new",
+            RTCPeerConnectionState::Connecting => "connecting",
+            RTCPeerConnectionState::Connected => "connected",
+            RTCPeerConnectionState::Disconnected => "disconnected",
+            RTCPeerConnectionState::Failed => "failed",
+            RTCPeerConnectionState::Closed => "closed",
+            _ => "unknown",
+        };
+        log::info!("[WebRTC] Connection state for {uid}: {state_str}");
+        let _ = ConnectionStateEvent {
+            user_id: uid.clone(),
+            state: state_str.to_string(),
+        }
+        .emit(&self.ctx.handle);
+    }
+
+    async fn on_data_channel(&self, dc: Arc<dyn DataChannel>) {
+        tauri::async_runtime::spawn(Arc::clone(&self.ctx).run_data_channel(dc));
+    }
+}
+
 pub struct PeerState {
-    pc: Arc<RTCPeerConnection>,
-    data_channels: Arc<Mutex<HashMap<String, Arc<RTCDataChannel>>>>,
+    pc: Arc<dyn PeerConnection>,
+    ctx: Arc<PeerContext>,
 }
 
 impl PeerState {
@@ -107,10 +246,13 @@ impl PeerState {
     }
 
     pub async fn send_message(&self, label: &str, data: &str) -> Result<(), String> {
-        let channels = self.data_channels.lock().await;
-        let dc = channels
-            .get(label)
-            .ok_or_else(|| format!("No data channel '{label}'"))?;
+        let dc = {
+            let channels = self.ctx.data_channels.lock().await;
+            channels
+                .get(label)
+                .cloned()
+                .ok_or_else(|| format!("No data channel '{label}'"))?
+        };
 
         // SCTP has a max message size (default ~64KB in webrtc-rs).
         // Messages under the limit are sent directly; larger ones are chunked
@@ -118,7 +260,7 @@ impl PeerState {
         const MAX_CHUNK_SIZE: usize = 48_000;
 
         if data.len() <= MAX_CHUNK_SIZE {
-            dc.send_text(data.to_string())
+            dc.send_text(data)
                 .await
                 .map_err(|e| format!("Failed to send message on '{label}': {e}"))?;
         } else {
@@ -136,7 +278,7 @@ impl PeerState {
 
             for (i, chunk) in chunks.iter().enumerate() {
                 let msg = format!("\x01CHUNK:{chunk_id}:{i}:{total}\n{chunk}");
-                dc.send_text(msg).await.map_err(|e| {
+                dc.send_text(&msg).await.map_err(|e| {
                     format!("Failed to send chunk {}/{total} on '{label}': {e}", i + 1)
                 })?;
             }
@@ -144,143 +286,11 @@ impl PeerState {
 
         Ok(())
     }
-}
 
-fn setup_ice_candidate_callback(pc: &Arc<RTCPeerConnection>, user_id: &str, handle: &AppHandle) {
-    let uid = user_id.to_string();
-    let handle = handle.clone();
-    pc.on_ice_candidate(Box::new(move |candidate| {
-        let uid = uid.clone();
-        let handle = handle.clone();
-        Box::pin(async move {
-            if let Some(c) = candidate {
-                let json = match c.to_json() {
-                    Ok(init) => serde_json::to_string(&init).unwrap_or_default(),
-                    Err(_) => return,
-                };
-                let _ = IceCandidateEvent {
-                    user_id: uid,
-                    candidate: json,
-                }
-                .emit(&handle);
-            }
-        })
-    }));
-}
-
-fn setup_connection_state_callback(pc: &Arc<RTCPeerConnection>, user_id: &str, handle: &AppHandle) {
-    let uid = user_id.to_string();
-    let handle = handle.clone();
-    pc.on_peer_connection_state_change(Box::new(move |state| {
-        let uid = uid.clone();
-        let handle = handle.clone();
-        Box::pin(async move {
-            let state_str = match state {
-                RTCPeerConnectionState::New => "new",
-                RTCPeerConnectionState::Connecting => "connecting",
-                RTCPeerConnectionState::Connected => "connected",
-                RTCPeerConnectionState::Disconnected => "disconnected",
-                RTCPeerConnectionState::Failed => "failed",
-                RTCPeerConnectionState::Closed => "closed",
-                _ => "unknown",
-            };
-            log::info!("[WebRTC] Connection state for {uid}: {state_str}");
-            let _ = ConnectionStateEvent {
-                user_id: uid,
-                state: state_str.to_string(),
-            }
-            .emit(&handle);
-        })
-    }));
-}
-
-fn setup_data_channel_callback(
-    pc: &Arc<RTCPeerConnection>,
-    user_id: &str,
-    handle: &AppHandle,
-    data_channels: &Arc<Mutex<HashMap<String, Arc<RTCDataChannel>>>>,
-) {
-    let uid = user_id.to_string();
-    let handle = handle.clone();
-    let channels = Arc::clone(data_channels);
-    pc.on_data_channel(Box::new(move |dc: Arc<RTCDataChannel>| {
-        let uid = uid.clone();
-        let handle = handle.clone();
-        let channels = Arc::clone(&channels);
-        Box::pin(async move {
-            let label = dc.label().to_string();
-            log::debug!("[WebRTC] Data channel '{label}' created for user {uid}");
-
-            {
-                let mut ch = channels.lock().await;
-                ch.insert(label.clone(), Arc::clone(&dc));
-            }
-
-            {
-                let uid = uid.clone();
-                let label = label.clone();
-                let handle = handle.clone();
-                dc.on_open(Box::new(move || {
-                    let uid = uid.clone();
-                    let label = label.clone();
-                    let handle = handle.clone();
-                    Box::pin(async move {
-                        log::debug!("[WebRTC] Data channel '{label}' opened for user {uid}");
-                        let _ = ChannelOpenEvent {
-                            user_id: uid,
-                            label,
-                        }
-                        .emit(&handle);
-                    })
-                }));
-            }
-
-            {
-                let uid = uid.clone();
-                let label = label.clone();
-                let handle = handle.clone();
-                let channels_close = Arc::clone(&channels);
-                dc.on_close(Box::new(move || {
-                    let uid = uid.clone();
-                    let label = label.clone();
-                    let handle = handle.clone();
-                    let channels_close = Arc::clone(&channels_close);
-                    Box::pin(async move {
-                        log::debug!("[WebRTC] Data channel '{label}' closed for user {uid}");
-                        {
-                            let mut ch = channels_close.lock().await;
-                            ch.remove(&label);
-                        }
-                        let _ = ChannelCloseEvent {
-                            user_id: uid,
-                            label,
-                        }
-                        .emit(&handle);
-                    })
-                }));
-            }
-
-            {
-                let uid = uid.clone();
-                let label = label.clone();
-                let handle = handle.clone();
-                dc.on_message(Box::new(move |msg: DataChannelMessage| {
-                    let uid = uid.clone();
-                    let label = label.clone();
-                    let handle = handle.clone();
-                    Box::pin(async move {
-                        let data = String::from_utf8(msg.data.to_vec()).unwrap_or_default();
-                        let _ = ChannelMessageEvent {
-                            user_id: uid,
-                            label,
-                            data,
-                        }
-                        .emit(&handle);
-                    })
-                }));
-            }
-        })
-    }));
+    async fn close(&self) {
+        let _ = self.pc.close().await;
+        self.ctx.close().await;
+    }
 }
 
 pub struct WebRTCHost {
@@ -303,43 +313,60 @@ impl WebRTCHost {
     ) -> Result<String, String> {
         if let Some(old) = self.peers.remove(&user_id) {
             log::info!("[WebRTC] Closing existing connection for user {user_id}");
-            let _ = old.pc.close().await;
+            old.close().await;
         }
 
         log::info!("[WebRTC] Creating peer connection for user {user_id}");
 
-        let config = RTCConfiguration {
-            ice_servers: ice_servers.iter().map(|s| s.to_rtc_ice_server()).collect(),
-            ..Default::default()
-        };
+        let config = RTCConfigurationBuilder::new()
+            .with_ice_servers(ice_servers.iter().map(|s| s.to_rtc_ice_server()).collect())
+            .build();
 
         let mut media_engine = MediaEngine::default();
         media_engine
             .register_default_codecs()
             .map_err(|e| format!("Failed to register codecs: {e}"))?;
 
-        let mut registry = Registry::new();
-        registry = register_default_interceptors(registry, &mut media_engine)
+        let registry = register_default_interceptors(Registry::new(), &mut media_engine)
             .map_err(|e| format!("Failed to register interceptors: {e}"))?;
 
-        let api = APIBuilder::new()
+        let (closed, _) = watch::channel(false);
+        let ctx = Arc::new(PeerContext {
+            user_id: user_id.clone(),
+            handle: app_handle,
+            data_channels: Mutex::new(HashMap::new()),
+            closed,
+        });
+
+        let pc = PeerConnectionBuilder::new()
+            .with_configuration(config)
             .with_media_engine(media_engine)
             .with_interceptor_registry(registry)
-            .build();
-
-        let pc = api
-            .new_peer_connection(config)
+            .with_handler(Arc::new(PeerHandler {
+                ctx: Arc::clone(&ctx),
+            }))
+            // Wildcard: one socket per local IPv4 interface, each on an ephemeral port.
+            .with_udp_addrs(vec!["0.0.0.0:0"])
+            .build()
             .await
             .map_err(|e| format!("Failed to create peer connection: {e}"))?;
-        let pc = Arc::new(pc);
+        let pc: Arc<dyn PeerConnection> = Arc::new(pc);
+        let peer = PeerState { pc, ctx };
 
-        let data_channels: Arc<Mutex<HashMap<String, Arc<RTCDataChannel>>>> =
-            Arc::new(Mutex::new(HashMap::new()));
+        let answer_sdp = match Self::negotiate(&peer.pc, offer_sdp).await {
+            Ok(sdp) => sdp,
+            Err(e) => {
+                peer.close().await;
+                return Err(e);
+            }
+        };
 
-        setup_ice_candidate_callback(&pc, &user_id, &app_handle);
-        setup_connection_state_callback(&pc, &user_id, &app_handle);
-        setup_data_channel_callback(&pc, &user_id, &app_handle, &data_channels);
+        self.peers.insert(user_id, Arc::new(peer));
 
+        Ok(answer_sdp)
+    }
+
+    async fn negotiate(pc: &Arc<dyn PeerConnection>, offer_sdp: String) -> Result<String, String> {
         let offer = RTCSessionDescription::offer(offer_sdp)
             .map_err(|e| format!("Invalid offer SDP: {e}"))?;
         pc.set_remote_description(offer)
@@ -350,14 +377,10 @@ impl WebRTCHost {
             .create_answer(None)
             .await
             .map_err(|e| format!("Failed to create answer: {e}"))?;
-        pc.set_local_description(answer.clone())
+        let answer_sdp = answer.sdp.clone();
+        pc.set_local_description(answer)
             .await
             .map_err(|e| format!("Failed to set local description: {e}"))?;
-
-        let answer_sdp = answer.sdp;
-
-        self.peers
-            .insert(user_id, Arc::new(PeerState { pc, data_channels }));
 
         Ok(answer_sdp)
     }
@@ -372,14 +395,14 @@ impl WebRTCHost {
     pub async fn close_connection(&mut self, user_id: &str) {
         if let Some(peer) = self.peers.remove(user_id) {
             log::info!("[WebRTC] Closing connection for user {user_id}");
-            let _ = peer.pc.close().await;
+            peer.close().await;
         }
     }
 
     pub async fn close_all(&mut self) {
         log::info!("[WebRTC] Closing all connections");
         for (_, peer) in self.peers.drain() {
-            let _ = peer.pc.close().await;
+            peer.close().await;
         }
     }
 }
