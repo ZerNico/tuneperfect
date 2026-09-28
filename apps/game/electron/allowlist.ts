@@ -4,8 +4,8 @@ import type { JsonStores } from "./store";
 const ALLOWLIST_FILE = "allowed-paths.json";
 
 /**
- * Song folders the app may read, replacing Tauri's persisted fs scope. The native side
- * enforces it for parsing and media serving; this keeps it across restarts.
+ * Song folders the app may read. The native side enforces it for parsing and media serving;
+ * this keeps it across restarts.
  */
 export class SongFolderAccess {
   readonly #stores: JsonStores;
@@ -15,8 +15,8 @@ export class SongFolderAccess {
   }
 
   /**
-   * Restores folders granted in earlier sessions, including the ones configured under the
-   * Tauri version (`settings.json` → `songs.paths`), and grants `extra` for this session.
+   * Restores folders granted in earlier sessions and the configured song folders
+   * (`settings.json` → `songs.paths`), and grants `extra` for this session.
    */
   async restore(extra: string[]): Promise<void> {
     const granted = await this.#granted();

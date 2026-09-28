@@ -8,8 +8,8 @@ const STORE_FILE = /^[\w.-]+\.json$/;
 const WRITE_DELAY_MS = 100;
 
 /**
- * JSON key-value files, one object per file, compatible with what Tauri's store plugin
- * wrote. The main process owns the data: reads come from memory after the first load and
+ * JSON key-value files, one object per file (the format the Tauri version's store plugin
+ * used, so migrated files load as-is). The main process owns the data: reads come from memory after the first load and
  * writes are debounced, written atomically, and flushed on quit.
  */
 export class JsonStores {

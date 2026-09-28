@@ -1,13 +1,8 @@
 /**
- * The app's name and identifiers, shared by the main process and the packaging script.
- * Electron itself only knows the name (`app.getName()`); the identifier is a packaging
- * concept (bundle ID on macOS, AppUserModelId on Windows). The data, config and log
- * directories are named after it, as they were in the Tauri version.
+ * The app's name and identifier, shared by the main process and the packaging script.
+ * Electron derives the data and log directories from the name; the identifier is only a
+ * packaging concept (bundle ID on macOS, AppUserModelId on Windows).
  */
 export const PRODUCT_NAME = "Tune Perfect";
 
-/** Identifier of release builds. */
 export const APP_ID = "org.tuneperfect.game";
-
-/** Identifier of development builds, so they keep their own settings and logs. */
-export const DEV_APP_ID = "localhost.tuneperfect.game";

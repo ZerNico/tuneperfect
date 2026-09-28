@@ -10,9 +10,9 @@ import { PRODUCT_NAME } from "./identity";
 import { createLogger } from "./logger";
 import { setApplicationMenu } from "./menu";
 import { native } from "./native";
-import { configDir, logDir, storeDir } from "./paths";
 import { createRpcHandler, listenForRpc } from "./rpc";
 import { JsonStores } from "./store";
+import { migrateFromTauri } from "./tauri-migration";
 import { loadWindowState, saveWindowState } from "./window-state";
 
 /** Set by the dev script; packaged and preview builds load the bundled frontend instead. */
@@ -25,13 +25,9 @@ const appOrigin = new URL(appUrl).origin;
 
 const rendererDir = path.join(__dirname, "../dist");
 
-app.setName(PRODUCT_NAME);
-// Chromium's own storage (local storage, cache, cookies) and the single-instance lock live
-// in userData, which Electron names after the app. Give development builds their own so
-// they don't share it with an installed release.
-if (!app.isPackaged) {
-  app.setPath("userData", path.join(app.getPath("appData"), `${PRODUCT_NAME} Dev`));
-}
+// Electron names the data and log directories after the app, so development builds get
+// their own and never share settings, storage or the single-instance lock with a release.
+app.setName(app.isPackaged ? PRODUCT_NAME : `${PRODUCT_NAME} Dev`);
 // Every renderer is sandboxed, including any created later.
 app.enableSandbox();
 
@@ -43,7 +39,10 @@ protocol.registerSchemesAsPrivileged([
   { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ]);
 
-const logger = createLogger(logDir());
+const logger = createLogger(app.getPath("logs"));
+
+/** Stores and window state. `TUNEPERFECT_STORE_DIR` points it elsewhere, e.g. at a copy. */
+const dataDir = process.env.TUNEPERFECT_STORE_DIR ?? app.getPath("userData");
 
 /** `--songpath <dir>` / `-s <dir>`, repeatable, like the Tauri CLI plugin accepted. */
 function songPathArgs(argv: string[]): string[] | null {
@@ -90,11 +89,11 @@ function applyDevelopmentCsp(url: string) {
 }
 
 function createWindow(): BrowserWindow {
-  const saved = loadWindowState(configDir());
+  const saved = loadWindowState(dataDir);
 
   const window = new BrowserWindow({
     title: PRODUCT_NAME,
-    // Tauri's defaults; the saved state usually replaces them.
+    // First launch; afterwards the saved state replaces these.
     width: 800,
     height: 600,
     ...saved.bounds,
@@ -119,7 +118,7 @@ function createWindow(): BrowserWindow {
   if (saved.maximized) window.maximize();
   if (saved.fullscreen) window.setFullScreen(true);
   window.once("ready-to-show", () => window.show());
-  window.on("close", () => saveWindowState(configDir(), window));
+  window.on("close", () => saveWindowState(dataDir, window));
 
   // No pinch zoom; the webview didn't zoom either.
   void window.webContents.setVisualZoomLevelLimits(1, 1);
@@ -146,7 +145,8 @@ async function start() {
     app.dock?.setIcon(path.join(__dirname, "../resources/icons/icon.png"));
   }
 
-  const stores = new JsonStores(storeDir());
+  migrateFromTauri(dataDir, logger);
+  const stores = new JsonStores(dataDir);
   const songFolders = new SongFolderAccess(stores);
   const songPaths = songPathArgs(process.argv);
   await songFolders.restore(songPaths ?? []);

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { PRODUCT_NAME } from "./identity";
 
-/** Rotate by starting over once the file grows past this, like Tauri's "keep one" strategy. */
+/** Rotate by starting over once the file grows past this. */
 const MAX_FILE_SIZE = 1_000_000;
 
 export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG" | "TRACE";
@@ -13,14 +13,14 @@ export interface Logger {
 }
 
 function timestamp(): string {
-  // UTC, in the layout Tauri's log plugin used: [2026-09-28][13:52:10]
+  // UTC: [2026-09-28][13:52:10]
   const iso = new Date().toISOString();
   return `[${iso.slice(0, 10)}][${iso.slice(11, 19)}]`;
 }
 
 /**
  * Writes `[date][time][target][LEVEL] message` lines to `<dir>/<product name>.log` and to the
- * console, the format and place the Tauri version used.
+ * console.
  */
 export function createLogger(dir: string): Logger {
   const file = path.join(dir, `${PRODUCT_NAME}.log`);
