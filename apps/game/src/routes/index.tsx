@@ -9,7 +9,6 @@ import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
-import { relaunch } from "~/lib/platform/app";
 import { platform } from "~/lib/platform/os";
 import { check } from "~/lib/platform/updater";
 import { initializeLobbySettings } from "~/stores/lobby";
@@ -56,8 +55,8 @@ function RouteComponent() {
     mutationFn: async () => {
       const update = checkUpdateQuery.data;
       if (update) {
+        // Restarts into the new version once installed.
         await update.downloadAndInstall();
-        await relaunch();
       }
     },
     onError: (error) => {

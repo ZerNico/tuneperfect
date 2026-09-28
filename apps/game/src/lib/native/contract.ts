@@ -33,6 +33,8 @@ export type UsdbCatalogEvent =
   | { type: "progress"; fetched: number; total: number }
   | { type: "done"; catalog: UsdbSearchEntry[] };
 
+export type UpdateInstallEvent = { type: "progress"; downloaded: number; total: number | null };
+
 export type DialogFilter = v.InferOutput<typeof dialogFilterSchema>;
 const dialogFilterSchema = v.object({ name: v.string(), extensions: v.array(v.string()) });
 
@@ -98,11 +100,16 @@ export const contract = {
     isFullscreen: base.output(type<boolean>()),
     setFullscreen: base.input(v.object({ fullscreen: v.boolean() })),
   },
+  updates: {
+    /** The newer version this installation can update itself to, if there is one. */
+    check: base.output(type<{ version: string } | null>()),
+    /** Downloads, verifies and installs the update from the last check, then restarts. */
+    install: base.output(eventIterator(type<UpdateInstallEvent>())),
+  },
   app: {
     /** Song folders passed with `--songpath`/`-s`, or `null` when none were given. */
     songPaths: base.output(type<string[] | null>()),
     exit: base.input(v.object({ code: v.optional(v.number()) })),
-    relaunch: base,
     openUrl: base.input(v.object({ url: v.pipe(v.string(), v.url()) })),
     log: base.input(v.object({ level: v.picklist(["warn", "error"]), message: v.string() })),
   },

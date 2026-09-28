@@ -4,11 +4,17 @@ import { implement, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/message-port";
 import { app, type BrowserWindow, dialog, ipcMain, shell, systemPreferences } from "electron";
 
-import { contract, type ParseSongsEvent, type UsdbCatalogEvent } from "../src/lib/native/contract";
+import {
+  contract,
+  type ParseSongsEvent,
+  type UpdateInstallEvent,
+  type UsdbCatalogEvent,
+} from "../src/lib/native/contract";
 import type { SongGroup, UsdbSearchEntry } from "../src/lib/native/types";
 import type { SongFolderAccess } from "./allowlist";
 import { native, parseAppError } from "./native";
 import type { JsonStores } from "./store";
+import { checkForUpdate, installUpdate } from "./updater";
 
 export interface RpcContext {
   window: BrowserWindow | null;
@@ -35,10 +41,10 @@ async function ensureMicrophoneAccess(): Promise<void> {
 }
 
 /**
- * Turns a callback-driven native call into an async generator: everything the callback
- * receives is yielded in order, followed by `done(result)` once the call resolves.
+ * Turns a callback-driven call into an async generator: everything the callback receives
+ * is yielded in order, followed by `done(result)` (if given) once the call resolves.
  */
-async function* stream<E, R>(run: (emit: (event: E) => void) => Promise<R>, done: (result: R) => E) {
+async function* stream<E, R>(run: (emit: (event: E) => void) => Promise<R>, done?: (result: R) => E) {
   const queue: E[] = [];
   let wake: (() => void) | undefined;
   let outcome: { ok: true; value: R } | { ok: false; error: unknown } | undefined;
@@ -71,7 +77,7 @@ async function* stream<E, R>(run: (emit: (event: E) => void) => Promise<R>, done
   }
 
   if (!outcome.ok) throw outcome.error;
-  yield done(outcome.value);
+  if (done) yield done(outcome.value);
 }
 
 export function createRpcHandler({ stores, songFolders, songPaths, log }: RpcDependencies) {
@@ -173,14 +179,21 @@ export function createRpcHandler({ stores, songFolders, songPaths, log }: RpcDep
         context.window?.setFullScreen(input.fullscreen);
       }),
     },
+    updates: {
+      check: os.updates.check.handler(async () => {
+        const update = await checkForUpdate();
+        return update ? { version: update.version } : null;
+      }),
+      install: os.updates.install.handler(() =>
+        stream<UpdateInstallEvent, void>((emit) =>
+          installUpdate((progress) => emit({ type: "progress", ...progress })),
+        ),
+      ),
+    },
     app: {
       songPaths: os.app.songPaths.handler(() => songPaths),
       exit: os.app.exit.handler(({ input }) => {
         app.exit(input.code ?? 0);
-      }),
-      relaunch: os.app.relaunch.handler(() => {
-        app.relaunch();
-        app.exit(0);
       }),
       openUrl: os.app.openUrl.handler(async ({ input }) => {
         if (!/^https?:/.test(input.url)) throw new Error("Only http(s) URLs can be opened");

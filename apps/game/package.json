@@ -66,6 +66,8 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.10.5",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
     "@tanstack/solid-router-devtools": "^1.167.2",
     "@types/howler": "^2.2.13",
     "@types/node": "^26.6.3",

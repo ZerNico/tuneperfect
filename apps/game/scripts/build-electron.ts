@@ -16,6 +16,11 @@ export const electronBuildOptions: BuildOptions = {
   external: ["electron"],
   sourcemap: true,
   logLevel: "info",
+  // Update configuration is fixed at build time; see `electron/updater.ts`.
+  define: {
+    "process.env.TUNEPERFECT_UPDATE_ENDPOINT": JSON.stringify(process.env.TUNEPERFECT_UPDATE_ENDPOINT ?? ""),
+    "process.env.TUNEPERFECT_UPDATE_PUBKEY": JSON.stringify(process.env.TUNEPERFECT_UPDATE_PUBKEY ?? ""),
+  },
 };
 
 if (import.meta.main) {
