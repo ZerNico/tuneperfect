@@ -4,13 +4,13 @@ import { pathToFileURL } from "node:url";
 
 import { app, BrowserWindow, net, protocol, session, shell, webContents } from "electron";
 
-import { SongFolderAccess } from "./allowlist";
 import { CONTENT_SECURITY_POLICY } from "./csp";
 import { PRODUCT_NAME } from "./identity";
 import { createLogger } from "./logger";
 import { setApplicationMenu } from "./menu";
 import { native } from "./native";
 import { createRpcHandler, listenForRpc } from "./rpc";
+import { grantSongFolders } from "./song-folders";
 import { JsonStores } from "./store";
 import { migrateFromTauri } from "./tauri-migration";
 import { loadWindowState, saveWindowState } from "./window-state";
@@ -147,9 +147,8 @@ async function start() {
 
   migrateFromTauri(dataDir, logger);
   const stores = new JsonStores(dataDir);
-  const songFolders = new SongFolderAccess(stores);
   const songPaths = songPathArgs(process.argv);
-  await songFolders.restore(songPaths ?? []);
+  await grantSongFolders(stores, songPaths ?? []);
 
   // The embed page on the media server may only be framed by the app itself.
   await native.startLocalServer([appOrigin]);
@@ -170,7 +169,6 @@ async function start() {
 
   const rpc = createRpcHandler({
     stores,
-    songFolders,
     songPaths,
     log: (level, message) => logger.write(level.toUpperCase(), "webview", message),
   });

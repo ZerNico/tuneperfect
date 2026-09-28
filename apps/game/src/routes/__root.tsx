@@ -8,7 +8,7 @@ import PopupContainer from "~/components/popup-container";
 import { RouteError } from "~/components/route-error";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
-import { isFullscreen, setFullscreen } from "~/lib/platform/window";
+import { native } from "~/lib/native/client";
 import { useWebRTCAutoConnect } from "~/stores/webrtc";
 
 interface RouterContext {
@@ -33,7 +33,7 @@ function RootComponent() {
   useWebRTCAutoConnect();
 
   const toggleFullscreen = async () => {
-    await setFullscreen(!(await isFullscreen()));
+    await native.window.toggleFullscreen();
   };
 
   useNavigation({

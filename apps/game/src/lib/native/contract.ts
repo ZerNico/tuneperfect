@@ -40,9 +40,6 @@ export type UsdbCatalogEvent =
 
 export type UpdateInstallEvent = { type: "progress"; downloaded: number; total: number | null };
 
-export type DialogFilter = v.InferOutput<typeof dialogFilterSchema>;
-const dialogFilterSchema = v.object({ name: v.string(), extensions: v.array(v.string()) });
-
 export const contract = {
   microphones: {
     list: base.output(type<Microphone[]>()),
@@ -79,31 +76,20 @@ export const contract = {
     getSong: base.input(v.object({ songId: v.number() })).output(type<UsdbSong>()),
     getSongPreview: base.input(v.object({ songId: v.number() })).output(type<UsdbSongPreview>()),
   },
+  /** JSON files in the app's data directory, one object each (settings.json, local.json, …). */
   store: {
-    entries: base.input(v.object({ file: v.string() })).output(type<[string, unknown][]>()),
-    get: base.input(v.object({ file: v.string(), key: v.string() })).output(type<unknown>()),
-    set: base.input(v.object({ file: v.string(), key: v.string(), value: v.unknown() })),
-    delete: base.input(v.object({ file: v.string(), key: v.string() })).output(type<boolean>()),
-    save: base.input(v.object({ file: v.string() })),
+    /** The file's contents, or `null` if it doesn't exist or isn't a JSON object. */
+    read: base.input(v.object({ file: v.string() })).output(type<Record<string, unknown> | null>()),
+    write: base.input(v.object({ file: v.string(), data: v.record(v.string(), v.unknown()) })),
   },
   dialog: {
-    open: base
-      .input(
-        v.object({
-          directory: v.optional(v.boolean()),
-          multiple: v.optional(v.boolean()),
-          filters: v.optional(v.array(dialogFilterSchema)),
-        }),
-      )
-      .output(type<string[] | null>()),
-  },
-  fs: {
-    /** Reads a file picked through `dialog.open` in this session, as base64. */
-    readFile: base.input(v.object({ path: v.string() })).output(type<string>()),
+    /** Lets the user pick a song folder and grants the app access to it. */
+    pickFolder: base.output(type<string | null>()),
+    /** Lets the user pick an image (PNG, JPEG or WebP) and returns it as a data URL. */
+    pickImage: base.output(type<string | null>()),
   },
   window: {
-    isFullscreen: base.output(type<boolean>()),
-    setFullscreen: base.input(v.object({ fullscreen: v.boolean() })),
+    toggleFullscreen: base,
   },
   updates: {
     /** The newer version this installation can update itself to, if there is one. */
@@ -116,7 +102,6 @@ export const contract = {
     songPaths: base.output(type<string[] | null>()),
     /** Quits the app (pending settings are saved first). */
     exit: base,
-    openUrl: base.input(v.object({ url: v.pipe(v.string(), v.url()) })),
     log: base.input(v.object({ level: v.picklist(["warn", "error"]), message: v.string() })),
   },
 };

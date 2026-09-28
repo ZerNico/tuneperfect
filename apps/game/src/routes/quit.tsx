@@ -5,7 +5,7 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
-import { exit } from "~/lib/platform/app";
+import { native } from "~/lib/native/client";
 
 export const Route = createFileRoute("/quit")({
   component: QuitComponent,
@@ -15,7 +15,7 @@ function QuitComponent() {
   const navigate = useNavigate();
 
   const closeGame = async () => {
-    await exit();
+    await native.app.exit();
   };
 
   const onBack = () => {

@@ -46,12 +46,13 @@ src/
 ├── routes/               # TanStack file-based routes
 ├── stores/               # SolidJS reactive stores (settings, songs, lobby, round)
 src/lib/native/           # oRPC contract, typed client, types generated from Rust (types.gen.ts)
-src/lib/platform/         # App/OS services (store, dialog, window, updater, …) over that client
+src/lib/desktop.ts        # platform + app version, provided synchronously by the preload
 electron/
 ├── main.ts               # App lifecycle, window, app:// protocol, CSP, permissions
-├── rpc/                  # Contract implementation: native.ts (addon), platform.ts (OS services)
+├── rpc/                  # Contract implementation: native.ts (addon), platform.ts (stores, dialogs, window, updates)
 ├── updater.ts            # Tauri-style updater: minisign-verified download, per-OS install
-├── store.ts              # JSON stores in the app's data dir (settings.json, local.json, …)
+├── store.ts              # JSON files in the app's data dir (settings.json, local.json, …), read/written whole
+├── song-folders.ts       # Grants the configured song folders to the native side at startup
 ├── window-state.ts       # Window size/position/maximized/fullscreen
 ├── logger.ts             # Log file in the app's log dir
 ├── tauri-migration.ts    # One-time move of the Tauri version's data (remove once unused)
@@ -125,7 +126,7 @@ resources/icons/          # App icons for electron-builder
 | `src/lib/webrtc/host-connection.ts` | WebRTC host connection                         |
 | `src/lib/native/contract.ts`        | Renderer ↔ main process contract               |
 | `electron/main.ts`                  | Electron entry — window, protocol, security    |
-| `electron/rpc.ts`                   | Contract implementation                        |
+| `electron/rpc/`                     | Contract implementation                        |
 | `native/src/napi_api.rs`            | Native addon exports                           |
 | `native/src/commands/songs.rs`      | Song scanning/loading                          |
 | `native/src/audio/recorder.rs`      | Microphone recording pipeline                  |
@@ -137,7 +138,7 @@ rg -n "export default function\|export function" src/components/   # find compon
 rg -n "createRoute\|createFileRoute" src/routes/                   # find routes
 rg -n "createPersistentStore\|createSignal" src/stores/            # find stores
 rg -n "#\[napi\]" native/src/                                     # find native exports
-rg -n "\.handler\(" electron/rpc.ts                                # find contract implementations
+rg -n "\.handler\(" electron/rpc/                                  # find contract implementations
 rg -n "pub fn\|pub async fn" native/src/                           # find Rust public functions
 rg -n "export const use" src/hooks/                                # find hooks
 ```

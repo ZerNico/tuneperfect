@@ -4,7 +4,6 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
-import { openUrl } from "~/lib/platform/app";
 
 export const Route = createFileRoute("/settings/credits")({
   component: CreditsComponent,
@@ -18,7 +17,8 @@ function CreditsComponent() {
     {
       type: "button",
       label: "UltraStar Play",
-      action: () => openUrl("https://ultrastar-play.com"),
+      // Opens in the browser; the app window never navigates away.
+      action: () => window.open("https://ultrastar-play.com"),
     },
     {
       type: "button",

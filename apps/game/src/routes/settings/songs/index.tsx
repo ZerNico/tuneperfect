@@ -10,7 +10,7 @@ import IconButton from "~/components/ui/icon-button";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
-import { open } from "~/lib/platform/dialog";
+import { native } from "~/lib/native/client";
 import { playSound } from "~/lib/sound";
 import { songsStore } from "~/stores/songs";
 
@@ -35,10 +35,7 @@ function SongsComponent() {
     if (loading()) return;
     setLoading(true);
 
-    const path = await open({
-      directory: true,
-      recursive: true,
-    });
+    const path = await native.dialog.pickFolder().catch(() => null);
 
     if (path) {
       songsStore.addSongPath(path);

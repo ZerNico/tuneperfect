@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 
-import { getVersion } from "~/lib/platform/app";
+import { appVersion } from "~/lib/desktop";
 
 export const initPostHog = async (token: string) => {
   posthog.init(token, {
@@ -17,7 +17,6 @@ export const initPostHog = async (token: string) => {
     mask_personal_data_properties: true,
   });
 
-  const appVersion = await getVersion().catch(() => undefined);
   posthog.register({ app_name: "game", app_version: appVersion });
 };
 

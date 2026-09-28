@@ -7,10 +7,9 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import { platform } from "~/lib/desktop";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
-import { platform } from "~/lib/platform/os";
-import { check } from "~/lib/platform/updater";
 import { initializeLobbySettings } from "~/stores/lobby";
 import { initializeLocalSettings } from "~/stores/local";
 import { initializeSettings } from "~/stores/settings";
@@ -33,17 +32,13 @@ function RouteComponent() {
 
   const checkUpdateQuery = useQuery(() => ({
     queryKey: ["checkUpdate"],
-    queryFn: async () => {
-      const update = await check();
-      return update;
-    },
+    queryFn: () => native.updates.check(),
     retry: false,
   }));
 
   const askForMicrophonePermission = async () => {
     try {
-      const currentPlatform = platform();
-      if (currentPlatform === "macos") {
+      if (platform === "macos") {
         await native.microphones.list();
       }
     } catch (error) {
@@ -53,11 +48,9 @@ function RouteComponent() {
 
   const installUpdateMutation = useMutation(() => ({
     mutationFn: async () => {
-      const update = checkUpdateQuery.data;
-      if (update) {
-        // Restarts into the new version once installed.
-        await update.downloadAndInstall();
-      }
+      if (!checkUpdateQuery.data) return;
+      // Streams download progress (not shown yet), then restarts into the new version.
+      await Array.fromAsync(await native.updates.install());
     },
     onError: (error) => {
       console.error(error);

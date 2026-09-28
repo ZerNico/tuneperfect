@@ -5,8 +5,8 @@ import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 import Layout from "~/components/layout";
 import { t } from "~/lib/i18n";
+import { native } from "~/lib/native/client";
 import type { ParseSongsEvent } from "~/lib/native/contract";
-import { getSongPathArgs } from "~/lib/platform/app";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { songsStore } from "~/stores/songs";
 
@@ -34,7 +34,7 @@ function LoadingComponent() {
   };
 
   onMount(async () => {
-    const [_error, songPathArgs] = await tryCatch(getSongPathArgs());
+    const [_error, songPathArgs] = await tryCatch(native.app.songPaths());
 
     await songsStore.updateLocalSongs(songPathArgs ?? songsStore.paths(), onProgress);
 

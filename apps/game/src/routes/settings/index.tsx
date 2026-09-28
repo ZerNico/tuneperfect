@@ -6,13 +6,13 @@ import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
-import { getSongPathArgs } from "~/lib/platform/app";
+import { native } from "~/lib/native/client";
 import { tryCatch } from "~/lib/utils/try-catch";
 
 export const Route = createFileRoute("/settings/")({
   component: SettingsComponent,
   loader: async () => {
-    const [_error, songpaths] = await tryCatch(getSongPathArgs());
+    const [_error, songpaths] = await tryCatch(native.app.songPaths());
     return {
       songpaths: songpaths ?? [],
     };

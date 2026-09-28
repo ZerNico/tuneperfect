@@ -4,7 +4,6 @@ import * as v from "valibot";
 
 import { native, safe } from "~/lib/native/client";
 import type { UsdbSearchEntry } from "~/lib/native/types.gen";
-import { load } from "~/lib/platform/store";
 import { createPersistentStore } from "~/lib/utils/store";
 
 export type { UsdbSearchEntry } from "~/lib/native/types.gen";
@@ -67,11 +66,8 @@ interface CatalogData {
 
 async function loadCatalog(): Promise<CatalogData> {
   try {
-    const store = await load(CATALOG_FILENAME);
-    const catalog = ((await store.get("catalog")) as UsdbSearchEntry[] | undefined) ?? [];
-    const lastMtime = ((await store.get("lastMtime")) as number | undefined) ?? 0;
-    const lastSongIds = ((await store.get("lastSongIds")) as number[] | undefined) ?? [];
-    return { catalog, lastMtime, lastSongIds };
+    const data = (await native.store.read({ file: CATALOG_FILENAME })) as Partial<CatalogData> | null;
+    return { catalog: data?.catalog ?? [], lastMtime: data?.lastMtime ?? 0, lastSongIds: data?.lastSongIds ?? [] };
   } catch {
     return { catalog: [], lastMtime: 0, lastSongIds: [] };
   }
@@ -79,10 +75,7 @@ async function loadCatalog(): Promise<CatalogData> {
 
 async function saveCatalog(data: CatalogData): Promise<void> {
   try {
-    const store = await load(CATALOG_FILENAME);
-    await store.set("catalog", data.catalog);
-    await store.set("lastMtime", data.lastMtime);
-    await store.set("lastSongIds", data.lastSongIds);
+    await native.store.write({ file: CATALOG_FILENAME, data: { ...data } });
   } catch (error) {
     console.error("Failed to save USDB catalog:", error);
   }

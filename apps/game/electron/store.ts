@@ -7,58 +7,63 @@ const STORE_FILE = /^[\w.-]+\.json$/;
 
 const WRITE_DELAY_MS = 100;
 
+type StoreData = Record<string, unknown>;
+
 /**
- * JSON key-value files, one object per file (the format the Tauri version's store plugin
- * used, so migrated files load as-is). The main process owns the data: reads come from memory after the first load and
- * writes are debounced, written atomically, and flushed on quit.
+ * JSON files in the app's data directory, one object each. Reads are served from memory
+ * after the first load; writes are debounced, written atomically and flushed on quit.
  */
 export class JsonStores {
   readonly #dir: string;
-  readonly #data = new Map<string, Promise<Record<string, unknown>>>();
-  /** The same objects once loaded, so a flush at quit can write without awaiting. */
-  readonly #loaded = new Map<string, Record<string, unknown>>();
+  readonly #cache = new Map<string, StoreData | null>();
   readonly #pendingWrites = new Map<string, NodeJS.Timeout>();
 
   constructor(dir: string) {
     this.#dir = dir;
   }
 
-  async entries(file: string): Promise<[string, unknown][]> {
-    return Object.entries(await this.#load(file));
+  /** The file's object, or `null` if it doesn't exist or doesn't hold a JSON object. */
+  async read(file: string): Promise<StoreData | null> {
+    const filePath = this.#path(file);
+    if (this.#cache.has(file)) return this.#cache.get(file) ?? null;
+
+    let data: StoreData | null = null;
+    try {
+      const parsed: unknown = JSON.parse(await fsp.readFile(filePath, "utf8"));
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) data = parsed as StoreData;
+    } catch {
+      // Missing or unreadable: the caller falls back to its defaults.
+    }
+    // A write that happened while reading wins.
+    if (!this.#cache.has(file)) this.#cache.set(file, data);
+    return this.#cache.get(file) ?? null;
   }
 
-  async get(file: string, key: string): Promise<unknown> {
-    return (await this.#load(file))[key];
-  }
+  write(file: string, data: StoreData): void {
+    this.#path(file);
+    this.#cache.set(file, data);
 
-  async set(file: string, key: string, value: unknown): Promise<void> {
-    const data = await this.#load(file);
-    data[key] = value;
-    this.#scheduleWrite(file);
-  }
-
-  async delete(file: string, key: string): Promise<boolean> {
-    const data = await this.#load(file);
-    if (!(key in data)) return false;
-    delete data[key];
-    this.#scheduleWrite(file);
-    return true;
-  }
-
-  async save(file: string): Promise<void> {
     const pending = this.#pendingWrites.get(file);
     if (pending) clearTimeout(pending);
-    this.#pendingWrites.delete(file);
-    await this.#write(file);
+    this.#pendingWrites.set(
+      file,
+      setTimeout(() => {
+        this.#pendingWrites.delete(file);
+        this.#writeFile(file, data).catch((error: unknown) => console.error(`Failed to write store ${file}:`, error));
+      }, WRITE_DELAY_MS),
+    );
   }
 
   /** Writes every file with unsaved changes. Synchronous so it can run while quitting. */
   flushSync(): void {
     for (const [file, timer] of this.#pendingWrites) {
       clearTimeout(timer);
-      // A write is only ever scheduled after the file finished loading.
-      const data = this.#loaded.get(file);
-      if (data) this.#writeSync(file, data);
+      const data = this.#cache.get(file);
+      if (!data) continue;
+      const filePath = this.#path(file);
+      fs.mkdirSync(this.#dir, { recursive: true });
+      fs.writeFileSync(`${filePath}.tmp`, JSON.stringify(data, null, 2));
+      fs.renameSync(`${filePath}.tmp`, filePath);
     }
     this.#pendingWrites.clear();
   }
@@ -68,56 +73,10 @@ export class JsonStores {
     return path.join(this.#dir, file);
   }
 
-  #load(file: string): Promise<Record<string, unknown>> {
-    let data = this.#data.get(file);
-    if (!data) {
-      const filePath = this.#path(file);
-      data = fsp
-        .readFile(filePath, "utf8")
-        .then(
-          (contents): Record<string, unknown> => {
-            const parsed: unknown = JSON.parse(contents);
-            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-              ? (parsed as Record<string, unknown>)
-              : {};
-          },
-          () => ({}),
-        )
-        .then((value) => {
-          this.#loaded.set(file, value);
-          return value;
-        });
-      this.#data.set(file, data);
-    }
-    return data;
-  }
-
-  #scheduleWrite(file: string): void {
-    const pending = this.#pendingWrites.get(file);
-    if (pending) clearTimeout(pending);
-    this.#pendingWrites.set(
-      file,
-      setTimeout(() => {
-        this.#pendingWrites.delete(file);
-        this.#write(file).catch((error: unknown) => console.error(`Failed to write store ${file}:`, error));
-      }, WRITE_DELAY_MS),
-    );
-  }
-
-  async #write(file: string): Promise<void> {
-    const data = await this.#load(file);
+  async #writeFile(file: string, data: StoreData): Promise<void> {
     const filePath = this.#path(file);
     await fsp.mkdir(this.#dir, { recursive: true });
-    const temp = `${filePath}.tmp`;
-    await fsp.writeFile(temp, JSON.stringify(data, null, 2));
-    await fsp.rename(temp, filePath);
-  }
-
-  #writeSync(file: string, data: Record<string, unknown>): void {
-    const filePath = this.#path(file);
-    fs.mkdirSync(this.#dir, { recursive: true });
-    const temp = `${filePath}.tmp`;
-    fs.writeFileSync(temp, JSON.stringify(data, null, 2));
-    fs.renameSync(temp, filePath);
+    await fsp.writeFile(`${filePath}.tmp`, JSON.stringify(data, null, 2));
+    await fsp.rename(`${filePath}.tmp`, filePath);
   }
 }

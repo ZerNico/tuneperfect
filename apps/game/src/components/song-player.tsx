@@ -2,7 +2,7 @@ import { createEventListener } from "@solid-primitives/event-listener";
 import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMount, type Ref, Show } from "solid-js";
 
 import { getAudioContext } from "~/lib/audio/context";
-import { platform } from "~/lib/platform/os";
+import { platform } from "~/lib/desktop";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -504,7 +504,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     }
   };
 
-  if (platform() === "macos") {
+  if (platform === "macos") {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         resyncOnFocus();

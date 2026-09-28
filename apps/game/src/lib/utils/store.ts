@@ -1,7 +1,7 @@
 import { createEffect, createRoot, createSignal, on } from "solid-js";
 import * as v from "valibot";
 
-import { load } from "~/lib/platform/store";
+import { native } from "~/lib/native/client";
 
 import { makeNested } from "./setter";
 
@@ -14,17 +14,13 @@ export interface PersistentStoreOptions<T> {
 /**
  * Creates a backup store with a timestamp when parsing fails
  */
-async function createBackupStore(filename: string, entries: [string, unknown][]): Promise<void> {
+async function createBackupStore(filename: string, data: Record<string, unknown>): Promise<void> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").split(".")[0];
   const fileExtension = filename.includes(".") ? `.${filename.split(".").pop()}` : "";
   const nameWithoutExtension = filename.includes(".") ? filename.substring(0, filename.lastIndexOf(".")) : filename;
   const backupFilename = `${nameWithoutExtension}_backup_${timestamp}${fileExtension}`;
 
-  const backupStore = await load(backupFilename);
-
-  for (const [key, value] of entries) {
-    await backupStore.set(key, value);
-  }
+  await native.store.write({ file: backupFilename, data });
 
   console.warn(`Settings backup created: ${backupFilename}`);
 }
@@ -39,17 +35,15 @@ export function createPersistentStore<T>(options: PersistentStoreOptions<T>) {
 
   async function initialize() {
     try {
-      const store = await load(filename);
-      const entries = await store.entries();
-      const object = Object.fromEntries(entries);
-      const result = v.safeParse(schema, object);
+      const data = await native.store.read({ file: filename });
+      const result = v.safeParse(schema, data ?? {});
 
       if (result.success) {
         setSettings(result.output);
       } else {
-        if (entries.length > 0) {
+        if (data && Object.keys(data).length > 0) {
           try {
-            await createBackupStore(filename, entries);
+            await createBackupStore(filename, data);
           } catch (backupError) {
             console.error("Failed to create backup during parse failure:", backupError);
           }
@@ -73,11 +67,7 @@ export function createPersistentStore<T>(options: PersistentStoreOptions<T>) {
           if (!initialized()) return;
 
           try {
-            const store = await load(filename);
-
-            for (const [key, value] of Object.entries(currentSettings as Record<string, unknown>)) {
-              await store.set(key, value);
-            }
+            await native.store.write({ file: filename, data: currentSettings as Record<string, unknown> });
           } catch {}
         },
         { defer: true },

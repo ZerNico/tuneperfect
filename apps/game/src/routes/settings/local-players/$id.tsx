@@ -8,10 +8,8 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import ImageCrop from "~/components/ui/image-crop";
 import { t } from "~/lib/i18n";
-import { open } from "~/lib/platform/dialog";
-import { readFile } from "~/lib/platform/fs";
+import { native } from "~/lib/native/client";
 import { popup } from "~/lib/popup";
-import { blobToDataUrl } from "~/lib/utils";
 import { localStore } from "~/stores/local";
 
 export const Route = createFileRoute("/settings/local-players/$id")({
@@ -62,22 +60,9 @@ function LocalPlayerComponent() {
   };
 
   const openImagePicker = async () => {
-    const selected = await open({
-      multiple: false,
-      filters: [
-        {
-          name: "Images",
-          extensions: ["png", "jpg", "jpeg", "webp"],
-        },
-      ],
-    });
+    const dataUrl = await native.dialog.pickImage().catch(() => null);
 
-    if (selected) {
-      // Read the file and convert to data URL for cropping
-      const fileData = await readFile(selected);
-      const blob = new Blob([fileData]);
-      const dataUrl = await blobToDataUrl(blob);
-
+    if (dataUrl) {
       const croppedImage = await popup.show<string | null>({
         render: (resolve) => (
           <ImageCrop imageUrl={dataUrl} onCrop={(data) => resolve(data)} onCancel={() => resolve(null)} layer={1} />
