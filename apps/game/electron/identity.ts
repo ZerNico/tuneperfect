@@ -6,3 +6,5 @@
 export const PRODUCT_NAME = "Tune Perfect";
 
 export const APP_ID = "org.tuneperfect.game";
+
+export const COPYRIGHT = `© ${new Date().getFullYear()} ${PRODUCT_NAME}`;

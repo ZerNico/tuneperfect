@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { type FuseV1Config, FuseV1Options, FuseVersion } from "@electron/fuses";
 import { Arch, build, type Configuration, Platform } from "electron-builder";
 
-import { APP_ID, PRODUCT_NAME } from "../electron/identity";
+import { APP_ID, COPYRIGHT, PRODUCT_NAME } from "../electron/identity";
 import packageJson from "../package.json";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -114,6 +114,7 @@ const fuses: FuseV1Config = {
 const config: Configuration = {
   appId: APP_ID,
   productName,
+  copyright: COPYRIGHT,
   electronVersion,
   directories: { output: outputDir, buildResources: path.join(root, "resources") },
   asar: true,

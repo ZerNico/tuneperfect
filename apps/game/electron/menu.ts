@@ -1,10 +1,11 @@
-import { app, Menu, type MenuItemConstructorOptions } from "electron";
+import { app, Menu, type MenuItemConstructorOptions, type WebContents } from "electron";
+
+import { COPYRIGHT } from "./identity";
 
 /**
- * The application menu the Tauri version had: on macOS the standard app, File, Edit, View,
- * Window and Help menus (the Edit menu makes copy/paste work in text fields); on Windows
- * and Linux no menu bar. Unlike Electron's default menu there is no reload, zoom or
- * developer tools, except in development.
+ * On macOS a minimal menu: the app menu, Edit (which makes copy and paste work in text
+ * fields), View with full screen, and Window. Windows and Linux get no menu bar. Reload
+ * and the developer tools are only there in development.
  */
 export function setApplicationMenu() {
   const development = !app.isPackaged;
@@ -19,14 +20,20 @@ export function setApplicationMenu() {
     return;
   }
 
+  app.setAboutPanelOptions({
+    applicationName: app.name,
+    applicationVersion: app.getVersion(),
+    // Otherwise the panel repeats the version as a build number: "0.3.1 (0.3.1)".
+    version: "",
+    copyright: COPYRIGHT,
+  });
+
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
       {
         label: app.name,
         submenu: [
           { role: "about" },
-          { type: "separator" },
-          { role: "services" },
           { type: "separator" },
           { role: "hide" },
           { role: "hideOthers" },
@@ -35,7 +42,6 @@ export function setApplicationMenu() {
           { role: "quit" },
         ],
       },
-      { label: "File", submenu: [{ role: "close" }] },
       {
         label: "Edit",
         submenu: [
@@ -50,7 +56,42 @@ export function setApplicationMenu() {
       },
       { label: "View", submenu: [{ role: "togglefullscreen" }, ...developmentItems] },
       { role: "windowMenu" },
-      { role: "help", submenu: [] },
     ]),
   );
+}
+
+/**
+ * The right-click menu the system webview used to provide. In text fields it offers the
+ * edit actions; in development anywhere else it also has back, forward, reload and the
+ * inspector. Release builds block right-clicks outside text fields in the renderer
+ * (`routes/__root.tsx`), so there it only opens for the edit actions.
+ */
+export function attachContextMenu(contents: WebContents) {
+  contents.on("context-menu", (_event, params) => {
+    const items: MenuItemConstructorOptions[] = [];
+
+    if (params.isEditable) {
+      items.push(
+        { role: "cut", enabled: params.editFlags.canCut },
+        { role: "copy", enabled: params.editFlags.canCopy },
+        { role: "paste", enabled: params.editFlags.canPaste },
+        { type: "separator" },
+        { role: "selectAll", enabled: params.editFlags.canSelectAll },
+      );
+    }
+
+    if (!app.isPackaged) {
+      const history = contents.navigationHistory;
+      if (items.length > 0) items.push({ type: "separator" });
+      items.push(
+        { label: "Back", enabled: history.canGoBack(), click: () => history.goBack() },
+        { label: "Forward", enabled: history.canGoForward(), click: () => history.goForward() },
+        { label: "Reload", click: () => contents.reload() },
+        { type: "separator" },
+        { label: "Inspect Element", click: () => contents.inspectElement(params.x, params.y) },
+      );
+    }
+
+    if (items.length > 0) Menu.buildFromTemplate(items).popup();
+  });
 }

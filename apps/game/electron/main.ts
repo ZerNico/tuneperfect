@@ -7,7 +7,7 @@ import { app, BrowserWindow, net, protocol, session, shell, webContents } from "
 import { CONTENT_SECURITY_POLICY } from "./csp";
 import { PRODUCT_NAME } from "./identity";
 import { createLogger } from "./logger";
-import { setApplicationMenu } from "./menu";
+import { attachContextMenu, setApplicationMenu } from "./menu";
 import { native } from "./native";
 import { createRpcHandler, listenForRpc } from "./rpc";
 import { grantSongFolders } from "./song-folders";
@@ -119,6 +119,8 @@ function createWindow(): BrowserWindow {
   if (saved.fullscreen) window.setFullScreen(true);
   window.once("ready-to-show", () => window.show());
   window.on("close", () => saveWindowState(dataDir, window));
+
+  attachContextMenu(window.webContents);
 
   // No pinch zoom; the webview didn't zoom either.
   void window.webContents.setVisualZoomLevelLimits(1, 1);
