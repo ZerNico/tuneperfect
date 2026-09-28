@@ -92,6 +92,13 @@ function stage() {
   fs.writeFileSync(path.join(stageDir, "package.json"), JSON.stringify(stagedPackage, null, 2));
 }
 
+/**
+ * The Tauri version's deb and rpm were named `tune-perfect` and installed `/usr/bin/tuneperfect`
+ * too. Installing this package removes it (the data moves over on first launch); the Tauri
+ * updater never updated these installs, so this is how they leave Tauri.
+ */
+const replacesTauriPackage = ["--conflicts", "tune-perfect", "--replaces", "tune-perfect"];
+
 /** Hardening switches compiled into the Electron binary. */
 const fuses: FuseV1Config = {
   version: FuseVersion.V1,
@@ -152,10 +159,12 @@ const config: Configuration = {
     artifactName: `${productName}_${version}_${releaseArch.linux}.deb`,
     // cpal records through ALSA.
     depends: ["libasound2 | libasound2t64"],
+    fpm: replacesTauriPackage,
   },
   rpm: {
     artifactName: `${productName}-${version}-1.${releaseArch.rpm}.rpm`,
     depends: ["alsa-lib"],
+    fpm: replacesTauriPackage,
   },
   publish: null,
 
