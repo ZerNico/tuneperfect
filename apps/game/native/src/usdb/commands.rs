@@ -13,9 +13,7 @@ pub struct UsdbSyncProgressEvent {
 
 pub type UsdbProgressSink = dyn Fn(UsdbSyncProgressEvent) + Send + Sync;
 
-pub async fn usdb_login(username: String,
-    password: String,
-) -> Result<bool, AppError> {
+pub async fn usdb_login(username: String, password: String) -> Result<bool, AppError> {
     let mut client = crate::usdb::client::UsdbClient::new();
     let success = client.login(&username, &password).await?;
 
@@ -70,8 +68,7 @@ pub async fn usdb_fetch_catalog(
     }
 }
 
-pub async fn usdb_get_song_preview(song_id: u32,
-) -> Result<UsdbSongPreview, AppError> {
+pub async fn usdb_get_song_preview(song_id: u32) -> Result<UsdbSongPreview, AppError> {
     let client = {
         let usdb = state().usdb_client.lock().await;
         usdb.as_ref()

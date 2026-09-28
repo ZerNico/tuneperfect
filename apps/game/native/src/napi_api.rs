@@ -95,7 +95,10 @@ pub async fn start_local_server(frame_ancestors: Vec<String>) -> Result<String> 
 
 #[napi]
 pub fn get_local_server_base_url() -> Option<String> {
-    state().local_server.get().map(|server| server.get_base_url())
+    state()
+        .local_server
+        .get()
+        .map(|server| server.get_base_url())
 }
 
 /// Grants the app access to a song folder. Returns `false` if it doesn't exist.
@@ -111,9 +114,14 @@ pub async fn get_microphones() -> Result<Value> {
 }
 
 #[napi]
-pub async fn start_recording(options: Value, playback_enabled: bool, playback_volume: f64) -> Result<()> {
+pub async fn start_recording(
+    options: Value,
+    playback_enabled: bool,
+    playback_volume: f64,
+) -> Result<()> {
     let options: Vec<MicrophoneOptions> = from_json(options)?;
-    blocking(move || pitch::start_recording(options, playback_enabled, playback_volume as f32)).await
+    blocking(move || pitch::start_recording(options, playback_enabled, playback_volume as f32))
+        .await
 }
 
 #[napi]
@@ -137,7 +145,9 @@ pub async fn get_audio_levels() -> Result<Vec<f64>> {
 #[napi]
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
-    #[napi(ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string }) => void")]
+    #[napi(
+        ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string }) => void"
+    )]
     on_event: JsonCallback,
 ) -> Result<Value> {
     let on_event = Arc::new(on_event);
@@ -171,7 +181,8 @@ pub async fn usdb_is_logged_in() -> Result<bool> {
 pub async fn usdb_fetch_catalog(
     last_mtime: i32,
     last_song_ids: Vec<u32>,
-    #[napi(ts_arg_type = "(progress: { fetched: number; total: number }) => void")] on_progress: JsonCallback,
+    #[napi(ts_arg_type = "(progress: { fetched: number; total: number }) => void")]
+    on_progress: JsonCallback,
 ) -> Result<Value> {
     let sink = move |event: usdb::UsdbSyncProgressEvent| {
         if let Ok(value) = serde_json::to_value(event) {

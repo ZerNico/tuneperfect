@@ -21,7 +21,10 @@ impl PathAllowlist {
             return false;
         };
 
-        let mut roots = self.roots.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut roots = self
+            .roots
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if !roots.contains(&root) {
             roots.push(root);
         }
@@ -33,7 +36,10 @@ impl PathAllowlist {
             return false;
         };
 
-        let roots = self.roots.read().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let roots = self
+            .roots
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         roots.iter().any(|root| path.starts_with(root))
     }
 }

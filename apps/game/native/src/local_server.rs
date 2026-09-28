@@ -296,12 +296,16 @@ pub fn start(
             .map_err(|e| format!("Failed to set listener non-blocking: {e}"))?;
         // Adopting the listener registers it with the tokio reactor, so the caller must be
         // running inside the runtime.
-        let listener =
-            TcpListener::from_std(listener).map_err(|e| format!("Failed to adopt listener: {e}"))?;
+        let listener = TcpListener::from_std(listener)
+            .map_err(|e| format!("Failed to adopt listener: {e}"))?;
 
         let policy = policy.clone();
         let policy_for_request = move || policy.clone();
-        tokio::spawn(accept_loop(listener, policy_for_request, frame_ancestors.clone()));
+        tokio::spawn(accept_loop(
+            listener,
+            policy_for_request,
+            frame_ancestors.clone(),
+        ));
     }
 
     Ok(LocalServerState::new(config))
