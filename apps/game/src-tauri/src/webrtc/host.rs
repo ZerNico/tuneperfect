@@ -269,11 +269,7 @@ impl PeerState {
                 .unwrap_or_default()
                 .as_nanos();
 
-            let chunks: Vec<&str> = data
-                .as_bytes()
-                .chunks(MAX_CHUNK_SIZE)
-                .map(|c| std::str::from_utf8(c).unwrap_or_default())
-                .collect();
+            let chunks = split_at_char_boundaries(data, MAX_CHUNK_SIZE);
             let total = chunks.len();
 
             for (i, chunk) in chunks.iter().enumerate() {
@@ -291,6 +287,27 @@ impl PeerState {
         let _ = self.pc.close().await;
         self.ctx.close().await;
     }
+}
+
+/// Splits `data` into chunks of at most `max_bytes` bytes without cutting through a
+/// multi-byte UTF-8 character, so every chunk is valid text on its own.
+fn split_at_char_boundaries(data: &str, max_bytes: usize) -> Vec<&str> {
+    let mut chunks = Vec::new();
+    let mut rest = data;
+    while !rest.is_empty() {
+        let mut end = max_bytes.min(rest.len());
+        while !rest.is_char_boundary(end) {
+            end -= 1;
+        }
+        if end == 0 {
+            // `max_bytes` is smaller than the next character; send it whole.
+            end = rest.chars().next().map_or(rest.len(), char::len_utf8);
+        }
+        let (chunk, tail) = rest.split_at(end);
+        chunks.push(chunk);
+        rest = tail;
+    }
+    chunks
 }
 
 pub struct WebRTCHost {
@@ -411,4 +428,41 @@ pub type SharedWebRTCHost = Arc<Mutex<WebRTCHost>>;
 
 pub fn create_shared_host() -> SharedWebRTCHost {
     Arc::new(Mutex::new(WebRTCHost::new()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::split_at_char_boundaries;
+
+    #[test]
+    fn splits_ascii_at_exact_size() {
+        assert_eq!(split_at_char_boundaries("abcdefg", 3), ["abc", "def", "g"]);
+    }
+
+    #[test]
+    fn never_cuts_multi_byte_characters() {
+        // "ü" is 2 bytes, so a 3-byte limit would land mid-character every time.
+        let data = "üüüüü";
+        let chunks = split_at_char_boundaries(data, 3);
+        assert_eq!(chunks, ["ü", "ü", "ü", "ü", "ü"]);
+        assert_eq!(chunks.concat(), data);
+    }
+
+    #[test]
+    fn roundtrips_large_mixed_text() {
+        let data = "Beyoncé – Déjà Vu 🎤 ".repeat(5_000);
+        let chunks = split_at_char_boundaries(&data, 48_000);
+        assert!(chunks.iter().all(|c| c.len() <= 48_000));
+        assert_eq!(chunks.concat(), data);
+    }
+
+    #[test]
+    fn keeps_a_character_wider_than_the_limit() {
+        assert_eq!(split_at_char_boundaries("🎤a", 2), ["🎤", "a"]);
+    }
+
+    #[test]
+    fn empty_input_has_no_chunks() {
+        assert!(split_at_char_boundaries("", 10).is_empty());
+    }
 }
