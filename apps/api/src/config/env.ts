@@ -35,6 +35,22 @@ const ConfigSchema = v.object({
   VERSION: v.string(),
   /** Last release built with Tauri; installed Tauri versions are only offered this one (none when unset). */
   TAURI_VERSION: v.optional(v.string()),
+  /**
+   * Platforms (Tauri targets: `darwin`, `linux`, `windows`, or `all`) whose Tauri installs
+   * move to Electron, comma-separated. Unset = migration stays off everywhere.
+   */
+  TAURI_MIGRATION_ENABLED: v.optional(
+    v.pipe(
+      v.string(),
+      v.transform((value) =>
+        value
+          .split(",")
+          .map((target) => target.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ),
+    "",
+  ),
   GITHUB_REPO: v.optional(v.string()),
   STUN_URL: v.optional(v.string(), "stun:stun.l.google.com:19302"),
   TURN_URL: v.optional(v.string()),

@@ -32,6 +32,7 @@ process.env.TRUSTED_PROXY_ENABLED = "true";
 process.env.UPLOADS_PATH = "./test/.uploads";
 process.env.VERSION = "0.0.0-test";
 delete process.env.TAURI_VERSION;
+delete process.env.TAURI_MIGRATION_ENABLED;
 process.env.POSTHOG_TOKEN = "";
 
 /**

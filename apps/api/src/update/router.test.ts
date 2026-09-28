@@ -8,7 +8,12 @@ import { updateService } from "./service";
 
 const context = { cookies: new Bun.CookieMap(), headers: new Headers(), resHeaders: new Headers() };
 const input = { target: "linux", arch: "x86_64", currentVersion: "0.3.0" };
-const original = { VERSION: env.VERSION, TAURI_VERSION: env.TAURI_VERSION, GITHUB_REPO: env.GITHUB_REPO };
+const original = {
+  VERSION: env.VERSION,
+  TAURI_VERSION: env.TAURI_VERSION,
+  TAURI_MIGRATION_ENABLED: env.TAURI_MIGRATION_ENABLED,
+  GITHUB_REPO: env.GITHUB_REPO,
+};
 
 function stubRelease() {
   return spyOn(updateService, "resolveUpdate").mockImplementation(async ({ releaseVersion }) => ({
@@ -48,5 +53,30 @@ describe("getElectronUpdate", () => {
 
     const result = await call(updateRouter.getElectronUpdate, input, { context });
     expect(result).toMatchObject({ status: 200, body: { version: "0.5.0" } });
+  });
+});
+
+describe("getTauriMigration", () => {
+  const ask = (target: string) => call(updateRouter.getTauriMigration, { target }, { context });
+
+  it("is off everywhere while TAURI_MIGRATION_ENABLED is unset", async () => {
+    Object.assign(env, { TAURI_MIGRATION_ENABLED: [] });
+
+    expect(await ask("darwin")).toEqual({ enabled: false });
+    expect(await ask("windows")).toEqual({ enabled: false });
+  });
+
+  it("is on only for the listed platforms", async () => {
+    Object.assign(env, { TAURI_MIGRATION_ENABLED: ["darwin", "linux"] });
+
+    expect(await ask("darwin")).toEqual({ enabled: true });
+    expect(await ask("linux")).toEqual({ enabled: true });
+    expect(await ask("windows")).toEqual({ enabled: false });
+  });
+
+  it("is on for every platform with all", async () => {
+    Object.assign(env, { TAURI_MIGRATION_ENABLED: ["all"] });
+
+    expect(await ask("windows")).toEqual({ enabled: true });
   });
 });

@@ -32,6 +32,19 @@ export const updateRouter = os.prefix("/updates").router({
     .input(updateInput)
     .handler(({ input }) => respond(input, env.TAURI_VERSION)),
 
+  /**
+   * Asked by the last Tauri release before it moves the install to Electron. Controlled
+   * by `TAURI_MIGRATION_ENABLED`, so the rollout can go per platform and be switched off.
+   */
+  getTauriMigration: base
+    .route({ path: "/tauri-migration/{target}", method: "GET" })
+    .input(v.object({ target: v.string() }))
+    .output(v.object({ enabled: v.boolean() }))
+    .handler(({ input }) => {
+      const enabled = env.TAURI_MIGRATION_ENABLED;
+      return { enabled: enabled.includes("all") || enabled.includes(input.target.toLowerCase()) };
+    }),
+
   /** Polled by the Electron app. */
   getElectronUpdate: base
     .route({
