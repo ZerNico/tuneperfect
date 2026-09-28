@@ -1,0 +1,114 @@
+name: Build game
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "The Git tag to build and publish (e.g., v1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  build-electron:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          [
+            { os: "macos-latest", target: "aarch64-apple-darwin", arch: "arm64" },
+            { os: "macos-latest", target: "x86_64-apple-darwin", arch: "x64" },
+            { os: "ubuntu-24.04", target: "x86_64-unknown-linux-gnu", arch: "x64" },
+            { os: "windows-latest", target: "x86_64-pc-windows-msvc", arch: "x64" },
+            { os: "windows-latest", target: "aarch64-pc-windows-msvc", arch: "arm64" },
+          ]
+
+    runs-on: ${{ matrix.platform.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/game
+    env:
+      TUNEPERFECT_VERSION: ${{ inputs.tag }}
+      VITE_API_URL: ${{ vars.API_URL }}
+      VITE_APP_URL: ${{ vars.APP_URL }}
+      VITE_POSTHOG_TOKEN: ${{ secrets.POSTHOG_TOKEN }}
+      # The in-app updater checks this endpoint and verifies downloads against this key, the
+      # same minisign key pair the Tauri updater used.
+      TUNEPERFECT_UPDATE_ENDPOINT: "https://api.${{ vars.DOMAIN_NAME }}/v1.0/updates/electron/{{target}}/{{arch}}/{{current_version}}"
+      TUNEPERFECT_UPDATE_PUBKEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform.os == 'ubuntu-24.04'
+        working-directory: .
+        run: |
+          sudo apt-get update
+          # ALSA for microphone capture (cpal), rpm to build the .rpm package.
+          sudo apt-get install -y build-essential pkg-config libasound2-dev rpm
+
+      - name: Install ARM64 build tools (Windows ARM64 only)
+        if: matrix.platform.target == 'aarch64-pc-windows-msvc'
+        shell: powershell
+        working-directory: .
+        run: |
+          # Download Visual Studio Build Tools installer
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
+
+          # Install ARM64 build tools
+          Start-Process -FilePath "vs_buildtools.exe" -ArgumentList "--quiet", "--wait", "--add", "Microsoft.VisualStudio.Workload.VCTools", "--add", "Microsoft.VisualStudio.Component.VC.Tools.ARM64" -Wait
+
+          # Clean up
+          Remove-Item "vs_buildtools.exe"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build frontend and main process
+        run: |
+          bun run build:vite
+          bun run build:electron
+
+      - name: Build native addon
+        run: bun run native:build:release --target ${{ matrix.platform.target }}
+
+      - name: Package
+        run: bun scripts/package.ts --arch ${{ matrix.platform.arch }}
+
+      - name: Sign update artifacts
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          shopt -s nullglob
+          for file in release/*.app.tar.gz release/*-setup.exe release/*.AppImage; do
+            bunx @tauri-apps/cli@2 signer sign "$file"
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: tuneperfect-${{ matrix.platform.os }}-${{ matrix.platform.target }}
+          path: |
+            apps/game/release/*.exe
+            apps/game/release/*.exe.sig
+            apps/game/release/*.dmg
+            apps/game/release/*.app.tar.gz
+            apps/game/release/*.app.tar.gz.sig
+            apps/game/release/*.AppImage
+            apps/game/release/*.AppImage.sig
+            apps/game/release/*.deb
+            apps/game/release/*.rpm
+          if-no-files-found: error

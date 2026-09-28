@@ -3,7 +3,7 @@
 ## Project Snapshot
 
 - **Monorepo** (Bun workspaces + Turborepo) — karaoke/singing game platform
-- **Stack**: TypeScript (SolidJS, Vite), Rust (Tauri), Bun runtime, PostgreSQL, Redis
+- **Stack**: TypeScript (SolidJS, Vite), Electron + Rust (napi-rs), Bun runtime, PostgreSQL, Redis
 - **Linter/Formatter**: Oxc (`.oxlintrc.json`, `.oxfmtrc.json`)
 - Sub-packages have their own `AGENTS.md` — always check the nearest one first
 
@@ -46,12 +46,12 @@ Local dev uses Caddy as reverse proxy with mkcert TLS:
 
 ### Apps
 
-| App         | Purpose                             | Port | AGENTS.md                                  |
-| ----------- | ----------------------------------- | ---- | ------------------------------------------ |
-| `apps/api`  | Bun HTTP API (oRPC + OpenAPI)       | 3002 | [apps/api/AGENTS.md](apps/api/AGENTS.md)   |
-| `apps/game` | Tauri desktop game (SolidJS + Rust) | 1420 | [apps/game/AGENTS.md](apps/game/AGENTS.md) |
-| `apps/app`  | Companion web app (SolidJS SPA)     | 3001 | [apps/app/AGENTS.md](apps/app/AGENTS.md)   |
-| `apps/web`  | Marketing website (SolidStart SSR)  | 3000 | [apps/web/AGENTS.md](apps/web/AGENTS.md)   |
+| App         | Purpose                                | Port | AGENTS.md                                  |
+| ----------- | -------------------------------------- | ---- | ------------------------------------------ |
+| `apps/api`  | Bun HTTP API (oRPC + OpenAPI)          | 3002 | [apps/api/AGENTS.md](apps/api/AGENTS.md)   |
+| `apps/game` | Electron desktop game (SolidJS + Rust) | 1420 | [apps/game/AGENTS.md](apps/game/AGENTS.md) |
+| `apps/app`  | Companion web app (SolidJS SPA)        | 3001 | [apps/app/AGENTS.md](apps/app/AGENTS.md)   |
+| `apps/web`  | Marketing website (SolidStart SSR)     | 3000 | [apps/web/AGENTS.md](apps/web/AGENTS.md)   |
 
 ### Packages
 
