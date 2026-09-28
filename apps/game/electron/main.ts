@@ -25,6 +25,8 @@ const appOrigin = new URL(appUrl).origin;
 const rendererDir = path.join(__dirname, "../dist");
 
 app.setName("Tune Perfect");
+// Every renderer is sandboxed, including any created later.
+app.enableSandbox();
 
 // Chromium would route the game's audio to the system media controls: hardware media keys
 // and the macOS "Now Playing" widget could then pause songs. The Tauri webview didn't.
@@ -145,10 +147,16 @@ async function start() {
   // The embed page on the media server may only be framed by the app itself.
   await native.startLocalServer([appOrigin]);
 
+  // The only web permissions the game uses; everything else is denied, for requests and
+  // for the synchronous checks behind APIs like navigator.permissions.
+  const allowed = (url: string, permission: string) =>
+    URL.parse(url)?.origin === appOrigin && (permission === "fullscreen" || permission === "screen-wake-lock");
   session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
-    const trusted = new URL(contents.getURL()).origin === appOrigin;
-    callback(trusted && (permission === "fullscreen" || permission === "screen-wake-lock"));
+    callback(allowed(contents.getURL(), permission));
   });
+  session.defaultSession.setPermissionCheckHandler((_contents, permission, requestingOrigin) =>
+    allowed(requestingOrigin, permission),
+  );
 
   if (devServerUrl) applyDevelopmentCsp(appOrigin);
   else serveRenderer();
@@ -159,7 +167,7 @@ async function start() {
     songPaths,
     log: (level, message) => logger.write(level.toUpperCase(), "webview", message),
   });
-  listenForRpc(rpc, (id) => {
+  listenForRpc(rpc, appOrigin, (id) => {
     const contents = webContents.fromId(id);
     return contents ? BrowserWindow.fromWebContents(contents) : null;
   });

@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { type FuseV1Config, FuseV1Options, FuseVersion } from "@electron/fuses";
 import { Arch, build, type Configuration, Platform } from "electron-builder";
 
 import packageJson from "../package.json";
@@ -90,6 +91,25 @@ function stage() {
   fs.writeFileSync(path.join(stageDir, "package.json"), JSON.stringify(stagedPackage, null, 2));
 }
 
+/** Hardening switches compiled into the Electron binary. */
+const fuses: FuseV1Config = {
+  version: FuseVersion.V1,
+  // Nobody can run the shipped binary as a plain Node.js process, pass it Node options
+  // or attach Node's inspector.
+  [FuseV1Options.RunAsNode]: false,
+  [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+  [FuseV1Options.EnableNodeCliInspectArguments]: false,
+  // App code is only loaded from app.asar, and only if it matches the build.
+  [FuseV1Options.OnlyLoadAppFromAsar]: true,
+  [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
+  // The app is served from app://, never file://.
+  [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
+  // Left off on purpose: macOS keeps the key in the Keychain tied to the code signature,
+  // and ad-hoc signatures change every release, so players would get a Keychain prompt
+  // after each update.
+  [FuseV1Options.EnableCookieEncryption]: false,
+};
+
 const config: Configuration = {
   appId: "org.tuneperfect.game",
   productName,
@@ -136,11 +156,17 @@ const config: Configuration = {
     depends: ["alsa-lib"],
   },
   publish: null,
-  // Ad-hoc signature, like the Tauri builds had: required for Apple Silicon to run the app.
+
   afterPack: async (context) => {
-    if (context.electronPlatformName !== "darwin") return;
-    const app = path.join(context.appOutDir, `${productName}.app`);
-    execFileSync("codesign", ["--force", "--deep", "--sign", "-", app]);
+    // Applied here instead of through `electronFuses`, which electron-builder runs after
+    // this hook: flipping fuses modifies the binary, so it has to happen before signing.
+    await context.packager.addElectronFuses(context, fuses);
+
+    // Ad-hoc signature, like the Tauri builds had: required for Apple Silicon to run the app.
+    if (context.electronPlatformName === "darwin") {
+      const app = path.join(context.appOutDir, `${productName}.app`);
+      execFileSync("codesign", ["--force", "--deep", "--sign", "-", app]);
+    }
   },
 };
 
