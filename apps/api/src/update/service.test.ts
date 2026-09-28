@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 
 import { updateService } from "./service";
 
@@ -32,5 +32,43 @@ describe("getReleaseName", () => {
 
   it("does not allow path traversal through target or arch", async () => {
     expect(await updateService.getReleaseName("../..", "etc", "1.2.3")).toBeNull();
+  });
+});
+
+describe("resolveUpdate", () => {
+  const options = {
+    githubRepo: "owner/repo",
+    target: "linux",
+    arch: "x86_64",
+    currentVersion: "0.3.1",
+    releaseVersion: "v0.4.0",
+  };
+
+  it("points at the release file and its signature when a newer release exists", async () => {
+    const download = spyOn(updateService, "downloadSignatureFile").mockResolvedValue("c2lnbmF0dXJl");
+
+    expect(await updateService.resolveUpdate(options)).toEqual({
+      version: "0.4.0",
+      url: "https://github.com/owner/repo/releases/download/v0.4.0/Tune.Perfect_0.4.0_amd64.AppImage",
+      signature: "c2lnbmF0dXJl",
+    });
+    expect(download).toHaveBeenCalledWith(
+      "https://github.com/owner/repo/releases/download/v0.4.0/Tune.Perfect_0.4.0_amd64.AppImage.sig",
+    );
+    download.mockRestore();
+  });
+
+  it("offers nothing to clients already on that release or newer", async () => {
+    expect(await updateService.resolveUpdate({ ...options, currentVersion: "0.4.0" })).toBeNull();
+    expect(await updateService.resolveUpdate({ ...options, currentVersion: "0.5.0" })).toBeNull();
+  });
+
+  it("offers nothing without a repository, a release file or a signature", async () => {
+    expect(await updateService.resolveUpdate({ ...options, githubRepo: undefined })).toBeNull();
+    expect(await updateService.resolveUpdate({ ...options, target: "freebsd" })).toBeNull();
+
+    const download = spyOn(updateService, "downloadSignatureFile").mockResolvedValue(null);
+    expect(await updateService.resolveUpdate(options)).toBeNull();
+    download.mockRestore();
   });
 });

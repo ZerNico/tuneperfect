@@ -47,7 +47,14 @@ await runMigrations();
 await connectRedis();
 setupJobs();
 
-const allowedOrigins = [env.APP_URL, "http://localhost:1420", "tauri://localhost", "http://tauri.localhost"];
+const allowedOrigins = [
+  env.APP_URL,
+  // The game: Vite dev server, packaged Electron app, and the Tauri builds still installed.
+  "http://localhost:1420",
+  "app://tuneperfect",
+  "tauri://localhost",
+  "http://tauri.localhost",
+];
 
 const plugins = [
   new CORSPlugin({

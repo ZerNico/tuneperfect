@@ -31,6 +31,7 @@ process.env.REDIS_URL = "redis://localhost:6379";
 process.env.TRUSTED_PROXY_ENABLED = "true";
 process.env.UPLOADS_PATH = "./test/.uploads";
 process.env.VERSION = "0.0.0-test";
+delete process.env.TAURI_VERSION;
 process.env.POSTHOG_TOKEN = "";
 
 /**

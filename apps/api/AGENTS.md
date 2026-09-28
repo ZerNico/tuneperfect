@@ -112,7 +112,7 @@ rg -n "Cron\|setupJobs" src/                   # find scheduled jobs
 ## Common Gotchas
 
 - The API exposes **two** handler paths: `/rpc` (typed oRPC) and `/v1.0` (OpenAPI REST)
-- CORS is restricted to `APP_URL` + Tauri origins — update `allowedOrigins` in `src/index.ts` if adding new clients
+- CORS is restricted to `APP_URL` + the game's origins (Vite dev server, Electron `app://tuneperfect`, and the Tauri origins of older installs) — update `allowedOrigins` in `src/index.ts` if adding new clients
 - Rate limiting is configured per-route via `$meta` — see `src/lib/orpc/rate-limit.ts`
 - File uploads (user images) are stored on disk at `UPLOADS_PATH`, resized to 256x256 webp via Sharp
 
