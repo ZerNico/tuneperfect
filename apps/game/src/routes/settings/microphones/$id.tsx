@@ -2,13 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createResource, createSignal, Show, Suspense } from "solid-js";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
-import { commands } from "~/bindings";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import MicLevelMeter from "~/components/mic-level-meter";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
+import { native } from "~/lib/native/client";
 import { type Microphone, settingsStore } from "~/stores/settings";
 
 export const Route = createFileRoute("/settings/microphones/$id")({
@@ -21,12 +21,12 @@ function MicrophoneComponent() {
     navigate({ to: "/settings/microphones" });
   };
   const [microphones] = createResource(async () => {
-    const response = await commands.getMicrophones();
-    if (response.status === "ok") {
-      return response.data;
+    try {
+      return await native.microphones.list();
+    } catch (error) {
+      console.error("Failed to list microphones:", error);
+      return [];
     }
-
-    return [];
   });
 
   const params = Route.useParams();

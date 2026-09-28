@@ -1,6 +1,6 @@
-export type { LocalSong, UsdbSong } from "~/bindings";
+export type { LocalSong, UsdbSong } from "~/lib/native/types";
 
-import type { LocalSong, UsdbSong } from "~/bindings";
+import type { LocalSong, UsdbSong } from "~/lib/native/types";
 
 export type Song = LocalSong | UsdbSong;
 

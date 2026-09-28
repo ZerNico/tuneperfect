@@ -2,13 +2,13 @@ import { createEventListener } from "@solid-primitives/event-listener";
 import { debounce } from "@solid-primitives/scheduled";
 import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { createSignal, Suspense } from "solid-js";
 
 import PopupContainer from "~/components/popup-container";
 import { RouteError } from "~/components/route-error";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
+import { isFullscreen, setFullscreen } from "~/lib/platform/window";
 import { useWebRTCAutoConnect } from "~/stores/webrtc";
 
 interface RouterContext {
@@ -33,10 +33,7 @@ function RootComponent() {
   useWebRTCAutoConnect();
 
   const toggleFullscreen = async () => {
-    const window = getCurrentWindow();
-    const isFullscreen = await window.isFullscreen();
-
-    await window.setFullscreen(!isFullscreen);
+    await setFullscreen(!(await isFullscreen()));
   };
 
   useNavigation({

@@ -1,8 +1,8 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createEffect, createSignal, on, onCleanup } from "solid-js";
 
-import { commands } from "~/bindings";
 import { t } from "~/lib/i18n";
+import { native } from "~/lib/native/client";
 import { timeCall } from "~/lib/perf";
 
 interface MicLevelMeterProps {
@@ -32,15 +32,20 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       // when no id is set (and name is always sent for that fallback).
       const deviceId = props.deviceId();
 
-      await commands.stopRecording().catch(() => {});
+      await native.recording.stop().catch(() => {});
 
-      const result = await commands.startRecording(
-        [{ deviceId, name, channel: props.channel(), gain: props.gain(), threshold: 0, delay: 0 }],
-        false,
-        0,
-      );
+      const started = await native.recording
+        .start({
+          microphones: [{ deviceId, name, channel: props.channel(), gain: props.gain(), threshold: 0, delay: 0 }],
+          playbackEnabled: false,
+          playbackVolume: 0,
+        })
+        .then(
+          () => true,
+          () => false,
+        );
 
-      if (result.status === "ok") {
+      if (started) {
         setActive(true);
       }
     } finally {
@@ -55,7 +60,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     debouncedRestart.clear();
     setActive(false);
     setLevel(0);
-    await commands.stopRecording().catch(() => {});
+    await native.recording.stop().catch(() => {});
   };
 
   // Restart the recording stream when device or channel changes
@@ -94,9 +99,9 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     if (!active()) return;
 
     const interval = setInterval(async () => {
-      const result = await timeCall("getAudioLevels", () => commands.getAudioLevels());
-      const value = result.status === "ok" ? result.data[0] : undefined;
-      if (value !== undefined && value !== null) {
+      const levels = await timeCall("getAudioLevels", () => native.pitch.levels()).catch(() => []);
+      const value = levels[0];
+      if (value !== undefined) {
         const meter = ampToMeter(value);
         peakHold = meter >= peakHold ? meter : peakHold * decay;
         setLevel(peakHold);

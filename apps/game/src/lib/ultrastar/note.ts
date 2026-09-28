@@ -1,1 +1,1 @@
-export type { Note } from "~/bindings";
+export type { Note } from "~/lib/native/types";

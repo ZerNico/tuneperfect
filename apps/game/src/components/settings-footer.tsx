@@ -1,5 +1,6 @@
-import { getVersion } from "@tauri-apps/api/app";
 import { createResource, Show } from "solid-js";
+
+import { getVersion } from "~/lib/platform/app";
 
 import KeyHints from "./key-hints";
 

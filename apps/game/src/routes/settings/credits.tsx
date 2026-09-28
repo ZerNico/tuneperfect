@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { openUrl } from "@tauri-apps/plugin-opener";
 
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
+import { openUrl } from "~/lib/platform/app";
 
 export const Route = createFileRoute("/settings/credits")({
   component: CreditsComponent,

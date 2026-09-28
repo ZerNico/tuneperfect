@@ -1,17 +1,17 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { platform } from "@tauri-apps/plugin-os";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { check } from "@tauri-apps/plugin-updater";
 import { createEffect, Match, Switch } from "solid-js";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
-import { commands } from "~/bindings";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import { t } from "~/lib/i18n";
+import { native } from "~/lib/native/client";
+import { relaunch } from "~/lib/platform/app";
+import { platform } from "~/lib/platform/os";
+import { check } from "~/lib/platform/updater";
 import { initializeLobbySettings } from "~/stores/lobby";
 import { initializeLocalSettings } from "~/stores/local";
 import { initializeSettings } from "~/stores/settings";
@@ -45,7 +45,7 @@ function RouteComponent() {
     try {
       const currentPlatform = platform();
       if (currentPlatform === "macos") {
-        await commands.getMicrophones();
+        await native.microphones.list();
       }
     } catch (error) {
       console.error("Failed to get microphone permissions on startup:", error);

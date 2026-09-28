@@ -1,8 +1,8 @@
 import createRAF from "@solid-primitives/raf";
 import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
 
-import { commands } from "~/bindings";
 import type { SongPlayerRef } from "~/components/song-player";
+import { native } from "~/lib/native/client";
 import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
@@ -38,11 +38,11 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       throw new Error("No song provided");
     }
 
-    await commands.startRecording(
-      roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
-      settingsStore.general().micPlaybackEnabled,
-      settingsStore.volume().micPlayback,
-    );
+    await native.recording.start({
+      microphones: roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
+      playbackEnabled: settingsStore.general().micPlaybackEnabled,
+      playbackVolume: settingsStore.volume().micPlayback,
+    });
 
     setStarted(true);
     setPlaying(true);
@@ -51,7 +51,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   };
 
   const stop = async () => {
-    await commands.stopRecording();
+    await native.recording.stop();
     logPerfReport();
   };
 
@@ -163,9 +163,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const windowMs = beatToMsWithoutGap(song, 1);
 
     void (async () => {
-      const result = await timeCall("getPitches", () => commands.getPitches(windowMs));
-      if (result.status === "ok") {
-        setPitches(result.data);
+      try {
+        setPitches(await timeCall("getPitches", () => native.pitch.get({ windowMs })));
+      } catch (error) {
+        console.error("Failed to get pitches:", error);
       }
     })();
   });

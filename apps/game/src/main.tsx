@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
-import { error, warn } from "@tauri-apps/plugin-log";
 import { render } from "solid-js/web";
+
+import { error, warn } from "~/lib/platform/log";
 
 import { initPostHog } from "./lib/posthog";
 import { forwardConsole } from "./lib/utils/console";

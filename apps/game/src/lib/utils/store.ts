@@ -1,6 +1,7 @@
-import { load } from "@tauri-apps/plugin-store";
 import { createEffect, createRoot, createSignal, on } from "solid-js";
 import * as v from "valibot";
+
+import { load } from "~/lib/platform/store";
 
 import { makeNested } from "./setter";
 

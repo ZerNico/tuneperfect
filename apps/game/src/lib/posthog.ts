@@ -1,5 +1,6 @@
-import { getVersion } from "@tauri-apps/api/app";
 import posthog from "posthog-js";
+
+import { getVersion } from "~/lib/platform/app";
 
 export const initPostHog = async (token: string) => {
   posthog.init(token, {

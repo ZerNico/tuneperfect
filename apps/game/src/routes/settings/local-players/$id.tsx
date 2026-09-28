@@ -1,6 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { open } from "@tauri-apps/plugin-dialog";
-import { readFile } from "@tauri-apps/plugin-fs";
 import { createMemo, createSignal } from "solid-js";
 
 import Layout from "~/components/layout";
@@ -10,6 +8,8 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import ImageCrop from "~/components/ui/image-crop";
 import { t } from "~/lib/i18n";
+import { open } from "~/lib/platform/dialog";
+import { readFile } from "~/lib/platform/fs";
 import { popup } from "~/lib/popup";
 import { blobToDataUrl } from "~/lib/utils";
 import { localStore } from "~/stores/local";

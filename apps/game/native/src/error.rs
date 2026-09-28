@@ -22,9 +22,6 @@ pub enum AppError {
     #[error("ultrastar error: {0}")]
     UltrastarError(String),
 
-    #[error("webrtc error: {0}")]
-    WebRTCError(String),
-
     #[error("usdb error: {0}")]
     UsdbError(String),
 }

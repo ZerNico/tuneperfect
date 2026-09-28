@@ -1,13 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import type { Event } from "@tauri-apps/api/event";
-import { getMatches } from "@tauri-apps/plugin-cli";
-import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { createMemo, createSignal, onMount } from "solid-js";
 import * as v from "valibot";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
-import { events, type ProgressEvent, type StartParsingEvent } from "~/bindings";
 import Layout from "~/components/layout";
 import { t } from "~/lib/i18n";
+import type { ParseSongsEvent } from "~/lib/native/contract";
+import { getSongPathArgs } from "~/lib/platform/app";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { songsStore } from "~/stores/songs";
 
@@ -25,36 +24,22 @@ function LoadingComponent() {
   const [currentSongs, setCurrentSongs] = createSignal(0);
   const [totalSongs, setTotalSongs] = createSignal(0);
 
-  onMount(async () => {
-    const [_error, matches] = await tryCatch(getMatches());
-
-    if (matches?.args.songpath && Array.isArray(matches.args.songpath.value)) {
-      await songsStore.updateLocalSongs(matches.args.songpath.value);
-    } else {
-      await songsStore.updateLocalSongs(songsStore.paths());
+  const onProgress = (event: ParseSongsEvent) => {
+    if (event.type === "start") {
+      setTotalSongs(event.total);
+    } else if (event.type === "progress") {
+      setCurrentSongs((currentSongs) => currentSongs + 1);
+      setCurrentSong(event.song);
     }
+  };
+
+  onMount(async () => {
+    const [_error, songPathArgs] = await tryCatch(getSongPathArgs());
+
+    await songsStore.updateLocalSongs(songPathArgs ?? songsStore.paths(), onProgress);
 
     navigate({
       to: search().redirect,
-    });
-  });
-
-  const onProgress = (event: Event<ProgressEvent>) => {
-    setCurrentSongs((currentSongs) => currentSongs + 1);
-    setCurrentSong(event.payload.song);
-  };
-
-  const onStartParsing = (event: Event<StartParsingEvent>) => {
-    setTotalSongs(event.payload.total_songs);
-  };
-
-  onMount(() => {
-    const unlistenProgress = events.progressEvent.listen(onProgress);
-    const unlistenStartParsing = events.startParsingEvent.listen(onStartParsing);
-
-    onCleanup(async () => {
-      (await unlistenProgress)();
-      (await unlistenStartParsing)();
     });
   });
 

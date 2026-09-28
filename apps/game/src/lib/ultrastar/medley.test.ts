@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Note, Phrase, Voice } from "~/bindings";
+import type { Note, Phrase, Voice } from "~/lib/native/types";
 
 import { getMedleySong } from "./medley";
 import type { LocalSong } from "./song";

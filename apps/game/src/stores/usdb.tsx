@@ -1,12 +1,13 @@
-import { load } from "@tauri-apps/plugin-store";
 import MiniSearch from "minisearch";
 import { createRoot, createSignal } from "solid-js";
 import * as v from "valibot";
 
-import { commands, events, type UsdbSearchEntry } from "~/bindings";
+import { native, safe } from "~/lib/native/client";
+import type { UsdbSearchEntry } from "~/lib/native/types";
+import { load } from "~/lib/platform/store";
 import { createPersistentStore } from "~/lib/utils/store";
 
-export type { UsdbSearchEntry } from "~/bindings";
+export type { UsdbSearchEntry } from "~/lib/native/types";
 
 const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
@@ -137,15 +138,16 @@ function createUsdbStore() {
     const { username, password } = credentials();
     if (!username || !password) return false;
 
-    try {
-      const result = await commands.usdbLogin(username, password);
-      if (result.status === "ok" && result.data) {
-        setLoggedIn(true);
-        setSessionActive(true);
-        return true;
-      }
+    const [error, success, isDefined] = await safe(native.usdb.login({ username, password }));
+    if (!error && success) {
+      setLoggedIn(true);
+      setSessionActive(true);
+      return true;
+    }
+    if (!error || isDefined) {
+      // Rejected by USDB (or its response couldn't be understood): the creds are bad.
       setLoggedIn(false);
-    } catch (error) {
+    } else {
       // Transport error — keep the persisted flag, creds may still be valid.
       console.error("USDB login failed:", error);
     }
@@ -156,7 +158,7 @@ function createUsdbStore() {
 
   const logout = async () => {
     try {
-      await commands.usdbLogout();
+      await native.usdb.logout();
     } catch {
       // Ignore
     }
@@ -169,11 +171,6 @@ function createUsdbStore() {
     setSyncing(true);
     setSyncProgress(null);
 
-    // Rust emits this per fetched page.
-    const unlisten = await events.usdbSyncProgressEvent.listen((event) => {
-      setSyncProgress({ fetched: event.payload.fetched, total: event.payload.total });
-    });
-
     try {
       const isFullSync = force || lastMtime === 0;
       const mtimeToSend = force ? 0 : lastMtime;
@@ -183,14 +180,18 @@ function createUsdbStore() {
         setSyncProgress({ fetched: 0, total: 27000 });
       }
 
-      const result = await commands.usdbFetchCatalog(mtimeToSend, songIdsToSend);
-
-      if (result.status !== "ok") {
-        console.error("Catalog sync failed:", result.error);
-        return;
+      let newEntries: UsdbSearchEntry[] = [];
+      // Progress arrives per fetched page, then the entries.
+      for await (const event of await native.usdb.fetchCatalog({
+        lastMtime: mtimeToSend,
+        lastSongIds: songIdsToSend,
+      })) {
+        if (event.type === "progress") {
+          setSyncProgress({ fetched: event.fetched, total: event.total });
+        } else {
+          newEntries = event.catalog;
+        }
       }
-
-      const newEntries = result.data;
 
       if (isFullSync) {
         updateCatalog(newEntries);
@@ -217,7 +218,6 @@ function createUsdbStore() {
     } catch (error) {
       console.error("Catalog sync error:", error);
     } finally {
-      unlisten();
       setSyncing(false);
       setSyncProgress(null);
     }

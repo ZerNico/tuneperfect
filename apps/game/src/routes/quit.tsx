@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { exit } from "@tauri-apps/plugin-process";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
+import { exit } from "~/lib/platform/app";
 
 export const Route = createFileRoute("/quit")({
   component: QuitComponent,

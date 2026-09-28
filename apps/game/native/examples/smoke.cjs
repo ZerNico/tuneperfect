@@ -24,7 +24,9 @@ async function main() {
       else progress++;
     });
     const songs = groups.flatMap((group) => group.songs);
-    console.log(`parsed ${songs.length} songs (${progress} progress events) in ${Math.round(performance.now() - started)} ms`);
+    console.log(
+      `parsed ${songs.length} songs (${progress} progress events) in ${Math.round(performance.now() - started)} ms`,
+    );
 
     const audioUrl = songs.find((song) => song.audioUrl)?.audioUrl;
     if (audioUrl) {
@@ -54,9 +56,7 @@ async function main() {
   await native.stopRecording();
 
   timings.sort((a, b) => a - b);
-  console.log(
-    `getPitches in-process: p50 ${timings[15].toFixed(3)} ms, max ${timings.at(-1).toFixed(3)} ms`,
-  );
+  console.log(`getPitches in-process: p50 ${timings[15].toFixed(3)} ms, max ${timings.at(-1).toFixed(3)} ms`);
 }
 
 main().catch((error) => {

@@ -5,8 +5,6 @@ import icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
 
-const host = process.env.TAURI_DEV_HOST;
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -24,16 +22,8 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/native/**", "**/electron/**", "**/dist-electron/**"],
     },
   },
   build: {
