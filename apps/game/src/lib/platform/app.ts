@@ -6,8 +6,8 @@ export async function getVersion(): Promise<string> {
   return desktop.version;
 }
 
-export async function exit(code?: number): Promise<void> {
-  await native.app.exit({ code });
+export async function exit(): Promise<void> {
+  await native.app.exit();
 }
 
 export async function openUrl(url: string): Promise<void> {

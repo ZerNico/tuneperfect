@@ -6,10 +6,13 @@ import { app, BrowserWindow, net, protocol, session, shell, webContents } from "
 
 import { SongFolderAccess } from "./allowlist";
 import { CONTENT_SECURITY_POLICY } from "./csp";
+import { createLogger } from "./logger";
+import { setApplicationMenu } from "./menu";
 import { native } from "./native";
-import { storeDir } from "./paths";
+import { configDir, logDir, storeDir } from "./paths";
 import { createRpcHandler, listenForRpc } from "./rpc";
 import { JsonStores } from "./store";
+import { loadWindowState, saveWindowState } from "./window-state";
 
 /** Set by the dev script; packaged and preview builds load the bundled frontend instead. */
 const devServerUrl = process.env.TUNEPERFECT_DEV_SERVER_URL;
@@ -23,9 +26,15 @@ const rendererDir = path.join(__dirname, "../dist");
 
 app.setName("Tune Perfect");
 
+// Chromium would route the game's audio to the system media controls: hardware media keys
+// and the macOS "Now Playing" widget could then pause songs. The Tauri webview didn't.
+app.commandLine.appendSwitch("disable-features", "HardwareMediaKeyHandling,MediaSessionService");
+
 protocol.registerSchemesAsPrivileged([
   { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ]);
+
+const logger = createLogger(logDir());
 
 /** `--songpath <dir>` / `-s <dir>`, repeatable, like the Tauri CLI plugin accepted. */
 function songPathArgs(argv: string[]): string[] | null {
@@ -61,13 +70,26 @@ function serveRenderer() {
   });
 }
 
+/** Applies the same CSP to pages from the Vite dev server, so problems show up in development. */
+function applyDevelopmentCsp(url: string) {
+  session.defaultSession.webRequest.onHeadersReceived({ urls: [`${url}/*`] }, (details, callback) => {
+    if (details.resourceType !== "mainFrame") return callback({});
+    callback({
+      responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [CONTENT_SECURITY_POLICY] },
+    });
+  });
+}
+
 function createWindow(): BrowserWindow {
+  const saved = loadWindowState(configDir());
+
   const window = new BrowserWindow({
     title: "Tune Perfect",
-    width: 1280,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    // Tauri's defaults; the saved state usually replaces them.
+    width: 800,
+    height: 600,
+    ...saved.bounds,
+    useContentSize: true,
     backgroundColor: "#000000",
     show: false,
     webPreferences: {
@@ -75,6 +97,8 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      devTools: !app.isPackaged,
+      spellcheck: false,
       // The game clock runs on requestAnimationFrame and media time; don't let Chromium
       // throttle it when the window is occluded.
       backgroundThrottling: false,
@@ -83,7 +107,13 @@ function createWindow(): BrowserWindow {
     },
   });
 
+  if (saved.maximized) window.maximize();
+  if (saved.fullscreen) window.setFullScreen(true);
   window.once("ready-to-show", () => window.show());
+  window.on("close", () => saveWindowState(configDir(), window));
+
+  // No pinch zoom; the webview didn't zoom either.
+  void window.webContents.setVisualZoomLevelLimits(1, 1);
 
   // Links to other sites open in the browser; the app window never navigates away.
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -99,6 +129,14 @@ function createWindow(): BrowserWindow {
 }
 
 async function start() {
+  native.setLogSink((record) => logger.write(record.level, record.target, record.message));
+  setApplicationMenu();
+
+  // Packaged apps get their icon from the bundle; in development the Dock would show Electron's.
+  if (!app.isPackaged && process.platform === "darwin") {
+    app.dock?.setIcon(path.join(__dirname, "../resources/icons/icon.png"));
+  }
+
   const stores = new JsonStores(storeDir());
   const songFolders = new SongFolderAccess(stores);
   const songPaths = songPathArgs(process.argv);
@@ -112,13 +150,14 @@ async function start() {
     callback(trusted && (permission === "fullscreen" || permission === "screen-wake-lock"));
   });
 
-  if (!devServerUrl) serveRenderer();
+  if (devServerUrl) applyDevelopmentCsp(appOrigin);
+  else serveRenderer();
 
   const rpc = createRpcHandler({
     stores,
     songFolders,
     songPaths,
-    log: (level, message) => (level === "error" ? console.error : console.warn)(`[webview] ${message}`),
+    log: (level, message) => logger.write(level.toUpperCase(), "webview", message),
   });
   listenForRpc(rpc, (id) => {
     const contents = webContents.fromId(id);
@@ -145,12 +184,14 @@ async function start() {
   });
 }
 
+process.on("uncaughtException", (error) => logger.write("ERROR", "tuneperfect", error.stack ?? String(error)));
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on("window-all-closed", () => app.quit());
   app.whenReady().then(start, (error: unknown) => {
-    console.error("Failed to start:", error);
+    logger.write("ERROR", "tuneperfect", `Failed to start: ${error instanceof Error ? error.stack : String(error)}`);
     app.exit(1);
   });
 }
