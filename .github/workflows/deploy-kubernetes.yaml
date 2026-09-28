@@ -66,6 +66,9 @@ jobs:
           # ("darwin,linux", "all"; off when empty).
           TAURI_VERSION: ${{ vars.TAURI_VERSION }}
           TAURI_MIGRATION_ENABLED: ${{ vars.TAURI_MIGRATION_ENABLED }}
+          # The release the website's download pages link to while it isn't the deployed one
+          # (the last Tauri release, until installs move to Electron); empty = the deployed tag.
+          DOWNLOAD_VERSION: ${{ vars.DOWNLOAD_VERSION }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -99,6 +102,7 @@ jobs:
             --set apps.web.ingress.tls[0].secretName=web-tls-$DOMAIN_NAME \
             --set apps.web.env.VITE_APP_URL=https://app.$DOMAIN_NAME \
             --set apps.web.env.VERSION=$IMAGE_TAG \
+            --set-string apps.web.env.DOWNLOAD_VERSION="$DOWNLOAD_VERSION" \
             --set apps.web.env.GITHUB_REPO=${{ github.repository }} \
             --set apps.web.env.SUPPORT_EMAIL=support@$DOMAIN_NAME \
             --set apps.web.env.VITE_POSTHOG_TOKEN=$POSTHOG_TOKEN \

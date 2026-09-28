@@ -11,7 +11,7 @@ export const Route = createFileRoute("/download/macos")({
 
 function RouteComponent() {
   const context = Route.useRouteContext();
-  const version = () => context()?.config?.VERSION?.replace(/^v/, "") || "";
+  const version = () => context()?.config?.DOWNLOAD_VERSION?.replace(/^v/, "") || "";
   const githubRepo = () => context()?.config?.GITHUB_REPO || "";
 
   const handleDownload = (architecture: string, extension: string) => {
