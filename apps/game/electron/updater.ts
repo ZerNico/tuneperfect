@@ -150,6 +150,19 @@ function installAppImage(file: string, image: Uint8Array) {
   fs.renameSync(temp, file);
 }
 
+/**
+ * Starts `file` again once this process has exited. `app.relaunch()` can't be used for an
+ * AppImage: its helper runs from the AppImage's mount, which disappears when the app quits.
+ * Waiting for the exit also keeps the new instance from losing the single-instance lock.
+ */
+function relaunchAppImage(file: string) {
+  const waitThenRun = 'while kill -0 "$0" 2>/dev/null; do sleep 0.2; done; exec "$@"';
+  spawn("/bin/sh", ["-c", waitThenRun, String(process.pid), file, ...process.argv.slice(1)], {
+    detached: true,
+    stdio: "ignore",
+  }).unref();
+}
+
 function runWindowsInstaller(installer: Uint8Array, workDir: string) {
   const setup = path.join(workDir, "setup.exe");
   fs.writeFileSync(setup, installer);
@@ -181,7 +194,7 @@ export async function installUpdate(onProgress: (progress: DownloadProgress) => 
       return;
     case "appimage":
       installAppImage(target.file, data);
-      app.relaunch({ execPath: target.file });
+      relaunchAppImage(target.file);
       app.exit(0);
       return;
     case "windows":
