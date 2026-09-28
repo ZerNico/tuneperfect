@@ -154,10 +154,19 @@ function installAppImage(file: string, image: Uint8Array) {
  * Starts `file` again once this process has exited. `app.relaunch()` can't be used for an
  * AppImage: its helper runs from the AppImage's mount, which disappears when the app quits.
  * Waiting for the exit also keeps the new instance from losing the single-instance lock.
+ *
+ * The shell first closes every descriptor it inherited besides stdio: Chromium leaves
+ * sockets and files from the old AppImage mount open across exec, which would keep the old
+ * mount (and its runtime process) alive and hand stale sockets to the new instance. bash
+ * because `exec {n}>&-` closes descriptors above 9, which dash can't.
  */
 function relaunchAppImage(file: string) {
-  const waitThenRun = 'while kill -0 "$0" 2>/dev/null; do sleep 0.2; done; exec "$@"';
-  spawn("/bin/sh", ["-c", waitThenRun, String(process.pid), file, ...process.argv.slice(1)], {
+  const script = [
+    'for fd in /proc/$$/fd/*; do n=${fd##*/}; [ "$n" -gt 2 ] && exec {n}>&-; done 2>/dev/null',
+    'while kill -0 "$0" 2>/dev/null; do sleep 0.2; done',
+    'exec "$@"',
+  ].join("; ");
+  spawn("/bin/bash", ["-c", script, String(process.pid), file, ...process.argv.slice(1)], {
     detached: true,
     stdio: "ignore",
   }).unref();
