@@ -1,3 +1,4 @@
+import { execFile, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -9,7 +10,8 @@ import { type WindowState, writeWindowState } from "./window-state";
 
 /**
  * One-time move of the Tauri version's data into this app's data directory: settings,
- * players, scores and the other stores, plus the window position. Remove this module once
+ * players, scores and the other stores, plus the window position. On Windows the Tauri
+ * version was installed elsewhere, so it's uninstalled afterwards. Remove this module once
  * no Tauri installs are left.
  */
 
@@ -102,4 +104,32 @@ export function migrateFromTauri(target: string, logger: Logger) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
   logger.write("INFO", "tuneperfect", `Moved the data of the Tauri version from ${legacy.data} to ${target}`);
+}
+
+/** Tauri's installer registered itself under the product name; this app's key is a GUID. */
+const TAURI_UNINSTALL_KEY = String.raw`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Tune Perfect`;
+
+/**
+ * Silently uninstalls the Tauri version on Windows, once its data has been moved. Its
+ * uninstaller keeps app data and only removes shortcuts that point at its own executable,
+ * so this app's shortcuts stay. On macOS and Linux the Tauri app was replaced in place.
+ */
+export function removeTauriInstall(logger: Logger) {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  if (fs.existsSync(path.join(tauriDirectories().data, "settings.json"))) return;
+
+  execFile("reg", ["query", TAURI_UNINSTALL_KEY, "/v", "UninstallString"], (error, stdout) => {
+    // No key: never installed, or already removed.
+    if (error) return;
+    const uninstaller = /UninstallString\s+REG_SZ\s+"?([^"\r\n]+?)"?\s*$/m.exec(stdout)?.[1];
+    if (!uninstaller || !fs.existsSync(uninstaller)) return;
+    if (path.dirname(uninstaller).toLowerCase() === path.dirname(process.execPath).toLowerCase()) return;
+
+    logger.write("INFO", "tuneperfect", `Uninstalling the Tauri version (${uninstaller})`);
+    spawn(uninstaller, ["/S"], { detached: true, stdio: "ignore" })
+      .on("error", (spawnError) => {
+        logger.write("WARN", "tuneperfect", `Uninstalling the Tauri version failed: ${String(spawnError)}`);
+      })
+      .unref();
+  });
 }
