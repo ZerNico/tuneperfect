@@ -11,12 +11,13 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Arch, build, type Configuration, Platform } from "electron-builder";
 
 import packageJson from "../package.json";
 
-const root = path.resolve(import.meta.dir, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const stageDir = path.join(root, ".electron-app");
 const outputDir = path.join(root, "release");
 
