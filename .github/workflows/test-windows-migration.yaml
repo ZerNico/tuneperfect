@@ -69,6 +69,16 @@ jobs:
             "identifier": "org.tuneperfect.game",
             "version": "0.3.2",
             "bundle": { "createUpdaterArtifacts": false },
+            "app": {
+              "windows": [
+                {
+                  "title": "Tune Perfect",
+                  "width": 800,
+                  "height": 600,
+                  "additionalBrowserArgs": "--remote-debugging-port=9333 --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
+                }
+              ]
+            },
             "plugins": {
               "updater": {
                 "pubkey": "$UPDATE_PUBKEY",
@@ -172,7 +182,6 @@ jobs:
 
           bun "$RUNNER_TEMP/server.ts" > "$log" 2>&1 &
           sleep 2
-          export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9333"
 
           echo "::group::Switch off: the regular update check runs, nothing migrates"
           "$TAURI_EXE" > "$RUNNER_TEMP/out/tauri-off.log" 2>&1 &
@@ -180,8 +189,9 @@ jobs:
           if grep -q "GET /v1.0/updates/electron/" "$log"; then echo "asked for the Electron build while the switch was off"; exit 1; fi
           sleep 3
           timeout 20 bun "$RUNNER_TEMP/cdp.ts" shot "$RUNNER_TEMP/out/switch-off.png" || true
-          taskkill //IM tuneperfect.exe //F > /dev/null 2>&1 || true
-          sleep 3
+          taskkill /IM tuneperfect.exe /F
+          for i in $(seq 1 20); do tasklist | grep -qi "^tuneperfect.exe" || break; sleep 1; done
+          if tasklist | grep -qi "^tuneperfect.exe"; then echo "the first Tauri run is still running"; exit 1; fi
           echo "::endgroup::"
 
           echo "::group::Switch on: the Electron build is offered and installed"
