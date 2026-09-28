@@ -11,6 +11,16 @@ export const commands = {
 	getPitches: (windowMs: number | null) => typedError<(number | null)[], AppError>(__TAURI_INVOKE("get_pitches", { windowMs })),
 	getAudioLevels: () => typedError<(number | null)[], AppError>(__TAURI_INVOKE("get_audio_levels")),
 	getLocalServerBaseUrl: () => typedError<string | null, string>(__TAURI_INVOKE("get_local_server_base_url")),
+	/**
+	 *  The version of the Electron build to move to, or `None` when migration is off. Failures
+	 *  count as off, so the regular update check still runs.
+	 */
+	checkMigration: () => typedError<string | null, AppError>(__TAURI_INVOKE("check_migration")),
+	/**
+	 *  Downloads and verifies the Electron build, installs it and starts it. Only returns if
+	 *  something failed.
+	 */
+	installMigration: () => typedError<null, AppError>(__TAURI_INVOKE("install_migration")),
 	parseSongsFromPaths: (paths: string[]) => typedError<SongGroup[], AppError>(__TAURI_INVOKE("parse_songs_from_paths", { paths })),
 	webrtcCreateAnswer: (userId: string, offerSdp: string, iceServers: IceServerConfig_Deserialize[]) => typedError<string, AppError>(__TAURI_INVOKE("webrtc_create_answer", { userId, offerSdp, iceServers })),
 	webrtcAddIceCandidate: (userId: string, candidate: string) => typedError<null, AppError>(__TAURI_INVOKE("webrtc_add_ice_candidate", { userId, candidate })),
@@ -39,7 +49,7 @@ export const events = {
 };
 
 /* Types */
-export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string } | { type: "UsdbError"; data: string };
+export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "WebRTCError"; data: string } | { type: "UsdbError"; data: string } | { type: "MigrationError"; data: string };
 
 export type ChannelCloseEvent = {
 	userId: string,

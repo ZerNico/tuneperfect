@@ -61,6 +61,10 @@
           "short": "s",
           "takesValue": true,
           "multiple": true
+        },
+        {
+          "name": "enable-migration",
+          "description": "Offer the move to the Electron version even while it's off for everyone"
         }
       ]
     }

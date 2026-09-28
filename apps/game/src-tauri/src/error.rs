@@ -27,6 +27,9 @@ pub enum AppError {
 
     #[error("usdb error: {0}")]
     UsdbError(String),
+
+    #[error("migration error: {0}")]
+    MigrationError(String),
 }
 
 macro_rules! impl_from_errors {
@@ -44,5 +47,8 @@ macro_rules! impl_from_errors {
 impl_from_errors!(
     (std::io::Error, IoError),
     (lofty::error::FileParseError, LoftyError),
-    (cpal::Error, CpalError)
+    (cpal::Error, CpalError),
+    (tauri_plugin_updater::Error, MigrationError),
+    (reqwest::Error, MigrationError),
+    (serde_json::Error, MigrationError)
 );

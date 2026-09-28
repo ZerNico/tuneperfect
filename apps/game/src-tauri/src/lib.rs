@@ -2,6 +2,7 @@ mod audio;
 mod commands;
 mod error;
 mod local_server;
+mod migration;
 mod ultrastar;
 mod usdb;
 mod webrtc;
@@ -48,6 +49,8 @@ pub fn run() {
             pitch::get_pitches,
             pitch::get_audio_levels,
             local_server::get_local_server_base_url,
+            migration::check_migration,
+            migration::install_migration,
             songs::parse_songs_from_paths,
             webrtc::commands::webrtc_create_answer,
             webrtc::commands::webrtc_add_ice_candidate,
@@ -127,6 +130,7 @@ pub fn run() {
             }
 
             app.manage(AppState::default());
+            migration::manage(app);
             app.manage(webrtc::host::create_shared_host());
             builder.mount_events(app);
 

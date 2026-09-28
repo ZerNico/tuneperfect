@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { platform } from "@tauri-apps/plugin-os";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { check } from "@tauri-apps/plugin-updater";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import { createEffect, Match, Switch } from "solid-js";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 
@@ -16,6 +16,9 @@ import { initializeLobbySettings } from "~/stores/lobby";
 import { initializeLocalSettings } from "~/stores/local";
 import { initializeSettings } from "~/stores/settings";
 import { initializeUsdbStore } from "~/stores/usdb";
+
+/** A regular update, or the move to the Electron version (see `src-tauri/src/migration.rs`). */
+type AvailableUpdate = { kind: "update"; update: Update; version: string } | { kind: "migration"; version: string };
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -34,9 +37,19 @@ function RouteComponent() {
 
   const checkUpdateQuery = useQuery(() => ({
     queryKey: ["checkUpdate"],
-    queryFn: async () => {
-      const update = await check();
-      return update;
+    queryFn: async (): Promise<AvailableUpdate | null> => {
+      try {
+        const migration = await commands.checkMigration();
+        if (migration.status === "ok" && migration.data) {
+          return { kind: "migration", version: migration.data };
+        }
+
+        const update = await check();
+        return update ? { kind: "update", update, version: update.version } : null;
+      } catch (error) {
+        console.error("Update check failed:", error);
+        throw error;
+      }
     },
     retry: false,
   }));
@@ -54,11 +67,18 @@ function RouteComponent() {
 
   const installUpdateMutation = useMutation(() => ({
     mutationFn: async () => {
-      const update = checkUpdateQuery.data;
-      if (update) {
-        await update.downloadAndInstall();
-        await relaunch();
+      const available = checkUpdateQuery.data;
+      if (!available) return;
+
+      if (available.kind === "migration") {
+        // Starts the Electron version; only returns if something failed.
+        const result = await commands.installMigration();
+        if (result.status === "error") throw new Error(result.error.data);
+        return;
       }
+
+      await available.update.downloadAndInstall();
+      await relaunch();
     },
     onError: (error) => {
       console.error(error);
