@@ -33,7 +33,7 @@ const ConfigSchema = v.object({
   ),
   UPLOADS_PATH: v.fallback(v.pipe(v.string(), v.nonEmpty()), "./uploads"),
   VERSION: v.string(),
-  /** Last release built with Tauri; installed Tauri versions are only offered this one. */
+  /** Last release built with Tauri; installed Tauri versions are only offered this one (none when unset). */
   TAURI_VERSION: v.optional(v.string()),
   GITHUB_REPO: v.optional(v.string()),
   STUN_URL: v.optional(v.string(), "stun:stun.l.google.com:19302"),
