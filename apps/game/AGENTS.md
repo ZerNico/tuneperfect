@@ -11,12 +11,12 @@
 ## Setup & Run
 
 ```bash
-bun run dev                        # native build + Vite + Electron (restarts on main-process changes)
+bun run dev                        # Vite + Electron; rebuilds Rust and restarts Electron on main-process or Rust changes
 bun run dev -- --songpath <dir>    # pass app arguments after `--`
 bun run build                      # vite build + main-process bundle + release native build
 bun run package -- --arch x64      # build + installers for this OS (release/); same script CI runs
 bun run package:dir                # build + unpacked app only
-bun run native:build               # rebuild the Rust addon (restart `dev` afterwards)
+bun run native:build               # build the Rust addon once (`dev` does this itself)
 bun run native:types               # regenerate src/lib/native/types.gen.ts from the Rust types
 bun run typecheck                  # main process + renderer (run `native:build` once first)
 bun run dev:vite                   # vite-only dev (no Electron shell)
