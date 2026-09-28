@@ -29,7 +29,7 @@ impl AudioResampler {
 
         let params = SincInterpolationParameters {
             sinc_len: 256,
-            f_cutoff: 0.95,
+            f_cutoff: Some(0.95),
             window: WindowFunction::BlackmanHarris2,
             oversampling_factor: 256,
             interpolation: rubato::SincInterpolationType::Linear,

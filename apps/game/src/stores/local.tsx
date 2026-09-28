@@ -45,19 +45,17 @@ const localStoreSchema1_0_0 = v.pipe(
     ),
     scores: v.record(v.string(), v.record(v.string(), v.number())),
   }),
-  v.transform(
-    (data): v.InferInput<typeof localStoreSchema1_1_0> => ({
-      version: "1.1.0",
-      players: data.players,
-      playedSongs: {},
-      scores: Object.fromEntries(
-        Object.entries(data.scores).map(([userId, userScores]) => [
-          userId,
-          Object.fromEntries(Object.entries(userScores).map(([songHash, score]) => [songHash, { easy: score }])),
-        ]),
-      ),
-    }),
-  ),
+  v.transform((data): v.InferInput<typeof localStoreSchema1_1_0> => ({
+    version: "1.1.0",
+    players: data.players,
+    playedSongs: {},
+    scores: Object.fromEntries(
+      Object.entries(data.scores).map(([userId, userScores]) => [
+        userId,
+        Object.fromEntries(Object.entries(userScores).map(([songHash, score]) => [songHash, { easy: score }])),
+      ]),
+    ),
+  })),
   localStoreSchema1_1_0,
 );
 

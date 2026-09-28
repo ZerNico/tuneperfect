@@ -7,16 +7,16 @@
     "dev": "bun run email dev --port 3003"
   },
   "dependencies": {
-    "@react-email/components": "^1.0.10",
-    "@react-email/render": "^2.0.8",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.16",
-    "react-email": "^5.2.11"
+    "@types/react": "^19.3.0",
+    "react-email": "^6.11.0"
   },
   "peerDependencies": {
-    "typescript": "^6.0.0"
+    "typescript": "^7.0.2"
   }
 }

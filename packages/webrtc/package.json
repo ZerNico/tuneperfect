@@ -12,15 +12,15 @@
     "./contracts/app": "./src/contracts/app.ts"
   },
   "dependencies": {
-    "@orpc/client": "^1.14.4",
-    "@orpc/contract": "^1.14.4",
-    "@orpc/server": "^1.14.4",
-    "@orpc/shared": "^1.14.4",
-    "@orpc/standard-server": "^1.14.4",
-    "@orpc/standard-server-peer": "^1.14.4",
-    "valibot": "^1.4.1"
+    "@orpc/client": "^1.15.4",
+    "@orpc/contract": "^1.15.4",
+    "@orpc/server": "^1.15.4",
+    "@orpc/shared": "^1.15.4",
+    "@orpc/standard-server": "^1.15.4",
+    "@orpc/standard-server-peer": "^1.15.4",
+    "valibot": "^1.5.0"
   },
   "peerDependencies": {
-    "typescript": "^6.0.0"
+    "typescript": "^7.0.2"
   }
 }

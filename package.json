@@ -17,10 +17,10 @@
     "@tuneperfect/cli": "workspace:*"
   },
   "devDependencies": {
-    "eslint-plugin-solid": "^0.14.5",
-    "oxfmt": "^0.51.0",
-    "oxlint": "^1.68.0",
-    "turbo": "^2.9.16"
+    "eslint-plugin-solid": "^0.18.0",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "turbo": "^2.11.5"
   },
   "packageManager": "bun@1.3.14"
 }

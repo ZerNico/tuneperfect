@@ -9,68 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as NoAuthRouteImport } from './routes/_no-auth'
 import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as NoAuthVerifyEmailRouteImport } from './routes/_no-auth/verify-email'
-import { Route as NoAuthSignUpRouteImport } from './routes/_no-auth/sign-up'
-import { Route as NoAuthSignInRouteImport } from './routes/_no-auth/sign-in'
-import { Route as NoAuthResetPasswordRouteImport } from './routes/_no-auth/reset-password'
-import { Route as NoAuthForgotPasswordRouteImport } from './routes/_no-auth/forgot-password'
-import { Route as AuthEditProfileRouteImport } from './routes/_auth/edit-profile'
-import { Route as AuthCompleteProfileRouteImport } from './routes/_auth/complete-profile'
-import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
-import { Route as AuthNoLobbyRouteImport } from './routes/_auth/_no-lobby'
+import { Route as NoAuthRouteImport } from './routes/_no-auth'
 import { Route as AuthLobbyRouteImport } from './routes/_auth/_lobby'
-import { Route as AuthClubsIndexRouteImport } from './routes/_auth/clubs/index'
+import { Route as AuthNoLobbyRouteImport } from './routes/_auth/_no-lobby'
+import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
+import { Route as AuthCompleteProfileRouteImport } from './routes/_auth/complete-profile'
+import { Route as AuthEditProfileRouteImport } from './routes/_auth/edit-profile'
+import { Route as NoAuthForgotPasswordRouteImport } from './routes/_no-auth/forgot-password'
+import { Route as NoAuthResetPasswordRouteImport } from './routes/_no-auth/reset-password'
+import { Route as NoAuthSignInRouteImport } from './routes/_no-auth/sign-in'
+import { Route as NoAuthSignUpRouteImport } from './routes/_no-auth/sign-up'
+import { Route as NoAuthVerifyEmailRouteImport } from './routes/_no-auth/verify-email'
 import { Route as AuthLobbyIndexRouteImport } from './routes/_auth/_lobby/index'
-import { Route as AuthClubsIdRouteImport } from './routes/_auth/clubs/$id'
-import { Route as AuthLobbyPlayersRouteImport } from './routes/_auth/_lobby/players'
 import { Route as AuthLobbyConnectedRouteImport } from './routes/_auth/_lobby/_connected'
+import { Route as AuthLobbyPlayersRouteImport } from './routes/_auth/_lobby/players'
+import { Route as AuthClubsIndexRouteImport } from './routes/_auth/clubs/index'
+import { Route as AuthClubsIdRouteImport } from './routes/_auth/clubs/$id'
+import { Route as AuthLobbyConnectedSongsRouteImport } from './routes/_auth/_lobby/_connected/songs'
 import { Route as AuthNoLobbyJoinIndexRouteImport } from './routes/_auth/_no-lobby/join/index'
 import { Route as AuthNoLobbyJoinIdRouteImport } from './routes/_auth/_no-lobby/join/$id'
-import { Route as AuthLobbyConnectedSongsRouteImport } from './routes/_auth/_lobby/_connected/songs'
 
-const NoAuthRoute = NoAuthRouteImport.update({
-  id: '/_no-auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NoAuthVerifyEmailRoute = NoAuthVerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => NoAuthRoute,
+const NoAuthRoute = NoAuthRouteImport.update({
+  id: '/_no-auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const NoAuthSignUpRoute = NoAuthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => NoAuthRoute,
-} as any)
-const NoAuthSignInRoute = NoAuthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => NoAuthRoute,
-} as any)
-const NoAuthResetPasswordRoute = NoAuthResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => NoAuthRoute,
-} as any)
-const NoAuthForgotPasswordRoute = NoAuthForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => NoAuthRoute,
-} as any)
-const AuthEditProfileRoute = AuthEditProfileRouteImport.update({
-  id: '/edit-profile',
-  path: '/edit-profile',
+const AuthLobbyRoute = AuthLobbyRouteImport.update({
+  id: '/_lobby',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthCompleteProfileRoute = AuthCompleteProfileRouteImport.update({
-  id: '/complete-profile',
-  path: '/complete-profile',
+const AuthNoLobbyRoute = AuthNoLobbyRouteImport.update({
+  id: '/_no-lobby',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
@@ -78,37 +51,69 @@ const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
   path: '/change-password',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthNoLobbyRoute = AuthNoLobbyRouteImport.update({
-  id: '/_no-lobby',
+const AuthCompleteProfileRoute = AuthCompleteProfileRouteImport.update({
+  id: '/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthLobbyRoute = AuthLobbyRouteImport.update({
-  id: '/_lobby',
+const AuthEditProfileRoute = AuthEditProfileRouteImport.update({
+  id: '/edit-profile',
+  path: '/edit-profile',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthClubsIndexRoute = AuthClubsIndexRouteImport.update({
-  id: '/clubs/',
-  path: '/clubs/',
-  getParentRoute: () => AuthRoute,
+const NoAuthForgotPasswordRoute = NoAuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+const NoAuthResetPasswordRoute = NoAuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+const NoAuthSignInRoute = NoAuthSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+const NoAuthSignUpRoute = NoAuthSignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => NoAuthRoute,
+} as any)
+const NoAuthVerifyEmailRoute = NoAuthVerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => NoAuthRoute,
 } as any)
 const AuthLobbyIndexRoute = AuthLobbyIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthLobbyRoute,
 } as any)
-const AuthClubsIdRoute = AuthClubsIdRouteImport.update({
-  id: '/clubs/$id',
-  path: '/clubs/$id',
-  getParentRoute: () => AuthRoute,
+const AuthLobbyConnectedRoute = AuthLobbyConnectedRouteImport.update({
+  id: '/_connected',
+  getParentRoute: () => AuthLobbyRoute,
 } as any)
 const AuthLobbyPlayersRoute = AuthLobbyPlayersRouteImport.update({
   id: '/players',
   path: '/players',
   getParentRoute: () => AuthLobbyRoute,
 } as any)
-const AuthLobbyConnectedRoute = AuthLobbyConnectedRouteImport.update({
-  id: '/_connected',
-  getParentRoute: () => AuthLobbyRoute,
+const AuthClubsIndexRoute = AuthClubsIndexRouteImport.update({
+  id: '/clubs/',
+  path: '/clubs/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthClubsIdRoute = AuthClubsIdRouteImport.update({
+  id: '/clubs/$id',
+  path: '/clubs/$id',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLobbyConnectedSongsRoute = AuthLobbyConnectedSongsRouteImport.update({
+  id: '/songs',
+  path: '/songs',
+  getParentRoute: () => AuthLobbyConnectedRoute,
 } as any)
 const AuthNoLobbyJoinIndexRoute = AuthNoLobbyJoinIndexRouteImport.update({
   id: '/join/',
@@ -119,11 +124,6 @@ const AuthNoLobbyJoinIdRoute = AuthNoLobbyJoinIdRouteImport.update({
   id: '/join/$id',
   path: '/join/$id',
   getParentRoute: () => AuthNoLobbyRoute,
-} as any)
-const AuthLobbyConnectedSongsRoute = AuthLobbyConnectedSongsRouteImport.update({
-  id: '/songs',
-  path: '/songs',
-  getParentRoute: () => AuthLobbyConnectedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -249,13 +249,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/_no-auth': {
-      id: '/_no-auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof NoAuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -263,60 +256,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_no-auth/verify-email': {
-      id: '/_no-auth/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof NoAuthVerifyEmailRouteImport
-      parentRoute: typeof NoAuthRoute
+    '/_no-auth': {
+      id: '/_no-auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof NoAuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_no-auth/sign-up': {
-      id: '/_no-auth/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof NoAuthSignUpRouteImport
-      parentRoute: typeof NoAuthRoute
-    }
-    '/_no-auth/sign-in': {
-      id: '/_no-auth/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof NoAuthSignInRouteImport
-      parentRoute: typeof NoAuthRoute
-    }
-    '/_no-auth/reset-password': {
-      id: '/_no-auth/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof NoAuthResetPasswordRouteImport
-      parentRoute: typeof NoAuthRoute
-    }
-    '/_no-auth/forgot-password': {
-      id: '/_no-auth/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof NoAuthForgotPasswordRouteImport
-      parentRoute: typeof NoAuthRoute
-    }
-    '/_auth/edit-profile': {
-      id: '/_auth/edit-profile'
-      path: '/edit-profile'
-      fullPath: '/edit-profile'
-      preLoaderRoute: typeof AuthEditProfileRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/complete-profile': {
-      id: '/_auth/complete-profile'
-      path: '/complete-profile'
-      fullPath: '/complete-profile'
-      preLoaderRoute: typeof AuthCompleteProfileRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/change-password': {
-      id: '/_auth/change-password'
-      path: '/change-password'
-      fullPath: '/change-password'
-      preLoaderRoute: typeof AuthChangePasswordRouteImport
+    '/_auth/_lobby': {
+      id: '/_auth/_lobby'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthLobbyRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/_no-lobby': {
@@ -326,19 +277,61 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthNoLobbyRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/_lobby': {
-      id: '/_auth/_lobby'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthLobbyRouteImport
+    '/_auth/change-password': {
+      id: '/_auth/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AuthChangePasswordRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/clubs/': {
-      id: '/_auth/clubs/'
-      path: '/clubs'
-      fullPath: '/clubs/'
-      preLoaderRoute: typeof AuthClubsIndexRouteImport
+    '/_auth/complete-profile': {
+      id: '/_auth/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof AuthCompleteProfileRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_auth/edit-profile': {
+      id: '/_auth/edit-profile'
+      path: '/edit-profile'
+      fullPath: '/edit-profile'
+      preLoaderRoute: typeof AuthEditProfileRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_no-auth/forgot-password': {
+      id: '/_no-auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof NoAuthForgotPasswordRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/reset-password': {
+      id: '/_no-auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof NoAuthResetPasswordRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/sign-in': {
+      id: '/_no-auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof NoAuthSignInRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/sign-up': {
+      id: '/_no-auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof NoAuthSignUpRouteImport
+      parentRoute: typeof NoAuthRoute
+    }
+    '/_no-auth/verify-email': {
+      id: '/_no-auth/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof NoAuthVerifyEmailRouteImport
+      parentRoute: typeof NoAuthRoute
     }
     '/_auth/_lobby/': {
       id: '/_auth/_lobby/'
@@ -347,12 +340,12 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthLobbyIndexRouteImport
       parentRoute: typeof AuthLobbyRoute
     }
-    '/_auth/clubs/$id': {
-      id: '/_auth/clubs/$id'
-      path: '/clubs/$id'
-      fullPath: '/clubs/$id'
-      preLoaderRoute: typeof AuthClubsIdRouteImport
-      parentRoute: typeof AuthRoute
+    '/_auth/_lobby/_connected': {
+      id: '/_auth/_lobby/_connected'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthLobbyConnectedRouteImport
+      parentRoute: typeof AuthLobbyRoute
     }
     '/_auth/_lobby/players': {
       id: '/_auth/_lobby/players'
@@ -361,12 +354,26 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthLobbyPlayersRouteImport
       parentRoute: typeof AuthLobbyRoute
     }
-    '/_auth/_lobby/_connected': {
-      id: '/_auth/_lobby/_connected'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthLobbyConnectedRouteImport
-      parentRoute: typeof AuthLobbyRoute
+    '/_auth/clubs/': {
+      id: '/_auth/clubs/'
+      path: '/clubs'
+      fullPath: '/clubs/'
+      preLoaderRoute: typeof AuthClubsIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/clubs/$id': {
+      id: '/_auth/clubs/$id'
+      path: '/clubs/$id'
+      fullPath: '/clubs/$id'
+      preLoaderRoute: typeof AuthClubsIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/_lobby/_connected/songs': {
+      id: '/_auth/_lobby/_connected/songs'
+      path: '/songs'
+      fullPath: '/songs'
+      preLoaderRoute: typeof AuthLobbyConnectedSongsRouteImport
+      parentRoute: typeof AuthLobbyConnectedRoute
     }
     '/_auth/_no-lobby/join/': {
       id: '/_auth/_no-lobby/join/'
@@ -381,13 +388,6 @@ declare module '@tanstack/solid-router' {
       fullPath: '/join/$id'
       preLoaderRoute: typeof AuthNoLobbyJoinIdRouteImport
       parentRoute: typeof AuthNoLobbyRoute
-    }
-    '/_auth/_lobby/_connected/songs': {
-      id: '/_auth/_lobby/_connected/songs'
-      path: '/songs'
-      fullPath: '/songs'
-      preLoaderRoute: typeof AuthLobbyConnectedSongsRouteImport
-      parentRoute: typeof AuthLobbyConnectedRoute
     }
   }
 }

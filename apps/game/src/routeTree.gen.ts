@@ -9,54 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as QuitRouteImport } from './routes/quit'
-import { Route as LoadingRouteImport } from './routes/loading'
-import { Route as HomeRouteImport } from './routes/home'
-import { Route as CreateLobbyRouteImport } from './routes/create-lobby'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SingIndexRouteImport } from './routes/sing/index'
-import { Route as SettingsIndexRouteImport } from './routes/settings/index'
-import { Route as PartyIndexRouteImport } from './routes/party/index'
-import { Route as LobbyIndexRouteImport } from './routes/lobby/index'
+import { Route as CreateLobbyRouteImport } from './routes/create-lobby'
+import { Route as HomeRouteImport } from './routes/home'
+import { Route as LoadingRouteImport } from './routes/loading'
+import { Route as QuitRouteImport } from './routes/quit'
 import { Route as GameIndexRouteImport } from './routes/game/index'
-import { Route as SingSelectRouteImport } from './routes/sing/select'
-import { Route as SingOnlineLoadingRouteImport } from './routes/sing/online-loading'
-import { Route as SingOnlineRouteImport } from './routes/sing/online'
-import { Route as SettingsUsdbRouteImport } from './routes/settings/usdb'
-import { Route as SettingsCreditsRouteImport } from './routes/settings/credits'
-import { Route as LobbySelectClubRouteImport } from './routes/lobby/select-club'
-import { Route as LobbyAddLocalPlayerRouteImport } from './routes/lobby/add-local-player'
-import { Route as LobbyIdRouteImport } from './routes/lobby/$id'
-import { Route as GameScoreRouteImport } from './routes/game/score'
-import { Route as GameRestartRouteImport } from './routes/game/restart'
 import { Route as GameNextRouteImport } from './routes/game/next'
-import { Route as SettingsVolumeIndexRouteImport } from './routes/settings/volume/index'
-import { Route as SettingsSongsIndexRouteImport } from './routes/settings/songs/index'
-import { Route as SettingsMicrophonesIndexRouteImport } from './routes/settings/microphones/index'
-import { Route as SettingsLocalPlayersIndexRouteImport } from './routes/settings/local-players/index'
-import { Route as SettingsGeneralIndexRouteImport } from './routes/settings/general/index'
-import { Route as PartyVersusIndexRouteImport } from './routes/party/versus/index'
-import { Route as PartyTicTacToeIndexRouteImport } from './routes/party/tic-tac-toe/index'
-import { Route as SettingsSongsPathRouteImport } from './routes/settings/songs/$path'
-import { Route as SettingsMicrophonesIdRouteImport } from './routes/settings/microphones/$id'
-import { Route as SettingsLocalPlayersIdRouteImport } from './routes/settings/local-players/$id'
-import { Route as PartyVersusSettingsRouteImport } from './routes/party/versus/settings'
-import { Route as PartyTicTacToeSettingsRouteImport } from './routes/party/tic-tac-toe/settings'
+import { Route as GameRestartRouteImport } from './routes/game/restart'
+import { Route as GameScoreRouteImport } from './routes/game/score'
+import { Route as LobbyIndexRouteImport } from './routes/lobby/index'
+import { Route as LobbyIdRouteImport } from './routes/lobby/$id'
+import { Route as LobbyAddLocalPlayerRouteImport } from './routes/lobby/add-local-player'
+import { Route as LobbySelectClubRouteImport } from './routes/lobby/select-club'
+import { Route as PartyIndexRouteImport } from './routes/party/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as SettingsCreditsRouteImport } from './routes/settings/credits'
+import { Route as SettingsUsdbRouteImport } from './routes/settings/usdb'
+import { Route as SingIndexRouteImport } from './routes/sing/index'
+import { Route as SingOnlineRouteImport } from './routes/sing/online'
+import { Route as SingOnlineLoadingRouteImport } from './routes/sing/online-loading'
+import { Route as SingSelectRouteImport } from './routes/sing/select'
 import { Route as LobbyLocalIdRouteImport } from './routes/lobby/local/$id'
+import { Route as PartyTicTacToeIndexRouteImport } from './routes/party/tic-tac-toe/index'
+import { Route as PartyTicTacToeSettingsRouteImport } from './routes/party/tic-tac-toe/settings'
+import { Route as PartyVersusIndexRouteImport } from './routes/party/versus/index'
+import { Route as PartyVersusSettingsRouteImport } from './routes/party/versus/settings'
+import { Route as SettingsGeneralIndexRouteImport } from './routes/settings/general/index'
+import { Route as SettingsLocalPlayersIndexRouteImport } from './routes/settings/local-players/index'
+import { Route as SettingsLocalPlayersIdRouteImport } from './routes/settings/local-players/$id'
+import { Route as SettingsMicrophonesIndexRouteImport } from './routes/settings/microphones/index'
+import { Route as SettingsMicrophonesIdRouteImport } from './routes/settings/microphones/$id'
+import { Route as SettingsSongsIndexRouteImport } from './routes/settings/songs/index'
+import { Route as SettingsSongsPathRouteImport } from './routes/settings/songs/$path'
+import { Route as SettingsVolumeIndexRouteImport } from './routes/settings/volume/index'
 
-const QuitRoute = QuitRouteImport.update({
-  id: '/quit',
-  path: '/quit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoadingRoute = LoadingRouteImport.update({
-  id: '/loading',
-  path: '/loading',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HomeRoute = HomeRouteImport.update({
-  id: '/home',
-  path: '/home',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateLobbyRoute = CreateLobbyRouteImport.update({
@@ -64,29 +54,19 @@ const CreateLobbyRoute = CreateLobbyRouteImport.update({
   path: '/create-lobby',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SingIndexRoute = SingIndexRouteImport.update({
-  id: '/sing/',
-  path: '/sing/',
+const LoadingRoute = LoadingRouteImport.update({
+  id: '/loading',
+  path: '/loading',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyIndexRoute = PartyIndexRouteImport.update({
-  id: '/party/',
-  path: '/party/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LobbyIndexRoute = LobbyIndexRouteImport.update({
-  id: '/lobby/',
-  path: '/lobby/',
+const QuitRoute = QuitRouteImport.update({
+  id: '/quit',
+  path: '/quit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GameIndexRoute = GameIndexRouteImport.update({
@@ -94,49 +74,9 @@ const GameIndexRoute = GameIndexRouteImport.update({
   path: '/game/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SingSelectRoute = SingSelectRouteImport.update({
-  id: '/sing/select',
-  path: '/sing/select',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SingOnlineLoadingRoute = SingOnlineLoadingRouteImport.update({
-  id: '/sing/online-loading',
-  path: '/sing/online-loading',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SingOnlineRoute = SingOnlineRouteImport.update({
-  id: '/sing/online',
-  path: '/sing/online',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsUsdbRoute = SettingsUsdbRouteImport.update({
-  id: '/settings/usdb',
-  path: '/settings/usdb',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsCreditsRoute = SettingsCreditsRouteImport.update({
-  id: '/settings/credits',
-  path: '/settings/credits',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LobbySelectClubRoute = LobbySelectClubRouteImport.update({
-  id: '/lobby/select-club',
-  path: '/lobby/select-club',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LobbyAddLocalPlayerRoute = LobbyAddLocalPlayerRouteImport.update({
-  id: '/lobby/add-local-player',
-  path: '/lobby/add-local-player',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LobbyIdRoute = LobbyIdRouteImport.update({
-  id: '/lobby/$id',
-  path: '/lobby/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GameScoreRoute = GameScoreRouteImport.update({
-  id: '/game/score',
-  path: '/game/score',
+const GameNextRoute = GameNextRouteImport.update({
+  id: '/game/next',
+  path: '/game/next',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GameRestartRoute = GameRestartRouteImport.update({
@@ -144,19 +84,110 @@ const GameRestartRoute = GameRestartRouteImport.update({
   path: '/game/restart',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GameNextRoute = GameNextRouteImport.update({
-  id: '/game/next',
-  path: '/game/next',
+const GameScoreRoute = GameScoreRouteImport.update({
+  id: '/game/score',
+  path: '/game/score',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsVolumeIndexRoute = SettingsVolumeIndexRouteImport.update({
-  id: '/settings/volume/',
-  path: '/settings/volume/',
+const LobbyIndexRoute = LobbyIndexRouteImport.update({
+  id: '/lobby/',
+  path: '/lobby/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsSongsIndexRoute = SettingsSongsIndexRouteImport.update({
-  id: '/settings/songs/',
-  path: '/settings/songs/',
+const LobbyIdRoute = LobbyIdRouteImport.update({
+  id: '/lobby/$id',
+  path: '/lobby/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LobbyAddLocalPlayerRoute = LobbyAddLocalPlayerRouteImport.update({
+  id: '/lobby/add-local-player',
+  path: '/lobby/add-local-player',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LobbySelectClubRoute = LobbySelectClubRouteImport.update({
+  id: '/lobby/select-club',
+  path: '/lobby/select-club',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyIndexRoute = PartyIndexRouteImport.update({
+  id: '/party/',
+  path: '/party/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsCreditsRoute = SettingsCreditsRouteImport.update({
+  id: '/settings/credits',
+  path: '/settings/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsdbRoute = SettingsUsdbRouteImport.update({
+  id: '/settings/usdb',
+  path: '/settings/usdb',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingIndexRoute = SingIndexRouteImport.update({
+  id: '/sing/',
+  path: '/sing/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingOnlineRoute = SingOnlineRouteImport.update({
+  id: '/sing/online',
+  path: '/sing/online',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingOnlineLoadingRoute = SingOnlineLoadingRouteImport.update({
+  id: '/sing/online-loading',
+  path: '/sing/online-loading',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SingSelectRoute = SingSelectRouteImport.update({
+  id: '/sing/select',
+  path: '/sing/select',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LobbyLocalIdRoute = LobbyLocalIdRouteImport.update({
+  id: '/lobby/local/$id',
+  path: '/lobby/local/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyTicTacToeIndexRoute = PartyTicTacToeIndexRouteImport.update({
+  id: '/party/tic-tac-toe/',
+  path: '/party/tic-tac-toe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyTicTacToeSettingsRoute = PartyTicTacToeSettingsRouteImport.update({
+  id: '/party/tic-tac-toe/settings',
+  path: '/party/tic-tac-toe/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyVersusIndexRoute = PartyVersusIndexRouteImport.update({
+  id: '/party/versus/',
+  path: '/party/versus/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyVersusSettingsRoute = PartyVersusSettingsRouteImport.update({
+  id: '/party/versus/settings',
+  path: '/party/versus/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsGeneralIndexRoute = SettingsGeneralIndexRouteImport.update({
+  id: '/settings/general/',
+  path: '/settings/general/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsLocalPlayersIndexRoute =
+  SettingsLocalPlayersIndexRouteImport.update({
+    id: '/settings/local-players/',
+    path: '/settings/local-players/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SettingsLocalPlayersIdRoute = SettingsLocalPlayersIdRouteImport.update({
+  id: '/settings/local-players/$id',
+  path: '/settings/local-players/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsMicrophonesIndexRoute =
@@ -165,25 +196,14 @@ const SettingsMicrophonesIndexRoute =
     path: '/settings/microphones/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const SettingsLocalPlayersIndexRoute =
-  SettingsLocalPlayersIndexRouteImport.update({
-    id: '/settings/local-players/',
-    path: '/settings/local-players/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const SettingsGeneralIndexRoute = SettingsGeneralIndexRouteImport.update({
-  id: '/settings/general/',
-  path: '/settings/general/',
+const SettingsMicrophonesIdRoute = SettingsMicrophonesIdRouteImport.update({
+  id: '/settings/microphones/$id',
+  path: '/settings/microphones/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PartyVersusIndexRoute = PartyVersusIndexRouteImport.update({
-  id: '/party/versus/',
-  path: '/party/versus/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyTicTacToeIndexRoute = PartyTicTacToeIndexRouteImport.update({
-  id: '/party/tic-tac-toe/',
-  path: '/party/tic-tac-toe/',
+const SettingsSongsIndexRoute = SettingsSongsIndexRouteImport.update({
+  id: '/settings/songs/',
+  path: '/settings/songs/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsSongsPathRoute = SettingsSongsPathRouteImport.update({
@@ -191,29 +211,9 @@ const SettingsSongsPathRoute = SettingsSongsPathRouteImport.update({
   path: '/settings/songs/$path',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsMicrophonesIdRoute = SettingsMicrophonesIdRouteImport.update({
-  id: '/settings/microphones/$id',
-  path: '/settings/microphones/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsLocalPlayersIdRoute = SettingsLocalPlayersIdRouteImport.update({
-  id: '/settings/local-players/$id',
-  path: '/settings/local-players/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyVersusSettingsRoute = PartyVersusSettingsRouteImport.update({
-  id: '/party/versus/settings',
-  path: '/party/versus/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartyTicTacToeSettingsRoute = PartyTicTacToeSettingsRouteImport.update({
-  id: '/party/tic-tac-toe/settings',
-  path: '/party/tic-tac-toe/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LobbyLocalIdRoute = LobbyLocalIdRouteImport.update({
-  id: '/lobby/local/$id',
-  path: '/lobby/local/$id',
+const SettingsVolumeIndexRoute = SettingsVolumeIndexRouteImport.update({
+  id: '/settings/volume/',
+  path: '/settings/volume/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -476,25 +476,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/quit': {
-      id: '/quit'
-      path: '/quit'
-      fullPath: '/quit'
-      preLoaderRoute: typeof QuitRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/loading': {
-      id: '/loading'
-      path: '/loading'
-      fullPath: '/loading'
-      preLoaderRoute: typeof LoadingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home': {
-      id: '/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create-lobby': {
@@ -504,39 +490,25 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof CreateLobbyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sing/': {
-      id: '/sing/'
-      path: '/sing'
-      fullPath: '/sing/'
-      preLoaderRoute: typeof SingIndexRouteImport
+    '/loading': {
+      id: '/loading'
+      path: '/loading'
+      fullPath: '/loading'
+      preLoaderRoute: typeof LoadingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/': {
-      id: '/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/party/': {
-      id: '/party/'
-      path: '/party'
-      fullPath: '/party/'
-      preLoaderRoute: typeof PartyIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lobby/': {
-      id: '/lobby/'
-      path: '/lobby'
-      fullPath: '/lobby/'
-      preLoaderRoute: typeof LobbyIndexRouteImport
+    '/quit': {
+      id: '/quit'
+      path: '/quit'
+      fullPath: '/quit'
+      preLoaderRoute: typeof QuitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/game/': {
@@ -546,67 +518,11 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof GameIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sing/select': {
-      id: '/sing/select'
-      path: '/sing/select'
-      fullPath: '/sing/select'
-      preLoaderRoute: typeof SingSelectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sing/online-loading': {
-      id: '/sing/online-loading'
-      path: '/sing/online-loading'
-      fullPath: '/sing/online-loading'
-      preLoaderRoute: typeof SingOnlineLoadingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sing/online': {
-      id: '/sing/online'
-      path: '/sing/online'
-      fullPath: '/sing/online'
-      preLoaderRoute: typeof SingOnlineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/usdb': {
-      id: '/settings/usdb'
-      path: '/settings/usdb'
-      fullPath: '/settings/usdb'
-      preLoaderRoute: typeof SettingsUsdbRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/credits': {
-      id: '/settings/credits'
-      path: '/settings/credits'
-      fullPath: '/settings/credits'
-      preLoaderRoute: typeof SettingsCreditsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lobby/select-club': {
-      id: '/lobby/select-club'
-      path: '/lobby/select-club'
-      fullPath: '/lobby/select-club'
-      preLoaderRoute: typeof LobbySelectClubRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lobby/add-local-player': {
-      id: '/lobby/add-local-player'
-      path: '/lobby/add-local-player'
-      fullPath: '/lobby/add-local-player'
-      preLoaderRoute: typeof LobbyAddLocalPlayerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lobby/$id': {
-      id: '/lobby/$id'
-      path: '/lobby/$id'
-      fullPath: '/lobby/$id'
-      preLoaderRoute: typeof LobbyIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/game/score': {
-      id: '/game/score'
-      path: '/game/score'
-      fullPath: '/game/score'
-      preLoaderRoute: typeof GameScoreRouteImport
+    '/game/next': {
+      id: '/game/next'
+      path: '/game/next'
+      fullPath: '/game/next'
+      preLoaderRoute: typeof GameNextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/game/restart': {
@@ -616,53 +532,102 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof GameRestartRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/game/next': {
-      id: '/game/next'
-      path: '/game/next'
-      fullPath: '/game/next'
-      preLoaderRoute: typeof GameNextRouteImport
+    '/game/score': {
+      id: '/game/score'
+      path: '/game/score'
+      fullPath: '/game/score'
+      preLoaderRoute: typeof GameScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/volume/': {
-      id: '/settings/volume/'
-      path: '/settings/volume'
-      fullPath: '/settings/volume/'
-      preLoaderRoute: typeof SettingsVolumeIndexRouteImport
+    '/lobby/': {
+      id: '/lobby/'
+      path: '/lobby'
+      fullPath: '/lobby/'
+      preLoaderRoute: typeof LobbyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/songs/': {
-      id: '/settings/songs/'
-      path: '/settings/songs'
-      fullPath: '/settings/songs/'
-      preLoaderRoute: typeof SettingsSongsIndexRouteImport
+    '/lobby/$id': {
+      id: '/lobby/$id'
+      path: '/lobby/$id'
+      fullPath: '/lobby/$id'
+      preLoaderRoute: typeof LobbyIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/microphones/': {
-      id: '/settings/microphones/'
-      path: '/settings/microphones'
-      fullPath: '/settings/microphones/'
-      preLoaderRoute: typeof SettingsMicrophonesIndexRouteImport
+    '/lobby/add-local-player': {
+      id: '/lobby/add-local-player'
+      path: '/lobby/add-local-player'
+      fullPath: '/lobby/add-local-player'
+      preLoaderRoute: typeof LobbyAddLocalPlayerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/local-players/': {
-      id: '/settings/local-players/'
-      path: '/settings/local-players'
-      fullPath: '/settings/local-players/'
-      preLoaderRoute: typeof SettingsLocalPlayersIndexRouteImport
+    '/lobby/select-club': {
+      id: '/lobby/select-club'
+      path: '/lobby/select-club'
+      fullPath: '/lobby/select-club'
+      preLoaderRoute: typeof LobbySelectClubRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/general/': {
-      id: '/settings/general/'
-      path: '/settings/general'
-      fullPath: '/settings/general/'
-      preLoaderRoute: typeof SettingsGeneralIndexRouteImport
+    '/party/': {
+      id: '/party/'
+      path: '/party'
+      fullPath: '/party/'
+      preLoaderRoute: typeof PartyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/party/versus/': {
-      id: '/party/versus/'
-      path: '/party/versus'
-      fullPath: '/party/versus/'
-      preLoaderRoute: typeof PartyVersusIndexRouteImport
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/credits': {
+      id: '/settings/credits'
+      path: '/settings/credits'
+      fullPath: '/settings/credits'
+      preLoaderRoute: typeof SettingsCreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/usdb': {
+      id: '/settings/usdb'
+      path: '/settings/usdb'
+      fullPath: '/settings/usdb'
+      preLoaderRoute: typeof SettingsUsdbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/': {
+      id: '/sing/'
+      path: '/sing'
+      fullPath: '/sing/'
+      preLoaderRoute: typeof SingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/online': {
+      id: '/sing/online'
+      path: '/sing/online'
+      fullPath: '/sing/online'
+      preLoaderRoute: typeof SingOnlineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/online-loading': {
+      id: '/sing/online-loading'
+      path: '/sing/online-loading'
+      fullPath: '/sing/online-loading'
+      preLoaderRoute: typeof SingOnlineLoadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sing/select': {
+      id: '/sing/select'
+      path: '/sing/select'
+      fullPath: '/sing/select'
+      preLoaderRoute: typeof SingSelectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lobby/local/$id': {
+      id: '/lobby/local/$id'
+      path: '/lobby/local/$id'
+      fullPath: '/lobby/local/$id'
+      preLoaderRoute: typeof LobbyLocalIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party/tic-tac-toe/': {
@@ -672,25 +637,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof PartyTicTacToeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/songs/$path': {
-      id: '/settings/songs/$path'
-      path: '/settings/songs/$path'
-      fullPath: '/settings/songs/$path'
-      preLoaderRoute: typeof SettingsSongsPathRouteImport
+    '/party/tic-tac-toe/settings': {
+      id: '/party/tic-tac-toe/settings'
+      path: '/party/tic-tac-toe/settings'
+      fullPath: '/party/tic-tac-toe/settings'
+      preLoaderRoute: typeof PartyTicTacToeSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/microphones/$id': {
-      id: '/settings/microphones/$id'
-      path: '/settings/microphones/$id'
-      fullPath: '/settings/microphones/$id'
-      preLoaderRoute: typeof SettingsMicrophonesIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/local-players/$id': {
-      id: '/settings/local-players/$id'
-      path: '/settings/local-players/$id'
-      fullPath: '/settings/local-players/$id'
-      preLoaderRoute: typeof SettingsLocalPlayersIdRouteImport
+    '/party/versus/': {
+      id: '/party/versus/'
+      path: '/party/versus'
+      fullPath: '/party/versus/'
+      preLoaderRoute: typeof PartyVersusIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/party/versus/settings': {
@@ -700,18 +658,60 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof PartyVersusSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/party/tic-tac-toe/settings': {
-      id: '/party/tic-tac-toe/settings'
-      path: '/party/tic-tac-toe/settings'
-      fullPath: '/party/tic-tac-toe/settings'
-      preLoaderRoute: typeof PartyTicTacToeSettingsRouteImport
+    '/settings/general/': {
+      id: '/settings/general/'
+      path: '/settings/general'
+      fullPath: '/settings/general/'
+      preLoaderRoute: typeof SettingsGeneralIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lobby/local/$id': {
-      id: '/lobby/local/$id'
-      path: '/lobby/local/$id'
-      fullPath: '/lobby/local/$id'
-      preLoaderRoute: typeof LobbyLocalIdRouteImport
+    '/settings/local-players/': {
+      id: '/settings/local-players/'
+      path: '/settings/local-players'
+      fullPath: '/settings/local-players/'
+      preLoaderRoute: typeof SettingsLocalPlayersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/local-players/$id': {
+      id: '/settings/local-players/$id'
+      path: '/settings/local-players/$id'
+      fullPath: '/settings/local-players/$id'
+      preLoaderRoute: typeof SettingsLocalPlayersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/microphones/': {
+      id: '/settings/microphones/'
+      path: '/settings/microphones'
+      fullPath: '/settings/microphones/'
+      preLoaderRoute: typeof SettingsMicrophonesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/microphones/$id': {
+      id: '/settings/microphones/$id'
+      path: '/settings/microphones/$id'
+      fullPath: '/settings/microphones/$id'
+      preLoaderRoute: typeof SettingsMicrophonesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/songs/': {
+      id: '/settings/songs/'
+      path: '/settings/songs'
+      fullPath: '/settings/songs/'
+      preLoaderRoute: typeof SettingsSongsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/songs/$path': {
+      id: '/settings/songs/$path'
+      path: '/settings/songs/$path'
+      fullPath: '/settings/songs/$path'
+      preLoaderRoute: typeof SettingsSongsPathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/volume/': {
+      id: '/settings/volume/'
+      path: '/settings/volume'
+      fullPath: '/settings/volume/'
+      preLoaderRoute: typeof SettingsVolumeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

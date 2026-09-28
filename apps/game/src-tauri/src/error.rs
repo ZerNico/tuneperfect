@@ -43,6 +43,6 @@ macro_rules! impl_from_errors {
 
 impl_from_errors!(
     (std::io::Error, IoError),
-    (lofty::error::LoftyError, LoftyError),
+    (lofty::error::FileParseError, LoftyError),
     (cpal::Error, CpalError)
 );

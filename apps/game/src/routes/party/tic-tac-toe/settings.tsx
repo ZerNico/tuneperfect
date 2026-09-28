@@ -179,23 +179,21 @@ function TicTacToeSettingsComponent() {
           <span>{value === "manual" ? t("party.ticTacToe.singerManual") : t("party.ticTacToe.singerRandom")}</span>
         ),
       },
-      ...users().map(
-        (user): MenuItem => ({
-          type: "custom",
-          interactive: true,
-          render: (ctx) => (
-            <TeamAssignmentRow
-              user={user}
-              assignment={getAssignment(user)}
-              selected={ctx.selected()}
-              gradient={ctx.gradient()}
-              teamColor={teamColor}
-              onCycle={(direction) => cycleAssignment(user, direction)}
-              onSelect={(assignment) => setAssignment(user, assignment)}
-            />
-          ),
-        }),
-      ),
+      ...users().map((user): MenuItem => ({
+        type: "custom",
+        interactive: true,
+        render: (ctx) => (
+          <TeamAssignmentRow
+            user={user}
+            assignment={getAssignment(user)}
+            selected={ctx.selected()}
+            gradient={ctx.gradient()}
+            teamColor={teamColor}
+            onCycle={(direction) => cycleAssignment(user, direction)}
+            onSelect={(assignment) => setAssignment(user, assignment)}
+          />
+        ),
+      })),
       {
         type: "button",
         label: t("party.ticTacToe.start"),

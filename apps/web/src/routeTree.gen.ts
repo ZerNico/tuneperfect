@@ -9,16 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
-import { Route as DownloadMacosRouteImport } from './routes/download/macos'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
+import { Route as DownloadMacosRouteImport } from './routes/download/macos'
+import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 
-const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
-  id: '/terms-of-service',
-  path: '/terms-of-service',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -26,14 +26,14 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
-  id: '/download/windows',
-  path: '/download/windows',
+const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
+  id: '/download/linux',
+  path: '/download/linux',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadMacosRoute = DownloadMacosRouteImport.update({
@@ -41,9 +41,9 @@ const DownloadMacosRoute = DownloadMacosRouteImport.update({
   path: '/download/macos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
-  id: '/download/linux',
-  path: '/download/linux',
+const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
+  id: '/download/windows',
+  path: '/download/windows',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -110,11 +110,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    '/terms-of-service': {
-      id: '/terms-of-service'
-      path: '/terms-of-service'
-      fullPath: '/terms-of-service'
-      preLoaderRoute: typeof TermsOfServiceRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy-policy': {
@@ -124,18 +124,18 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/download/windows': {
-      id: '/download/windows'
-      path: '/download/windows'
-      fullPath: '/download/windows'
-      preLoaderRoute: typeof DownloadWindowsRouteImport
+    '/download/linux': {
+      id: '/download/linux'
+      path: '/download/linux'
+      fullPath: '/download/linux'
+      preLoaderRoute: typeof DownloadLinuxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download/macos': {
@@ -145,11 +145,11 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof DownloadMacosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/download/linux': {
-      id: '/download/linux'
-      path: '/download/linux'
-      fullPath: '/download/linux'
-      preLoaderRoute: typeof DownloadLinuxRouteImport
+    '/download/windows': {
+      id: '/download/windows'
+      path: '/download/windows'
+      fullPath: '/download/windows'
+      preLoaderRoute: typeof DownloadWindowsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
