@@ -34,7 +34,7 @@ export default function Button(props: ButtonProps) {
       if (event.action === "confirm") {
         setPressed(false);
 
-        if (props.selected) {
+        if (props.selected && !props.loading) {
           props.onClick?.();
         }
       }

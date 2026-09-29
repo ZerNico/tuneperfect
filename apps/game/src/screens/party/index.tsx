@@ -6,7 +6,6 @@ import Layout from "~/components/layout";
 import ModeCardRow, { type ModeCardItem } from "~/components/mode-card-row";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
-import { playSound } from "~/lib/sound";
 
 /** Board with an X and an O, drawn solid like the Phosphor Fill icons. */
 function IconTicTacToe(props: { class?: string }) {
@@ -47,7 +46,6 @@ export default function PartyScreen() {
       description: t("party.versusDescription"),
       action: () => {
         navigate({ to: "/party/versus/settings" });
-        playSound("confirm");
       },
     },
     {
@@ -57,7 +55,6 @@ export default function PartyScreen() {
       description: t("party.ticTacToeDescription"),
       action: () => {
         navigate({ to: "/party/tic-tac-toe/settings" });
-        playSound("confirm");
       },
     },
   ];

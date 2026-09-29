@@ -1,8 +1,7 @@
-import { type Component, createEffect, createSignal, For, on, Show } from "solid-js";
+import { type Component, createSignal, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { playSound } from "~/lib/sound";
 
@@ -26,40 +25,38 @@ interface ModeCardRowProps {
  * jump under a still pointer while the cards resize.
  */
 export default function ModeCardRow(props: ModeCardRowProps) {
-  const [pressed, setPressed] = createSignal(false);
-  const { position, increment, decrement, set } = createLoop(() => props.cards.length);
+  // Pressing a card with the pointer; the keyboard/gamepad press comes from the list.
+  const [pointerPressed, setPointerPressed] = createSignal(false);
 
-  useNavigation(() => ({
+  const activate = (index: number) => {
+    const card = props.cards[index];
+    if (!card) return;
+    playSound("confirm");
+    card.action();
+  };
+
+  const list = createListNavigation({
+    get count() {
+      return props.cards.length;
+    },
     layer: 0,
+    keys: ["left", "right"],
+    onActivate: activate,
     onKeydown(event) {
       if (event.action === "back") {
         props.onBack();
         playSound("confirm");
-      } else if (event.action === "left") {
-        decrement();
-      } else if (event.action === "right") {
-        increment();
-      } else if (event.action === "confirm") {
-        setPressed(true);
       }
     },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        props.cards[position()]?.action();
-      }
-    },
-  }));
-
-  createEffect(on(position, () => playSound("select"), { defer: true }));
+  });
 
   return (
     <div class={`relative flex min-h-0 gap-5 ${props.class ?? ""}`}>
       <For each={props.cards}>
         {(card, index) => (
           <ModeCard
-            selected={position() === index()}
-            active={pressed() && position() === index()}
+            selected={list.isSelected(index())}
+            active={(list.pressed() || pointerPressed()) && list.isSelected(index())}
             label={card.label}
             gradient={card.gradient}
             icon={card.icon}
@@ -74,15 +71,15 @@ export default function ModeCardRow(props: ModeCardRowProps) {
               type="button"
               class="h-full flex-1 cursor-pointer"
               aria-label={card.label}
-              onMouseEnter={() => set(index())}
+              onMouseEnter={() => list.set(index())}
               // The cards sit below these zones, so the press is passed on by hand.
               onPointerDown={() => {
-                set(index());
-                setPressed(true);
+                list.set(index());
+                setPointerPressed(true);
               }}
-              onPointerUp={() => setPressed(false)}
-              onPointerLeave={() => setPressed(false)}
-              onClick={() => card.action()}
+              onPointerUp={() => setPointerPressed(false)}
+              onPointerLeave={() => setPointerPressed(false)}
+              onClick={() => activate(index())}
             />
           )}
         </For>

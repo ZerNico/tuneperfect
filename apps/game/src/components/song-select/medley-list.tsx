@@ -5,18 +5,19 @@ import IconTriangleUp from "~icons/ph/caret-up-fill";
 import IconX from "~icons/ph/x-bold";
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconF2Key from "~icons/sing/f2-key";
+import IconGamepadDPad from "~icons/sing/gamepad-dpad";
 import IconGamepadLT from "~icons/sing/gamepad-lt";
 import IconGamepadRStick from "~icons/sing/gamepad-rstick";
 import IconPageDownKey from "~icons/sing/page-down-key";
 import IconPageUpKey from "~icons/sing/page-up-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
-import { createLoop } from "~/hooks/loop";
-import { keyMode, useNavigation } from "~/hooks/navigation";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import type { LocalSong } from "~/lib/ultrastar/song";
 
+import KeyGlyph from "../ui/key-glyph";
 import SlantPanel from "../ui/slant-panel";
 
 interface MedleyListProps {
@@ -27,60 +28,27 @@ interface MedleyListProps {
 }
 
 export function MedleyList(props: MedleyListProps) {
-  const { position, increment, decrement, set } = createLoop(() => props.songs.length);
-  let scrollContainer: HTMLDivElement | undefined;
-  const itemRefs: (HTMLDivElement | undefined)[] = [];
-
-  const setItemRef = (index: number) => (el: HTMLDivElement) => {
-    itemRefs[index] = el;
-  };
-
-  useNavigation({
+  const list = createListNavigation({
+    get count() {
+      return props.songs.length;
+    },
+    get keys() {
+      return props.useAlternativeNavigation ? (["medley-up", "medley-down"] as const) : (["up", "down"] as const);
+    },
+    sound: false,
     onKeydown(event) {
-      const upAction = props.useAlternativeNavigation ? "medley-up" : "up";
-      const downAction = props.useAlternativeNavigation ? "medley-down" : "down";
-
-      if (event.action === upAction) {
-        decrement();
-      } else if (event.action === downAction) {
-        increment();
-      } else if (event.action === "remove-from-medley") {
-        props.onRemove(position());
-      }
+      if (event.action === "remove-from-medley" && props.songs.length > 0) props.onRemove(list.position());
     },
   });
 
-  createEffect(
-    on(
-      position,
-      () => {
-        const selectedItem = itemRefs[position()];
-        if (selectedItem && scrollContainer) {
-          selectedItem.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "nearest",
-          });
-        }
-      },
-      { defer: true },
-    ),
-  );
-
+  // Select a newly added song; keep the selection on the list when songs are removed.
   createEffect(
     on(
       () => props.songs.length,
       (newLength, oldLength) => {
-        if (oldLength === undefined) return;
-
-        if (newLength > oldLength) {
-          set(newLength - 1);
-        } else if (newLength < oldLength) {
-          const currentPos = position();
-          if (currentPos >= newLength) {
-            set(Math.max(0, newLength - 1));
-          }
-        }
+        if (oldLength === undefined || newLength === oldLength) return;
+        if (newLength > oldLength) list.set(newLength - 1);
+        list.scrollToSelected();
       },
     ),
   );
@@ -96,23 +64,19 @@ export function MedleyList(props: MedleyListProps) {
 
   const UpKeyIcon = () => (
     <Show
-      when={keyMode() === "keyboard"}
-      fallback={props.useAlternativeNavigation ? <IconGamepadRStick class="text-sm" /> : null}
+      when={props.useAlternativeNavigation}
+      fallback={<KeyGlyph keyboard={IconUpArrowKey} gamepad={IconGamepadDPad} class="text-sm" />}
     >
-      <Show when={props.useAlternativeNavigation} fallback={<IconUpArrowKey class="text-sm" />}>
-        <IconPageUpKey class="text-sm" />
-      </Show>
+      <KeyGlyph keyboard={IconPageUpKey} gamepad={IconGamepadRStick} class="text-sm" />
     </Show>
   );
 
   const DownKeyIcon = () => (
     <Show
-      when={keyMode() === "keyboard"}
-      fallback={props.useAlternativeNavigation ? <IconGamepadRStick class="text-sm" /> : null}
+      when={props.useAlternativeNavigation}
+      fallback={<KeyGlyph keyboard={IconDownArrowKey} gamepad={IconGamepadDPad} class="text-sm" />}
     >
-      <Show when={props.useAlternativeNavigation} fallback={<IconDownArrowKey class="text-sm" />}>
-        <IconPageDownKey class="text-sm" />
-      </Show>
+      <KeyGlyph keyboard={IconPageDownKey} gamepad={IconGamepadRStick} class="text-sm" />
     </Show>
   );
 
@@ -131,7 +95,7 @@ export function MedleyList(props: MedleyListProps) {
           <button
             type="button"
             class="flex shrink-0 cursor-pointer items-center gap-1.5 transition-all hover:opacity-75 active:scale-95"
-            onClick={() => decrement()}
+            onClick={() => list.move(-1)}
           >
             <UpKeyIcon />
             <IconTriangleUp class="text-lg" />
@@ -139,16 +103,13 @@ export function MedleyList(props: MedleyListProps) {
         </div>
 
         <div class="relative min-h-0 flex-1">
-          <div
-            ref={scrollContainer}
-            class="styled-scrollbars absolute flex h-full w-full flex-col gap-2 overflow-x-hidden overflow-y-auto px-1 py-1"
-          >
+          <div class="styled-scrollbars absolute flex h-full w-full flex-col gap-2 overflow-x-hidden overflow-y-auto px-1 py-1">
             <TransitionGroup onEnter={enterRow} onExit={exitRow}>
               <For each={props.songs}>
                 {(song, index) => {
-                  const isSelected = () => position() === index();
+                  const isSelected = () => list.isSelected(index());
                   return (
-                    <div ref={setItemRef(index())} class="shrink-0">
+                    <div ref={list.itemRef(index)} class="shrink-0">
                       <SlantPanel
                         class="group flex h-[3.6cqw] items-center gap-3 pr-2 pl-3"
                         surface="rounded-lg transition-[background,box-shadow] duration-200"
@@ -156,7 +117,7 @@ export function MedleyList(props: MedleyListProps) {
                           "bg-white/8 ring-1 ring-white/10 ring-inset": !isSelected(),
                           "gradient-sing bg-linear-to-r shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)]": isSelected(),
                         }}
-                        onClick={() => set(index())}
+                        onClick={() => list.set(index())}
                       >
                         <span class="w-5 shrink-0 text-center text-lg text-display tabular-nums">{index() + 1}</span>
                         <div class="size-[2.6cqw] shrink-0 overflow-hidden rounded-md bg-black/40">
@@ -173,9 +134,7 @@ export function MedleyList(props: MedleyListProps) {
                           classList={{ "opacity-100": isSelected() }}
                         >
                           <Show when={isSelected()}>
-                            <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLT class="text-xs" />}>
-                              <IconF2Key class="text-xs" />
-                            </Show>
+                            <KeyGlyph keyboard={IconF2Key} gamepad={IconGamepadLT} class="text-xs" />
                           </Show>
                           <button
                             type="button"
@@ -213,7 +172,7 @@ export function MedleyList(props: MedleyListProps) {
           <button
             type="button"
             class="ml-auto flex shrink-0 cursor-pointer items-center gap-1.5 transition-all hover:opacity-75 active:scale-95"
-            onClick={() => increment()}
+            onClick={() => list.move(1)}
           >
             <DownKeyIcon />
             <IconTriangleDown class="text-lg" />

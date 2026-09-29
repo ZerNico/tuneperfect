@@ -13,7 +13,6 @@ import ModeCardRow, { type ModeCardItem } from "~/components/mode-card-row";
 import Avatar from "~/components/ui/avatar";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
-import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
@@ -37,7 +36,6 @@ export default function HomeScreen() {
         }
 
         navigate({ to: "/sing" });
-        playSound("confirm");
       },
     },
     {
@@ -47,7 +45,6 @@ export default function HomeScreen() {
       description: t("home.partyDescription"),
       action: () => {
         navigate({ to: "/party" });
-        playSound("confirm");
       },
     },
     {
@@ -57,7 +54,6 @@ export default function HomeScreen() {
       description: t("home.lobbyDescription"),
       action: () => {
         navigate({ to: "/lobby" });
-        playSound("confirm");
       },
     },
     {
@@ -67,7 +63,6 @@ export default function HomeScreen() {
       description: t("home.settingsDescription"),
       action: () => {
         navigate({ to: "/settings" });
-        playSound("confirm");
       },
     },
   ];

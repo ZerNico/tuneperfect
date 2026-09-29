@@ -13,7 +13,7 @@ import SlantPanel from "~/components/ui/slant-panel";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 
-type HintType = "navigate" | "confirm" | "back" | "add-to-medley";
+type HintType = "navigate" | "confirm" | "back";
 
 interface KeyHintsProps {
   hints: HintType[];
@@ -27,8 +27,6 @@ export default function KeyHints(props: KeyHintsProps) {
       case "back":
         return isGamepad ? <IconGamepadB /> : <IconEscKey />;
       case "confirm":
-        return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
-      case "add-to-medley":
         return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
       case "navigate":
         return isGamepad ? (

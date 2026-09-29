@@ -3,7 +3,7 @@
 @import "@fontsource-variable/rubik/wght-italic.css";
 
 @theme {
-  --font-primary: "Rubik Variable", "sans-serif";
+  --font-primary: "Rubik Variable", sans-serif;
 
   --spacing: 0.25cqw;
 
@@ -13,7 +13,7 @@
   --text-xs: 0.67cqw;
   --text-sm: 0.78cqw;
   --text-base: 1cqw;
-  --text-lg: 1cqw;
+  --text-lg: 1.05cqw;
   --text-xl: 1.11cqw;
   --text-2xl: 1.33cqw;
   --text-3xl: 1.67cqw;
@@ -35,7 +35,6 @@
   --animate-hide: hide 0.1s ease-in;
   --animate-slide-in: slideIn 0.15s ease-out;
   --animate-swipe-out: swipeOut 0.1s ease-in;
-  --animate-scroll: scroll 10s linear infinite;
   --animate-sparkle: sparkle 2s ease-in-out infinite;
   --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
   --animate-score-pop: scorePop 0.2s ease-out;
@@ -43,29 +42,6 @@
   --animate-lyric-fade: lyricFade 0.2s ease-out both;
   --animate-value-from-right: valueFromRight 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-value-from-left: valueFromLeft 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-
-  /* A menu value arriving from the side its arrow points to. */
-  @keyframes valueFromRight {
-    from {
-      opacity: 0;
-      translate: 0.8em 0;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-
-  @keyframes valueFromLeft {
-    from {
-      opacity: 0;
-      translate: -0.8em 0;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
   --animate-band-in: bandIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
   --animate-flash: flash 0.6s ease-out both;
   --animate-title-in: titleIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -86,57 +62,17 @@
   --animate-winner-glow: winnerGlow 1.6s ease-out 1 both;
   --animate-pop-in: popIn 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
   --animate-stripes-move: stripesMove 1.5s linear infinite;
-  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
   --animate-aurora: aurora 18s ease-in-out infinite alternate;
   --animate-float: float 2.4s ease-in-out infinite alternate;
   --animate-stage-grid: stageGrid 4s linear infinite;
   --animate-shimmer: shimmer 0.8s ease-in-out both;
   --animate-slam: slam 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
   --animate-burst: burst 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) both;
-  --animate-float-up: floatUp 1s ease-out both;
   --animate-stamp: stamp 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) both;
-  --animate-spin-slow: spin 40s linear infinite;
-  --animate-shake: shake 0.4s ease-in-out;
   --animate-confetti: confetti 2.4s cubic-bezier(0.3, 0.5, 0.6, 1) both;
   --animate-eq-bounce: eqBounce 0.9s ease-in-out infinite alternate;
-
-  /* Loading equalizer bar. */
-  @keyframes eqBounce {
-    from {
-      scale: 1 0.25;
-    }
-    to {
-      scale: 1 1;
-    }
-  }
-
   --animate-line-draw: lineDraw 0.65s cubic-bezier(0.6, 0, 0.2, 1) both;
   --animate-pop-scale: popScale 0.45s ease-out both;
-
-  /* Draws an SVG stroke; the element needs `pathLength="1"` and `stroke-dasharray: 1`. */
-  @keyframes lineDraw {
-    from {
-      stroke-dashoffset: 1;
-    }
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
-
-  /* Individual scale/rotate properties, so it composes with an element's own transform. */
-  @keyframes popScale {
-    0% {
-      scale: 1;
-    }
-    40% {
-      scale: 1.18;
-      rotate: -3deg;
-    }
-    100% {
-      scale: 1.06;
-      rotate: 0deg;
-    }
-  }
 
   @keyframes hide {
     from {
@@ -165,15 +101,6 @@
     }
   }
 
-  @keyframes scroll {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(-50%);
-    }
-  }
-
   @keyframes sparkle {
     0%, 100% {
       opacity: 0;
@@ -182,6 +109,33 @@
     50% {
       opacity: 1;
       transform: scale(1) rotate(180deg);
+    }
+  }
+
+  @keyframes phraseRating {
+    0% {
+      opacity: 0;
+      transform: scale(1.8) translateY(0);
+      filter: blur(0.3cqw);
+    }
+    12% {
+      opacity: 1;
+      transform: scale(0.94) translateY(0);
+      filter: blur(0);
+    }
+    20% {
+      transform: scale(1.04) translateY(0);
+    }
+    30% {
+      transform: scale(1) translateY(0);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-0.5cqh);
     }
   }
 
@@ -223,6 +177,38 @@
     }
   }
 
+  /* A menu value arriving from the side its arrow points to. */
+  @keyframes valueFromRight {
+    from {
+      opacity: 0;
+      translate: 0.8em 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes valueFromLeft {
+    from {
+      opacity: 0;
+      translate: -0.8em 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes bandIn {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
   /* A spotlight switching on with a stutter, shining briefly, then fading. */
   @keyframes flash {
     0% {
@@ -260,6 +246,17 @@
     to {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  @keyframes backdropIn {
+    from {
+      backdrop-filter: blur(0);
+      background-color: rgb(0 0 0 / 0);
+    }
+    to {
+      backdrop-filter: blur(12px);
+      background-color: rgb(0 0 0 / 0.75);
     }
   }
 
@@ -412,17 +409,6 @@
     }
   }
 
-  @keyframes backdropIn {
-    from {
-      backdrop-filter: blur(0);
-      background-color: rgb(0 0 0 / 0);
-    }
-    to {
-      backdrop-filter: blur(12px);
-      background-color: rgb(0 0 0 / 0.75);
-    }
-  }
-
   @keyframes popIn {
     0% {
       transform: scale(0.7) rotate(-10deg);
@@ -445,15 +431,13 @@
     }
   }
 
-  @keyframes pulseGlow {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: scale(0.95);
+  /* Background: slow drift of the aurora glows */
+  @keyframes aurora {
+    from {
+      transform: translate(0, 0) scale(1);
     }
-    50% {
-      opacity: 1;
-      transform: scale(1.05);
+    to {
+      transform: translate(8%, 10%) scale(1.15);
     }
   }
 
@@ -466,16 +450,6 @@
     }
   }
 
-  /* Background: slow drift of the aurora glows */
-  @keyframes aurora {
-    from {
-      transform: translate(0, 0) scale(1);
-    }
-    to {
-      transform: translate(8%, 10%) scale(1.15);
-    }
-  }
-
   /* Background: the stage grid rolls towards the viewer, one cell per loop */
   @keyframes stageGrid {
     from {
@@ -483,15 +457,6 @@
     }
     to {
       background-position: 0 5cqw;
-    }
-  }
-
-  @keyframes bandIn {
-    from {
-      transform: scaleX(0);
-    }
-    to {
-      transform: scaleX(1);
     }
   }
 
@@ -540,24 +505,6 @@
     }
   }
 
-  @keyframes floatUp {
-    0% {
-      opacity: 0;
-      transform: translateY(0) scale(0.8);
-    }
-    15% {
-      opacity: 1;
-      transform: translateY(-0.5cqw) scale(1.1);
-    }
-    30% {
-      transform: translateY(-0.8cqw) scale(1);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-3cqw) scale(1);
-    }
-  }
-
   @keyframes stamp {
     0% {
       opacity: 0;
@@ -570,30 +517,6 @@
     100% {
       opacity: 1;
       transform: scale(1) rotate(var(--stamp-rotate, 0deg));
-    }
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes shake {
-    0%, 100% {
-      transform: translateX(0);
-    }
-    20% {
-      transform: translateX(-0.4cqw) rotate(-2deg);
-    }
-    40% {
-      transform: translateX(0.35cqw) rotate(1.5deg);
-    }
-    60% {
-      transform: translateX(-0.25cqw) rotate(-1deg);
-    }
-    80% {
-      transform: translateX(0.1cqw);
     }
   }
 
@@ -611,30 +534,57 @@
     }
   }
 
-  @keyframes phraseRating {
+  /* Loading equalizer bar. */
+  @keyframes eqBounce {
+    from {
+      scale: 1 0.25;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+
+  /* Draws an SVG stroke; the element needs `pathLength="1"` and `stroke-dasharray: 1`. */
+  @keyframes lineDraw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Individual scale/rotate properties, so it composes with an element's own transform. */
+  @keyframes popScale {
     0% {
-      opacity: 0;
-      transform: scale(1.8) translateY(0);
-      filter: blur(0.3cqw);
+      scale: 1;
     }
-    12% {
-      opacity: 1;
-      transform: scale(0.94) translateY(0);
-      filter: blur(0);
-    }
-    20% {
-      transform: scale(1.04) translateY(0);
-    }
-    30% {
-      transform: scale(1) translateY(0);
-    }
-    80% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
+    40% {
+      scale: 1.18;
+      rotate: -3deg;
     }
     100% {
-      opacity: 0;
-      transform: scale(0.95) translateY(-0.5cqh);
+      scale: 1.06;
+      rotate: 0deg;
+    }
+  }
+
+  /* No --animate-* for this one: the combo counter combines it with hide in an arbitrary animate-[…]. */
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-0.4cqw) rotate(-2deg);
+    }
+    40% {
+      transform: translateX(0.35cqw) rotate(1.5deg);
+    }
+    60% {
+      transform: translateX(-0.25cqw) rotate(-1deg);
+    }
+    80% {
+      transform: translateX(0.1cqw);
     }
   }
 }
@@ -874,7 +824,7 @@ body {
 .reset-range {
   -webkit-appearance: none;
 
-  ::-webkit-slider-runnable-track {
+  &::-webkit-slider-runnable-track {
     width: 100%;
     height: 100%;
   }
@@ -883,10 +833,6 @@ body {
     -webkit-appearance: none;
     appearance: none;
     width: 0;
-    height: 100%;
-  }
-
-  ::-webkit-slider-runnable-track {
     height: 100%;
   }
 }

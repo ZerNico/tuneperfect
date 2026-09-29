@@ -4,8 +4,6 @@ import { type JSX, Show, Suspense, untrack } from "solid-js";
 import { effectsEnabled } from "~/lib/fx";
 import { roundStore } from "~/stores/round";
 
-import { ToastRegion } from "./ui/toast";
-
 interface LayoutProps {
   children?: JSX.Element;
   intent?: "primary" | "secondary" | "popup";
@@ -64,7 +62,6 @@ export default function Layout(props: LayoutProps) {
                 <div class="flex min-h-0 w-full min-w-0 flex-col">{props.children}</div>
                 <div>{props.footer}</div>
               </div>
-              <ToastRegion />
             </Suspense>
           </div>
         </div>

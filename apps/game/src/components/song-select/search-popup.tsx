@@ -1,4 +1,4 @@
-import { createEffect, onCleanup, onMount, Show } from "solid-js";
+import { onMount, Show } from "solid-js";
 import { Motion } from "solid-motionone";
 import IconTriangleLeft from "~icons/ph/caret-left-fill";
 import IconTriangleRight from "~icons/ph/caret-right-fill";
@@ -7,7 +7,9 @@ import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
 
+import KeyGlyph from "~/components/ui/key-glyph";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
+import { createClickOutside } from "~/hooks/click-outside";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import type { SearchFieldScope } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
@@ -35,18 +37,10 @@ export function SearchPopup(props: SearchPopupProps) {
   let searchRef!: HTMLInputElement;
   let popupRef!: HTMLDivElement;
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
   const onInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
     props.onSearchQuery(e.currentTarget.value);
@@ -100,9 +94,7 @@ export function SearchPopup(props: SearchPopupProps) {
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
-                <IconF6Key class="text-sm" />
-              </Show>
+              <KeyGlyph keyboard={IconF6Key} gamepad={IconGamepadLB} class="text-sm" />
               <button
                 type="button"
                 class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -126,9 +118,7 @@ export function SearchPopup(props: SearchPopupProps) {
               >
                 <IconTriangleRight class="text-xs" />
               </button>
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
-                <IconF7Key class="text-sm" />
-              </Show>
+              <KeyGlyph keyboard={IconF7Key} gamepad={IconGamepadRB} class="text-sm" />
             </div>
           </div>
 

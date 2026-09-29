@@ -1,3 +1,4 @@
+/** Edits a text input like typing would (for the virtual keyboard), firing `input` events. */
 export function useTextInput(inputRef: () => HTMLInputElement) {
   const moveCursor = (direction: "left" | "right") => {
     const input = inputRef();
@@ -13,13 +14,21 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     scrollToSelectionStart();
   };
 
+  /** Replaces the selection (or inserts at the caret), unless that would exceed the input's maxLength. */
   const writeCharacter = (character: string) => {
-    const input = inputRef();
-    const cursor = input.selectionStart;
-    if (cursor === null) return;
+    if (!character) return;
 
-    input.value = input.value.slice(0, cursor) + character + input.value.slice(cursor);
-    input.setSelectionRange(cursor + 1, cursor + 1);
+    const input = inputRef();
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    if (start === null || end === null) return;
+
+    const value = input.value.slice(0, start) + character + input.value.slice(end);
+    // maxLength is -1 when not set.
+    if (input.maxLength >= 0 && value.length > input.maxLength) return;
+
+    input.value = value;
+    input.setSelectionRange(start + character.length, start + character.length);
     sendInputEvent();
     scrollToSelectionStart();
   };
@@ -50,32 +59,14 @@ export function useTextInput(inputRef: () => HTMLInputElement) {
     const fontSizeNumber = Number.parseFloat(fontSize);
     const charWidth = fontSizeNumber * 0.55;
 
-    if (input.selectionStart) {
+    if (input.selectionStart !== null) {
       input.scrollLeft = input.selectionStart * charWidth - input.clientWidth / 2;
     }
   };
 
-  const selectAll = () => {
-    const input = inputRef();
-    input.select();
-  };
-
   const sendInputEvent = () => {
-    const input = inputRef();
-    const data = {
-      target: input,
-      currentTarget: input,
-      bubbles: true,
-    };
-    input.dispatchEvent(new Event("input", data));
+    inputRef().dispatchEvent(new Event("input", { bubbles: true }));
   };
 
-  return {
-    moveCursor,
-    writeCharacter,
-    deleteCharacter,
-    scrollToSelectionStart,
-    sendInputEvent,
-    selectAll,
-  };
+  return { moveCursor, writeCharacter, deleteCharacter };
 }

@@ -1,15 +1,15 @@
-import { createEffect, createMemo, For, onCleanup, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { Motion } from "solid-motionone";
 import IconTriangleLeft from "~icons/ph/caret-left-fill";
 import IconTriangleRight from "~icons/ph/caret-right-fill";
 import IconTrash from "~icons/ph/trash-bold";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createClickOutside } from "~/hooks/click-outside";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import { formatDecade, getDecades, getEditions, getGenres, getLanguages } from "~/lib/utils/song-facets";
+import { formatDecade, getDecades, getEditions, getGenres, getLanguages, typeLabel } from "~/lib/utils/song-facets";
 
 import Plate from "../ui/plate";
 import SlantPanel from "../ui/slant-panel";
@@ -78,12 +78,6 @@ export function FilterPopup(props: FilterPopupProps) {
     const list = key === "genre" ? facets().genres : key === "language" ? facets().languages : facets().editions;
     const options: (string | null)[] = [null, ...list];
     update({ [key]: cycle(options, props.filters[key], direction) } as Partial<SongFilters>);
-  };
-
-  const typeLabel = (value: SongTypeFilter): string => {
-    if (value === "duet") return t("sing.filter.duet");
-    if (value === "solo") return t("sing.filter.solo");
-    return t("sing.filter.any");
   };
 
   const facetLabel = (value: string | null): string => value ?? t("sing.filter.any");
@@ -157,42 +151,27 @@ export function FilterPopup(props: FilterPopupProps) {
     return list;
   });
 
-  const { position, increment, decrement, set } = createLoop(() => rows().length);
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
-
-  useNavigation({
+  const list = createListNavigation({
+    get count() {
+      return rows().length;
+    },
     layer: 1,
     onKeydown(event) {
+      const row = rows()[list.position()];
       if (event.action === "back" || event.action === "filter") {
         props.onClose();
-      } else if (event.action === "up") {
-        decrement();
-        playSound("select");
-      } else if (event.action === "down") {
-        increment();
-        playSound("select");
       } else if (event.action === "left") {
-        const row = rows()[position()];
         row?.onLeft?.();
         if (row?.onLeft) playSound("select");
       } else if (event.action === "right") {
-        const row = rows()[position()];
         row?.onRight?.();
         if (row?.onRight) playSound("select");
       } else if (event.action === "confirm") {
-        const row = rows()[position()];
         if (row?.kind === "clear") {
           row.onConfirm?.();
           playSound("confirm");
@@ -215,7 +194,7 @@ export function FilterPopup(props: FilterPopupProps) {
         <div class="flex flex-col gap-1">
           <For each={rows()}>
             {(row, index) => {
-              const selected = () => position() === index();
+              const selected = () => list.isSelected(index());
               return (
                 <Show
                   when={row.kind !== "clear"}
@@ -228,11 +207,11 @@ export function FilterPopup(props: FilterPopupProps) {
                       selected={selected()}
                       contentClass="flex items-center justify-center gap-2 font-bold"
                       onClick={() => {
-                        set(index());
+                        list.set(index());
                         row.onConfirm?.();
                         playSound("confirm");
                       }}
-                      onMouseEnter={() => set(index())}
+                      onMouseEnter={() => list.set(index())}
                     >
                       <IconTrash />
                       <span>{row.label}</span>
@@ -243,7 +222,7 @@ export function FilterPopup(props: FilterPopupProps) {
                     class="flex items-center gap-3 px-3 py-1.5"
                     surface="rounded-md transition-colors"
                     surfaceClassList={{ "bg-white/12 ring-1 ring-white/20 ring-inset": selected() }}
-                    onMouseEnter={() => set(index())}
+                    onMouseEnter={() => list.set(index())}
                   >
                     <span
                       class="min-w-0 flex-1 truncate text-sm font-bold"
@@ -259,7 +238,7 @@ export function FilterPopup(props: FilterPopupProps) {
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                         onClick={() => {
-                          set(index());
+                          list.set(index());
                           row.onLeft?.();
                           playSound("select");
                         }}
@@ -282,7 +261,7 @@ export function FilterPopup(props: FilterPopupProps) {
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                         onClick={() => {
-                          set(index());
+                          list.set(index());
                           row.onRight?.();
                           playSound("select");
                         }}

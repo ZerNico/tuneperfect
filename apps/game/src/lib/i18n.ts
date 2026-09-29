@@ -10,8 +10,8 @@ const [dictionaries, setDictionaries] = createSignal({
   en: en.dict,
   de: de.dict,
 });
-export type Locale = keyof ReturnType<typeof dictionaries>;
-export type Dictionary = i18n.Flatten<en.Dict>;
+type Locale = keyof ReturnType<typeof dictionaries>;
+type Dictionary = i18n.Flatten<en.Dict>;
 
 const getDictionary = (locale: Locale): Dictionary => i18n.flatten(dictionaries()[locale]) as Dictionary;
 
@@ -27,10 +27,6 @@ const dict = createMemo(() => getDictionary(locale()));
 // oxlint-disable-next-line solid/reactivity
 const t = i18n.translator(dict, i18n.resolveTemplate);
 
-const setLocale = (lang: Locale) => {
-  settingsStore.saveGeneral({ ...settingsStore.general(), language: lang });
-};
-
 // Swap translations in place when a dictionary file changes, instead of reloading the whole app.
 if (import.meta.hot) {
   import.meta.hot.accept(["../i18n/en", "../i18n/de"], ([nextEn, nextDe]) => {
@@ -38,4 +34,4 @@ if (import.meta.hot) {
   });
 }
 
-export { t, setLocale, locale, dict };
+export { t };

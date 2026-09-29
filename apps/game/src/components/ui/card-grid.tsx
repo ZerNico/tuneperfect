@@ -1,9 +1,8 @@
-import { createEffect, createSignal, For, type JSX, on, Show } from "solid-js";
+import { For, type JSX, Show } from "solid-js";
 import IconPlus from "~icons/ph/plus-bold";
 import IconSpinner from "~icons/ph/spinner-gap-bold";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { playSound } from "~/lib/sound";
 import { getColorVar } from "~/lib/utils/color";
 
@@ -38,22 +37,6 @@ interface CardGridProps {
  */
 export default function CardGrid(props: CardGridProps) {
   const columns = () => props.columns ?? 5;
-  const [pressed, setPressed] = createSignal(false);
-  const { position, set } = createLoop(() => props.cards.length);
-  const refs: (HTMLElement | undefined)[] = [];
-
-  /** Keyboard/gamepad move: also scrolls the new card into view (hovering never scrolls). */
-  const move = (delta: number) => {
-    const count = props.cards.length;
-    if (count === 0) return;
-    const next = position() + delta;
-    // Left/right wrap around; up/down stop at the first and last row.
-    if (Math.abs(delta) === 1) set((next + count) % count);
-    else if (next >= 0 && next < count) set(next);
-    else if (delta > 0 && Math.floor(position() / columns()) < Math.floor((count - 1) / columns())) set(count - 1);
-    // Centred: at the start and end this clamps, so the padding (room for the enlarged card) stays visible.
-    refs[position()]?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
 
   const activate = (index: number) => {
     const card = props.cards[index];
@@ -62,25 +45,21 @@ export default function CardGrid(props: CardGridProps) {
     card.action();
   };
 
-  useNavigation(() => ({
+  const list = createListNavigation({
+    get count() {
+      return props.cards.length;
+    },
     layer: 0,
+    get columns() {
+      return columns();
+    },
+    // Centred: at the start and end this clamps, so the padding (room for the enlarged card) stays visible.
+    scrollBlock: "center",
+    onActivate: activate,
     onKeydown(event) {
       if (event.action === "back") props.onBack();
-      else if (event.action === "left") move(-1);
-      else if (event.action === "right") move(1);
-      else if (event.action === "up") move(-columns());
-      else if (event.action === "down") move(columns());
-      else if (event.action === "confirm") setPressed(true);
     },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        activate(position());
-      }
-    },
-  }));
-
-  createEffect(on(position, () => playSound("select"), { defer: true }));
+  });
 
   return (
     <div class="styled-scrollbars max-h-full w-full overflow-y-auto">
@@ -93,17 +72,17 @@ export default function CardGrid(props: CardGridProps) {
       >
         <For each={props.cards}>
           {(card, index) => {
-            const selected = () => position() === index();
+            const selected = () => list.isSelected(index());
             const accent = (shade: 400 | 500 | 800) => (card.accent ? getColorVar(card.accent, shade) : undefined);
             return (
               <SlantPanel
                 as="button"
                 type="button"
-                ref={(el) => (refs[index()] = el)}
+                ref={list.itemRef(index)}
                 class="flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center gap-3 p-4 text-center transition-[scale,opacity] duration-150 active:scale-95"
                 classList={{
-                  "scale-105": selected() && !pressed(),
-                  "scale-95": selected() && pressed(),
+                  "scale-105": selected() && !list.pressed(),
+                  "scale-95": selected() && list.pressed(),
                   "opacity-65 hover:opacity-90": !selected(),
                 }}
                 surface="overflow-hidden rounded-2xl transition-[box-shadow,background] duration-150"
@@ -128,7 +107,7 @@ export default function CardGrid(props: CardGridProps) {
                     </Show>
                   </>
                 }
-                onMouseEnter={() => set(index())}
+                onMouseEnter={() => list.set(index())}
                 onClick={() => activate(index())}
               >
                 <div class="flex h-[6cqw] items-center justify-center text-[4.5cqw]">

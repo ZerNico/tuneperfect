@@ -1,5 +1,5 @@
-import { Toast as KToast, toaster } from "@kobalte/core/toast";
-import { createMemo, onCleanup } from "solid-js";
+import { Toast as KToast } from "@kobalte/core/toast";
+import { createMemo } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import CircleCheck from "~icons/ph/check-circle-fill";
 import Info from "~icons/ph/info-fill";
@@ -64,10 +64,6 @@ export default function Toast(props: ToastProps) {
 }
 
 export function ToastRegion() {
-  onCleanup(() => {
-    toaster.clear();
-  });
-
   return (
     <KToast.Region swipeDirection="right" limit={5}>
       <KToast.List class="pointer-events-none absolute inset-0 z-10 flex flex-col items-end justify-start gap-2 p-4" />

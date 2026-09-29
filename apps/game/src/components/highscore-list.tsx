@@ -35,7 +35,6 @@ interface HighscoreListProps {
 
 export default function HighscoreList(props: HighscoreListProps) {
   let containerRef: HTMLDivElement | undefined;
-  let scrollTimeout: ReturnType<typeof setTimeout>;
 
   const rankedScores = createMemo((): RankedHighscore[] => {
     // First, deduplicate by user ID, keeping only the highest score for each user
@@ -78,42 +77,36 @@ export default function HighscoreList(props: HighscoreListProps) {
     return ranked;
   });
 
-  const startScrolling = () => {
-    if (!containerRef) return;
-
-    const scroll = () => {
-      if (!containerRef) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = containerRef;
-
-      if (scrollTop >= scrollHeight - clientHeight) {
-        setTimeout(() => {
-          if (!containerRef) return;
-          containerRef.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          });
-          setTimeout(() => {
-            scrollTimeout = setTimeout(scroll, 50);
-          }, 1500);
-        }, 1000);
-      } else {
-        containerRef.scrollTop += 1;
-        scrollTimeout = setTimeout(scroll, 50);
-      }
-    };
-
-    setTimeout(scroll, 3000);
+  // Auto-scroll: after a pause, creep down to the end, wait, jump back to the top, wait, repeat.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let alive = true;
+  const after = (ms: number, step: () => void) => {
+    if (alive) timer = setTimeout(step, ms);
   };
 
-  onMount(() => {
-    if (containerRef) {
-      startScrolling();
+  const scroll = () => {
+    if (!containerRef) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef;
+
+    // Nothing to scroll (yet): check again later, e.g. once more scores have loaded.
+    if (scrollHeight <= clientHeight) return after(3000, scroll);
+
+    if (scrollTop < scrollHeight - clientHeight - 1) {
+      containerRef.scrollTop += 1;
+      return after(50, scroll);
     }
-  });
+
+    after(1000, () => {
+      containerRef?.scrollTo({ top: 0, behavior: "smooth" });
+      after(1500, scroll);
+    });
+  };
+
+  onMount(() => after(3000, scroll));
 
   onCleanup(() => {
-    clearTimeout(scrollTimeout);
+    alive = false;
+    clearTimeout(timer);
   });
 
   return (

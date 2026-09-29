@@ -1,8 +1,8 @@
-import { createEffect, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
+import { For, type JSX, Show } from "solid-js";
 import { Motion } from "solid-motionone";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createClickOutside } from "~/hooks/click-outside";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { playSound } from "~/lib/sound";
 
 import Plate from "../ui/plate";
@@ -21,46 +21,26 @@ interface MenuPopupProps {
 
 /** Dropdown menu anchored below its trigger, driven by keyboard, gamepad or mouse. */
 export function MenuPopup(props: MenuPopupProps) {
-  const options = () => props.items;
-
-  const { position, increment, decrement, set } = createLoop(() => options().length);
   let popupRef!: HTMLDivElement;
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
+  const activate = (index: number) => {
+    props.items[index]?.action();
+    props.onClose();
+    playSound("confirm");
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
-
-  const [pressed, setPressed] = createSignal(false);
-
-  useNavigation({
+  const list = createListNavigation({
+    get count() {
+      return props.items.length;
+    },
     layer: 2,
+    onActivate: activate,
     onKeydown(event) {
       if (event.action === "back" || event.action === "menu") {
-        props.onClose();
-        playSound("confirm");
-      } else if (event.action === "up") {
-        decrement();
-        playSound("select");
-      } else if (event.action === "down") {
-        increment();
-        playSound("select");
-      } else if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        options()[position()]?.action();
         props.onClose();
         playSound("confirm");
       }
@@ -76,36 +56,27 @@ export function MenuPopup(props: MenuPopupProps) {
         class="w-70 rounded-xl glass p-2"
       >
         <div class="flex flex-col gap-1">
-          <For each={options()}>
-            {(option, index) => {
-              const isSelected = () => position() === index();
-              const isActive = () => isSelected() && pressed();
-              return (
-                <Plate
-                  as="button"
-                  size="sm"
-                  class="w-full"
-                  gradient="gradient-sing"
-                  selected={isSelected()}
-                  pressed={isActive()}
-                  contentClass="flex items-center px-4 font-bold"
-                  onClick={() => {
-                    set(index());
-                    option.action();
-                    props.onClose();
-                    playSound("confirm");
-                  }}
-                  onMouseEnter={() => set(index())}
-                >
-                  <span class="flex w-full items-center justify-between gap-4">
-                    <span>{option.label}</span>
-                    <Show when={option.hint}>
-                      <span class="flex items-center gap-1 text-sm opacity-80">{option.hint}</span>
-                    </Show>
-                  </span>
-                </Plate>
-              );
-            }}
+          <For each={props.items}>
+            {(option, index) => (
+              <Plate
+                as="button"
+                size="sm"
+                class="w-full"
+                gradient="gradient-sing"
+                selected={list.isSelected(index())}
+                pressed={list.isSelected(index()) && list.pressed()}
+                contentClass="flex items-center px-4 font-bold"
+                onClick={() => activate(index())}
+                onMouseEnter={() => list.set(index())}
+              >
+                <span class="flex w-full items-center justify-between gap-4">
+                  <span>{option.label}</span>
+                  <Show when={option.hint}>
+                    <span class="flex items-center gap-1 text-sm opacity-80">{option.hint}</span>
+                  </Show>
+                </span>
+              </Plate>
+            )}
           </For>
         </div>
       </Motion.div>

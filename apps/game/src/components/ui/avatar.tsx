@@ -18,12 +18,11 @@ const AVATAR_COLORS = ["sky", "red", "blue", "green", "pink", "purple", "yellow"
 export default function Avatar(props: AvatarProps) {
   const [error, setError] = createSignal(false);
 
+  // A new picture gets a new chance to load.
   createEffect(
     on(
-      () => props.user,
-      () => {
-        setError(false);
-      },
+      () => props.user?.image,
+      () => setError(false),
     ),
   );
 

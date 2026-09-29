@@ -4,6 +4,7 @@ import { Outlet } from "@tanstack/solid-router";
 import { createSignal, Suspense } from "solid-js";
 
 import PopupContainer from "~/components/popup-container";
+import { ToastRegion } from "~/components/ui/toast";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { native } from "~/lib/native/client";
@@ -82,6 +83,14 @@ export default function RootScreen() {
         <Outlet />
       </Suspense>
       <PopupContainer />
+      {/* Above everything, popups included, and sized like the layout so the toasts' cqw match the screens'. */}
+      <div class="pointer-events-none fixed inset-0 z-100 flex items-center justify-center">
+        <div class="layout flex">
+          <div class="@container relative grow overflow-hidden">
+            <ToastRegion />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
