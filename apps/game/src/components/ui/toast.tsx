@@ -9,6 +9,8 @@ import CircleX from "~icons/ph/x-circle-fill";
 
 import { t } from "~/lib/i18n";
 
+import SlantPanel from "./slant-panel";
+
 const TOAST_ICONS = new Map([
   ["success", CircleCheck],
   ["error", CircleX],
@@ -16,12 +18,13 @@ const TOAST_ICONS = new Map([
   ["warning", CircleAlert],
 ]);
 
-const TOAST_COLORS = new Map([
-  ["success", "bg-green-400"],
-  ["error", "bg-red-400"],
-  ["info", "bg-blue-400"],
-  ["warning", "bg-yellow-400"],
-]);
+// Full class names (not built at runtime) so Tailwind picks them up.
+const TOAST_COLORS = {
+  success: { stripe: "bg-green-400", icon: "text-green-400" },
+  error: { stripe: "bg-red-400", icon: "text-red-400" },
+  info: { stripe: "bg-sky-400", icon: "text-sky-400" },
+  warning: { stripe: "bg-yellow-400", icon: "text-yellow-400" },
+} as const;
 
 interface ToastProps {
   toastId: number;
@@ -31,29 +34,31 @@ interface ToastProps {
 
 export default function Toast(props: ToastProps) {
   const IconComponent = createMemo(() => TOAST_ICONS.get(props.intent));
-  const bgColor = () => TOAST_COLORS.get(props.intent);
+  const colors = () => TOAST_COLORS[props.intent];
   const title = () => t(`common.notifications.${props.intent}`);
 
   return (
+    // The Kobalte element owns the enter/exit/swipe transforms; the slanted panel sits inside it.
     <KToast
       toastId={props.toastId}
-      class="pointer-events-auto flex w-80 transform items-start justify-between rounded-lg p-3 text-black data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
-      classList={{
-        [bgColor() || ""]: true,
-      }}
+      class="pointer-events-auto w-[26cqw] data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
     >
-      <div class="flex">
-        <div class={`mr-3 shrink-0 text-xl text-toast-${props.intent}`}>
+      <SlantPanel
+        class="flex items-start gap-3 py-3 pr-3 pl-5 text-white"
+        surface="overflow-hidden rounded-xl bg-black/75 shadow-[0.35cqw_0.35cqw_0_rgb(0_0_0/0.35)] ring-1 ring-white/10 backdrop-blur-md ring-inset"
+        surfaceContent={<span class={`absolute inset-y-0 left-0 w-[0.45cqw] ${colors().stripe}`} />}
+      >
+        <div class={`shrink-0 pt-0.5 text-2xl ${colors().icon}`}>
           <Dynamic component={IconComponent()} />
         </div>
-        <div class="flex flex-col gap-1">
-          <KToast.Title class="text-xl font-semibold">{title()}</KToast.Title>
-          <KToast.Description class="text-base">{props.message}</KToast.Description>
+        <div class="flex min-w-0 grow flex-col gap-0.5">
+          <KToast.Title class="text-lg font-black tracking-wide uppercase italic">{title()}</KToast.Title>
+          <KToast.Description class="text-base text-white/85">{props.message}</KToast.Description>
         </div>
-      </div>
-      <KToast.CloseButton class="cursor-pointer">
-        <X />
-      </KToast.CloseButton>
+        <KToast.CloseButton class="shrink-0 cursor-pointer p-1 text-white/60 transition-colors hover:text-white">
+          <X />
+        </KToast.CloseButton>
+      </SlantPanel>
     </KToast>
   );
 }

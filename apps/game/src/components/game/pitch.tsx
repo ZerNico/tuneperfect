@@ -1,15 +1,12 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, For, Show } from "solid-js";
 
-import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
 import type { Note } from "~/lib/ultrastar/note";
 import { clamp } from "~/lib/utils/math";
 import { settingsStore } from "~/stores/settings";
-
-import Burst from "../fx/burst";
 
 export default function Pitch() {
   const game = useGame();
@@ -179,7 +176,7 @@ export default function Pitch() {
   const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   return (
-    <div class="grid grow" classList={{ "px-60 py-[2cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
+    <div class="grid grow" classList={{ "px-48 py-[1cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
       <div
         style={{
           "grid-template-rows": `repeat(${ROW_COUNT},1fr)`,
@@ -260,10 +257,7 @@ function SparkleParticles(props: { length: number }) {
 }
 
 function PitchNote(props: PitchNoteProps) {
-  const player = usePlayer();
-  const result = () => player.noteResults.get(props.note);
   const isGolden = () => props.note.type.endsWith("Golden");
-  const hitColor = () => (isGolden() ? "var(--color-yellow-300)" : `var(--color-${player.microphone().color}-400)`);
 
   return (
     <div
@@ -274,30 +268,17 @@ function PitchNote(props: PitchNoteProps) {
       }}
     >
       <div class="relative h-2/1 w-full -translate-y-1/4 transform">
+        {/* One outline and a hard shadow; hits show through the sung fill, nothing else. */}
         <div
-          class="relative h-full w-full overflow-hidden rounded-full border-[0.15cqw] shadow-md transition-[opacity,box-shadow] duration-300"
+          class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)] transition-opacity duration-300"
           classList={{
-            "border-yellow-400 bg-yellow-400/20": isGolden(),
-            "border-white bg-black/20": !isGolden(),
+            "border-yellow-300 bg-yellow-300/25": isGolden(),
+            "border-white bg-black/35": !isGolden(),
             "border-dashed": props.note.type.startsWith("Rap"),
-            "animate-note-hit": result() === "hit" && effectsEnabled(),
-            "opacity-40": result() === "miss",
-          }}
-          style={{
-            "box-shadow": result() === "hit" ? `0 0 0.8cqw ${hitColor()}` : undefined,
           }}
         >
           {props.note.type === "Golden" && <SparkleParticles length={props.note.length} />}
         </div>
-        <Burst
-          trigger={result() === "hit" ? 0 : undefined}
-          color={hitColor()}
-          shape={isGolden() ? "star" : "dot"}
-          count={isGolden() ? 16 : 10}
-          spread={isGolden() ? 6 : 4}
-          size={isGolden() ? 1.4 : 0.6}
-          class="top-1/2 right-0"
-        />
       </div>
     </div>
   );

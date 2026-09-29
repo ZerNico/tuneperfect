@@ -1,38 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute } from "@tanstack/solid-router";
 
-import KeyHints from "~/components/key-hints";
-import Layout from "~/components/layout";
-import type { MenuItem } from "~/components/menu";
-import Menu from "~/components/menu";
-import TitleBar from "~/components/title-bar";
-import { t } from "~/lib/i18n";
+import PartyScreen from "~/screens/party/index";
+
 export const Route = createFileRoute("/party/")({
-  component: PartyComponent,
+  component: PartyScreen,
 });
-
-function PartyComponent() {
-  const navigate = useNavigate();
-  const onBack = () => navigate({ to: "/home" });
-
-  const menuItems: MenuItem[] = [
-    {
-      type: "button",
-      label: t("party.versus.title"),
-      action: () => navigate({ to: "/party/versus/settings" }),
-    },
-    {
-      type: "button",
-      label: t("party.ticTacToe.title"),
-      action: () => navigate({ to: "/party/tic-tac-toe/settings" }),
-    },
-  ];
-  return (
-    <Layout
-      intent="secondary"
-      header={<TitleBar title={t("party.title")} onBack={onBack} />}
-      footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
-    >
-      <Menu items={menuItems} onBack={onBack} gradient="gradient-party" />
-    </Layout>
-  );
-}

@@ -1,6 +1,7 @@
 import { createMemo, For, Show } from "solid-js";
 import IconX from "~icons/ph/x-bold";
 
+import SlantPanel from "~/components/ui/slant-panel";
 import type { SongFilters, SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { formatDecade } from "~/lib/utils/song-facets";
@@ -68,17 +69,17 @@ export function FilterChips(props: FilterChipsProps) {
       <div class="flex items-center gap-2">
         <For each={activeChips()}>
           {(def) => (
-            <button
+            <SlantPanel
+              as="button"
               type="button"
               aria-label={`${def.label(props.filters)} (${t("sing.filter.clearAll")})`}
-              class="gradient-sing flex h-8 max-w-44 -skew-x-6 cursor-pointer items-center rounded-md bg-linear-to-r text-xs font-bold text-white shadow-[0.2cqw_0.2cqw_0_rgb(0_0_0/0.3)] transition-all hover:brightness-110 active:scale-95"
+              class="group flex h-8 max-w-44 cursor-pointer items-center gap-1.5 px-2.5 text-xs font-bold text-white transition-[scale] active:scale-95"
+              surface="gradient-sing rounded-md bg-linear-to-r shadow-[0.2cqw_0.2cqw_0_rgb(0_0_0/0.3)] transition-[filter] group-hover:brightness-110"
               onClick={() => props.onChange(def.reset(props.filters))}
             >
-              <span class="flex min-w-0 skew-x-6 items-center gap-1.5 px-2.5">
-                <span class="truncate">{def.label(props.filters)}</span>
-                <IconX class="shrink-0 opacity-80" />
-              </span>
-            </button>
+              <span class="truncate">{def.label(props.filters)}</span>
+              <IconX class="shrink-0 opacity-80" />
+            </SlantPanel>
           )}
         </For>
       </div>

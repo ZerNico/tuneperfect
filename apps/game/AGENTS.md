@@ -43,7 +43,8 @@ src/
 │   ├── ultrastar/        # UltraStar format parsing (notes, songs, medley)
 │   ├── webrtc/           # WebRTC host connection logic
 │   └── utils/            # Utility functions
-├── routes/               # TanStack file-based routes
+├── routes/               # TanStack file-based routes: only `Route` + loader/beforeLoad
+├── screens/              # The UI for each route, same path as its route file (default export)
 ├── stores/               # SolidJS reactive stores (settings, songs, lobby, round)
 src/lib/native/           # oRPC contract, typed client, types generated from Rust (types.gen.ts)
 src/lib/desktop.ts        # platform + app version, provided synchronously by the preload
@@ -86,6 +87,7 @@ resources/icons/          # App icons for electron-builder
 - Route tree auto-generated at `src/routeTree.gen.ts` — **never edit manually**
 - Layout routes use underscore prefix: `_auth.tsx`, `_no-auth.tsx`
 - Dynamic params use `$` prefix: `$id.tsx`, `$hash.tsx`, `$path.tsx`
+- Route files stay thin: `Route`, loader/beforeLoad and what those need. The screen lives in `src/screens/<same path>.tsx` as a default-exported component (use `getRouteApi("/path")` for params/search/loader data — never import the route file from a screen). Why: with `autoCodeSplitting`, the router plugin makes the split component chunk import `Route` back from the route file; that cycle (plus the plugin's `hot.accept` alias that Vite doesn't detect) turns every route-file edit into a full page reload, while edits in screens/components hot-swap
 
 ### i18n
 

@@ -4,14 +4,9 @@ All sounds are CC0 (public domain). Credit is optional but given in Settings →
 
 ## Kenney ([kenney.nl](https://kenney.nl))
 
-| File                  | Pack             | Original file          |
-| --------------------- | ---------------- | ---------------------- |
-| `golden-hit.ogg`      | Interface Sounds | `glass_001.ogg`        |
-| `combo-milestone.ogg` | Interface Sounds | `confirmation_004.ogg` |
-| `combo-break.ogg`     | Interface Sounds | `minimize_007.ogg`     |
-| `perfect.ogg`         | Interface Sounds | `glass_004.ogg`        |
-| `count-tick.ogg`      | Interface Sounds | `tick_002.ogg`         |
-| `whoosh.ogg`          | Interface Sounds | `maximize_006.ogg`     |
+| File             | Pack             | Original file  |
+| ---------------- | ---------------- | -------------- |
+| `count-tick.ogg` | Interface Sounds | `tick_002.ogg` |
 
 ## Freesound ([freesound.org](https://freesound.org)), result ranks
 

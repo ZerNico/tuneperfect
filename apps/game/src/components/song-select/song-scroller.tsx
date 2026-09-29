@@ -16,6 +16,8 @@ import { createRefContent } from "~/lib/utils/ref";
 
 export interface SongScrollerRef<T> {
   goToRandomSong: () => T | null;
+  /** Spin forward through the strip for `durationMs` and land on the next `item` (slot-machine style). */
+  spinTo: (item: T, durationMs: number) => Promise<void>;
 }
 
 interface VisibleItem<T> {
@@ -23,7 +25,8 @@ interface VisibleItem<T> {
   position: number;
 }
 
-const ITEM_WIDTH_CQW = 0.12;
+/** Default slot width as a share of the scroller's width. */
+const ITEM_WIDTH = 0.12;
 const MAX_SCALE = 1.3;
 
 export interface ScrollerItemState {
@@ -46,6 +49,10 @@ interface SongScrollerProps<T> {
   children: (item: T, index: number, state: Accessor<ScrollerItemState>) => JSX.Element;
   onCenteredItemChange?: (item: T | null, index: number) => void;
   onConfirm?: (item: T) => void;
+  /** Slot width as a share of the scroller's width; items fill their slot. */
+  itemSize?: number;
+  /** When false, the strip ignores keys, wheel, drag and clicks (driven only through the ref). */
+  interactive?: boolean;
   class?: string;
 }
 
@@ -58,7 +65,8 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
   const [currentItemId, setCurrentItemId] = createSignal<string | null>(null);
   const [hasInitialized, setHasInitialized] = createSignal(false);
 
-  const itemWidth = () => containerWidth() * ITEM_WIDTH_CQW;
+  const itemSize = () => props.itemSize ?? ITEM_WIDTH;
+  const itemWidth = () => containerWidth() * itemSize();
 
   const filteredAndSortedItems = () => props.items;
 
@@ -86,7 +94,7 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
           const index = items.findIndex((item) => props.getId(item) === initialId);
           const initialItem = items[index];
           if (initialItem) {
-            const calculatedItemWidth = width * ITEM_WIDTH_CQW;
+            const calculatedItemWidth = width * itemSize();
             setOffset(index * calculatedItemWidth);
             setCurrentItemId(initialId);
             setHasInitialized(true);
@@ -322,6 +330,7 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
   };
 
   const handleWheel = (e: WheelEvent) => {
+    if (props.interactive === false) return;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (delta === 0) return;
     e.preventDefault();
@@ -356,7 +365,7 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
   const [grabbing, setGrabbing] = createSignal(false);
 
   const handlePointerDown = (e: PointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || props.interactive === false) return;
     dragPointerId = e.pointerId;
     dragStartX = dragLastX = e.clientX;
     dragLastTime = performance.now();
@@ -422,12 +431,54 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
     return randomSong;
   };
 
+  const spinTo = (item: T, durationMs: number): Promise<void> => {
+    const items = filteredAndSortedItems();
+    const width = itemWidth();
+    const targetIndex = items.findIndex((candidate) => props.getId(candidate) === props.getId(item));
+    if (targetIndex === -1 || width === 0) return Promise.resolve();
+
+    // Stop the physics loop; this spin owns the offset until it lands.
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = undefined;
+    snapTarget = null;
+    velocity = 0;
+    holdDirection = 0;
+
+    // Forward to the item's next occurrence; the caller decides how far that is.
+    const from = currentPosition();
+    const to = from + (mod(targetIndex - from, items.length) || items.length);
+
+    const initialOffset = offset();
+    const endOffset = to * width;
+    const start = performance.now();
+    const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
+
+    return new Promise((resolve) => {
+      const step = (now: number) => {
+        const progress = Math.min((now - start) / durationMs, 1);
+        setOffset(initialOffset + (endOffset - initialOffset) * easeOutQuart(progress));
+        if (progress < 1) {
+          spinFrame = requestAnimationFrame(step);
+        } else {
+          spinFrame = undefined;
+          resolve();
+        }
+      };
+      spinFrame = requestAnimationFrame(step);
+    });
+  };
+  let spinFrame: number | undefined;
+  onCleanup(() => spinFrame !== undefined && cancelAnimationFrame(spinFrame));
+
   createRefContent(
     () => props.ref,
-    () => ({ goToRandomSong }),
+    () => ({ goToRandomSong, spinTo }),
   );
 
   useNavigation({
+    get enabled() {
+      return props.interactive !== false;
+    },
     onKeydown(event) {
       if (event.action === "left") goToPosition(currentPosition() - 1);
       else if (event.action === "right") goToPosition(currentPosition() + 1);
@@ -451,13 +502,13 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
     const updateSize = () => {
       const prevWidth = containerWidth();
       const newWidth = containerRef.clientWidth;
-      const prevItemWidth = prevWidth * ITEM_WIDTH_CQW;
+      const prevItemWidth = prevWidth * itemSize();
       const pos = prevItemWidth > 0 ? Math.round(offset() / prevItemWidth) : 0;
 
       setContainerWidth(newWidth);
 
       if (prevWidth > 0 && newWidth !== prevWidth) {
-        const newItemWidth = newWidth * ITEM_WIDTH_CQW;
+        const newItemWidth = newWidth * itemSize();
         setOffset(pos * newItemWidth);
       }
     };
@@ -477,6 +528,7 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
 
   const handleItemClick = (item: T, position: number) => {
     const isCentered = position === currentPosition();
+    if (props.interactive === false && !isCentered) return;
     if (isCentered) {
       props.onConfirm?.(item);
     } else {
@@ -488,7 +540,10 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
     <div
       ref={containerRef}
       class={`relative touch-pan-y overflow-hidden select-none ${props.class ?? ""}`}
-      classList={{ "cursor-grab": !grabbing(), "cursor-grabbing": grabbing() }}
+      classList={{
+        "cursor-grab": props.interactive !== false && !grabbing(),
+        "cursor-grabbing": props.interactive !== false && grabbing(),
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -502,8 +557,9 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
           const t = () => itemTransforms().get(position) ?? { x: 0, scale: 1, offset: 0 };
           return (
             <div
-              class="absolute top-0 flex h-full items-center"
+              class="absolute top-0 flex h-full items-center justify-center"
               style={{
+                width: `${itemWidth()}px`,
                 transform: `translateX(${t().x}px) scale(${t().scale})`,
                 "will-change": "transform",
                 // No paint containment: cards may draw outside their box (e.g. the vinyl).
@@ -511,6 +567,7 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
               }}
             >
               <div
+                class="flex w-full justify-center"
                 onClick={() => !suppressClick && handleItemClick(item, position)}
                 onKeyDown={(e) => e.key === "Enter" && handleItemClick(item, position)}
               >

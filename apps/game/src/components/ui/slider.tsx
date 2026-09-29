@@ -6,6 +6,7 @@ import { useNavigation } from "~/hooks/navigation";
 import { clamp } from "~/lib/utils/math";
 
 import MenuRow from "./menu-row";
+import SlantPanel from "./slant-panel";
 
 interface SliderProps {
   selected?: boolean;
@@ -76,17 +77,20 @@ export default function Slider(props: SliderProps) {
         <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("left")}>
           <IconCaretLeft />
         </button>
-        <div class="grid h-6 grow -skew-x-12 items-center overflow-hidden rounded-sm">
-          <div class="col-start-1 row-start-1 h-full w-full bg-black/25" />
-          <div class="col-start-1 row-start-1 h-full w-full bg-white" style={{ width: `${percentage()}%` }} />
+        <SlantPanel
+          skew={12}
+          class="grid h-6 grow items-center"
+          surface="overflow-hidden rounded-sm bg-black/25"
+          surfaceContent={<span class="absolute inset-y-0 left-0 bg-white" style={{ width: `${percentage()}%` }} />}
+        >
           <div
-            class="col-start-1 row-start-1 skew-x-12 text-center text-sm font-black text-white tabular-nums"
+            class="col-start-1 row-start-1 text-center text-sm font-black text-white tabular-nums"
             style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
           >
             {props.renderValue ? props.renderValue(props.value) : props.value}
           </div>
           <div
-            class="col-start-1 row-start-1 skew-x-12 text-center text-sm font-black text-black tabular-nums"
+            class="col-start-1 row-start-1 text-center text-sm font-black text-black tabular-nums"
             style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
           >
             {props.renderValue ? props.renderValue(props.value) : props.value}
@@ -102,7 +106,7 @@ export default function Slider(props: SliderProps) {
             onInput={(e) => handleInput(e)}
             onKeyDown={(e) => e.preventDefault()}
           />
-        </div>
+        </SlantPanel>
         <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("right")}>
           <IconCaretRight />
         </button>

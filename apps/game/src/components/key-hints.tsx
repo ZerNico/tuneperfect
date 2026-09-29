@@ -9,6 +9,7 @@ import IconLeftArrowKey from "~icons/sing/left-arrow-key";
 import IconRightArrowKey from "~icons/sing/right-arrow-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
+import SlantPanel from "~/components/ui/slant-panel";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 
@@ -63,10 +64,11 @@ interface KeyHintProps {
 }
 function KeyHint(props: KeyHintProps) {
   return (
-    <div class="flex -skew-x-6 items-center gap-2 rounded-md bg-black/25 px-3 py-1.5">
-      <div class="flex skew-x-6 items-center gap-2 font-bold tracking-wide uppercase">
-        {props.icon} <span class="text-sm">{props.label}</span>
-      </div>
-    </div>
+    <SlantPanel
+      class="flex items-center gap-2 px-3 py-1.5 font-bold tracking-wide uppercase"
+      surface="rounded-md bg-black/25"
+    >
+      {props.icon} <span class="text-sm">{props.label}</span>
+    </SlantPanel>
   );
 }

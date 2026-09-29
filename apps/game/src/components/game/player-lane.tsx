@@ -3,10 +3,10 @@ import { createEffect, createSignal, Show } from "solid-js";
 import { MIN_VISIBLE_COMBO } from "~/lib/game/combo";
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
-import { createPlayerSounds } from "~/lib/game/player-sounds";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 
 import Avatar from "../ui/avatar";
+import SlantPanel from "../ui/slant-panel";
 import ComboCounter from "./combo-counter";
 import PhraseRating from "./phrase-rating";
 import Pitch from "./pitch";
@@ -22,7 +22,6 @@ export default function PlayerLane(props: PlayerLaneProps) {
     index: props.index,
   }));
   const { PlayerProvider, player, phrase, combo, microphone } = playerState;
-  createPlayerSounds(playerState);
   const game = useGame();
   const isCompact = () => game.playerCount() > 2;
 
@@ -86,42 +85,45 @@ export default function PlayerLane(props: PlayerLaneProps) {
         >
           <Pitch />
         </div>
-        <div class="pointer-events-none absolute top-1/2 right-20 -translate-y-1/2">
+        <div class="pointer-events-none absolute top-1/2 right-[3cqw] -translate-y-1/2">
           <PhraseRating />
         </div>
         <div
-          class="absolute right-0 left-0 flex items-center justify-between px-20 py-4"
+          class="absolute right-0 left-0 flex items-center justify-between px-[3cqw]"
           classList={{
-            "top-0": props.position === "bottom",
-            "bottom-0": props.position === "top",
+            "top-[1.5cqh]": props.position === "bottom",
+            "bottom-[1.5cqh]": props.position === "top",
           }}
         >
+          <Show when={player()}>
+            {(player) => (
+              <SlantPanel
+                class="flex items-center gap-3 py-1.5 pr-5 pl-4"
+                surface="overflow-hidden rounded-lg bg-black/55 shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)] backdrop-blur-sm"
+                surfaceContent={
+                  <span
+                    class="absolute inset-y-0 left-0 w-[0.5cqw]"
+                    style={{ background: `var(--color-${microphone().color}-400)` }}
+                  />
+                }
+              >
+                <div classList={{ "size-[2.6cqw]": !isCompact(), "size-[1.9cqw]": isCompact() }}>
+                  <Avatar
+                    user={player()}
+                    class="size-full ring-white"
+                    classList={{ "ring-[0.18cqw]": !isCompact(), "ring-[0.14cqw]": isCompact() }}
+                  />
+                </div>
+                <span class="font-bold" classList={{ "text-xl": !isCompact(), "text-base": isCompact() }}>
+                  {player().username}
+                </span>
+              </SlantPanel>
+            )}
+          </Show>
           <div
             class="flex items-center"
             classList={{
               "gap-4": !isCompact(),
-              "gap-2": isCompact(),
-            }}
-          >
-            <Show when={player()}>
-              {(player) => (
-                <>
-                  <Avatar user={player()} class={isCompact() ? "h-8 w-8" : ""} />
-                  <span
-                    classList={{
-                      "text-sm": isCompact(),
-                    }}
-                  >
-                    {player()?.username}
-                  </span>
-                </>
-              )}
-            </Show>
-          </div>
-          <div
-            class="flex items-center"
-            classList={{
-              "gap-6": !isCompact(),
               "gap-3": isCompact(),
             }}
           >

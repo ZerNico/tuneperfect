@@ -45,7 +45,7 @@ export default function ScoreLane(props: ScoreLaneProps) {
 
   const scoreText = () => (
     <span
-      class={`inline-block skew-x-12 leading-none text-display tabular-nums ${SCORE_TEXT[props.size]}`}
+      class={`inline-block leading-none text-display tabular-nums ${SCORE_TEXT[props.size]}`}
       style={{ "--display-shadow": color(800) }}
     >
       {Math.floor(props.shownScore).toLocaleString("en-US")}
@@ -152,8 +152,9 @@ export default function ScoreLane(props: ScoreLaneProps) {
 
           {/* Number and sticker ride on top. The number's box is as wide as the fill but never
               narrower than the number, so it starts at the left and only moves once the fill
-              can carry it; the sticker always follows whichever ends further right. */}
-          <div class="absolute inset-0 flex -skew-x-12 items-center">
+              can carry it; the sticker always follows whichever ends further right. Both sit on
+              the bar's vertical centre, where the slanted fill ends exactly at its width. */}
+          <div class="absolute inset-0 flex items-center">
             <div
               class="flex h-full shrink-0 items-center justify-end px-4"
               style={{ width: `${Math.max(fill(), 3)}%`, "min-width": "max-content" }}
@@ -164,7 +165,7 @@ export default function ScoreLane(props: ScoreLaneProps) {
               <div class="relative h-full w-0">
                 <div
                   ref={sticker}
-                  class="pointer-events-none absolute top-1/2 left-0 z-10 -translate-x-[4%] -translate-y-1/2 skew-x-12"
+                  class="pointer-events-none absolute top-1/2 left-0 z-10 -translate-x-[4%] -translate-y-1/2"
                   style={{ height: `calc(${BAR_HEIGHT[props.size]} * ${STICKER_SCALE[props.size]})` }}
                 >
                   <div class="h-full rotate-[-8deg]" classList={{ "animate-slap": animate() }}>

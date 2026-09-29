@@ -62,6 +62,9 @@ const en = {
   },
   lobby: {
     title: "Lobby",
+    current: "Current",
+    online: "Online",
+    local: "On this device",
     addLocalPlayer: "Add Local Player",
     kick: "Kick",
     removeFromLobby: "Remove from Lobby",
@@ -114,6 +117,9 @@ const en = {
     badge: {
       new: "New",
       duet: "Duet",
+    },
+    medley: {
+      title: "Medley",
     },
     songCount: {
       one: "{{count}} song",
@@ -293,6 +299,8 @@ const en = {
   },
   party: {
     title: "Party",
+    versusDescription: "One on one, everyone gets a turn. Win the most rounds to take the crown.",
+    ticTacToeDescription: "Two teams sing for the cells of the board. Get a line to win.",
     versus: {
       title: "Versus",
       start: "Start",
@@ -304,8 +312,13 @@ const en = {
       restart: "Restart",
       draw: "It's a draw",
       wins: "wins",
+      standings: "Standings",
+      winsColumn: "Wins",
+      score: "Score",
     },
     ticTacToe: {
+      playAgain: "Play again",
+      tieReroll: "Tie! New song",
       title: "Tic Tac Toe",
       start: "Start",
       restart: "Restart",
@@ -317,13 +330,22 @@ const en = {
       singerSelection: "Singer Selection",
       singerRandom: "Random",
       singerManual: "Manual",
-      chooseSinger: "Choose singer",
-      team: "Team",
       teamX: "Team X",
       teamO: "Team O",
       unassigned: "Unassigned",
-      yourTurn: "Your turn",
-      wins: "wins",
+      turn: "{{ team }}'s turn",
+      pickCell: "Pick a cell to sing for",
+      chooseSingers: "Choose your singers",
+      whoSings: "Who sings?",
+      sings: "Sings",
+      waiting: "Waiting…",
+      pickedEachRound: "Picked each round",
+      taken: "Already taken",
+      singThis: "Sing this",
+      drawStamp: "Draw!",
+      noLine: "No line this time",
+      boardFull: "Every cell is taken. Run it back?",
+      wins: "wins!",
       draw: "It's a draw",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a Tic Tac Toe game.",
       microphoneRequired: "You need at least 2 microphones to start a Tic Tac Toe game.",
@@ -332,7 +354,7 @@ const en = {
     },
   },
   loading: {
-    parsing: "Parsing",
+    title: "Loading songs",
   },
   virtualKeyboard: {
     space: "Space",

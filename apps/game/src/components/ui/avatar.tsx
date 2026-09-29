@@ -8,6 +8,7 @@ interface AvatarProps {
     username?: string | null;
   };
   class?: string;
+  classList?: Record<string, boolean | undefined>;
   /** CSS classes for the fallback circle (when no image). Defaults to a per-player colour. */
   fallbackClass?: string;
 }
@@ -45,7 +46,7 @@ export default function Avatar(props: AvatarProps) {
   };
 
   return (
-    <div class={twMerge("grid h-10 w-10 rounded-full", props.class)}>
+    <div class={twMerge("grid h-10 w-10 rounded-full", props.class)} classList={props.classList}>
       <div
         class={twMerge(
           "col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full leading-none text-white [container-type:size]",

@@ -1,11 +1,7 @@
 import { Howl } from "howler";
 
-import SoundComboBreak from "~/assets/sounds/combo-break.ogg?url";
-import SoundComboMilestone from "~/assets/sounds/combo-milestone.ogg?url";
 import SoundConfirm from "~/assets/sounds/confirm.mp3?url";
 import SoundCountTick from "~/assets/sounds/count-tick.ogg?url";
-import SoundGoldenHit from "~/assets/sounds/golden-hit.ogg?url";
-import SoundPerfect from "~/assets/sounds/perfect.ogg?url";
 import SoundSelect from "~/assets/sounds/select.mp3?url";
 import SoundTierA from "~/assets/sounds/tier-a.mp3?url";
 import SoundTierB from "~/assets/sounds/tier-b.mp3?url";
@@ -13,7 +9,6 @@ import SoundTierC from "~/assets/sounds/tier-c.mp3?url";
 import SoundTierD from "~/assets/sounds/tier-d.mp3?url";
 import SoundTierS from "~/assets/sounds/tier-s.mp3?url";
 import SoundTierSPlus from "~/assets/sounds/tier-splus.mp3?url";
-import SoundWhoosh from "~/assets/sounds/whoosh.ogg?url";
 import { settingsStore, type VolumeSettings } from "~/stores/settings";
 
 interface SoundDefinition {
@@ -26,14 +21,9 @@ interface SoundDefinition {
 const sounds = {
   confirm: { src: SoundConfirm, category: "menu", gain: 1 },
   select: { src: SoundSelect, category: "menu", gain: 1 },
-  // In-game sounds are short and quiet: the microphones also pick up the speakers.
-  goldenHit: { src: SoundGoldenHit, category: "effects", gain: 0.4 },
-  comboMilestone: { src: SoundComboMilestone, category: "effects", gain: 0.5 },
-  comboBreak: { src: SoundComboBreak, category: "effects", gain: 0.3 },
-  perfect: { src: SoundPerfect, category: "effects", gain: 0.5 },
+  // Results screen. Nothing plays while singing: the microphones would pick it up, and it distracts.
   countTick: { src: SoundCountTick, category: "effects", gain: 0.4 },
-  whoosh: { src: SoundWhoosh, category: "effects", gain: 0.5 },
-  // Results screen (loudness-normalised, so one gain for all): recording has stopped, so these can be bigger.
+  // Loudness-normalised, so one gain for all.
   tierD: { src: SoundTierD, category: "effects", gain: 0.8 },
   tierC: { src: SoundTierC, category: "effects", gain: 0.8 },
   tierB: { src: SoundTierB, category: "effects", gain: 0.8 },

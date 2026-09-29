@@ -12,6 +12,7 @@ import { playSound } from "~/lib/sound";
 import { formatDecade, getDecades, getEditions, getGenres, getLanguages } from "~/lib/utils/song-facets";
 
 import Plate from "../ui/plate";
+import SlantPanel from "../ui/slant-panel";
 
 interface FilterPopupProps {
   songs: SongLike[];
@@ -238,15 +239,14 @@ export function FilterPopup(props: FilterPopupProps) {
                     </Plate>
                   }
                 >
-                  <div
-                    class="flex -skew-x-6 items-center gap-3 rounded-md px-3 py-1.5 transition-all"
-                    classList={{
-                      "bg-white/12 ring-1 ring-white/20 ring-inset": selected(),
-                    }}
+                  <SlantPanel
+                    class="flex items-center gap-3 px-3 py-1.5"
+                    surface="rounded-md transition-colors"
+                    surfaceClassList={{ "bg-white/12 ring-1 ring-white/20 ring-inset": selected() }}
                     onMouseEnter={() => set(index())}
                   >
                     <span
-                      class="min-w-0 flex-1 skew-x-6 truncate text-sm font-bold"
+                      class="min-w-0 flex-1 truncate text-sm font-bold"
                       classList={{
                         "text-white": row.active || selected(),
                         "text-white/70": !row.active && !selected(),
@@ -254,7 +254,7 @@ export function FilterPopup(props: FilterPopupProps) {
                     >
                       {row.label}
                     </span>
-                    <div class="flex shrink-0 skew-x-6 items-center gap-2">
+                    <div class="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -266,16 +266,18 @@ export function FilterPopup(props: FilterPopupProps) {
                       >
                         <IconTriangleLeft class="text-xs" />
                       </button>
-                      <div
-                        class="w-40 truncate rounded-md px-3 py-0.5 text-center text-sm"
-                        classList={{
-                          "gradient-sing bg-linear-to-r font-bold text-white": !!row.active,
-                          "bg-white/10 text-white/70": !row.active,
+                      <SlantPanel
+                        class="w-40 truncate px-3 py-0.5 text-center text-sm"
+                        classList={{ "font-bold text-white": !!row.active, "text-white/70": !row.active }}
+                        surface="rounded-md"
+                        surfaceClassList={{
+                          "gradient-sing bg-linear-to-r": !!row.active,
+                          "bg-white/10": !row.active,
                         }}
                         title={row.valueLabel}
                       >
                         {row.valueLabel}
-                      </div>
+                      </SlantPanel>
                       <button
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -288,7 +290,7 @@ export function FilterPopup(props: FilterPopupProps) {
                         <IconTriangleRight class="text-xs" />
                       </button>
                     </div>
-                  </div>
+                  </SlantPanel>
                 </Show>
               );
             }}

@@ -1,6 +1,7 @@
 import { createEffect, createSignal, For, type JSX, on, Show, untrack } from "solid-js";
 import IconDuet from "~icons/ph/users-fill";
 
+import SlantPanel from "~/components/ui/slant-panel";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 
@@ -106,24 +107,37 @@ export function SongTitle(props: SongTitleProps) {
               classList={{ "animate-badge-in": !layer.leaving && effectsEnabled() }}
             >
               <Show when={layer.song.duet}>
-                <span class="inline-flex -skew-x-12 items-center rounded-sm bg-white px-2.5 py-0.5 text-sm font-black text-black uppercase shadow-md">
-                  <span class="inline-flex skew-x-12 items-center gap-1.5">
-                    <IconDuet />
-                    {t("sing.badge.duet")}
-                  </span>
-                </span>
+                <SlantPanel
+                  as="span"
+                  skew={12}
+                  class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-sm font-black text-black uppercase"
+                  surface="rounded-sm bg-white shadow-md"
+                >
+                  <IconDuet />
+                  {t("sing.badge.duet")}
+                </SlantPanel>
               </Show>
               <For each={layer.song.meta}>
                 {(value) => (
-                  <span class="inline-block -skew-x-12 rounded-sm bg-black/35 px-2.5 py-0.5 text-sm font-bold text-white/90 backdrop-blur-sm">
-                    <span class="inline-block skew-x-12">{value}</span>
-                  </span>
+                  <SlantPanel
+                    as="span"
+                    skew={12}
+                    class="inline-block px-2.5 py-0.5 text-sm font-bold text-white/90"
+                    surface="rounded-sm bg-black/35 backdrop-blur-sm"
+                  >
+                    {value}
+                  </SlantPanel>
                 )}
               </For>
               <Show when={layer.song.isNew}>
-                <span class="gradient-sing inline-block -skew-x-12 rounded-sm bg-linear-to-b px-2.5 py-0.5 text-sm font-black text-white uppercase shadow-md">
-                  <span class="inline-block skew-x-12">{t("sing.badge.new")}</span>
-                </span>
+                <SlantPanel
+                  as="span"
+                  skew={12}
+                  class="inline-block px-2.5 py-0.5 text-sm font-black text-white uppercase"
+                  surface="gradient-sing rounded-sm bg-linear-to-b shadow-md"
+                >
+                  {t("sing.badge.new")}
+                </SlantPanel>
               </Show>
               {layer.song.extras}
             </div>

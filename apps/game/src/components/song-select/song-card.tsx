@@ -35,6 +35,10 @@ function Cover(props: CoverProps) {
 interface SongCardProps extends CoverProps {
   /** 0 = at rest, 1 = centred/selected. The centred cover lifts and brightens. */
   emphasis?: number;
+  /** Pointer cursor and press feedback; off for covers that can't be clicked. Defaults to true. */
+  clickable?: boolean;
+  /** Drop shadow under the cover. Defaults to true. */
+  shadow?: boolean;
 }
 
 /** Cover in the coverflow. */
@@ -44,13 +48,20 @@ export function SongCard(props: SongCardProps) {
   return (
     <button
       type="button"
-      class="relative mx-4 aspect-square w-40 cursor-pointer active:scale-95 active:transition-transform active:duration-250"
+      class="relative aspect-square w-[84%]"
+      classList={{
+        "cursor-pointer active:scale-95 active:transition-transform active:duration-250": props.clickable !== false,
+        "cursor-default": props.clickable === false,
+      }}
     >
       <div
         class="relative h-full w-full overflow-hidden rounded-xl bg-black"
         style={{
           transform: `translateY(${-emphasis() * 0.6}cqw)`,
-          "box-shadow": `0 ${0.4 + emphasis()}cqw ${1 + emphasis() * 2}cqw rgb(0 0 0 / ${0.35 + emphasis() * 0.25})`,
+          "box-shadow":
+            props.shadow === false
+              ? undefined
+              : `0 ${0.4 + emphasis()}cqw ${1 + emphasis() * 2}cqw rgb(0 0 0 / ${0.35 + emphasis() * 0.25})`,
           filter: `brightness(${0.6 + 0.4 * emphasis()})`,
         }}
       >

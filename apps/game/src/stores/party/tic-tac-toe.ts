@@ -32,6 +32,10 @@ export interface State {
   winner: Mark | "draw" | null;
   winningCells: number[];
   playing: boolean;
+  /** The cell claimed by the last round, so the screen can stamp its mark in. */
+  lastClaimed: number | null;
+  /** The cell whose song was replaced after a tie or a failed round. */
+  lastRerolled: number | null;
 }
 
 export const GRID_SIZES = [3, 4, 5] as const;
@@ -98,6 +102,8 @@ function emptyState(): State {
     winner: null,
     winningCells: [],
     playing: false,
+    lastClaimed: null,
+    lastRerolled: null,
   };
 }
 
@@ -171,11 +177,13 @@ function createTicTacToeStore() {
       winner: null,
       winningCells: [],
       playing: true,
+      lastClaimed: null,
+      lastRerolled: null,
     });
   };
 
   const setContestedCell = (index: number) => {
-    setState((prev) => ({ ...prev, contestedCell: index }));
+    setState((prev) => ({ ...prev, contestedCell: index, lastClaimed: null, lastRerolled: null }));
   };
 
   /** Assigns the cell to a team and updates the winner if a line is completed. */
@@ -185,7 +193,7 @@ function createTicTacToeStore() {
       const lineWinner = checkWinner(board, prev.gridSize, prev.winLength);
       const winner: State["winner"] = lineWinner?.mark ?? (isBoardFull(board) ? "draw" : null);
       const winningCells = lineWinner?.cells ?? [];
-      return { ...prev, board, contestedCell: null, winner, winningCells };
+      return { ...prev, board, contestedCell: null, winner, winningCells, lastClaimed: index, lastRerolled: null };
     });
   };
 
@@ -200,7 +208,7 @@ function createTicTacToeStore() {
       const pool = candidates.length > 0 ? candidates : songs;
       const song = pickSong(pool, used);
       const board = prev.board.map((cell, i) => (i === index ? { ...cell, song } : cell));
-      return { ...prev, board, contestedCell: null };
+      return { ...prev, board, contestedCell: null, lastClaimed: null, lastRerolled: index };
     });
   };
 
@@ -223,6 +231,12 @@ function createTicTacToeStore() {
     });
   };
 
+  /** A new game with the same teams and rules on a fresh board. */
+  const playAgain = (songs: LocalSong[]) => {
+    const { teams, gridSize, winLength, singerMode } = state();
+    startGame(teams, songs, gridSize, winLength, singerMode);
+  };
+
   const reset = () => {
     setState(emptyState());
   };
@@ -235,6 +249,7 @@ function createTicTacToeStore() {
     claimCell,
     rerollCell,
     nextTurn,
+    playAgain,
     reset,
   };
 }

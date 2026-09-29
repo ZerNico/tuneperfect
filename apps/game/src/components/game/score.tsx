@@ -66,7 +66,8 @@ export default function Score(props: ScoreProps) {
     }),
   );
 
-  const micColor = () => `var(--color-${player.microphone().color}-500)`;
+  // White digits on a shadow in the singer's colour, like the rest of the display type.
+  const shadowColor = () => `var(--color-${player.microphone().color}-800)`;
   const isCompact = () => game.playerCount() > 2;
 
   return (
@@ -79,7 +80,7 @@ export default function Score(props: ScoreProps) {
           "animate-score-pop": pop() && !effectsEnabled(),
           "animate-score-rush": pop() && effectsEnabled(),
         }}
-        style={{ color: micColor() }}
+        style={{ "--display-shadow": shadowColor() }}
         onAnimationEnd={() => setPop(false)}
       >
         {displayScore().toLocaleString("en-US", {

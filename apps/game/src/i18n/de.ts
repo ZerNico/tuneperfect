@@ -62,6 +62,9 @@ const de = {
   },
   lobby: {
     title: "Lobby",
+    current: "Aktuell",
+    online: "Online",
+    local: "Auf diesem Gerät",
     addLocalPlayer: "Lokalen Spieler hinzufügen",
     kick: "Kicken",
     removeFromLobby: "Aus Lobby entfernen",
@@ -114,6 +117,9 @@ const de = {
     badge: {
       new: "Neu",
       duet: "Duett",
+    },
+    medley: {
+      title: "Medley",
     },
     songCount: {
       one: "{{count}} Lied",
@@ -293,6 +299,8 @@ const de = {
   },
   party: {
     title: "Party",
+    versusDescription: "Eins gegen eins, jeder ist mal dran. Wer die meisten Runden gewinnt, holt die Krone.",
+    ticTacToeDescription: "Zwei Teams singen um die Felder. Wer eine Reihe schafft, gewinnt.",
     versus: {
       title: "Versus",
       start: "Start",
@@ -304,8 +312,13 @@ const de = {
       restart: "Neustart",
       draw: "Unentschieden",
       wins: "hat gewonnen",
+      standings: "Tabelle",
+      winsColumn: "Siege",
+      score: "Punkte",
     },
     ticTacToe: {
+      playAgain: "Nochmal spielen",
+      tieReroll: "Gleichstand! Neuer Song",
       title: "Tic Tac Toe",
       start: "Start",
       restart: "Neustart",
@@ -317,13 +330,22 @@ const de = {
       singerSelection: "Sänger-Auswahl",
       singerRandom: "Zufällig",
       singerManual: "Manuell",
-      chooseSinger: "Sänger wählen",
-      team: "Team",
       teamX: "Team X",
       teamO: "Team O",
       unassigned: "Nicht zugewiesen",
-      yourTurn: "Du bist dran",
-      wins: "hat gewonnen",
+      turn: "{{ team }} ist dran",
+      pickCell: "Wählt ein Feld zum Singen",
+      chooseSingers: "Wählt eure Sänger",
+      whoSings: "Wer singt?",
+      sings: "Singt",
+      waiting: "Wartet…",
+      pickedEachRound: "Wird jede Runde gewählt",
+      taken: "Schon vergeben",
+      singThis: "Singen",
+      drawStamp: "Remis!",
+      noLine: "Diesmal keine Reihe",
+      boardFull: "Alle Felder sind belegt. Nochmal?",
+      wins: "gewinnt!",
       draw: "Unentschieden",
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Tic-Tac-Toe-Spiels.",
       microphoneRequired: "Du brauchst mindestens 2 Mikrofone zum Starten eines Tic-Tac-Toe-Spiels.",
@@ -332,7 +354,7 @@ const de = {
     },
   },
   loading: {
-    parsing: "Parse",
+    title: "Songs werden geladen",
   },
   virtualKeyboard: {
     space: "Leertaste",

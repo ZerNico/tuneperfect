@@ -11,6 +11,8 @@ import { useNavigation } from "~/hooks/navigation";
 import { useTextInput } from "~/hooks/use-text-input";
 import { t } from "~/lib/i18n";
 
+import SlantPanel from "./slant-panel";
+
 interface VirtualKeyboardProps {
   inputRef: HTMLInputElement;
   layer?: number;
@@ -178,34 +180,40 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   });
 
   return (
-    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-xl glass p-2 text-white">
+    <div class="grid grid-cols-[repeat(10,2.4cqw)] gap-1.5 rounded-2xl glass p-3 text-white">
       <For each={activeKeys()}>
         {(row, rowIndex) => (
           <For each={row}>
-            {(key, colIndex) => (
-              <button
-                type="button"
-                class="relative flex h-8 cursor-pointer items-center justify-center rounded-md transition-transform ease-in-out active:scale-95"
-                classList={{
-                  "gradient-sing bg-linear-to-r": rowIndex() === position().row && colIndex() === position().col,
-                  "scale-95": rowIndex() === position().row && colIndex() === position().col && pressed(),
-                  "bg-white/10": key.highlight,
-                }}
-                style={{ "grid-column": `span ${key.colSpan || 1}` }}
-                onMouseEnter={() => setPosition({ row: rowIndex(), col: colIndex() })}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  if (key.action) {
-                    key.action();
-                  } else if (typeof key.content === "string") {
-                    writeCharacter(key.content);
-                  }
-                }}
-              >
-                {key.content}
-                {key.hint && <div class="absolute top-1 left-1 text-xs">{key.hint}</div>}
-              </button>
-            )}
+            {(key, colIndex) => {
+              const selected = () => rowIndex() === position().row && colIndex() === position().col;
+              return (
+                <SlantPanel
+                  as="button"
+                  type="button"
+                  class="flex h-[2.4cqw] cursor-pointer items-center justify-center text-base font-bold transition-[scale] duration-100"
+                  classList={{ "scale-110": selected() && !pressed(), "scale-95": selected() && pressed() }}
+                  surface="rounded-md transition-colors duration-100"
+                  surfaceClassList={{
+                    "gradient-settings bg-linear-to-r shadow-[0.2cqw_0.2cqw_0_rgb(0_0_0/0.4)]": selected(),
+                    "bg-white/15": !selected() && !!key.highlight,
+                    "bg-white/6": !selected() && !key.highlight,
+                  }}
+                  style={{ "grid-column": `span ${key.colSpan || 1}` }}
+                  onMouseEnter={() => setPosition({ row: rowIndex(), col: colIndex() })}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    if (key.action) {
+                      key.action();
+                    } else if (typeof key.content === "string") {
+                      writeCharacter(key.content);
+                    }
+                  }}
+                >
+                  {key.content}
+                  {key.hint && <div class="absolute top-0.5 left-1 text-[0.55cqw] opacity-70">{key.hint}</div>}
+                </SlantPanel>
+              );
+            }}
           </For>
         )}
       </For>

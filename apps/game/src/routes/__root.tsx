@@ -1,15 +1,9 @@
-import { createEventListener } from "@solid-primitives/event-listener";
-import { debounce } from "@solid-primitives/scheduled";
 import type { QueryClient } from "@tanstack/solid-query";
-import { createRootRouteWithContext, Outlet, redirect } from "@tanstack/solid-router";
-import { createSignal, Suspense } from "solid-js";
+import { createRootRouteWithContext, redirect } from "@tanstack/solid-router";
+import { createSignal } from "solid-js";
 
-import PopupContainer from "~/components/popup-container";
 import { RouteError } from "~/components/route-error";
-import { useNavigation } from "~/hooks/navigation";
-import { useWakeLock } from "~/hooks/use-wake-lock";
-import { native } from "~/lib/native/client";
-import { useWebRTCAutoConnect } from "~/stores/webrtc";
+import RootScreen from "~/screens/root";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -18,7 +12,7 @@ interface RouterContext {
 const [initialized, setInitialized] = createSignal(false);
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: RootComponent,
+  component: RootScreen,
   errorComponent: RouteError,
   beforeLoad: async () => {
     if (!initialized()) {
@@ -27,80 +21,3 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     }
   },
 });
-
-function RootComponent() {
-  useWakeLock();
-  useWebRTCAutoConnect();
-
-  const toggleFullscreen = async () => {
-    await native.window.toggleFullscreen();
-  };
-
-  useNavigation({
-    layer: false,
-    onKeydown: (event) => {
-      if (event.action === "fullscreen") {
-        toggleFullscreen();
-      }
-    },
-  });
-
-  const [mouseHidden, setMouseHidden] = createSignal(false);
-
-  const hideMouse = debounce(() => {
-    setMouseHidden(true);
-  }, 3000);
-
-  createEventListener(document, "mousemove", () => {
-    setMouseHidden(false);
-    hideMouse();
-  });
-
-  if (import.meta.env.MODE === "production") {
-    createEventListener(
-      document,
-      "contextmenu",
-      (event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
-          return;
-        }
-
-        event.preventDefault();
-      },
-      { capture: true },
-    );
-  }
-
-  if (import.meta.env.MODE === "production") {
-    createEventListener(
-      document,
-      "selectstart",
-      (event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
-          return;
-        }
-
-        event.preventDefault();
-      },
-      { capture: true },
-    );
-  }
-
-  return (
-    <div
-      class="font-primary text-base text-white"
-      classList={{
-        "cursor-none": mouseHidden(),
-      }}
-    >
-      <Suspense>
-        <Outlet />
-      </Suspense>
-      <PopupContainer />
-    </div>
-  );
-}

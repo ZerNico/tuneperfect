@@ -7,6 +7,8 @@ import { getColorVar } from "~/lib/utils/color";
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
+import SlantPanel from "../ui/slant-panel";
+
 const formatTime = (seconds: number): string => {
   const minutes = Math.floor(Math.abs(seconds) / 60);
   const remainingSeconds = Math.floor(Math.abs(seconds) % 60);
@@ -159,32 +161,33 @@ export default function Progress() {
   };
 
   return (
-    <div class="grid h-full w-full grid-cols-[5cqw_1fr_5cqw] items-center justify-center gap-2">
-      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
-        {formatTime(timingInfo().elapsed)}
-      </div>
-      <div class="relative h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-        <Show when={settingsStore.general().showNoteSegments}>
-          <For each={noteSegments()}>
-            {(segment) => (
-              <div
-                class="absolute top-0 h-full rounded-full bg-white/30 shadow-sm"
-                style={{
-                  left: `${segment.start * 100}%`,
-                  width: `${(segment.end - segment.start) * 100}%`,
-                }}
-              />
-            )}
-          </For>
-        </Show>
-        <div
-          class="relative z-10 h-full rounded-full transition-colors duration-500"
-          style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
-        />
-      </div>
-      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
-        {formatTime(timingInfo().remaining)}
-      </div>
+    // Full width like the name plates and scores; the bar fills between the times.
+    <div class="grid h-full w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-[3cqw]">
+      <span class="text-sm font-black tabular-nums">{formatTime(timingInfo().elapsed)}</span>
+      <SlantPanel
+        skew={12}
+        class="h-[0.6cqw]"
+        surface="overflow-hidden rounded-sm bg-white/20"
+        surfaceContent={
+          <>
+            <Show when={settingsStore.general().showNoteSegments}>
+              <For each={noteSegments()}>
+                {(segment) => (
+                  <span
+                    class="absolute inset-y-0 bg-white/30"
+                    style={{ left: `${segment.start * 100}%`, width: `${(segment.end - segment.start) * 100}%` }}
+                  />
+                )}
+              </For>
+            </Show>
+            <span
+              class="absolute inset-y-0 left-0 transition-colors duration-500"
+              style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
+            />
+          </>
+        }
+      />
+      <span class="text-sm font-black text-white/60 tabular-nums">{formatTime(timingInfo().remaining)}</span>
     </div>
   );
 }
