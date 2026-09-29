@@ -160,8 +160,9 @@ export default function ScoreScreen() {
           <Button
             loading={done() && round.saving()}
             selected
+            size="sm"
             gradient={roundStore.settings()?.returnTo ? "gradient-party" : "gradient-sing"}
-            class="w-[30cqw]"
+            class="w-[16cqw]"
             onClick={handleContinue}
           >
             {done() ? t("score.continue") : t("score.skip")}
