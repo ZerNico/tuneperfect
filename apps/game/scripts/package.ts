@@ -131,7 +131,10 @@ const config: Configuration = {
   nodeGypRebuild: false,
   mac: {
     category: "public.app-category.music",
-    icon: path.join(root, "resources/icons/icon.icns"),
+    // An Icon Composer icon, so macOS 26 shows it as a proper app icon instead of putting it
+    // on a gray tile. electron-builder compiles it with Xcode's actool (Xcode 26 or later)
+    // and derives the .icns older macOS versions use from it.
+    icon: path.join(root, "resources/icons/icon.icon"),
     // There's no Developer ID yet: skip electron-builder's signing, which would pick up any
     // certificate in the local keychain, and sign ad-hoc in `afterPack` instead.
     identity: null,
