@@ -88,6 +88,14 @@ function GeneralSettingsComponent() {
       renderValue: (value) => t(`settings.sections.general.songSelectStyleOptions.${value as "coverflow" | "grid"}`),
     },
     {
+      type: "select-string",
+      label: t("settings.sections.general.visualEffects"),
+      value: () => general().visualEffects,
+      options: ["full", "reduced"],
+      onChange: (value) => setGeneral({ ...general(), visualEffects: value as "full" | "reduced" }),
+      renderValue: (value) => t(`settings.sections.general.visualEffectsOptions.${value as "full" | "reduced"}`),
+    },
+    {
       type: "slider",
       label: t("settings.sections.general.outputLatency"),
       value: () => general().outputLatency,

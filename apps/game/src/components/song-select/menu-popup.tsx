@@ -1,68 +1,27 @@
-import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconF1Key from "~icons/sing/f1-key";
-import IconGamepadRT from "~icons/sing/gamepad-rt";
-import IconShiftKey from "~icons/sing/shift-key";
 
 import { createLoop } from "~/hooks/loop";
-import { keyMode, useNavigation } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
+import { useNavigation } from "~/hooks/navigation";
 import { playSound } from "~/lib/sound";
-import { usdbStore } from "~/stores/usdb";
 
-interface MenuPopupProps {
-  onClose: () => void;
-  onStartRandomMedley: () => void;
-  onAddToMedley: () => void;
-  onSearchUsdb: () => void;
+import Plate from "../ui/plate";
+
+export interface MenuPopupItem {
+  label: JSX.Element;
+  /** Key glyph(s) for the item's direct shortcut, if it has one. */
+  hint?: JSX.Element;
+  action: () => void;
 }
 
+interface MenuPopupProps {
+  items: MenuPopupItem[];
+  onClose: () => void;
+}
+
+/** Dropdown menu anchored below its trigger, driven by keyboard, gamepad or mouse. */
 export function MenuPopup(props: MenuPopupProps) {
-  const options = createMemo(() => {
-    const items = [
-      {
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.addToMedley")}</span>
-            <div class="flex items-center gap-1">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRT class="text-sm" />}>
-                <IconF1Key class="text-sm" />
-              </Show>
-            </div>
-          </div>
-        ),
-        action: () => props.onAddToMedley(),
-      },
-      {
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.startRandomMedley")}</span>
-            <div class="flex items-center gap-1">
-              <Show when={keyMode() === "keyboard"}>
-                <IconShiftKey class="text-sm" />
-                <span class="text-xs font-bold">+</span>
-                <span class="text-sm font-bold">D</span>
-              </Show>
-            </div>
-          </div>
-        ),
-        action: () => props.onStartRandomMedley(),
-      },
-    ];
-
-    if (usdbStore.loggedIn()) {
-      items.push({
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.searchUsdb")}</span>
-          </div>
-        ),
-        action: () => props.onSearchUsdb(),
-      });
-    }
-
-    return items;
-  });
+  const options = () => props.items;
 
   const { position, increment, decrement, set } = createLoop(() => options().length);
   let popupRef!: HTMLDivElement;
@@ -114,7 +73,7 @@ export function MenuPopup(props: MenuPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-70 rounded-lg bg-black/30 p-2 shadow-xl backdrop-blur-md"
+        class="w-70 rounded-xl glass p-2"
       >
         <div class="flex flex-col gap-1">
           <For each={options()}>
@@ -122,14 +81,14 @@ export function MenuPopup(props: MenuPopupProps) {
               const isSelected = () => position() === index();
               const isActive = () => isSelected() && pressed();
               return (
-                <button
-                  type="button"
-                  class="group relative grid w-full overflow-hidden rounded-lg text-left transition-all duration-250 active:scale-95"
-                  classList={{
-                    "bg-white/10": !isSelected(),
-                    "shadow-lg": isSelected(),
-                    "scale-95": isActive(),
-                  }}
+                <Plate
+                  as="button"
+                  size="sm"
+                  class="w-full"
+                  gradient="gradient-sing"
+                  selected={isSelected()}
+                  pressed={isActive()}
+                  contentClass="flex items-center px-4 font-bold"
                   onClick={() => {
                     set(index());
                     option.action();
@@ -138,16 +97,13 @@ export function MenuPopup(props: MenuPopupProps) {
                   }}
                   onMouseEnter={() => set(index())}
                 >
-                  <div
-                    class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-250"
-                    classList={{
-                      "gradient-sing": true,
-                      "opacity-0": !isSelected(),
-                      "opacity-90": isSelected(),
-                    }}
-                  />
-                  <div class="z-2 col-start-1 row-start-1 p-3 font-medium">{option.label}</div>
-                </button>
+                  <span class="flex w-full items-center justify-between gap-4">
+                    <span>{option.label}</span>
+                    <Show when={option.hint}>
+                      <span class="flex items-center gap-1 text-sm opacity-80">{option.hint}</span>
+                    </Show>
+                  </span>
+                </Plate>
               );
             }}
           </For>

@@ -1,8 +1,8 @@
 import { createEffect, createMemo, For, onCleanup, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconTrash from "~icons/lucide/trash-2";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
+import IconTrash from "~icons/ph/trash-bold";
 
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
@@ -10,6 +10,8 @@ import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter }
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import { formatDecade, getDecades, getEditions, getGenres, getLanguages } from "~/lib/utils/song-facets";
+
+import Plate from "../ui/plate";
 
 interface FilterPopupProps {
   songs: SongLike[];
@@ -207,7 +209,7 @@ export function FilterPopup(props: FilterPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-lg bg-black/30 p-3 text-white shadow-xl backdrop-blur-md"
+        class="w-96 rounded-xl glass p-3 text-white"
       >
         <div class="flex flex-col gap-1">
           <For each={rows()}>
@@ -217,13 +219,13 @@ export function FilterPopup(props: FilterPopupProps) {
                 <Show
                   when={row.kind !== "clear"}
                   fallback={
-                    <button
-                      type="button"
-                      class="group relative mt-1 grid w-full overflow-hidden rounded-md text-left transition-all duration-200 active:scale-95"
-                      classList={{
-                        "bg-white/10": !selected(),
-                        "shadow-lg": selected(),
-                      }}
+                    <Plate
+                      as="button"
+                      size="sm"
+                      class="mt-2 w-full"
+                      gradient="gradient-sing"
+                      selected={selected()}
+                      contentClass="flex items-center justify-center gap-2 font-bold"
                       onClick={() => {
                         set(index());
                         row.onConfirm?.();
@@ -231,30 +233,20 @@ export function FilterPopup(props: FilterPopupProps) {
                       }}
                       onMouseEnter={() => set(index())}
                     >
-                      <div
-                        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-200"
-                        classList={{
-                          "gradient-sing": true,
-                          "opacity-0": !selected(),
-                          "opacity-90": selected(),
-                        }}
-                      />
-                      <div class="z-2 col-start-1 row-start-1 flex items-center justify-center gap-2 p-2 text-sm font-medium">
-                        <IconTrash class="text-xs" />
-                        <span>{row.label}</span>
-                      </div>
-                    </button>
+                      <IconTrash />
+                      <span>{row.label}</span>
+                    </Plate>
                   }
                 >
                   <div
-                    class="flex items-center gap-3 rounded-md px-2 py-1.5 transition-all"
+                    class="flex -skew-x-6 items-center gap-3 rounded-md px-3 py-1.5 transition-all"
                     classList={{
-                      "bg-white/10": selected(),
+                      "bg-white/12 ring-1 ring-white/20 ring-inset": selected(),
                     }}
                     onMouseEnter={() => set(index())}
                   >
                     <span
-                      class="min-w-0 flex-1 truncate text-sm font-medium"
+                      class="min-w-0 flex-1 skew-x-6 truncate text-sm font-bold"
                       classList={{
                         "text-white": row.active || selected(),
                         "text-white/70": !row.active && !selected(),
@@ -262,7 +254,7 @@ export function FilterPopup(props: FilterPopupProps) {
                     >
                       {row.label}
                     </span>
-                    <div class="flex shrink-0 items-center gap-2">
+                    <div class="flex shrink-0 skew-x-6 items-center gap-2">
                       <button
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -277,7 +269,7 @@ export function FilterPopup(props: FilterPopupProps) {
                       <div
                         class="w-40 truncate rounded-md px-3 py-0.5 text-center text-sm"
                         classList={{
-                          "gradient-sing bg-linear-to-r font-semibold text-white": !!row.active,
+                          "gradient-sing bg-linear-to-r font-bold text-white": !!row.active,
                           "bg-white/10 text-white/70": !row.active,
                         }}
                         title={row.valueLabel}

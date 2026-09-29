@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { batch, createMemo, createSignal, For, Show } from "solid-js";
-import IconCircle from "~icons/lucide/circle";
-import IconMicVocal from "~icons/lucide/mic-vocal";
-import IconTrophy from "~icons/lucide/trophy";
-import IconX from "~icons/lucide/x";
+import IconCircle from "~icons/ph/circle-bold";
+import IconMicVocal from "~icons/ph/microphone-stage-fill";
+import IconTrophy from "~icons/ph/trophy-fill";
+import IconX from "~icons/ph/x-bold";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

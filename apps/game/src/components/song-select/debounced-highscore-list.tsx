@@ -55,7 +55,7 @@ export function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
 
   return (
     <div class="h-full transition-opacity duration-250" classList={{ "opacity-0": highscores().length === 0 }}>
-      <HighscoreList scores={highscores()} />
+      <HighscoreList scores={highscores()} class="w-[21cqw]" />
     </div>
   );
 }

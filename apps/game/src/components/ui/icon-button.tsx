@@ -1,5 +1,5 @@
 import { Show, type JSX, type Ref } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
+import IconLoaderCircle from "~icons/ph/spinner-gap-bold";
 
 interface IconButtonProps {
   ref?: Ref<HTMLButtonElement>;

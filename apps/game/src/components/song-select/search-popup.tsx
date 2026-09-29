@@ -1,11 +1,11 @@
 import { createEffect, onCleanup, onMount, Show } from "solid-js";
 import { Motion } from "solid-motionone";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
 import IconF6Key from "~icons/sing/f6-key";
 import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
 
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
 import { keyMode, useNavigation } from "~/hooks/navigation";
@@ -95,7 +95,7 @@ export function SearchPopup(props: SearchPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-lg bg-black/30 p-4 text-white shadow-xl backdrop-blur-md"
+        class="w-96 rounded-xl glass p-4 text-white"
       >
         <div class="space-y-3">
           <div class="flex items-center justify-between">

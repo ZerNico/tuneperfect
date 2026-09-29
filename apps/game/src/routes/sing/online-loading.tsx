@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createMemo, createSignal, onMount } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
+import IconLoaderCircle from "~icons/ph/spinner-gap-bold";
 
 import Layout from "~/components/layout";
 import { t } from "~/lib/i18n";

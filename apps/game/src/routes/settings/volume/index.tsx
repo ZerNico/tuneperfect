@@ -72,6 +72,17 @@ function VolumeComponent() {
     },
     {
       type: "slider",
+      label: t("settings.sections.volume.effects"),
+      value: () => Math.round(volume().effects * 100),
+      min: 0,
+      max: 100,
+      step: 1,
+      onInput: (value: number) => {
+        setVolume((prev) => ({ ...prev, effects: Math.round(value) / 100 }));
+      },
+    },
+    {
+      type: "slider",
       label: t("settings.sections.volume.micPlaybackVolume"),
       value: () => Math.round(volume().micPlayback * 100),
       min: 0,

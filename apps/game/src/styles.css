@@ -1,10 +1,9 @@
 @import "tailwindcss";
-@import "@fontsource/lato/300.css";
-@import "@fontsource/lato/400.css";
-@import "@fontsource/lato/700.css";
+@import "@fontsource-variable/rubik/wght.css";
+@import "@fontsource-variable/rubik/wght-italic.css";
 
 @theme {
-  --font-primary: "Lato", "sans-serif";
+  --font-primary: "Rubik Variable", "sans-serif";
 
   --spacing: 0.25cqw;
 
@@ -40,7 +39,40 @@
   --animate-sparkle: sparkle 2s ease-in-out infinite;
   --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
   --animate-score-pop: scorePop 0.2s ease-out;
+  --animate-score-rush: scoreRush 0.3s ease-out;
+  --animate-note-hit: noteHit 0.35s ease-out;
+  --animate-band-in: bandIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  --animate-flash: flash 0.6s ease-out both;
+  --animate-title-in: titleIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-title-out: titleOut 0.1s ease-in forwards;
+  --animate-badge-in: badgeIn 0.18s ease-out 180ms both;
+  --animate-backdrop-in: backdropIn 0.3s ease-out both;
+  --animate-slap: slap 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  --animate-art-drop: artDrop 0.7s ease-in infinite;
+  --animate-art-bubble: artBubble 2.4s ease-in-out infinite;
+  --animate-art-flicker: artFlicker 1.4s linear both;
+  --animate-art-twinkle: artTwinkle 1.8s ease-in-out infinite;
+  --animate-art-shimmer: artShimmer 1.2s ease-in-out infinite alternate;
+  --animate-art-chase: artChase 0.77s steps(1) infinite;
+  --animate-art-flash: artFlash 1.4s ease-out infinite;
+  --animate-art-burst: artBurst 1.6s ease-out infinite;
+  --animate-art-glint: artGlint 1.2s ease-in-out infinite alternate;
+  --animate-lane-in: laneIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  --animate-winner-glow: winnerGlow 1.6s ease-out 1 both;
+  --animate-pop-in: popIn 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  --animate-stripes-move: stripesMove 1.5s linear infinite;
+  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
+  --animate-float: float 2.4s ease-in-out infinite alternate;
+  --animate-stage-grid: stageGrid 4s linear infinite;
   --animate-shimmer: shimmer 0.8s ease-in-out both;
+  --animate-slam: slam 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-burst: burst 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) both;
+  --animate-float-up: floatUp 1s ease-out both;
+  --animate-stamp: stamp 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  --animate-spin-slow: spin 40s linear infinite;
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-confetti: confetti 2.4s cubic-bezier(0.3, 0.5, 0.6, 1) both;
 
   @keyframes hide {
     from {
@@ -101,6 +133,306 @@
     }
   }
 
+  /* Bigger score jumps: a quick lean and smear, like the digits are rushing in. */
+  @keyframes scoreRush {
+    0% {
+      transform: scale(1) skewX(0deg);
+      filter: blur(0);
+    }
+    35% {
+      transform: scale(1.12) skewX(-10deg);
+      filter: blur(0.12cqw);
+    }
+    100% {
+      transform: scale(1) skewX(0deg);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes noteHit {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.12, 1.3);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* A spotlight switching on with a stutter, shining briefly, then fading. */
+  @keyframes flash {
+    0% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Text changes: the new text rises in, the old one drifts up and fades. */
+  @keyframes titleIn {
+    from {
+      opacity: 0;
+      transform: translateY(0.6cqw);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes titleOut {
+    to {
+      opacity: 0;
+      transform: translateY(-0.4cqw);
+    }
+  }
+
+  @keyframes badgeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* A sticker slapped onto the bar: comes in big and tilted, squashes on impact, settles. */
+  @keyframes slap {
+    0% {
+      opacity: 0;
+      transform: scale(2.4) rotate(-28deg) translateY(-1cqw);
+    }
+    45% {
+      opacity: 1;
+      transform: scale(0.86, 0.78) rotate(-4deg);
+    }
+    68% {
+      transform: scale(1.08) rotate(-10deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(-8deg);
+    }
+  }
+
+  /* Rank art idle animations */
+  @keyframes artDrop {
+    0% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  @keyframes artBubble {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-6px) scale(1.08);
+    }
+  }
+
+  @keyframes artFlicker {
+    0%,
+    10%,
+    22% {
+      opacity: 0;
+    }
+    5%,
+    16% {
+      opacity: 0.18;
+    }
+    30%,
+    100% {
+      opacity: 0.22;
+    }
+  }
+
+  @keyframes artTwinkle {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.1) rotate(6deg);
+    }
+  }
+
+  @keyframes artShimmer {
+    from {
+      opacity: 0.65;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes artChase {
+    0% {
+      fill: #fde047;
+    }
+    50% {
+      fill: #7c2d12;
+    }
+  }
+
+  @keyframes artFlash {
+    0% {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    15% {
+      opacity: 1;
+      transform: scale(1.3);
+    }
+    35%,
+    100% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+
+  @keyframes artBurst {
+    0% {
+      opacity: 1;
+      transform: scale(0.3);
+    }
+    70%,
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+
+  @keyframes artGlint {
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes laneIn {
+    from {
+      opacity: 0;
+      transform: translateX(-4cqw);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* One bright pulse around the winning bar, settling into a soft glow. */
+  @keyframes winnerGlow {
+    0% {
+      box-shadow: 0 0 0 0 rgb(253 224 71 / 0);
+    }
+    30% {
+      box-shadow: 0 0 2.5cqw 0.4cqw rgb(253 224 71 / 0.7);
+    }
+    100% {
+      box-shadow: 0 0 1.2cqw 0.1cqw rgb(253 224 71 / 0.35);
+    }
+  }
+
+  @keyframes backdropIn {
+    from {
+      backdrop-filter: blur(0);
+      background-color: rgb(0 0 0 / 0);
+    }
+    to {
+      backdrop-filter: blur(12px);
+      background-color: rgb(0 0 0 / 0.75);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0.7) rotate(-10deg);
+    }
+    60% {
+      transform: scale(1.15) rotate(4deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  /* Moves .bg-stripes by exactly one stripe period so the loop is seamless. */
+  @keyframes stripesMove {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: calc(1.2cqw * 1.41421) 0;
+    }
+  }
+
+  @keyframes pulseGlow {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(0.95);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes float {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-0.5cqw);
+    }
+  }
+
+  /* Background: slow drift of the aurora glows */
+  @keyframes aurora {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(8%, 10%) scale(1.15);
+    }
+  }
+
+  /* Background: the stage grid rolls towards the viewer, one cell per loop */
+  @keyframes stageGrid {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 0 5cqw;
+    }
+  }
+
+  @keyframes bandIn {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);
@@ -110,14 +442,126 @@
     }
   }
 
-  @keyframes phraseRating {
+  /* Text lands from "in front of" the screen: big and blurred, then overshoots. */
+  @keyframes slam {
     0% {
       opacity: 0;
-      transform: scale(0.6) translateY(0.5cqh);
+      transform: scale(1.8);
+      filter: blur(0.4cqw);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(0.94);
+      filter: blur(0);
+    }
+    75% {
+      transform: scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Particles fly to (--dx, --dy) set per element. */
+  @keyframes burst {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(var(--rot, 0deg));
+    }
+  }
+
+  @keyframes floatUp {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.8);
     }
     15% {
       opacity: 1;
-      transform: scale(1.1) translateY(0);
+      transform: translateY(-0.5cqw) scale(1.1);
+    }
+    30% {
+      transform: translateY(-0.8cqw) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-3cqw) scale(1);
+    }
+  }
+
+  @keyframes stamp {
+    0% {
+      opacity: 0;
+      transform: scale(2.5) rotate(-15deg);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.9) rotate(2deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(var(--stamp-rotate, 0deg));
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-0.4cqw) rotate(-2deg);
+    }
+    40% {
+      transform: translateX(0.35cqw) rotate(1.5deg);
+    }
+    60% {
+      transform: translateX(-0.25cqw) rotate(-1deg);
+    }
+    80% {
+      transform: translateX(0.1cqw);
+    }
+  }
+
+  @keyframes confetti {
+    0% {
+      opacity: 1;
+      transform: translate(0, -10vh) rotate(0deg);
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), 110vh) rotate(var(--rot, 720deg));
+    }
+  }
+
+  @keyframes phraseRating {
+    0% {
+      opacity: 0;
+      transform: scale(1.8) translateY(0);
+      filter: blur(0.3cqw);
+    }
+    12% {
+      opacity: 1;
+      transform: scale(0.94) translateY(0);
+      filter: blur(0);
+    }
+    20% {
+      transform: scale(1.04) translateY(0);
     }
     30% {
       transform: scale(1) translateY(0);
@@ -283,6 +727,50 @@ body {
   background: radial-gradient(at top, #2d3438 0%, #203141 100%);
 }
 
+/* Chunky headline text: black italic caps with a hard offset shadow. */
+@utility text-display {
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-shadow: 0.06em 0.06em 0 var(--display-shadow, rgb(0 0 0 / 0.35));
+}
+
+/* Dark frosted surface for popups and panels, with a hard "sticker" shadow. */
+@utility glass {
+  background-color: rgb(10 12 28 / 0.72);
+  backdrop-filter: blur(1cqw);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0.4cqw 0.4cqw 0 rgb(0 0 0 / 0.35);
+}
+
+/* White sticker edge plus a hard offset shadow, for illustrations drawn as stickers. */
+@utility sticker-edge {
+  filter: drop-shadow(0.15cqw 0 0 white) drop-shadow(-0.15cqw 0 0 white) drop-shadow(0 0.15cqw 0 white)
+    drop-shadow(0 -0.15cqw 0 white) drop-shadow(0.35cqw 0.35cqw 0 rgb(0 0 0 / 0.35));
+}
+
+/* SVG parts animate around their own centre. */
+.art-part {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Decorative backgrounds, tinted via --fx-color. */
+@utility bg-halftone {
+  background-image: radial-gradient(circle, var(--fx-color, white) 22%, transparent 24%);
+  background-size: 1cqw 1cqw;
+}
+
+@utility bg-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--fx-color, white) 0 0.6cqw,
+    transparent 0.6cqw 1.2cqw
+  );
+}
+
 .gradient-sing {
   @apply from-green-400 to-teal-600;
 }
@@ -380,4 +868,26 @@ body {
   opacity: 1;
   z-index: 0;
   pointer-events: auto;
+}
+
+/* Entering a song or its results: the new screen wipes in diagonally over the old one. */
+@keyframes wipe-in {
+  from {
+    clip-path: polygon(0 0, 0 0, -20% 100%, -20% 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 120% 0, 100% 100%, -20% 100%);
+  }
+}
+
+html:active-view-transition-type(wipe) {
+  &::view-transition-old(root) {
+    animation: none;
+    z-index: 0;
+  }
+
+  &::view-transition-new(root) {
+    animation: wipe-in 0.55s cubic-bezier(0.7, 0, 0.3, 1) both;
+    z-index: 1;
+  }
 }

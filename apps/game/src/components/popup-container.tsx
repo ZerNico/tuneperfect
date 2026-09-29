@@ -16,14 +16,14 @@ export default function PopupContainer() {
 
           return (
             <Motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               class="fixed inset-0"
               style={{ "z-index": 50 + index() }}
             >
-              <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleBackdropClick} />
+              {/* The blur animates via CSS: solid-motionone can't tween backdrop-filter, and
+                  fading opacity instead makes Chromium skip the blur until the fade ends. */}
+              <div class="absolute inset-0 animate-backdrop-in" onClick={handleBackdropClick} />
 
               <Motion.div
                 initial={{ opacity: 0, scale: 0.95 }}

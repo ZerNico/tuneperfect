@@ -1,11 +1,11 @@
 import { Toast as KToast, toaster } from "@kobalte/core/toast";
 import { createMemo, onCleanup } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import CircleAlert from "~icons/lucide/circle-alert";
-import CircleCheck from "~icons/lucide/circle-check";
-import CircleX from "~icons/lucide/circle-x";
-import Info from "~icons/lucide/info";
-import X from "~icons/lucide/x";
+import CircleCheck from "~icons/ph/check-circle-fill";
+import Info from "~icons/ph/info-fill";
+import CircleAlert from "~icons/ph/warning-circle-fill";
+import X from "~icons/ph/x-bold";
+import CircleX from "~icons/ph/x-circle-fill";
 
 import { t } from "~/lib/i18n";
 

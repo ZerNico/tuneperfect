@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import { createMemo } from "solid-js";
-import IconBuilding from "~icons/lucide/building";
-import IconCheck from "~icons/lucide/check";
-import IconX from "~icons/lucide/x";
+import IconBuilding from "~icons/ph/buildings-fill";
+import IconCheck from "~icons/ph/check-bold";
+import IconX from "~icons/ph/x-bold";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

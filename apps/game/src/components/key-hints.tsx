@@ -46,7 +46,7 @@ export default function KeyHints(props: KeyHintsProps) {
   };
 
   return (
-    <div class="flex items-center gap-8 text-base">
+    <div class="flex items-center gap-3 text-base">
       <For each={props.hints}>
         {(hint) => {
           const label = t(`common.keyHints.${hint}`);
@@ -63,8 +63,10 @@ interface KeyHintProps {
 }
 function KeyHint(props: KeyHintProps) {
   return (
-    <div class="flex items-center gap-2">
-      {props.icon} {props.label}
+    <div class="flex -skew-x-6 items-center gap-2 rounded-md bg-black/25 px-3 py-1.5">
+      <div class="flex skew-x-6 items-center gap-2 font-bold tracking-wide uppercase">
+        {props.icon} <span class="text-sm">{props.label}</span>
+      </div>
     </div>
   );
 }

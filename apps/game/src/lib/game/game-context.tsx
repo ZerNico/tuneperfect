@@ -1,7 +1,7 @@
 import { type Accessor, createContext, createMemo, type JSX, type Setter, useContext } from "solid-js";
 
 import type { Song } from "~/lib/ultrastar/song";
-import type { Score } from "~/stores/round";
+import type { PlayerStats, Score } from "~/stores/round";
 
 export interface GameContextValue {
   resetScores: () => void;
@@ -19,6 +19,8 @@ export interface GameContextValue {
   duration: Accessor<number>;
   scores: Accessor<Score[]>;
   addScore: (index: number, type: "normal" | "golden" | "bonus", value: number) => void;
+  stats: Accessor<PlayerStats[]>;
+  setPlayerStats: (index: number, stats: PlayerStats) => void;
   preferInstrumental: Accessor<boolean>;
   setPreferInstrumental: Setter<boolean>;
   pitches: Accessor<(number | null)[]>;

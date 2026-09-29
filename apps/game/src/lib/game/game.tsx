@@ -6,7 +6,7 @@ import { native } from "~/lib/native/client";
 import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
-import { roundStore, type Score } from "~/stores/round";
+import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 import { type GameContextValue, GameProvider } from "./game-context";
@@ -26,6 +26,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
   const [scores, setScores] = createSignal<Score[]>([]);
+  const [stats, setStats] = createSignal<PlayerStats[]>([]);
   const [preferInstrumental, setPreferInstrumental] = createSignal(
     settingsStore.general().audioMode === "preferInstrumental",
   );
@@ -201,6 +202,17 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     });
   };
 
+  const setPlayerStats = (index: number, playerStats: PlayerStats) => {
+    setStats((prev) => {
+      const newStats = [...prev];
+      for (let i = 0; i < index; i++) {
+        newStats[i] ??= createEmptyStats();
+      }
+      newStats[index] = playerStats;
+      return newStats;
+    });
+  };
+
   const values: GameContextValue = {
     start,
     stop,
@@ -216,7 +228,12 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     duration,
     scores,
     addScore,
-    resetScores: () => setScores([]),
+    stats,
+    setPlayerStats,
+    resetScores: () => {
+      setScores([]);
+      setStats([]);
+    },
     preferInstrumental,
     setPreferInstrumental,
     pitches,

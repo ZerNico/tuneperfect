@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import type { Accessor } from "solid-js";
 import { createMemo } from "solid-js";
-import IconHome from "~icons/lucide/home";
-import IconRefreshCw from "~icons/lucide/refresh-cw";
+import IconRefreshCw from "~icons/ph/arrows-clockwise-bold";
+import IconHome from "~icons/ph/house-fill";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

@@ -1,16 +1,25 @@
+import { Key } from "@solid-primitives/keyed";
 import { throttle } from "@solid-primitives/scheduled";
 import { createVirtualizer } from "@tanstack/solid-virtual";
-import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, type Ref } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  on,
+  onCleanup,
+  onMount,
+  type Ref,
+  untrack,
+} from "solid-js";
 
 import { useNavigation } from "~/hooks/navigation";
-import { type SearchFieldScope, type SongFilters, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
-import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
-export type { SortOption, SearchFieldScope, SongFilters };
-
-export interface SongGridRef {
-  goToRandomSong: () => LocalSong | null;
+export interface SongGridRef<T> {
+  goToRandomSong: () => T | null;
 }
 
 const COLUMNS = 5;
@@ -19,21 +28,21 @@ const PADDING = 16;
 const VERTICAL_PADDING = 20;
 const SCROLL_PADDING = 20;
 
-interface SongGridProps {
-  ref?: Ref<SongGridRef>;
-  items: LocalSong[];
-  sort: SortOption;
-  searchQuery: string;
-  searchFieldScope: SearchFieldScope;
-  filters: SongFilters;
-  initialSong?: LocalSong;
-  onSelectedItemChange?: (item: LocalSong | null, index: number) => void;
-  onFilteredCountChange?: (count: number) => void;
-  onConfirm?: (item: LocalSong) => void;
+interface SongGridProps<T> {
+  ref?: Ref<SongGridRef<T>>;
+  /** Already filtered and sorted. */
+  items: T[];
+  getId: (item: T) => string;
+  initialId?: string;
+  /** Called once per card; `selected` is reactive so the card only updates its highlight. */
+  renderCard: (item: T, selected: Accessor<boolean>) => JSX.Element;
+  onSelectedItemChange?: (item: T | null, index: number) => void;
+  onConfirm?: (item: T) => void;
   class?: string;
 }
 
-export function SongGrid(props: SongGridProps) {
+/** Virtualised five-column cover grid with keyboard/gamepad navigation. */
+export function SongGrid<T>(props: SongGridProps<T>) {
   let containerRef!: HTMLDivElement;
 
   const [selectedIndex, setSelectedIndex] = createSignal(0);
@@ -41,19 +50,13 @@ export function SongGrid(props: SongGridProps) {
   const [hasInitialized, setHasInitialized] = createSignal(false);
   const [rowHeight, setRowHeight] = createSignal(120);
 
-  const { filteredItems } = useSongFilter({
-    items: () => props.items,
-    sortOption: () => props.sort,
-    searchQuery: () => props.searchQuery,
-    searchFieldScope: () => props.searchFieldScope,
-    filters: () => props.filters,
-  });
+  const filteredItems = () => props.items;
 
   const rowCount = createMemo(() => Math.ceil(filteredItems().length / COLUMNS));
 
   const rows = createMemo(() => {
     const items = filteredItems();
-    const result: LocalSong[][] = [];
+    const result: T[][] = [];
     for (let i = 0; i < items.length; i += COLUMNS) {
       result.push(items.slice(i, i + COLUMNS));
     }
@@ -86,35 +89,29 @@ export function SongGrid(props: SongGridProps) {
     onCleanup(() => resizeObserver.disconnect());
   });
 
-  createEffect(() => {
-    props.onFilteredCountChange?.(filteredItems().length);
-  });
-
   createEffect(
     on(
-      () => [props.initialSong, filteredItems()] as const,
-      ([initialSong, items]) => {
+      () => [props.initialId, filteredItems()] as const,
+      ([initialId, items]) => {
         if (hasInitialized() || items.length === 0) return;
 
         // If we have an initial song, find it and scroll to it
-        if (initialSong) {
-          const index = items.findIndex((item) => item.hash === initialSong.hash);
-          if (index !== -1) {
-            setSelectedIndex(index);
-            setSelectedHash(initialSong.hash);
-            setHasInitialized(true);
-            props.onSelectedItemChange?.(initialSong, index);
-            const rowIndex = Math.floor(index / COLUMNS);
-            virtualizer.scrollToIndex(rowIndex, { align: "center" });
-            return;
-          }
+        const initialItem = initialId ? items.find((item) => props.getId(item) === initialId) : undefined;
+        if (initialItem) {
+          const index = items.indexOf(initialItem);
+          setSelectedIndex(index);
+          setSelectedHash(props.getId(initialItem));
+          setHasInitialized(true);
+          props.onSelectedItemChange?.(initialItem, index);
+          virtualizer.scrollToIndex(Math.floor(index / COLUMNS), { align: "center" });
+          return;
         }
 
         // No initial song or not found - default to first item
         const firstSong = items[0];
         if (firstSong) {
           setSelectedIndex(0);
-          setSelectedHash(firstSong.hash);
+          setSelectedHash(props.getId(firstSong));
           setHasInitialized(true);
           props.onSelectedItemChange?.(firstSong, 0);
         }
@@ -135,7 +132,7 @@ export function SongGrid(props: SongGridProps) {
       const currentHash = selectedHash();
 
       if (currentHash) {
-        const newIndex = items.findIndex((item) => item.hash === currentHash);
+        const newIndex = items.findIndex((item) => props.getId(item) === currentHash);
         if (newIndex !== -1) {
           setSelectedIndex(newIndex);
           scrollToIndex(newIndex, false);
@@ -147,7 +144,7 @@ export function SongGrid(props: SongGridProps) {
       setSelectedIndex(0);
       const firstSong = items[0];
       if (firstSong) {
-        setSelectedHash(firstSong.hash);
+        setSelectedHash(props.getId(firstSong));
         props.onSelectedItemChange?.(firstSong, 0);
       }
     }),
@@ -161,7 +158,7 @@ export function SongGrid(props: SongGridProps) {
       const items = filteredItems();
       const item = items[index];
       if (item) {
-        setSelectedHash(item.hash);
+        setSelectedHash(props.getId(item));
         props.onSelectedItemChange?.(item, index);
       }
     }),
@@ -221,7 +218,7 @@ export function SongGrid(props: SongGridProps) {
     }
   };
 
-  const goToRandomSong = (): LocalSong | null => {
+  const goToRandomSong = (): T | null => {
     const items = filteredItems();
     if (items.length === 0) return null;
 
@@ -259,20 +256,22 @@ export function SongGrid(props: SongGridProps) {
   });
 
   const handleMouseEnter = (index: number) => setSelectedIndex(index);
-  const handleClick = (song: LocalSong) => props.onConfirm?.(song);
+  const handleClick = (song: T) => props.onConfirm?.(song);
 
   return (
     <div ref={containerRef} class={`styled-scrollbars overflow-y-auto ${props.class ?? ""}`}>
       <div class="relative w-full" style={{ height: `${virtualizer.getTotalSize() + VERTICAL_PADDING * 2}px` }}>
-        <For each={virtualizer.getVirtualItems()}>
+        {/* Keyed by row index: scrolling hands out new row objects, which would otherwise
+            rebuild every visible cover (and reload its image). */}
+        <Key each={virtualizer.getVirtualItems()} by={(row) => row.index}>
           {(virtualRow) => {
-            const rowItems = () => rows()[virtualRow.index] ?? [];
-            const baseIndex = () => virtualRow.index * COLUMNS;
+            const rowItems = () => rows()[virtualRow().index] ?? [];
+            const baseIndex = () => virtualRow().index * COLUMNS;
 
             return (
               <div
                 class="absolute top-0 left-0 grid w-full grid-cols-5 gap-3 px-4"
-                style={{ transform: `translateY(${virtualRow.start + VERTICAL_PADDING}px)` }}
+                style={{ transform: `translateY(${virtualRow().start + VERTICAL_PADDING}px)` }}
               >
                 <For each={rowItems()}>
                   {(song, colIndex) => {
@@ -283,7 +282,9 @@ export function SongGrid(props: SongGridProps) {
                         onClick={() => handleClick(song)}
                         onKeyDown={(e) => e.key === "Enter" && handleClick(song)}
                       >
-                        <SongGridCard song={song} selected={selectedIndex() === itemIndex()} />
+                        {/* Created once per card; the selection accessor is read reactively inside it. */}
+                        {/* oxlint-disable-next-line solid/reactivity */}
+                        {untrack(() => props.renderCard(song, () => selectedIndex() === itemIndex()))}
                       </div>
                     );
                   }}
@@ -291,25 +292,8 @@ export function SongGrid(props: SongGridProps) {
               </div>
             );
           }}
-        </For>
+        </Key>
       </div>
-    </div>
-  );
-}
-
-interface SongGridCardProps {
-  song: LocalSong;
-  selected?: boolean;
-}
-
-function SongGridCard(props: SongGridCardProps) {
-  return (
-    <div
-      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg shadow-md transition-all duration-150 active:scale-95"
-      classList={{ "scale-105 ring-4 ring-white": props.selected }}
-    >
-      <img class="h-full w-full object-cover" src={props.song.coverUrl ?? ""} alt={props.song.title} />
-      <div class="absolute inset-0 -z-1 bg-black" />
     </div>
   );
 }

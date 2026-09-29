@@ -1,6 +1,6 @@
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
-import IconMinus from "~icons/lucide/minus";
-import IconPlus from "~icons/lucide/plus";
+import IconMinus from "~icons/ph/minus-bold";
+import IconPlus from "~icons/ph/plus-bold";
 import IconF6Key from "~icons/sing/f6-key";
 import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";

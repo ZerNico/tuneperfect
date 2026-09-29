@@ -1,16 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show, untrack } from "solid-js";
+import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show, untrack } from "solid-js";
 
 import GameLayout from "~/components/game/game-layout";
 import Lyrics from "~/components/game/lyrics";
 import PauseMenu from "~/components/game/pause-menu";
 import PlayerLane from "~/components/game/player-lane";
 import Progress from "~/components/game/progress";
+import SongIntro from "~/components/game/song-intro";
 import OnlineSongPlayer from "~/components/online-song-player";
 import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
+import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
 import { roundStore, useRoundActions } from "~/stores/round";
@@ -59,6 +61,7 @@ function GameComponent() {
     playing,
     started,
     scores,
+    stats,
     skip,
     setPreferInstrumental,
     preferInstrumental,
@@ -94,7 +97,8 @@ function GameComponent() {
   });
 
   onMount(() => {
-    const startTimeout = roundSong()?.length === "full" ? 3000 : 1000;
+    // Long enough for the intro card to play out after the route wipe.
+    const startTimeout = roundSong()?.length === "full" ? 3000 : 1600;
     setTimeout(() => {
       setReady(true);
     }, startTimeout);
@@ -104,24 +108,34 @@ function GameComponent() {
     await stop();
   });
 
+  createEffect(
+    on(
+      started,
+      (isStarted) => {
+        if (isStarted) playSound("whoosh");
+      },
+      { defer: true },
+    ),
+  );
+
   const handleEnded = () => {
     queueMicrotask(() => {
-      roundActions.endRound(scores());
+      roundActions.endRound(scores(), stats());
     });
   };
 
   const handleNext = () => {
     queueMicrotask(() => {
-      roundActions.endRound(scores());
+      roundActions.endRound(scores(), stats());
     });
   };
 
   const handleExit = () => {
     queueMicrotask(() => {
       if (roundSong()?.mode === "medley") {
-        roundActions.endMedley(scores());
+        roundActions.endMedley(scores(), stats());
       } else {
-        roundActions.endRound(scores());
+        roundActions.endRound(scores(), stats());
       }
     });
   };
@@ -270,34 +284,11 @@ function GameComponent() {
                 />
               </Show>
 
-              <div
-                class="absolute inset-0 z-2 bg-black transition-opacity duration-1000"
-                classList={{
-                  "pointer-events-none opacity-0": started(),
-                }}
-              >
-                <img
-                  class="absolute inset-0 block h-full w-full scale-110 transform object-cover opacity-60 blur-xl"
-                  src={(() => {
-                    const song = roundSong()?.song;
-                    if (!song) return "";
-                    if (isUsdbSong(song)) return song.coverUrl ?? "";
-                    if (isLocalSong(song)) return song.coverUrl ?? song.backgroundUrl ?? "";
-                    return "";
-                  })()}
-                  alt=""
-                />
-                <div class="relative flex h-full w-full flex-col items-center justify-center gap-2">
-                  <p class="text-3xl">{roundSong()?.song.artist}</p>
-                  <div class="max-w-200">
-                    <span
-                      class={`${gradient()} bg-linear-to-b bg-clip-text text-center text-7xl font-bold text-transparent`}
-                    >
-                      {roundSong()?.song.title}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <SongIntro
+                song={roundSong().song}
+                started={started()}
+                accentColor={gradient() === "gradient-party" ? "pink" : "teal"}
+              />
             </div>
           )}
         </Show>

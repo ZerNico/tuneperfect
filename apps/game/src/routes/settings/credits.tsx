@@ -24,6 +24,16 @@ function CreditsComponent() {
       type: "button",
       label: "Karol Szcześniak",
     },
+    {
+      type: "button",
+      label: "Sound effects by Kenney",
+      action: () => window.open("https://kenney.nl"),
+    },
+    {
+      type: "button",
+      label: "Sound effects from Freesound (CC0)",
+      action: () => window.open("https://freesound.org"),
+    },
   ];
 
   return (

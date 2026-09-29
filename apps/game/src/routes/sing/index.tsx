@@ -1,39 +1,16 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, Match, on, Show, Switch } from "solid-js";
-import IconDices from "~icons/lucide/dices";
-import IconMenu from "~icons/lucide/menu";
-import IconMusic from "~icons/lucide/music";
-import IconDuet from "~icons/sing/duet";
-import IconF5Key from "~icons/sing/f5-key";
-import IconGamepadSelect from "~icons/sing/gamepad-select";
-import IconGamepadStart from "~icons/sing/gamepad-start";
-import IconTabKey from "~icons/sing/tab-key";
+import { createEffect, createMemo, createSignal, on, Show } from "solid-js";
+import IconF1Key from "~icons/sing/f1-key";
+import IconGamepadRT from "~icons/sing/gamepad-rt";
+import IconShiftKey from "~icons/sing/shift-key";
 
-import KeyHints from "~/components/key-hints";
-import Layout from "~/components/layout";
 import SongPlayer from "~/components/song-player";
 import { DebouncedHighscoreList } from "~/components/song-select/debounced-highscore-list";
-import { FilterButton } from "~/components/song-select/filter-button";
-import { FilterChips } from "~/components/song-select/filter-chips";
-import { FilterPopup } from "~/components/song-select/filter-popup";
 import { MedleyList } from "~/components/song-select/medley-list";
-import { MenuPopup } from "~/components/song-select/menu-popup";
-import { SearchButton } from "~/components/song-select/search-button";
-import { SearchPopup } from "~/components/song-select/search-popup";
-import { SongCard } from "~/components/song-select/song-card";
-import { SongGrid, type SongGridRef } from "~/components/song-select/song-grid";
-import {
-  type SearchFieldScope,
-  type SongFilters,
-  SongScroller,
-  type SongScrollerRef,
-  type SortOption,
-} from "~/components/song-select/song-scroller";
-import { SortSelect } from "~/components/song-select/sort-select";
-import TitleBar from "~/components/title-bar";
+import { createSongBrowserState, SongBrowser } from "~/components/song-select/song-browser";
+import KeyGlyph from "~/components/ui/key-glyph";
 import { keyMode, useNavigation } from "~/hooks/navigation";
-import { countActiveFilters, DEFAULT_FILTERS } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -42,24 +19,29 @@ import { medleyStore } from "~/stores/medley";
 import { selectionStore } from "~/stores/selection";
 import { settingsStore } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
+import { usdbStore } from "~/stores/usdb";
 
 export const Route = createFileRoute("/sing/")({
   component: SingComponent,
 });
 
-type OpenPanel = "search" | "filter" | "menu";
-
+// Module level: search, filters, sort and the selected song survive leaving the screen.
+const browserState = createSongBrowserState("artist");
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>(null);
-const [searchQuery, setSearchQuery] = createSignal("");
-const [searchFieldScope, setSearchFieldScope] = createSignal<SearchFieldScope>("all");
-const [filters, setFilters] = createSignal<SongFilters>({ ...DEFAULT_FILTERS });
-const [openPanel, setOpenPanel] = createSignal<OpenPanel | null>(null);
-const [sort, setSort] = createSignal<SortOption>("artist");
-const [filteredSongCount, setFilteredSongCount] = createSignal(0);
 
-const togglePanel = (panel: OpenPanel) => {
-  setOpenPanel((current) => (current === panel ? null : panel));
-};
+/** Genre fields are often comma lists ("Pop, Dance-Pop, …"); the first entry is enough. */
+const firstOf = (value: string[] | null | undefined) => value?.[0]?.split(",")[0]?.trim();
+
+const describeSong = (song: LocalSong) => ({
+  id: song.hash,
+  artist: song.artist,
+  title: song.title,
+  meta: [song.year?.toString(), firstOf(song.genre), firstOf(song.language)].filter(
+    (value): value is string => !!value,
+  ),
+  duet: song.voices.length > 1,
+  isNew: !localStore.isSongPlayed(song.hash),
+});
 
 function SingComponent() {
   const navigate = useNavigate();
@@ -104,15 +86,6 @@ function SingComponent() {
     swapToSong(song);
   }, 200);
 
-  createEffect(() => {
-    if (!currentSong()) {
-      const firstSong = songs()[0];
-      if (firstSong) {
-        setCurrentSong(firstSong);
-      }
-    }
-  });
-
   createEffect(
     on(currentSong, (song) => {
       latestSongHash = song?.hash ?? null;
@@ -126,28 +99,6 @@ function SingComponent() {
 
   const isMedley = createMemo(() => medleyStore.songs().length > 0);
 
-  let scrollerRef: SongScrollerRef | undefined;
-  let gridRef: SongGridRef | undefined;
-
-  const songSelectStyle = () => settingsStore.general().songSelectStyle;
-
-  const onBack = () => {
-    if (searchQuery().trim()) {
-      setSearchQuery("");
-      playSound("confirm");
-      return;
-    }
-
-    if (countActiveFilters(filters()) > 0) {
-      setFilters({ ...DEFAULT_FILTERS });
-      playSound("confirm");
-      return;
-    }
-
-    playSound("confirm");
-    navigate({ to: "/home" });
-  };
-
   const startRegular = (song: LocalSong) => {
     playSound("confirm");
     selectionStore.set([song], "single");
@@ -158,13 +109,6 @@ function SingComponent() {
     playSound("confirm");
     selectionStore.set(medleyStore.songs(), "medley");
     navigate({ to: "/sing/select" });
-  };
-
-  const selectRandomSong = () => {
-    const randomSong = songSelectStyle() === "grid" ? gridRef?.goToRandomSong() : scrollerRef?.goToRandomSong();
-    if (randomSong) {
-      setCurrentSong(randomSong);
-    }
   };
 
   const startRandomMedley = () => {
@@ -205,178 +149,93 @@ function SingComponent() {
     navigate({ to: "/sing/select" });
   };
 
-  const moveSorting = (direction: "left" | "right") => {
-    const SORT_OPTIONS: SortOption[] = ["artist", "title", "year", "date"];
-    const currentIndex = SORT_OPTIONS.indexOf(sort());
-    const newIndex = (currentIndex + (direction === "left" ? -1 : 1) + SORT_OPTIONS.length) % SORT_OPTIONS.length;
-    setSort(SORT_OPTIONS[newIndex] || "artist");
+  const addCurrentToMedley = () => {
+    const song = currentSong();
+    if (song) {
+      medleyStore.add(song);
+      playSound("select");
+    }
   };
 
+  // Library-only actions; search, filters, sort, random and confirm live in SongBrowser.
   useNavigation({
     onKeydown(event) {
-      if (event.action === "back") {
-        onBack();
-      } else if (event.action === "search") {
-        togglePanel("search");
-        playSound("select");
-      } else if (event.action === "filter") {
-        togglePanel("filter");
-        playSound("select");
-      } else if (event.action === "menu") {
-        togglePanel("menu");
-        playSound("select");
-      } else if (event.action === "random") {
-        selectRandomSong();
-        playSound("select");
-      } else if (event.action === "sort-left") {
-        moveSorting("left");
-        playSound("select");
-      } else if (event.action === "sort-right") {
-        moveSorting("right");
-        playSound("select");
-      } else if (event.action === "add-to-medley") {
-        const song = currentSong();
-        if (song) {
-          medleyStore.add(song);
-          playSound("select");
-        }
+      if (event.action === "add-to-medley") {
+        addCurrentToMedley();
       } else if (event.action === "start-random-medley") {
         startRandomMedley();
       }
     },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        if (isMedley()) {
-          startMedley();
-          return;
-        }
-
-        const song = currentSong();
-        if (song) {
-          startRegular(song);
-        }
-      }
-    },
   });
 
-  const handleCenteredItemChange = (song: LocalSong | null) => {
-    setCurrentSong(song);
-  };
+  const medleyList = (alternativeNavigation: boolean) => (
+    <Show when={isMedley()}>
+      <MedleyList
+        songs={medleyStore.songs()}
+        onRemove={(index) => {
+          medleyStore.removeAt(index);
+          playSound("select");
+        }}
+        onStart={startMedley}
+        useAlternativeNavigation={alternativeNavigation}
+      />
+    </Show>
+  );
 
   return (
-    <Layout
-      intent="secondary"
-      footer={
-        <div class="flex justify-between">
-          <KeyHints hints={["back", "navigate", "confirm"]} />
-          <div class="flex items-center gap-12">
-            <div class="flex items-center gap-2">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadSelect class="text-sm" />}>
-                <IconF5Key class="text-sm" />
-              </Show>
-              <button
-                type="button"
-                class="cursor-pointer text-2xl transition-all hover:opacity-75 active:scale-95"
-                onClick={selectRandomSong}
-              >
-                <IconDices />
-              </button>
-            </div>
-            <SortSelect selected={sort()} onSelect={setSort} />
-          </div>
-        </div>
+    <SongBrowser
+      title={t("sing.songs")}
+      state={browserState}
+      items={songs()}
+      getId={(song) => song.hash}
+      describe={describeSong}
+      coverOf={(song) => song.coverUrl}
+      sortOptions={["artist", "title", "year", "date"]}
+      countLabel={(filtered, total) =>
+        filtered !== total
+          ? t("sing.songCount.filtered", { filtered, total })
+          : total === 1
+            ? t("sing.songCount.one", { count: total })
+            : t("sing.songCount.other", { count: total })
       }
-      header={
-        <div class="flex items-center justify-between gap-20">
-          <div class="flex items-center gap-20">
-            <TitleBar title={t("sing.songs")} onBack={onBack} />
-            <div class="relative flex items-center gap-4">
-              <SearchButton
-                searchQuery={searchQuery()}
-                searchFieldScope={searchFieldScope()}
-                onClick={() => setOpenPanel("search")}
-              />
-
-              <Show when={openPanel() === "search"}>
-                <SearchPopup
-                  searchQuery={searchQuery()}
-                  searchFieldScope={searchFieldScope()}
-                  onSearchQuery={setSearchQuery}
-                  onSearchFieldScope={setSearchFieldScope}
-                  onClose={() => setOpenPanel(null)}
-                />
-              </Show>
-
-              <div class="relative">
-                <FilterButton onClick={() => setOpenPanel("filter")} />
-
-                <Show when={openPanel() === "filter"}>
-                  <FilterPopup
-                    songs={songs()}
-                    filters={filters()}
-                    onChange={setFilters}
-                    onClose={() => setOpenPanel(null)}
-                  />
-                </Show>
-              </div>
-
-              <FilterChips filters={filters()} onChange={setFilters} />
-
-              <div class="flex items-center gap-2 text-sm opacity-80">
-                <IconMusic />
-                <Show
-                  when={filteredSongCount() !== songs().length}
-                  fallback={
-                    <span>
-                      {songs().length === 1
-                        ? t("sing.songCount.one", { count: songs().length })
-                        : t("sing.songCount.other", { count: songs().length })}
-                    </span>
-                  }
-                >
-                  <span>{t("sing.songCount.filtered", { filtered: filteredSongCount(), total: songs().length })}</span>
-                </Show>
-              </div>
-            </div>
-          </div>
-
-          <div class="relative">
-            <button
-              type="button"
-              class="flex cursor-pointer items-center gap-2 transition-all hover:opacity-75 active:scale-95"
-              onClick={() => setOpenPanel("menu")}
-            >
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadStart class="text-sm" />}>
-                <IconTabKey class="text-sm" />
-              </Show>
-              <IconMenu class="text-2xl" />
-            </button>
-
-            <Show when={openPanel() === "menu"}>
-              <MenuPopup
-                onClose={() => setOpenPanel(null)}
-                onStartRandomMedley={() => {
-                  startRandomMedley();
-                  setOpenPanel(null);
-                }}
-                onAddToMedley={() => {
-                  const song = currentSong();
-                  if (song) {
-                    medleyStore.add(song);
-                    playSound("select");
-                  }
-                  setOpenPanel(null);
-                }}
-                onSearchUsdb={() => {
-                  setOpenPanel(null);
+      onBack={() => navigate({ to: "/home" })}
+      onConfirm={(song) => (isMedley() ? startMedley() : startRegular(song))}
+      onSelectedChange={setCurrentSong}
+      menuItems={[
+        {
+          label: t("sing.menu.addToMedley"),
+          hint: <KeyGlyph keyboard={IconF1Key} gamepad={IconGamepadRT} />,
+          action: addCurrentToMedley,
+        },
+        {
+          label: t("sing.menu.startRandomMedley"),
+          hint: (
+            <Show when={keyMode() === "keyboard"}>
+              <IconShiftKey />
+              <span class="text-xs font-bold">+ D</span>
+            </Show>
+          ),
+          action: startRandomMedley,
+        },
+        ...(usdbStore.loggedIn()
+          ? [
+              {
+                label: t("sing.menu.searchUsdb"),
+                action: () => {
                   playSound("confirm");
                   navigate({ to: "/sing/online-loading" });
-                }}
-              />
-            </Show>
-          </div>
-        </div>
-      }
+                },
+              },
+            ]
+          : []),
+      ]}
+      side={(song, view) => (
+        <>
+          <Show when={song}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+          {/* In the grid, up/down move through covers, so the medley list uses other keys. */}
+          {medleyList(view === "grid")}
+        </>
+      )}
       background={
         <div class="relative h-full w-full">
           <div
@@ -405,116 +264,6 @@ function SingComponent() {
           </div>
         </div>
       }
-    >
-      <Switch>
-        <Match when={songSelectStyle() === "grid"}>
-          <div class="relative flex h-full min-h-0 gap-8">
-            <div class="relative -ml-8 w-1/2">
-              <SongGrid
-                ref={gridRef}
-                items={songs()}
-                sort={sort()}
-                searchQuery={searchQuery()}
-                searchFieldScope={searchFieldScope()}
-                filters={filters()}
-                initialSong={currentSong() ?? undefined}
-                class="absolute inset-0"
-                onSelectedItemChange={handleCenteredItemChange}
-                onFilteredCountChange={setFilteredSongCount}
-                onConfirm={startRegular}
-              />
-            </div>
-            <div class="flex w-1/2 flex-col">
-              <div class="flex h-1/3 items-center">
-                <div class="relative flex flex-col">
-                  <p class="text-xl">{currentSong()?.artist}</p>
-                  <div class="max-w-full">
-                    <span class="gradient-sing bg-linear-to-b bg-clip-text text-6xl font-bold text-transparent">
-                      {currentSong()?.title}
-                    </span>
-                  </div>
-                  <div class="absolute top-full flex items-center gap-2">
-                    <Show when={(currentSong()?.voices.length || 0) > 1}>
-                      <IconDuet />
-                    </Show>
-                    <Show when={currentSong() && !localStore.isSongPlayed(currentSong()!.hash)}>
-                      <span class="gradient-sing rounded-full bg-linear-to-b px-2.5 py-0.5 text-sm font-semibold text-white shadow-md">
-                        {t("sing.badge.new")}
-                      </span>
-                    </Show>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-8 flex min-h-0 flex-1 gap-2">
-                <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
-                <Show when={isMedley()}>
-                  <MedleyList
-                    songs={medleyStore.songs()}
-                    onRemove={(index) => {
-                      medleyStore.removeAt(index);
-                      playSound("select");
-                    }}
-                    onStart={startMedley}
-                    useAlternativeNavigation
-                  />
-                </Show>
-              </div>
-            </div>
-          </div>
-        </Match>
-        <Match when={songSelectStyle() === "coverflow"}>
-          <div class="relative grid h-full grid-rows-[1fr_auto]">
-            <div class="flex grow items-center">
-              <div class="relative flex grow flex-col">
-                <p class="text-xl">{currentSong()?.artist}</p>
-                <div class="max-w-200">
-                  <span class="gradient-sing bg-linear-to-b bg-clip-text text-6xl font-bold text-transparent">
-                    {currentSong()?.title}
-                  </span>
-                </div>
-                <div class="absolute top-full flex items-center gap-2">
-                  <Show when={(currentSong()?.voices.length || 0) > 1}>
-                    <IconDuet />
-                  </Show>
-                  <Show when={currentSong() && !localStore.isSongPlayed(currentSong()!.hash)}>
-                    <span class="gradient-sing rounded-full bg-linear-to-b px-2.5 py-0.5 text-sm font-semibold text-white shadow-md">
-                      {t("sing.badge.new")}
-                    </span>
-                  </Show>
-                </div>
-              </div>
-              <div class="flex h-full gap-2">
-                <Show when={currentSong()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
-                <Show when={isMedley()}>
-                  <MedleyList
-                    songs={medleyStore.songs()}
-                    onRemove={(index) => {
-                      medleyStore.removeAt(index);
-                      playSound("select");
-                    }}
-                    onStart={startMedley}
-                  />
-                </Show>
-              </div>
-            </div>
-            <SongScroller
-              ref={scrollerRef}
-              items={songs()}
-              sort={sort()}
-              searchQuery={searchQuery()}
-              searchFieldScope={searchFieldScope()}
-              filters={filters()}
-              initialSong={currentSong() ?? undefined}
-              class="-mx-16 h-60 w-[calc(100%+8cqw)]"
-              onCenteredItemChange={handleCenteredItemChange}
-              onFilteredCountChange={setFilteredSongCount}
-              onConfirm={startRegular}
-            >
-              {(song) => <SongCard song={song} />}
-            </SongScroller>
-          </div>
-        </Match>
-      </Switch>
-    </Layout>
+    />
   );
 }

@@ -1,9 +1,11 @@
 import type { JSX, Ref } from "solid-js";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import IconCaretLeft from "~icons/ph/caret-left-fill";
+import IconCaretRight from "~icons/ph/caret-right-fill";
 
 import { useNavigation } from "~/hooks/navigation";
 import { clamp } from "~/lib/utils/math";
+
+import MenuRow from "./menu-row";
 
 interface SliderProps {
   selected?: boolean;
@@ -62,59 +64,49 @@ export default function Slider(props: SliderProps) {
   }));
 
   return (
-    <div
-      ref={props.ref}
-      class="grid h-16 items-center overflow-hidden rounded-lg"
+    <MenuRow
+      ref={props.ref as Ref<HTMLElement>}
+      class={props.class}
+      selected={props.selected}
+      gradient={props.gradient}
+      label={props.label}
       onMouseEnter={() => props.onMouseEnter?.()}
     >
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
-        classList={{
-          [props.gradient || ""]: true,
-          "opacity-0": !props.selected,
-        }}
-      />
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">{props.label}</div>
-        <div class="flex items-center gap-8">
-          <button class="cursor-pointer" type="button" onClick={() => changeValue("left")}>
-            <IconTriangleLeft />
-          </button>
-          <div class="grid h-5 grow items-center">
-            <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
-            <div
-              class="col-start-1 row-start-1 h-full w-full rounded-md bg-white"
-              style={{ width: `${percentage()}%` }}
-            />
-            <div
-              class="col-start-1 row-start-1 text-center text-sm font-bold text-white"
-              style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
-            >
-              {props.renderValue ? props.renderValue(props.value) : props.value}
-            </div>
-            <div
-              class="col-start-1 row-start-1 text-center text-sm font-bold text-black"
-              style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
-            >
-              {props.renderValue ? props.renderValue(props.value) : props.value}
-            </div>
-            <input
-              type="range"
-              aria-label={props.label}
-              class="reset-range col-start-1 row-start-1 block h-full w-full opacity-0"
-              min={props.min}
-              max={props.max}
-              step={props.step}
-              value={props.value}
-              onInput={(e) => handleInput(e)}
-              onKeyDown={(e) => e.preventDefault()}
-            />
+      <div class="flex w-full items-center gap-6">
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("left")}>
+          <IconCaretLeft />
+        </button>
+        <div class="grid h-6 grow -skew-x-12 items-center overflow-hidden rounded-sm">
+          <div class="col-start-1 row-start-1 h-full w-full bg-black/25" />
+          <div class="col-start-1 row-start-1 h-full w-full bg-white" style={{ width: `${percentage()}%` }} />
+          <div
+            class="col-start-1 row-start-1 skew-x-12 text-center text-sm font-black text-white tabular-nums"
+            style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
+          >
+            {props.renderValue ? props.renderValue(props.value) : props.value}
           </div>
-          <button class="cursor-pointer" type="button" onClick={() => changeValue("right")}>
-            <IconTriangleRight />
-          </button>
+          <div
+            class="col-start-1 row-start-1 skew-x-12 text-center text-sm font-black text-black tabular-nums"
+            style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
+          >
+            {props.renderValue ? props.renderValue(props.value) : props.value}
+          </div>
+          <input
+            type="range"
+            aria-label={props.label}
+            class="reset-range col-start-1 row-start-1 block h-full w-full opacity-0"
+            min={props.min}
+            max={props.max}
+            step={props.step}
+            value={props.value}
+            onInput={(e) => handleInput(e)}
+            onKeyDown={(e) => e.preventDefault()}
+          />
         </div>
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("right")}>
+          <IconCaretRight />
+        </button>
       </div>
-    </div>
+    </MenuRow>
   );
 }

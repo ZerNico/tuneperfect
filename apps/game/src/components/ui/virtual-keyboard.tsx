@@ -1,11 +1,11 @@
 import { createMemo, createSignal, For, type JSX } from "solid-js";
-import IconArrowBigDown from "~icons/lucide/arrow-big-down";
-import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
-import IconArrowBigUp from "~icons/lucide/arrow-big-up";
+import IconArrowBigDown from "~icons/ph/arrow-fat-down-fill";
+import IconArrowBigLeft from "~icons/ph/arrow-fat-left-fill";
+import IconArrowBigUp from "~icons/ph/arrow-fat-up-fill";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
 import IconGamepadB from "~icons/sing/gamepad-b";
 import IconGamepadX from "~icons/sing/gamepad-x";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
 
 import { useNavigation } from "~/hooks/navigation";
 import { useTextInput } from "~/hooks/use-text-input";
@@ -178,7 +178,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   });
 
   return (
-    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-lg bg-black/30 p-2 text-white backdrop-blur-md">
+    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-xl glass p-2 text-white">
       <For each={activeKeys()}>
         {(row, rowIndex) => (
           <For each={row}>

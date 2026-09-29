@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import IconCircle from "~icons/lucide/circle";
-import IconX from "~icons/lucide/x";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
+import IconCircle from "~icons/ph/circle-bold";
+import IconX from "~icons/ph/x-bold";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

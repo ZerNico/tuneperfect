@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { differenceInDays } from "date-fns";
 import { Match, onMount, Switch } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
+import IconLoaderCircle from "~icons/ph/spinner-gap-bold";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

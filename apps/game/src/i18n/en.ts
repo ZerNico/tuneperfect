@@ -78,6 +78,7 @@ const en = {
     addPlayer: "Add Player",
     start: "Start",
     selectPlayer: "Select Player",
+    micLabel: "Mic {{number}}",
     playerRequired: "Please select at least one player",
   },
   sing: {
@@ -112,6 +113,7 @@ const en = {
     },
     badge: {
       new: "New",
+      duet: "Duet",
     },
     songCount: {
       one: "{{count}} song",
@@ -119,6 +121,9 @@ const en = {
       filtered: "{{filtered}} / {{total}} songs",
     },
     menu: {
+      title: "Menu",
+      showGrid: "Show as Grid",
+      showCoverflow: "Show as Coverflow",
       addToMedley: "Add to Medley",
       startRandomMedley: "Start Random Medley",
       startMedley: "Start Medley",
@@ -161,6 +166,19 @@ const en = {
   score: {
     title: "Score",
     continue: "Continue",
+    skip: "Skip",
+    newRecord: "New Record!",
+    maxCombo: "Max Combo",
+    perfectPhrases: "Perfect Lines",
+    goldenNotes: "Golden Notes",
+    tiers: {
+      d: "Shower Singer",
+      c: "Open Mic",
+      b: "Rising Star",
+      a: "Headliner",
+      s: "Superstar",
+      splus: "Tune Perfect",
+    },
     normal: "Normal",
     golden: "Golden",
     bonus: "Bonus",
@@ -172,6 +190,8 @@ const en = {
       next: "Next Song",
       exit: "Exit",
     },
+    combo: "Combo",
+    nowSinging: "Now Singing",
     phraseRating: {
       perfect: "Perfect",
       great: "Great",
@@ -207,6 +227,11 @@ const en = {
         songSelectStyleOptions: {
           coverflow: "Coverflow",
           grid: "Grid",
+        },
+        visualEffects: "Visual Effects",
+        visualEffectsOptions: {
+          full: "Full",
+          reduced: "Reduced",
         },
         outputLatency: "Audio Output Latency",
         outputLatencyPreviewStart: "Test Audio Output Sync",
@@ -244,6 +269,7 @@ const en = {
         game: "Game Volume",
         preview: "Preview Volume",
         menu: "Menu Volume",
+        effects: "Effects Volume",
         micPlayback: "Microphone Playback",
         micPlaybackVolume: "Microphone Playback Volume",
       },

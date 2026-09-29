@@ -2,17 +2,18 @@ import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { type Component, createEffect, createSignal, For, on, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import IconMicVocal from "~icons/lucide/mic-vocal";
-import IconPartyPopper from "~icons/lucide/party-popper";
-import IconSettings from "~icons/lucide/settings";
-import IconUsers from "~icons/lucide/users";
+import IconConfetti from "~icons/ph/confetti-fill";
+import IconGear from "~icons/ph/gear-six-fill";
+import IconMicrophone from "~icons/ph/microphone-stage-fill";
+import IconUsers from "~icons/ph/users-three-fill";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import QRCodeView from "~/components/qr-code";
 import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
-import { createQRCode } from "~/hooks/qrcode";
+import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
@@ -32,7 +33,7 @@ function HomeComponent() {
     {
       label: t("sing.title"),
       gradient: "gradient-sing",
-      icon: IconMicVocal,
+      icon: IconMicrophone,
       description: t("home.singDescription"),
       action: () => {
         const microphones = settingsStore.microphones();
@@ -51,7 +52,7 @@ function HomeComponent() {
     {
       label: t("home.party"),
       gradient: "gradient-party",
-      icon: IconPartyPopper,
+      icon: IconConfetti,
       description: t("home.partyDescription"),
       action: () => {
         navigate({ to: "/party" });
@@ -71,7 +72,7 @@ function HomeComponent() {
     {
       label: t("settings.title"),
       gradient: "gradient-settings",
-      icon: IconSettings,
+      icon: IconGear,
       description: t("home.settingsDescription"),
       action: () => {
         navigate({ to: "/settings" });
@@ -105,11 +106,6 @@ function HomeComponent() {
     },
   }));
 
-  const qrcode = createQRCode(() => `${import.meta.env.VITE_APP_URL}/join/${lobbyStore.lobby()?.lobby.id}`, {
-    type: "image/webp",
-    width: 1024,
-  });
-
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
   createEffect(on(position, () => playSound("select"), { defer: true }));
@@ -117,51 +113,66 @@ function HomeComponent() {
   return (
     <Layout
       header={
-        <div class="flex justify-between">
-          <h1 class="text-3xl font-bold">Tune Perfect</h1>
-          <div class="flex gap-2">
-            <For each={lobbyQuery.data?.users}>{(user) => <Avatar user={user} />}</For>
+        <div class="flex items-center justify-between">
+          <h1 class="text-5xl text-display">Tune Perfect</h1>
+          <div class="flex -space-x-2">
+            <For each={lobbyQuery.data?.users}>{(user) => <Avatar user={user} class="ring-2 ring-black/40" />}</For>
           </div>
         </div>
       }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
     >
-      <div class="flex grow flex-col gap-[6cqh]">
-        <div class="flex grow">
-          <div class="grow" />
-          <Show when={lobbyStore.lobby()}>
-            {(lobby) => (
-              <div class="flex items-end">
-                <div class="flex gap-8">
-                  <div class="flex flex-col items-end justify-center">
-                    <span class="text-7xl font-bold">{lobby().lobby.id}</span>
-                    <span class="text-sm">{import.meta.env.VITE_APP_URL}/join</span>
-                  </div>
-                  <Show when={qrcode()}>{(qrcode) => <img src={qrcode()} alt="" class="h-[25cqh] rounded-lg" />}</Show>
-                </div>
-              </div>
-            )}
-          </Show>
+      <div class="flex h-full flex-col gap-6 pb-2">
+        {/* Reserved even offline so the cards keep the same size and position. */}
+        <div class="flex h-[24cqh] shrink-0 justify-end">
+          <Show when={lobbyStore.lobby()}>{(lobby) => <JoinPanel code={lobby().lobby.id} />}</Show>
         </div>
-        <div class="flex gap-4">
+        <div class="relative flex min-h-0 grow gap-5">
           <For each={cards}>
             {(card, index) => (
               <ModeCard
                 selected={position() === index()}
                 active={pressed() && position() === index()}
-                class="flex-1"
                 label={card.label as string}
                 gradient={card.gradient}
                 icon={card.icon}
                 description={card.description as string}
-                onMouseEnter={() => set(index())}
-                onClick={card.action}
               />
             )}
           </For>
+          {/* Fixed, equal-width hit zones: cards resize on selection, so hovering
+              the cards themselves would make the selection jump under a still pointer. */}
+          <div class="absolute inset-0 flex">
+            <For each={cards}>
+              {(card, index) => (
+                <button
+                  type="button"
+                  class="h-full flex-1 cursor-pointer"
+                  aria-label={card.label as string}
+                  onMouseEnter={() => set(index())}
+                  onClick={card.action}
+                />
+              )}
+            </For>
+          </div>
         </div>
       </div>
     </Layout>
+  );
+}
+
+function JoinPanel(props: { code: string }) {
+  const appUrl = import.meta.env.VITE_APP_URL as string;
+
+  return (
+    <div class="flex h-full items-center gap-6">
+      <div class="flex flex-col items-end text-right">
+        <span class="text-sm font-black tracking-widest text-white/70 uppercase italic">{t("home.joinLobby")}</span>
+        <span class="text-7xl leading-none text-display">{props.code}</span>
+        <span class="mt-2 text-sm text-white/60">{appUrl.replace(/^https?:\/\//, "")}/join</span>
+      </div>
+      <QRCodeView value={`${appUrl}/join/${props.code}`} class="h-full" />
+    </div>
   );
 }
 
@@ -169,51 +180,65 @@ interface ModeCardProps {
   selected?: boolean;
   active?: boolean;
   label: string;
-  class?: string;
   gradient?: string;
-  icon?: Component<{ class?: string }>;
+  icon?: Component<{ class?: string; classList?: Record<string, boolean | undefined> }>;
   description?: string;
-  onMouseEnter?: () => void;
-  onClick?: () => void;
 }
+
+/**
+ * A tall mode card; the selected one grows wide and reveals its description.
+ * Only the card's width animates: the icon and label scale with transforms and
+ * the description has a fixed width, so no text re-wraps mid-animation.
+ */
 function ModeCard(props: ModeCardProps) {
   return (
-    <button
-      class="flex transform cursor-pointer flex-col gap-1 p-1 text-start transition-all ease-in-out active:scale-95"
-      type="button"
+    <div
+      class="relative flex min-w-0 flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-b p-8 transition-[flex-grow,translate,scale,box-shadow,opacity,filter] duration-300 ease-out"
       classList={{
-        [props.class || ""]: true,
-        "opacity-50": !props.selected,
-        "scale-95": props.active,
+        [props.gradient || ""]: true,
+        "grow-[2.6] -translate-y-2 shadow-[0.6cqw_0.6cqw_0_rgb(0_0_0/0.4)]": props.selected && !props.active,
+        "grow-[2.6] scale-[0.97] shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.4)]": props.selected && props.active,
+        "grow opacity-60 saturate-50": !props.selected,
       }}
-      onMouseEnter={() => props.onMouseEnter?.()}
-      onClick={() => props.onClick?.()}
+      style={{ "flex-basis": "0" }}
+      aria-hidden="true"
     >
-      <div class="text-sm font-semibold uppercase">{props.label}</div>
-      <div
-        class="flex w-full grow flex-col shadow-xl"
-        classList={{
-          "overflow-hidden rounded-lg": props.selected,
-        }}
-      >
+      <Show when={props.selected && effectsEnabled()}>
+        <div class="absolute inset-0 animate-stripes-move bg-stripes opacity-10" style={{ "--fx-color": "white" }} />
+      </Show>
+      {/* Same icon area in every card (a size container), so the icon fits any
+          aspect ratio; unselected cards show it smaller. */}
+      <div class="[container-type:size] absolute inset-x-0 top-0 bottom-[42%] flex items-center justify-center p-6">
         <div
-          class="flex items-center justify-center rounded-t-lg bg-linear-to-b px-12 py-16 transition-all"
-          classList={{
-            [props.gradient || ""]: true,
-            "rounded-b-lg": !props.selected,
-          }}
+          class="transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          style={{ transform: props.selected ? "scale(1) rotate(-6deg)" : "scale(0.6) rotate(0deg)" }}
         >
-          <Dynamic class="text-6xl" component={props.icon} />
-        </div>
-        <div
-          class="grow rounded-b-md bg-white px-8 py-4 text-left text-base font-semibold text-black transition-all"
-          classList={{
-            "opacity-0": !props.selected,
-          }}
-        >
-          {props.description}
+          <div classList={{ "animate-float": props.selected && effectsEnabled() }}>
+            <Dynamic component={props.icon} class="block text-[min(85cqh,70cqw)] drop-shadow-lg" />
+          </div>
         </div>
       </div>
-    </button>
+      <div class="relative">
+        <div
+          class="origin-bottom-left text-6xl text-display whitespace-nowrap transition-transform duration-300 ease-out"
+          style={{ transform: props.selected ? "scale(1)" : "scale(0.5)" }}
+        >
+          {props.label}
+        </div>
+        <div
+          class="grid transition-[grid-template-rows] duration-300 ease-out"
+          style={{ "grid-template-rows": props.selected ? "1fr" : "0fr" }}
+        >
+          <div class="overflow-hidden">
+            <p
+              class="w-[24cqw] pt-2 text-lg font-semibold transition-opacity"
+              classList={{ "opacity-0 duration-100": !props.selected, "delay-200 duration-300": props.selected }}
+            >
+              {props.description}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

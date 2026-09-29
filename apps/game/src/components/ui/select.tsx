@@ -1,9 +1,10 @@
 import type { JSX, Ref } from "solid-js";
-import { twMerge } from "tailwind-merge";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import IconCaretLeft from "~icons/ph/caret-left-fill";
+import IconCaretRight from "~icons/ph/caret-right-fill";
 
 import { useNavigation } from "~/hooks/navigation";
+
+import MenuRow from "./menu-row";
 
 interface SelectProps<T extends string | number> {
   selected?: boolean;
@@ -56,32 +57,25 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
   }));
 
   return (
-    <div
-      ref={props.ref}
-      class={twMerge("grid h-16 items-center overflow-hidden rounded-lg", props.class)}
+    <MenuRow
+      ref={props.ref as Ref<HTMLElement>}
+      class={props.class}
+      selected={props.selected}
+      gradient={props.gradient}
+      label={props.label}
       onMouseEnter={() => props.onMouseEnter?.()}
     >
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
-        classList={{
-          [props.gradient || ""]: true,
-          "opacity-0": !props.selected,
-        }}
-      />
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">{props.label}</div>
-        <div class="flex items-center gap-8">
-          <button class="cursor-pointer" type="button" onClick={() => changeOptions("left")}>
-            <IconTriangleLeft />
-          </button>
-          <div class="flex grow flex-col items-center justify-center text-center text-xl font-bold">
-            {props.renderValue ? props.renderValue(props.value) : props.value}
-          </div>
-          <button class="cursor-pointer" type="button" onClick={() => changeOptions("right")}>
-            <IconTriangleRight />
-          </button>
+      <div class="flex w-full items-center gap-6">
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeOptions("left")}>
+          <IconCaretLeft />
+        </button>
+        <div class="flex min-w-0 grow items-center justify-center truncate text-center text-xl font-bold">
+          {props.renderValue ? props.renderValue(props.value) : props.value}
         </div>
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeOptions("right")}>
+          <IconCaretRight />
+        </button>
       </div>
-    </div>
+    </MenuRow>
   );
 }

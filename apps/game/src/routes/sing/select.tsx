@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import IconPlus from "~icons/lucide/plus";
+import { createEffect, createMemo, createSignal, For, type JSX, on, Show } from "solid-js";
+import IconPlus from "~icons/ph/plus-bold";
 
+import TagChip from "~/components/fx/tag-chip";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
@@ -10,6 +11,7 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
+import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { popup } from "~/lib/popup";
 import { lobbyQueryOptions } from "~/lib/queries";
@@ -186,38 +188,33 @@ function PlayerSelectionComponent() {
         </Show>
       }
     >
-      <div class="flex h-full flex-col items-center justify-center gap-8">
+      <div class="flex h-full flex-col items-center justify-center gap-4">
         <Show
           when={!isMedley() && songs()[0]}
           fallback={
             <Show when={isMedley()}>
-              <div class="flex flex-col items-center gap-3 text-center">
-                <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
-                  Medley
-                </span>
-                <p class="text-2xl opacity-80">
-                  {songs().length === 1
+              <SongHero
+                title="Medley"
+                subtitle={
+                  songs().length === 1
                     ? t("sing.songCount.one", { count: 1 })
-                    : t("sing.songCount.other", { count: songs().length })}
-                </p>
-              </div>
+                    : t("sing.songCount.other", { count: songs().length })
+                }
+                covers={songs().map((song) => song.coverUrl ?? "")}
+              />
             </Show>
           }
         >
           {(song) => (
-            <div class="flex flex-col items-center gap-3 text-center">
-              <p class="text-2xl opacity-80">{song().artist}</p>
-              <span class="gradient-sing max-w-4xl bg-linear-to-r bg-clip-text text-center text-5xl font-bold text-transparent">
-                {song().title}
-              </span>
+            <SongHero title={song().title} subtitle={song().artist} covers={[song().coverUrl ?? ""]}>
               <Show when={isDuet(song())}>
-                <div class="mt-2 flex items-center gap-1 text-sm">
-                  <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(song(), 0)}</span>
-                  <span class="opacity-50">&</span>
-                  <span class="rounded-full bg-white/10 px-3 py-1 backdrop-blur-md">{getVoiceName(song(), 1)}</span>
+                <div class="flex items-center gap-2 text-sm">
+                  <TagChip label={getVoiceName(song(), 0)} />
+                  <span class="font-black opacity-60">VS</span>
+                  <TagChip label={getVoiceName(song(), 1)} />
                 </div>
               </Show>
-            </div>
+            </SongHero>
           )}
         </Show>
 
@@ -260,6 +257,44 @@ function PlayerSelectionComponent() {
   );
 }
 
+interface SongHeroProps {
+  title: string;
+  subtitle: string;
+  /** One cover, or several fanned out for a medley. */
+  covers: string[];
+  children?: JSX.Element;
+}
+
+function SongHero(props: SongHeroProps) {
+  return (
+    <div class="flex max-w-280 items-center justify-center gap-10 px-12">
+      <div
+        class="relative h-[17cqh] shrink-0"
+        style={{ width: `calc(17cqh + ${Math.min(props.covers.length - 1, 2) * 3}cqh)` }}
+      >
+        <For each={props.covers.slice(0, 3).toReversed()}>
+          {(cover, index) => (
+            <img
+              class="absolute top-0 aspect-square h-full rounded-xl object-cover shadow-[0.5cqw_0.5cqw_0_rgb(0_0_0/0.4)] ring-[0.3cqw] ring-white"
+              style={{
+                left: `${(Math.min(props.covers.length, 3) - 1 - index()) * 3}cqh`,
+                transform: `rotate(${-4 + index() * 4}deg)`,
+              }}
+              src={cover}
+              alt=""
+            />
+          )}
+        </For>
+      </div>
+      <div class="flex min-w-0 flex-col gap-3">
+        <span class="text-xl font-semibold opacity-90">{props.subtitle}</span>
+        <span class="line-clamp-2 text-5xl leading-tight text-display">{props.title}</span>
+        {props.children}
+      </div>
+    </div>
+  );
+}
+
 interface PlayerSlotsRowProps {
   selected: boolean;
   song: Song | null | undefined;
@@ -286,6 +321,7 @@ function PlayerSlotsRow(props: PlayerSlotsRowProps) {
       <For each={settingsStore.microphones()}>
         {(microphone, index) => (
           <PlayerSlot
+            number={index() + 1}
             microphone={microphone}
             song={props.song}
             selection={props.getSlotSelection(index())}
@@ -300,6 +336,7 @@ function PlayerSlotsRow(props: PlayerSlotsRowProps) {
 }
 
 interface PlayerSlotProps {
+  number: number;
   microphone: Microphone;
   song: Song | null | undefined;
   selection: Selection | null;
@@ -342,49 +379,74 @@ function PlayerSlot(props: PlayerSlotProps) {
     },
   }));
 
+  const color = (shade: 400 | 500 | 700 | 800) => getColorVar(props.microphone.color, shade);
+
   return (
     <button
       type="button"
       onClick={openSelectPlayerPopup}
       onMouseEnter={() => props.onMouseEnter?.()}
-      class="flex w-56 cursor-pointer flex-col overflow-hidden rounded-xl shadow-lg transition-all duration-200 ease-in-out active:scale-95"
+      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-2xl p-5 transition-all duration-200 ease-out"
       classList={{
-        "scale-105 ring-4 ring-white": props.selected,
-        "opacity-50": !props.selected,
-        "scale-95!": pressed(),
+        "-translate-y-2 shadow-[0.5cqw_0.5cqw_0_rgb(0_0_0/0.4)] ring-[0.3cqw] ring-white": props.selected && !pressed(),
+        "scale-95 ring-[0.3cqw] ring-white": props.selected && pressed(),
+        "opacity-70 saturate-75": !props.selected,
+        "border-[0.2cqw] border-dashed": !props.selection,
       }}
       style={{
-        background: `linear-gradient(180deg, ${getColorVar(props.microphone.color, 500)} 0%, ${getColorVar(props.microphone.color, 700)} 100%)`,
+        background: props.selection
+          ? `linear-gradient(180deg, ${color(400)}, ${color(700)})`
+          : `linear-gradient(180deg, color-mix(in oklch, ${color(500)} 25%, transparent), color-mix(in oklch, ${color(800)} 35%, transparent))`,
+        "border-color": props.selection ? undefined : color(400),
       }}
     >
-      {/* Main content area */}
-      <div class="flex w-full grow flex-col items-center justify-center gap-4 p-6">
+      <Show when={props.selected && props.selection && effectsEnabled()}>
+        <div class="absolute inset-0 animate-stripes-move bg-stripes opacity-10" style={{ "--fx-color": "white" }} />
+      </Show>
+      <TagChip
+        class="relative self-start text-xs"
+        label={t("select.micLabel", { number: props.number })}
+        accent={<span class="block h-2 w-2 rounded-full bg-white" />}
+        accentColor={color(500)}
+      />
+      <div class="relative flex grow items-center justify-center">
         <Show
           when={props.selection}
           fallback={
-            <>
-              <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 transition-colors">
-                <IconPlus class="text-3xl opacity-70" />
-              </div>
-              <span class="text-center text-sm opacity-70">{t("select.addPlayer")}</span>
-            </>
+            <div
+              class="flex h-20 w-20 items-center justify-center rounded-full text-3xl"
+              style={{ "background-color": `color-mix(in oklch, ${color(400)} 30%, transparent)`, color: color(400) }}
+            >
+              <IconPlus />
+            </div>
           }
         >
-          {(selection) => <Avatar user={selection().player} class="h-20 w-20 text-2xl" fallbackClass="bg-white/20" />}
+          {(selection) => (
+            <Avatar
+              user={selection().player}
+              class="h-20 w-20 text-3xl shadow-lg ring-[0.25cqw] ring-white"
+              fallbackClass="bg-white/20"
+            />
+          )}
         </Show>
       </div>
-
-      {/* Footer name area */}
-      <Show when={props.selection}>
-        {(selection) => (
-          <div class="flex w-full flex-col items-center gap-0.5 bg-black/20 px-4 py-3">
-            <span class="max-w-full truncate text-center text-sm font-semibold">{selection().player.username}</span>
-            <Show when={isDuet(props.song)}>
-              <span class="text-center text-xs opacity-60">{getVoiceName(props.song ?? null, selection().voice)}</span>
-            </Show>
-          </div>
-        )}
-      </Show>
+      <div class="relative flex w-full flex-col items-center gap-1">
+        <Show
+          when={props.selection}
+          fallback={
+            <span class="text-sm font-black tracking-wide uppercase italic opacity-80">{t("select.addPlayer")}</span>
+          }
+        >
+          {(selection) => (
+            <>
+              <span class="max-w-full truncate text-2xl text-display">{selection().player.username}</span>
+              <Show when={isDuet(props.song)}>
+                <TagChip class="text-xs" label={getVoiceName(props.song ?? null, selection().voice)} />
+              </Show>
+            </>
+          )}
+        </Show>
+      </div>
     </button>
   );
 }

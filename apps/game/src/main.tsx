@@ -15,6 +15,8 @@ forwardConsole("error", (message) => native.app.log({ level: "error", message })
 const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
 if (posthogToken) void initPostHog(posthogToken);
 
+const WIPE_ROUTES = new Set(["/game", "/game/", "/game/score"]);
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -33,7 +35,10 @@ const router = createRouter({
   scrollRestoration: true,
   defaultPreload: false,
   defaultPreloadStaleTime: 0,
-  defaultViewTransition: true,
+  defaultViewTransition: {
+    // Big moments (starting a song, its results) wipe in; everything else fades.
+    types: ({ toLocation }) => (WIPE_ROUTES.has(toLocation.pathname) ? ["wipe"] : ["fade"]),
+  },
 });
 
 declare module "@tanstack/solid-router" {

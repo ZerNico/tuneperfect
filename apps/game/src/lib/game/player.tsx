@@ -1,15 +1,16 @@
 import { ReactiveMap } from "@solid-primitives/map";
 import { type Accessor, createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 
-import { roundStore } from "~/stores/round";
+import { createEmptyStats, roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
 import type { Note } from "../ultrastar/note";
 import { getMaxScore, getNoteScore, getPhraseRating, type PhraseRating } from "../utils/score";
+import { createComboTracker } from "./combo";
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
-import { type PlayerContextValue, PlayerProvider } from "./player-context";
+import { type NoteEvent, type PlayerContextValue, PlayerProvider } from "./player-context";
 import { beatsToProcess } from "./score-loop";
 
 interface CreatePlayerOptions {
@@ -87,7 +88,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const beats = createMemo(() => {
     const beatMap = new Map<
       number,
-      { note: Note; isFirstInPhrase: boolean; isLastInPhrase: boolean; isFirstInNote: boolean }
+      { note: Note; isFirstInPhrase: boolean; isLastInPhrase: boolean; isFirstInNote: boolean; isLastInNote: boolean }
     >();
     for (const phrase of voice()?.phrases || []) {
       for (const [noteIndex, note] of phrase.notes.entries()) {
@@ -101,6 +102,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
             isFirstInPhrase: noteIndex === 0 && i === 0,
             isLastInPhrase: isLastNoteInPhrase && isLastBeatInNote,
             isFirstInNote: i === 0,
+            isLastInNote: isLastBeatInNote,
           });
         }
       }
@@ -117,17 +119,61 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   let correctBeats = 0;
   let totalBeats = 0;
 
-  const [phraseRating, setPhraseRating] = createSignal<{ id: number; rating: PhraseRating } | null>(null);
+  let noteCorrectBeats = 0;
+  let noteTotalBeats = 0;
+
+  const comboTracker = createComboTracker();
+  const [combo, setCombo] = createSignal(0);
+  const noteResults = new ReactiveMap<Note, "hit" | "miss">();
+  const [noteEvent, setNoteEvent] = createSignal<NoteEvent | null>(null);
+  let noteEventId = 0;
+
+  const stats = createEmptyStats();
+  const publishStats = () => {
+    stats.maxCombo = comboTracker.maxCombo();
+    game.setPlayerStats(options().index, { ...stats });
+  };
+
+  const finishNote = (note: Note) => {
+    const outcome = comboTracker.noteFinished(noteCorrectBeats, noteTotalBeats);
+    noteCorrectBeats = 0;
+    noteTotalBeats = 0;
+
+    if (!outcome) {
+      return;
+    }
+
+    const isGolden = note.type === "Golden" || note.type === "RapGolden";
+    stats.notesTotal++;
+    if (isGolden) stats.goldenNotesTotal++;
+    if (outcome.hit) {
+      stats.notesHit++;
+      if (isGolden) stats.goldenNotesHit++;
+    }
+
+    noteResults.set(note, outcome.hit ? "hit" : "miss");
+    setCombo(outcome.combo);
+    setNoteEvent({ id: noteEventId++, note, golden: isGolden, ...outcome });
+    publishStats();
+  };
+
+  const [phraseRating, setPhraseRating] = createSignal<{ id: number; rating: PhraseRating; bonus: boolean } | null>(
+    null,
+  );
   let phraseRatingId = 0;
 
   const awardBonus = () => {
-    if (totalBeats > 0 && correctBeats / totalBeats > 0.9) {
+    const bonus = totalBeats > 0 && correctBeats / totalBeats > 0.9;
+    if (bonus) {
       addScore("bonus", correctBeats);
     }
 
     const rating = getPhraseRating(correctBeats, totalBeats);
     if (rating) {
-      setPhraseRating({ id: phraseRatingId++, rating });
+      setPhraseRating({ id: phraseRatingId++, rating, bonus });
+      stats.phrasesTotal++;
+      if (rating === "perfect") stats.perfectPhrases++;
+      publishStats();
     }
 
     correctBeats = 0;
@@ -143,8 +189,15 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
     const noteScore = getNoteScore(beatInfo.note);
 
+    if (beatInfo.isFirstInNote) {
+      // A seek can skip a note's last beat; never carry counts into the next note.
+      noteCorrectBeats = 0;
+      noteTotalBeats = 0;
+    }
+
     if (noteScore > 0) {
       totalBeats++;
+      noteTotalBeats++;
 
       const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
 
@@ -154,6 +207,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
       if (isCorrect) {
         correctBeats++;
+        noteCorrectBeats++;
 
         if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
           addScore("golden", noteScore);
@@ -171,6 +225,10 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
           isFirstInNote: beatInfo.isFirstInNote,
         });
       }
+    }
+
+    if (beatInfo.isLastInNote && noteScore > 0) {
+      finishNote(beatInfo.note);
     }
 
     if (beatInfo.isLastInPhrase) {
@@ -232,6 +290,9 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     player,
     score,
     phraseRating,
+    combo,
+    noteResults,
+    noteEvent,
   };
 
   const Provider = (props: { children: JSX.Element }) => (

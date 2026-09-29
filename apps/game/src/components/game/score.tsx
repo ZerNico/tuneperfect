@@ -1,5 +1,6 @@
 import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
 
+import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { usePlayer } from "~/lib/game/player-context";
 
@@ -71,11 +72,12 @@ export default function Score(props: ScoreProps) {
   return (
     <div class={props.class} classList={props.classList}>
       <p
-        class="tabular-nums"
+        class="text-display tabular-nums"
         classList={{
           "text-5xl": !isCompact(),
           "text-3xl": isCompact(),
-          "animate-score-pop": pop(),
+          "animate-score-pop": pop() && !effectsEnabled(),
+          "animate-score-rush": pop() && effectsEnabled(),
         }}
         style={{ color: micColor() }}
         onAnimationEnd={() => setPop(false)}

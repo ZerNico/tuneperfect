@@ -1,5 +1,7 @@
 import { Show } from "solid-js";
-import IconChevronLeft from "~icons/lucide/chevron-left";
+import IconCaretLeft from "~icons/ph/caret-left-bold";
+
+import TagChip from "./fx/tag-chip";
 
 interface TitleBarProps {
   title: string;
@@ -9,18 +11,20 @@ interface TitleBarProps {
 
 export default function TitleBar(props: TitleBarProps) {
   return (
-    <div class="flex items-center gap-2 text-base font-semibold uppercase">
+    <div class="flex items-center gap-4">
       <Show when={props.onBack}>
-        <button class="flex cursor-pointer items-center gap-2" onClick={() => props.onBack?.()} type="button">
-          <IconChevronLeft />
+        <button
+          class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-xl transition-colors hover:bg-white/20"
+          onClick={() => props.onBack?.()}
+          type="button"
+        >
+          <IconCaretLeft />
         </button>
       </Show>
-      <div>
-        {props.title}
-        <Show when={props.description}>
-          <span class="pl-2 text-xs">/ {props.description}</span>
-        </Show>
-      </div>
+      <h1 class="text-4xl text-display">{props.title}</h1>
+      <Show when={props.description}>
+        <TagChip class="text-base" label={props.description} />
+      </Show>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createMemo, createSignal, onMount } from "solid-js";
 import * as v from "valibot";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
 
 import Layout from "~/components/layout";
+import SummoningCircle from "~/components/summoning-circle";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
 import type { ParseSongsEvent } from "~/lib/native/contract";
@@ -53,25 +53,20 @@ function LoadingComponent() {
 
   return (
     <Layout>
-      <div class="flex grow flex-col items-center justify-center gap-8 p-4">
-        <div class="flex items-center justify-center">
-          <IconLoaderCircle class="animate-spin text-6xl" />
-        </div>
+      <div class="flex grow flex-col items-center justify-center gap-10 p-4">
+        <SummoningCircle progress={progress()} class="h-[45cqh]" />
 
-        <div class="w-full max-w-200">
-          <div class="mb-2 flex justify-between text-sm">
-            <div class="flex min-w-0 flex-1 items-center">
-              <span class="shrink-0">{t("loading.parsing")}&nbsp;</span>
-              <span class="min-w-0 truncate text-left" style={{ direction: "rtl", "unicode-bidi": "plaintext" }}>
-                {currentSong() || "..."}
-              </span>
-            </div>
-            <span class="ml-2 shrink-0">{progress()}%</span>
+        <div class="flex w-full max-w-200 flex-col items-center gap-2 text-sm">
+          <div class="flex items-baseline gap-3 font-black tracking-[0.3em] uppercase">
+            <span>{t("loading.parsing")}</span>
+            <span class="text-2xl tabular-nums">{progress().toString().padStart(3, "0")}%</span>
           </div>
-
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-            <div class="h-full rounded-full bg-white" style={{ width: `${progress()}%` }} />
-          </div>
+          <span
+            class="max-w-full min-w-0 truncate text-white/60"
+            style={{ direction: "rtl", "unicode-bidi": "plaintext" }}
+          >
+            {currentSong() || "..."}
+          </span>
         </div>
       </div>
     </Layout>

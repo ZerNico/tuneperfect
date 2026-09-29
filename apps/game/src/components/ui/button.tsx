@@ -1,7 +1,9 @@
-import { createSignal, type JSX, type Ref } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
+import { createSignal, type JSX, type Ref, Show } from "solid-js";
+import IconSpinner from "~icons/ph/spinner-gap-bold";
 
 import { useNavigation } from "~/hooks/navigation";
+
+import Plate from "./plate";
 
 interface ButtonProps {
   selected?: boolean;
@@ -36,46 +38,22 @@ export default function Button(props: ButtonProps) {
     },
   }));
 
-  const active = () => pressed() && props.selected;
-
   return (
-    <button
-      ref={props.ref}
-      class="grid h-16 cursor-pointer items-center overflow-hidden rounded-lg transition-all ease-in-out active:scale-95"
-      classList={{
-        [props.class || ""]: true,
-        "scale-95": active(),
-      }}
-      type="button"
+    <Plate
+      as="button"
+      ref={props.ref as Ref<HTMLElement>}
+      class={props.class}
+      selected={props.selected}
+      pressed={pressed() && props.selected}
+      gradient={props.gradient}
+      disabled={props.loading}
       onClick={() => props.onClick?.()}
       onMouseEnter={() => props.onMouseEnter?.()}
-      disabled={props.loading}
+      contentClass="flex items-center justify-center gap-3 text-center text-xl font-bold"
     >
-      <div
-        class="z-2 col-start-1 row-start-1 flex items-center justify-center gap-3 text-center text-xl font-bold transition-opacity"
-        classList={{
-          "pointer-events-none opacity-0": props.loading,
-        }}
-      >
+      <Show when={!props.loading} fallback={<IconSpinner class="animate-spin text-2xl" />}>
         {props.children}
-      </div>
-
-      <div
-        class="z-2 col-start-1 row-start-1 flex items-center justify-center transition-opacity"
-        classList={{
-          "pointer-events-none opacity-0": !props.loading,
-        }}
-      >
-        <IconLoaderCircle class="animate-spin text-2xl" />
-      </div>
-
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-all"
-        classList={{
-          [props.gradient || "gradient-settings"]: true,
-          "opacity-0": !props.selected,
-        }}
-      />
-    </button>
+      </Show>
+    </Plate>
   );
 }

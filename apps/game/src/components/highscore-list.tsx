@@ -1,10 +1,21 @@
-import { createMemo, For, onCleanup, onMount } from "solid-js";
+import { createMemo, For, onCleanup, onMount, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
-import IconHash from "~icons/lucide/hash";
+import IconCrown from "~icons/ph/crown-simple-fill";
 
+import { effectsEnabled } from "~/lib/fx";
 import type { User } from "~/lib/types";
 
 import Avatar from "./ui/avatar";
+
+/** Gold, silver and bronze for the podium; white for everyone else. */
+function rankText(rank: number) {
+  if (rank === 1) return "var(--color-yellow-400)";
+  if (rank === 2) return "var(--color-slate-300)";
+  if (rank === 3) return "var(--color-orange-400)";
+  return "rgb(255 255 255 / 0.6)";
+}
+
+const fmt = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export interface Highscore {
   score: number;
@@ -107,34 +118,36 @@ export default function HighscoreList(props: HighscoreListProps) {
   return (
     <div class={twMerge("relative h-full w-100", props.class)}>
       <div ref={containerRef} class="styled-scrollbars absolute flex h-full w-full flex-col overflow-y-auto">
-        <div class="flex min-h-full flex-col justify-center-safe gap-2">
-          <For each={rankedScores()}>
-            {(score) => (
-              <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4 backdrop-blur-md">
+        <div class="flex min-h-full flex-col justify-center-safe gap-2 px-2">
+          <div class="flex flex-col gap-1">
+            <For each={rankedScores()}>
+              {(score, index) => (
+                // The entrance animation sets `transform`, so it lives on a wrapper
+                // instead of overriding the row's slant.
                 <div
-                  class="flex h-full w-10 shrink-0 items-center justify-center text-center text-base"
-                  classList={{
-                    "bg-yellow-500": score.rank === 1,
-                    "bg-white text-black": score.rank !== 1,
-                  }}
+                  classList={{ "animate-title-in": effectsEnabled() }}
+                  style={{ "animation-delay": `${Math.min(index(), 8) * 40}ms` }}
                 >
-                  {score.rank}.
+                  <div
+                    class="flex h-9 w-full -skew-x-12 items-center rounded-sm bg-black/40 backdrop-blur-sm"
+                    classList={{ "ring-1 ring-yellow-400/60 ring-inset": score.rank === 1 }}
+                  >
+                    <div class="flex min-w-0 grow skew-x-12 items-center gap-2.5 px-3 text-base">
+                      <span class="w-5 shrink-0 text-center font-black" style={{ color: rankText(score.rank) }}>
+                        {score.rank}
+                      </span>
+                      <Avatar user={score.user} class="h-6 w-6 shrink-0" />
+                      <span class="min-w-0 truncate font-semibold">{score.user.username || "?"}</span>
+                      <Show when={score.rank === 1}>
+                        <IconCrown class="shrink-0 text-yellow-400" />
+                      </Show>
+                      <span class="ml-auto shrink-0 pl-3 font-black tabular-nums">{fmt(score.score)}</span>
+                    </div>
+                  </div>
                 </div>
-
-                <div class="flex grow items-center gap-2 overflow-hidden">
-                  <Avatar user={score.user} class="h-6 w-6 shrink-0" />
-                  <span class="truncate text-base">{score.user.username || "?"}</span>
-                </div>
-
-                <div class="flex shrink-0 flex-row items-center gap-4">
-                  <span class="flex shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
-                    <IconHash />
-                    {score.score.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-              </div>
-            )}
-          </For>
+              )}
+            </For>
+          </div>
         </div>
       </div>
     </div>

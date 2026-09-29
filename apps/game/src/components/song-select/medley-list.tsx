@@ -1,13 +1,13 @@
 import { createEffect, For, on, Show } from "solid-js";
-import IconX from "~icons/lucide/x";
+import IconTriangleDown from "~icons/ph/caret-down-fill";
+import IconTriangleUp from "~icons/ph/caret-up-fill";
+import IconX from "~icons/ph/x-bold";
 import IconDownArrowKey from "~icons/sing/down-arrow-key";
 import IconF2Key from "~icons/sing/f2-key";
 import IconGamepadLT from "~icons/sing/gamepad-lt";
 import IconGamepadRStick from "~icons/sing/gamepad-rstick";
 import IconPageDownKey from "~icons/sing/page-down-key";
 import IconPageUpKey from "~icons/sing/page-up-key";
-import IconTriangleDown from "~icons/sing/triangle-down";
-import IconTriangleUp from "~icons/sing/triangle-up";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
 import { createLoop } from "~/hooks/loop";
@@ -105,7 +105,7 @@ export function MedleyList(props: MedleyListProps) {
 
   return (
     <div class="h-full w-80">
-      <div class="flex h-full flex-col rounded-lg bg-black/30 p-4 backdrop-blur-md">
+      <div class="flex h-full flex-col rounded-xl glass p-4">
         <div class="mb-2 flex items-center justify-between">
           <h2 class="text-2xl font-bold">Medley</h2>
           <div class="flex items-center gap-2">

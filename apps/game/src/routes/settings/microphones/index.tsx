@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
-import IconMicVocal from "~icons/lucide/mic-vocal";
-import IconPlus from "~icons/lucide/plus";
+import IconMicVocal from "~icons/ph/microphone-stage-fill";
+import IconPlus from "~icons/ph/plus-bold";
 
 import Layout from "~/components/layout";
 import SettingsFooter from "~/components/settings-footer";

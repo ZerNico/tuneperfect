@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, Match, Switch } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
+import IconLoaderCircle from "~icons/ph/spinner-gap-bold";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";

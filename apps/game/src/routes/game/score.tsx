@@ -1,522 +1,237 @@
-import { useMutation, useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
 import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import IconReplay from "~icons/ph/arrow-counter-clockwise-bold";
 
+import Confetti from "~/components/fx/confetti";
 import HighscoreList from "~/components/highscore-list";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
+import ScoreLane, { type LaneSize } from "~/components/score/score-lane";
 import TitleBar from "~/components/title-bar";
-import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
+import ChipButton from "~/components/ui/chip-button";
+import { effectsEnabled } from "~/lib/fx";
+import { useRoundResults } from "~/lib/game/round-results";
 import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
-import { highscoreQueryOptions } from "~/lib/queries";
-import { playSound } from "~/lib/sound";
-import type { User } from "~/lib/types";
-import { getColorVar } from "~/lib/utils/color";
-import { getMaxScore, getRelativeScore, MAX_POSSIBLE_SCORE } from "~/lib/utils/score";
-import { isGuestUser, isLocalUser } from "~/lib/utils/user";
-import { lobbyStore } from "~/stores/lobby";
-import { localStore } from "~/stores/local";
-import { roundStore, type Score, useRoundActions } from "~/stores/round";
-import { settingsStore } from "~/stores/settings";
+import { playSound, type SoundName } from "~/lib/sound";
+import type { TierId } from "~/lib/utils/score";
+import { roundStore, useRoundActions } from "~/stores/round";
 
 export const Route = createFileRoute("/game/score")({
   component: ScoreComponent,
 });
 
-type ScoreCategory = "normal" | "golden" | "bonus";
+// Reveal timeline
+const FILL_MS = 4000;
+/** A tick every time the bars cover this share of the way, so ticks slow down as the bars do. */
+const TICK_STEP = 0.025;
+const TIER_DELAY_MS = 350;
+const STATS_DELAY_MS = 900;
+const DONE_DELAY_MS = 600;
 
-const ANIMATION_DURATION = 2000;
-const ANIMATION_DELAY = 2000;
-const ANIMATION_STEPS = 38;
+/** Fast start, long slow finish: the last points build suspense. */
+const easeOutCubic = (progress: number) => 1 - (1 - progress) ** 3;
 
-interface PlayerScoreData {
-  player: User;
-  score: Score;
-  totalScore: number;
-  micColor: string;
-  position: number;
-}
+const RANK_SOUNDS: Record<TierId, SoundName> = {
+  d: "tierD",
+  c: "tierC",
+  b: "tierB",
+  a: "tierA",
+  s: "tierS",
+  splus: "tierSPlus",
+};
+
+const CONFETTI_COLORS = [
+  "var(--color-yellow-300)",
+  "var(--color-pink-400)",
+  "var(--color-sky-400)",
+  "var(--color-green-400)",
+  "var(--color-purple-400)",
+];
 
 function ScoreComponent() {
-  const results = () => roundStore.results();
-  const shouldTrackHighscore = () => {
-    const res = results();
-    return res.length === 1 && res[0]?.song.mode === "single" && res[0]?.song.length === "full";
-  };
-
-  const maxPossibleScore = () => results().length * MAX_POSSIBLE_SCORE;
-
-  const highscoresQuery = useQuery(() => {
-    const hash = shouldTrackHighscore() ? results()[0]?.song.song.hash : undefined;
-    const options = highscoreQueryOptions(hash ?? "", settingsStore.general().difficulty);
-    return {
-      ...options,
-      enabled: !!hash,
-    };
-  });
-
-  const [showHighscores, setShowHighscores] = createSignal(false);
+  const round = useRoundResults();
   const roundActions = useRoundActions();
 
-  const scoreData = createMemo<PlayerScoreData[]>(() => {
-    const currentResults = results();
-    const firstResult = currentResults[0];
-    if (!firstResult) return [];
+  const laneSize = (): LaneSize => {
+    const count = round.players().length;
+    return count === 1 ? "lg" : count === 2 ? "md" : "sm";
+  };
 
-    // We assume the players from the first song are the players for the session
-    const players = firstResult.song.players;
-    const result: PlayerScoreData[] = [];
+  // Reveal state
+  const [fill, setFill] = createSignal(0);
+  const [tiersShown, setTiersShown] = createSignal(0);
+  const [statsShown, setStatsShown] = createSignal(false);
+  const [done, setDone] = createSignal(false);
+  const [instant, setInstant] = createSignal(!effectsEnabled());
+  const [confetti, setConfetti] = createSignal<number>();
+  const [flash, setFlash] = createSignal<number>();
+  // Bumped by the dev replay to remount the lanes and restart their entrances.
+  const [run, setRun] = createSignal(1);
 
-    for (const [index, player] of players.entries()) {
-      if (!player) continue;
+  let frame: number | undefined;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const at = (ms: number, callback: () => void) => timers.push(setTimeout(callback, ms));
+  const stop = () => {
+    if (frame !== undefined) cancelAnimationFrame(frame);
+    timers.forEach(clearTimeout);
+    timers.length = 0;
+  };
+  onCleanup(stop);
 
-      const totalScore: Score = { normal: 0, golden: 0, bonus: 0 };
+  /** All ranks land together; each distinct rank sound plays once. */
+  const showRanks = () => {
+    const tiers = new Set(round.players().map((result) => result.tier));
+    setTiersShown(round.players().length);
 
-      for (const res of currentResults) {
-        const voiceIndex = res.song.players[index]?.voice;
-        if (voiceIndex === undefined) continue;
+    // Uncorrelated sounds add up in power, so 1/√n keeps the mix about as loud as one sound.
+    const gain = 1 / Math.sqrt(tiers.size);
+    for (const tier of tiers) playSound(RANK_SOUNDS[tier], { gain });
 
-        const voice = res.song.song.voices[voiceIndex];
-        if (!voice) continue;
+    if (tiers.has("s") || tiers.has("splus")) setConfetti(Date.now());
+    if (tiers.has("splus")) setFlash(Date.now());
+  };
 
-        const maxScore = getMaxScore(voice);
-        const absoluteScore = res.scores[index] ?? { normal: 0, golden: 0, bonus: 0 };
-        const relativeScore = getRelativeScore(absoluteScore, maxScore);
+  const finish = () => {
+    stop();
+    setFill(1);
+    setTiersShown(round.players().length);
+    setStatsShown(true);
+    setDone(true);
+  };
 
-        totalScore.normal += relativeScore.normal;
-        totalScore.golden += relativeScore.golden;
-        totalScore.bonus += relativeScore.bonus;
-      }
+  const start = () => {
+    stop();
+    setFill(0);
+    setTiersShown(0);
+    setStatsShown(false);
+    setDone(false);
 
-      const micColor = player.microphone.color;
-
-      result.push({
-        player: player.player,
-        score: totalScore,
-        totalScore: Math.floor(totalScore.normal + totalScore.golden + totalScore.bonus),
-        micColor,
-        position: index + 1,
-      });
+    if (!effectsEnabled()) {
+      finish();
+      return;
     }
 
-    return result;
+    // One clock for every bar, so all players rise together.
+    const startTime = performance.now();
+    let lastTick = 0;
+    const step = (now: number) => {
+      const progress = Math.min((now - startTime) / FILL_MS, 1);
+      const eased = easeOutCubic(progress);
+      setFill(eased);
+
+      if (eased - lastTick >= TICK_STEP) {
+        lastTick = eased;
+        playSound("countTick");
+      }
+
+      if (progress < 1) {
+        frame = requestAnimationFrame(step);
+        return;
+      }
+
+      at(TIER_DELAY_MS, showRanks);
+      at(TIER_DELAY_MS + STATS_DELAY_MS, () => setStatsShown(true));
+      at(TIER_DELAY_MS + STATS_DELAY_MS + DONE_DELAY_MS, () => setDone(true));
+    };
+    frame = requestAnimationFrame(step);
+  };
+
+  const replay = () => {
+    setInstant(false);
+    setRun((value) => value + 1);
+    start();
+  };
+
+  onMount(() => {
+    round.commit();
+    start();
   });
 
-  const updateHighscoresMutation = useMutation(() => ({
-    mutationFn: async () => {
-      if (!shouldTrackHighscore()) return;
-
-      const scores = scoreData();
-      const songHash = results()[0]?.song.song.hash;
-
-      if (!songHash) return;
-
-      for (const score of scores) {
-        if (isGuestUser(score.player)) continue;
-
-        if (score.totalScore <= 0) continue;
-
-        if (isLocalUser(score.player)) {
-          localStore.addScore(score.player.id, songHash, settingsStore.general().difficulty, score.totalScore);
-          continue;
-        }
-
-        // Handle API users (only if we have a lobby connection)
-        if (!lobbyStore.lobby()) continue;
-
-        await client.highscore.setHighscore.call({
-          hash: songHash,
-          userId: score.player.id.toString(),
-          score: score.totalScore,
-          difficulty: settingsStore.general().difficulty,
-        });
-      }
-    },
-  }));
-
   const handleContinue = () => {
-    if (updateHighscoresMutation.isPending) return;
+    if (!done()) {
+      // First press skips the reveal.
+      setInstant(true);
+      finish();
+      return;
+    }
+    if (round.saving()) return;
 
     playSound("confirm");
     roundActions.returnRound();
   };
 
-  const animatedStages = createMemo(() => {
-    const stages = new Set<ScoreCategory>();
-    const scores = scoreData();
-
-    if (!scores.length) return [];
-
-    for (const data of scores) {
-      if (data.score.normal > 0) stages.add("normal");
-      if (data.score.golden > 0) stages.add("golden");
-      if (data.score.bonus > 0) stages.add("bonus");
-    }
-
-    return Array.from(stages);
-  });
-
-  onMount(() => {
-    for (const result of results()) {
-      localStore.markSongPlayed(result.song.song.hash);
-    }
-
-    updateHighscoresMutation.mutate();
-
-    const totalAnimationTime = animatedStages().length * ANIMATION_DELAY;
-
-    setTimeout(() => {
-      setShowHighscores(true);
-    }, totalAnimationTime);
-  });
-
-  const highscores = () => {
-    if (!shouldTrackHighscore()) return [];
-    const songHash = results()[0]?.song.song.hash;
-    if (!songHash) return [];
-
-    const allScores: { user: User; score: number }[] = [];
-
-    allScores.push(...(highscoresQuery.data || []));
-
-    const localScores = localStore.getScoresForSong(songHash, settingsStore.general().difficulty);
-    allScores.push(...localScores);
-
-    const scores = scoreData();
-    for (const score of scores) {
-      if (isGuestUser(score.player)) continue;
-      if (score.totalScore <= 0) continue;
-
-      allScores.push({
-        user: score.player,
-        score: score.totalScore,
-      });
-    }
-
-    return allScores;
-  };
+  const isWinner = createMemo(() => (total: number) => round.players().length > 1 && total === round.topScore());
 
   return (
-    <Layout intent="secondary" header={<TitleBar title={t("score.title")} />} footer={<KeyHints hints={["confirm"]} />}>
-      <div class="flex h-full flex-col gap-6">
-        <div class="flex min-h-0 grow">
-          <div
-            class="grid h-full w-full"
-            classList={{
-              "grid-cols-[2fr_3fr]": shouldTrackHighscore(),
-              "grid-cols-1": !shouldTrackHighscore(),
-            }}
-          >
-            <Show when={shouldTrackHighscore()}>
-              <div
-                class="flex h-full min-h-0 items-center justify-center transition-opacity duration-500"
-                classList={{ "opacity-0": !showHighscores() }}
-              >
-                <HighscoreList scores={highscores()} class="h-full w-100 max-w-full" />
-              </div>
+    <Layout
+      intent="secondary"
+      header={<TitleBar title={t("score.title")} />}
+      footer={
+        <div class="flex items-center justify-between gap-8">
+          <div class="flex items-center gap-4">
+            <KeyHints hints={["confirm"]} />
+            <Show when={import.meta.env.DEV}>
+              <ChipButton icon={IconReplay} onClick={replay}>
+                Replay
+              </ChipButton>
             </Show>
-            <div class="flex grow flex-col items-center justify-center gap-2">
-              <For each={scoreData()}>
-                {(data) => (
-                  <ScoreCard
-                    animatedStages={animatedStages()}
-                    score={data.score}
-                    player={data.player}
-                    micColor={data.micColor}
-                    position={data.position}
-                    maxPossibleScore={maxPossibleScore()}
-                    playerCount={scoreData().length}
+          </div>
+          <Button
+            loading={done() && round.saving()}
+            selected
+            gradient={roundStore.settings()?.returnTo ? "gradient-party" : "gradient-sing"}
+            class="w-[30cqw]"
+            onClick={handleContinue}
+          >
+            {done() ? t("score.continue") : t("score.skip")}
+          </Button>
+        </div>
+      }
+    >
+      <Show when={effectsEnabled() && flash()} keyed>
+        {(_) => <div class="pointer-events-none absolute inset-0 z-20 animate-flash bg-white" />}
+      </Show>
+      <Confetti trigger={confetti()} colors={CONFETTI_COLORS} count={60} class="z-20" />
+
+      <div class="flex h-full min-h-0 gap-10">
+        <div
+          class="flex min-h-0 min-w-0 grow flex-col justify-center"
+          classList={{ "gap-6": laneSize() !== "sm", "gap-2.5": laneSize() === "sm" }}
+        >
+          <Show when={run()} keyed>
+            {(_) => (
+              <For each={round.players()}>
+                {(result, index) => (
+                  <ScoreLane
+                    result={result}
+                    // One shared level rises for everyone and each bar stops at its own total, so bars
+                    // climb side by side and the winner only shows once the others have stopped.
+                    shownScore={Math.min(result.total, round.topScore() * fill())}
+                    maxScore={round.maxScore()}
+                    size={laneSize()}
+                    index={index()}
+                    tierRevealed={tiersShown() > index()}
+                    statsRevealed={statsShown()}
+                    newRecord={statsShown() && round.isNewRecord(result)}
+                    winner={done() && isWinner()(result.total)}
+                    instant={instant()}
                   />
                 )}
               </For>
-            </div>
-          </div>
+            )}
+          </Show>
         </div>
 
-        <div class="flex shrink-0">
-          <Button
-            loading={updateHighscoresMutation.isPending}
-            selected
-            gradient={!roundStore.settings()?.returnTo ? "gradient-sing" : "gradient-party"}
-            class="w-full"
-            onClick={handleContinue}
+        <Show when={round.tracksHighscore()}>
+          <div
+            class="flex w-[21cqw] shrink-0 flex-col justify-center transition-opacity duration-500"
+            classList={{ "opacity-0": !done() }}
           >
-            {t("score.continue")}
-          </Button>
-        </div>
+            <HighscoreList scores={round.highscores()} class="h-[40cqh] w-full" />
+          </div>
+        </Show>
       </div>
     </Layout>
-  );
-}
-
-interface ScoreCardProps {
-  score: Score;
-  player: User;
-  micColor: string;
-  position: number;
-  animatedStages: ScoreCategory[];
-  maxPossibleScore: number;
-  playerCount: number;
-}
-
-function ScoreCard(props: ScoreCardProps) {
-  const getPercentage = (value: number) => (value / props.maxPossibleScore) * 100;
-
-  const [animatedScores, setAnimatedScores] = createSignal<Score>({
-    normal: 0,
-    golden: 0,
-    bonus: 0,
-  });
-
-  const [animatedPercentages, setAnimatedPercentages] = createSignal<Score>({
-    normal: 0,
-    golden: 0,
-    bonus: 0,
-  });
-
-  const animatedTotalScore = () => {
-    const scores = animatedScores();
-    return Math.floor(scores.normal + scores.golden + scores.bonus);
-  };
-
-  const animateCounter = (
-    startValue: number,
-    endValue: number,
-    setValue: (value: number) => void,
-    duration: number,
-  ): ReturnType<typeof setInterval> => {
-    const stepValue = (endValue - startValue) / ANIMATION_STEPS;
-    const stepDuration = duration / ANIMATION_STEPS;
-    let currentStep = 0;
-
-    const interval = setInterval(() => {
-      currentStep++;
-      const newValue = startValue + stepValue * currentStep;
-      setValue(currentStep < ANIMATION_STEPS ? Math.floor(newValue) : endValue);
-
-      if (currentStep >= ANIMATION_STEPS) {
-        clearInterval(interval);
-      }
-    }, stepDuration);
-
-    return interval;
-  };
-
-  const animatePercentage = (
-    startValue: number,
-    endValue: number,
-    setValue: (value: number) => void,
-    duration: number,
-  ): (() => void) => {
-    const startTime = performance.now();
-    let animationFrame: number;
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Use easeInOut curve for smoother animation
-      const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
-
-      const currentValue = startValue + (endValue - startValue) * easeProgress;
-      setValue(currentValue);
-
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-
-    return () => cancelAnimationFrame(animationFrame);
-  };
-
-  onMount(() => {
-    const cleanupFunctions: (() => void)[] = [];
-
-    // If there are no animated stages, show the full score immediately
-    if (props.animatedStages.length === 0) {
-      setAnimatedScores({
-        normal: props.score.normal,
-        golden: props.score.golden,
-        bonus: props.score.bonus,
-      });
-      setAnimatedPercentages({
-        normal: getPercentage(props.score.normal),
-        golden: getPercentage(props.score.golden),
-        bonus: getPercentage(props.score.bonus),
-      });
-      return;
-    }
-
-    // Animate each score category, with sufficient delay to ensure previous animations finish
-    for (const [index, category] of props.animatedStages.entries()) {
-      setTimeout(() => {
-        const scoreValue = props.score[category];
-        const targetPercentage = getPercentage(scoreValue);
-
-        // Animate the score numbers (slower, stepped)
-        animateCounter(
-          0,
-          scoreValue,
-          (value) => setAnimatedScores((prev) => ({ ...prev, [category]: value })),
-          ANIMATION_DURATION,
-        );
-
-        // Animate the bar percentages (smooth, requestAnimationFrame)
-        const cleanup = animatePercentage(
-          0,
-          targetPercentage,
-          (value) => setAnimatedPercentages((prev) => ({ ...prev, [category]: value })),
-          ANIMATION_DURATION,
-        );
-
-        cleanupFunctions.push(cleanup);
-      }, index * ANIMATION_DELAY);
-    }
-
-    // Register cleanup with SolidJS onCleanup
-    onCleanup(() => {
-      cleanupFunctions.forEach((cleanup) => cleanup());
-    });
-  });
-
-  const isCompact = () => props.playerCount > 2;
-
-  return (
-    <div
-      class="flex w-140 rounded-xl shadow-xl transition-all"
-      classList={{
-        "flex-col gap-4 p-6": !isCompact(),
-        "flex-row gap-3 p-4": isCompact(),
-      }}
-      style={{
-        background: `linear-gradient(90deg, ${getColorVar(props.micColor, 600)}, ${getColorVar(props.micColor, 500)})`,
-      }}
-    >
-      <div
-        class="flex flex-col"
-        classList={{
-          "flex-1 gap-2": isCompact(),
-          "gap-4": !isCompact(),
-        }}
-      >
-        <div class="flex w-full items-center justify-between">
-          <div class="flex items-center gap-3">
-            <Avatar user={props.player} class={isCompact() ? "h-8 w-8" : ""} fallbackClass="bg-white/20" />
-            <div
-              class="font-bold text-white"
-              classList={{
-                "text-base": isCompact(),
-                "text-lg": !isCompact(),
-              }}
-            >
-              {props.player.username}
-            </div>
-          </div>
-          <div
-            class="font-bold text-white"
-            classList={{
-              "text-2xl": isCompact(),
-              "text-3xl": !isCompact(),
-            }}
-          >
-            {animatedTotalScore().toLocaleString("en-US", { maximumFractionDigits: 0 })}
-          </div>
-        </div>
-
-        <div
-          class="w-full overflow-hidden rounded-lg bg-black/20"
-          classList={{
-            "h-6": isCompact(),
-            "h-10": !isCompact(),
-          }}
-        >
-          <div class="flex h-full">
-            <ScoreBar percentage={animatedPercentages().normal} color={getColorVar(props.micColor, 400)} />
-            <ScoreBar percentage={animatedPercentages().golden} color={getColorVar(props.micColor, 300)} />
-            <ScoreBar percentage={animatedPercentages().bonus} color={getColorVar(props.micColor, 50)} />
-          </div>
-        </div>
-      </div>
-
-      <div
-        classList={{
-          "grid grid-cols-1 gap-1": isCompact(),
-          "grid grid-cols-3 gap-3": !isCompact(),
-        }}
-      >
-        <ScoreDetail
-          label={t("score.normal")}
-          value={animatedScores().normal}
-          color={getColorVar(props.micColor, 400)}
-          compact={isCompact()}
-        />
-        <ScoreDetail
-          label={t("score.golden")}
-          value={animatedScores().golden}
-          color={getColorVar(props.micColor, 300)}
-          compact={isCompact()}
-        />
-        <ScoreDetail
-          label={t("score.bonus")}
-          value={animatedScores().bonus}
-          color={getColorVar(props.micColor, 50)}
-          compact={isCompact()}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar(props: { percentage: number; color: string }) {
-  return (
-    <div
-      class="flex h-full items-center justify-center text-xs font-medium text-white/90"
-      style={{
-        width: `${props.percentage}%`,
-        "background-color": props.color,
-      }}
-    />
-  );
-}
-
-function ScoreDetail(props: { label: string; value: number; color: string; compact?: boolean }) {
-  return (
-    <div
-      class="flex items-center gap-2 rounded-md bg-black/10"
-      classList={{
-        "px-2 py-1": props.compact,
-        "px-3 py-1.5": !props.compact,
-      }}
-    >
-      <div
-        class="rounded-sm"
-        classList={{
-          "h-3 w-3": props.compact,
-          "h-4 w-4": !props.compact,
-        }}
-        style={{ "background-color": props.color }}
-      />
-      <div
-        classList={{
-          "flex min-w-24 flex-row items-center justify-between": props.compact,
-          "flex flex-col": !props.compact,
-        }}
-      >
-        <span class="text-xs text-white/70">{props.label}</span>
-        <span
-          class="font-medium text-white tabular-nums"
-          classList={{
-            "text-xs": props.compact,
-            "text-sm": !props.compact,
-          }}
-        >
-          {props.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-        </span>
-      </div>
-    </div>
   );
 }

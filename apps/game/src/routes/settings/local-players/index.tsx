@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, For, type JSX, on } from "solid-js";
-import IconPlus from "~icons/lucide/plus";
-import IconUser from "~icons/lucide/user";
+import IconPlus from "~icons/ph/plus-bold";
+import IconUser from "~icons/ph/user-fill";
 
 import Layout from "~/components/layout";
 import SettingsFooter from "~/components/settings-footer";

@@ -95,3 +95,24 @@ export function getMaxScore(voice: Voice) {
 
   return score;
 }
+
+export type TierId = "d" | "c" | "b" | "a" | "s" | "splus";
+
+/** Result tiers from best to worst, with the minimum score out of MAX_POSSIBLE_SCORE. */
+export const TIERS: readonly { id: TierId; min: number; stars: number }[] = [
+  { id: "splus", min: 95_000, stars: 5 },
+  { id: "s", min: 88_000, stars: 5 },
+  { id: "a", min: 75_000, stars: 4 },
+  { id: "b", min: 60_000, stars: 3 },
+  { id: "c", min: 40_000, stars: 2 },
+  { id: "d", min: 0, stars: 1 },
+];
+
+/**
+ * Tier for a total score. `maxScore` is the best possible total, e.g.
+ * `MAX_POSSIBLE_SCORE * songCount` for a medley.
+ */
+export function getTier(total: number, maxScore: number = MAX_POSSIBLE_SCORE) {
+  const normalized = maxScore > 0 ? (total / maxScore) * MAX_POSSIBLE_SCORE : 0;
+  return TIERS.find((tier) => normalized >= tier.min) ?? TIERS[TIERS.length - 1]!;
+}

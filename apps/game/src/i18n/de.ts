@@ -78,6 +78,7 @@ const de = {
     addPlayer: "Spieler hinzufügen",
     start: "Starten",
     selectPlayer: "Spieler auswählen",
+    micLabel: "Mikro {{number}}",
     playerRequired: "Bitte wähle mindestens einen Spieler aus",
   },
   sing: {
@@ -112,6 +113,7 @@ const de = {
     },
     badge: {
       new: "Neu",
+      duet: "Duett",
     },
     songCount: {
       one: "{{count}} Lied",
@@ -119,6 +121,9 @@ const de = {
       filtered: "{{filtered}} / {{total}} Lieder",
     },
     menu: {
+      title: "Menü",
+      showGrid: "Als Raster anzeigen",
+      showCoverflow: "Als Coverflow anzeigen",
       addToMedley: "Zu Medley hinzufügen",
       startRandomMedley: "Zufälliges Medley starten",
       startMedley: "Medley starten",
@@ -161,6 +166,19 @@ const de = {
   score: {
     title: "Punktzahl",
     continue: "Weiter",
+    skip: "Überspringen",
+    newRecord: "Neuer Rekord!",
+    maxCombo: "Max. Combo",
+    perfectPhrases: "Perfekte Zeilen",
+    goldenNotes: "Goldene Noten",
+    tiers: {
+      d: "Duschsänger",
+      c: "Open Mic",
+      b: "Aufsteiger",
+      a: "Headliner",
+      s: "Superstar",
+      splus: "Tune Perfect",
+    },
     normal: "Normal",
     golden: "Gold",
     bonus: "Bonus",
@@ -172,6 +190,8 @@ const de = {
       next: "Nächstes Lied",
       exit: "Beenden",
     },
+    combo: "Combo",
+    nowSinging: "Jetzt singen",
     phraseRating: {
       perfect: "Perfekt",
       great: "Super",
@@ -207,6 +227,11 @@ const de = {
         songSelectStyleOptions: {
           coverflow: "Coverflow",
           grid: "Raster",
+        },
+        visualEffects: "Visuelle Effekte",
+        visualEffectsOptions: {
+          full: "Voll",
+          reduced: "Reduziert",
         },
         outputLatency: "Audio-Ausgabelatenz",
         outputLatencyPreviewStart: "Audio-Ausgabe-Sync testen",
@@ -244,6 +269,7 @@ const de = {
         game: "Spiellautstärke",
         preview: "Vorschaulautstärke",
         menu: "Menülautstärke",
+        effects: "Effektlautstärke",
         micPlayback: "Mikrofon-Wiedergabe",
         micPlaybackVolume: "Mikrofon-Wiedergabelautstärke",
       },

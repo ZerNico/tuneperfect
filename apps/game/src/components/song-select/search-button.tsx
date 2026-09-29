@@ -1,11 +1,13 @@
 import { Show } from "solid-js";
-import IconSearch from "~icons/lucide/search";
+import IconSearch from "~icons/ph/magnifying-glass-bold";
 import IconF3Key from "~icons/sing/f3-key";
 import IconGamepadX from "~icons/sing/gamepad-x";
 
-import { keyMode } from "~/hooks/navigation";
 import type { SearchFieldScope } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
+
+import ChipButton from "../ui/chip-button";
+import KeyGlyph from "../ui/key-glyph";
 
 interface SearchButtonProps {
   searchQuery: string;
@@ -28,21 +30,19 @@ export function SearchButton(props: SearchButtonProps) {
   const scopeLabel = () => SCOPE_LABELS[props.searchFieldScope]();
 
   return (
-    <button
-      type="button"
-      class="flex w-40 items-center gap-1 rounded-full border-[0.12cqw] border-white px-1 py-0.5 text-sm transition-all hover:opacity-75 active:scale-95"
+    <ChipButton
+      class="w-56"
+      icon={IconSearch}
+      label={t("sing.search")}
+      hint={<KeyGlyph keyboard={IconF3Key} gamepad={IconGamepadX} />}
       onClick={() => props.onClick()}
     >
-      <IconSearch class="shrink-0" />
-      <div class="flex w-full min-w-0 items-center gap-2">
-        <span class="grow truncate text-start">{props.searchQuery || t("sing.search")}</span>
-        <Show when={props.searchQuery}>
-          <span class="py-0.4 shrink-0 rounded-full bg-white/20 px-1.5 text-xs">{scopeLabel()}</span>
-        </Show>
-      </div>
-      <Show when={keyMode() === "keyboard"} fallback={<IconGamepadX class="shrink-0 text-xs" />}>
-        <IconF3Key class="shrink-0 text-xs" />
+      <span class="grow truncate text-start" classList={{ "opacity-60": !props.searchQuery }}>
+        {props.searchQuery || t("sing.search")}
+      </span>
+      <Show when={props.searchQuery}>
+        <span class="shrink-0 rounded-sm bg-white/20 px-1.5 text-xs uppercase">{scopeLabel()}</span>
       </Show>
-    </button>
+    </ChipButton>
   );
 }

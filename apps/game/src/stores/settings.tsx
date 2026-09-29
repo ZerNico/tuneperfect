@@ -14,6 +14,7 @@ const settingsStoreSchema = v.object({
     micPlaybackEnabled: v.fallback(v.boolean(), false),
     songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
     outputLatency: v.fallback(v.number(), 0),
+    visualEffects: v.fallback(v.picklist(["full", "reduced"]), "full"),
   }),
   volume: v.object({
     master: v.number(),
@@ -21,6 +22,7 @@ const settingsStoreSchema = v.object({
     preview: v.number(),
     menu: v.number(),
     micPlayback: v.fallback(v.number(), 0.5),
+    effects: v.fallback(v.number(), 0.5),
   }),
   microphones: v.array(
     v.object({
@@ -53,6 +55,7 @@ const defaultSettings: SettingsStore = {
     micPlaybackEnabled: false,
     songSelectStyle: "coverflow",
     outputLatency: 0,
+    visualEffects: "full",
   },
   volume: {
     master: 1,
@@ -60,6 +63,7 @@ const defaultSettings: SettingsStore = {
     preview: 0.5,
     menu: 0.5,
     micPlayback: 1,
+    effects: 0.5,
   },
   microphones: [],
   songs: {

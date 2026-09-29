@@ -130,7 +130,8 @@ export default function Menu(props: MenuProps) {
   return (
     <div class={twMerge("flex h-full max-h-full w-full grow flex-col", props.class)}>
       <div ref={scrollContainer} class="styled-scrollbars flex min-h-0 grow flex-col overflow-y-auto">
-        <div class="m-auto flex w-full shrink-0 flex-col">
+        {/* Side padding leaves room for the slant and the selection marker. */}
+        <div class="m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-3">
           <For each={props.items}>
             {(item, index) => (
               <Switch>
