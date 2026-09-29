@@ -39,10 +39,16 @@ export default function OnlineLoadingScreen() {
     // 3. Sync catalog if needed
     if (usdbStore.catalog().length === 0) {
       setStatus(t("online.syncing"));
-      await usdbStore.syncCatalog();
+      const synced = await usdbStore.syncCatalog();
+      // An empty catalogue has nothing to browse.
+      if (!synced || usdbStore.catalog().length === 0) {
+        notify({ message: t("online.syncFailed"), intent: "error" });
+        navigate({ to: "/sing" });
+        return;
+      }
     } else {
       // Incremental sync in background — don't block navigation
-      usdbStore.syncCatalog();
+      void usdbStore.syncCatalog();
     }
 
     navigate({ to: "/sing/online", replace: true });

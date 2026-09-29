@@ -6,7 +6,7 @@ import IconPlus from "~icons/ph/plus-bold";
 import TagChip from "~/components/fx/tag-chip";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
-import Menu, { type MenuItem } from "~/components/menu";
+import Menu, { select, type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
@@ -233,14 +233,13 @@ export default function PlayerSelectionScreen() {
                 />
               ),
             },
-            {
-              type: "select-string",
+            select({
               label: t("sing.length.label"),
               value: () => selectedLength(),
               options: LENGTH_OPTIONS,
               onChange: (value) => setSelectedLength(value as RoundLength),
               renderValue: (value) => <span>{value !== null ? getLengthLabel(value as RoundLength) : ""}</span>,
-            },
+            }),
             {
               type: "button",
               label: t("select.start"),
@@ -491,14 +490,15 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
     const items: MenuItem[] = [];
 
     if (isDuet(props.song)) {
-      items.push({
-        type: "select-number",
-        label: t("sing.voice"),
-        value: () => selectedVoice(),
-        onChange: (voice: number) => setSelectedVoice(voice),
-        options: props.song?.voices.map((_, index) => index) ?? [],
-        renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>,
-      });
+      items.push(
+        select({
+          label: t("sing.voice"),
+          value: () => selectedVoice(),
+          onChange: (voice: number) => setSelectedVoice(voice),
+          options: props.song?.voices.map((_, index) => index) ?? [],
+          renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>,
+        }),
+      );
     }
 
     for (const player of users()) {

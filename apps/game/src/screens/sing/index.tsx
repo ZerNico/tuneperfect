@@ -1,6 +1,6 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, on, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, on, onCleanup, Show } from "solid-js";
 import IconF1Key from "~icons/sing/f1-key";
 import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconShiftKey from "~icons/sing/shift-key";
@@ -11,9 +11,12 @@ import { MedleyList } from "~/components/song-select/medley-list";
 import { createSongBrowserState, SongBrowser } from "~/components/song-select/song-browser";
 import KeyGlyph from "~/components/ui/key-glyph";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { isDuet } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { toShuffled } from "~/lib/utils/array";
+import { firstFacetValue } from "~/lib/utils/song-facets";
 import { localStore } from "~/stores/local";
 import { medleyStore } from "~/stores/medley";
 import { selectionStore } from "~/stores/selection";
@@ -25,24 +28,19 @@ import { usdbStore } from "~/stores/usdb";
 const browserState = createSongBrowserState("artist");
 const [currentSong, setCurrentSong] = createSignal<LocalSong | null>(null);
 
-/** Genre fields are often comma lists ("Pop, Dance-Pop, …"); the first entry is enough. */
-const firstOf = (value: string[] | null | undefined) => value?.[0]?.split(",")[0]?.trim();
-
 const describeSong = (song: LocalSong) => ({
   id: song.hash,
   artist: song.artist,
   title: song.title,
-  meta: [song.year?.toString(), firstOf(song.genre), firstOf(song.language)].filter(
+  meta: [song.year?.toString(), firstFacetValue(song.genre), firstFacetValue(song.language)].filter(
     (value): value is string => !!value,
   ),
-  duet: song.voices.length > 1,
+  duet: isDuet(song),
   isNew: !localStore.isSongPlayed(song.hash),
 });
 
 export default function SingScreen() {
   const navigate = useNavigate();
-  const songs = createMemo(() => songsStore.songs());
-
   // Double-buffered preview player — two persistent SongPlayer instances that crossfade
   const [slotASong, setSlotASong] = createSignal<LocalSong | null>(currentSong());
   const [slotBSong, setSlotBSong] = createSignal<LocalSong | null>(null);
@@ -77,18 +75,17 @@ export default function SingScreen() {
     }, 600);
   };
 
-  let latestSongHash: string | null = null;
+  onCleanup(() => clearTimeout(cleanupTimeout));
 
   // oxlint-disable-next-line solid/reactivity
   const debouncedSwap = debounce((song: LocalSong | null) => {
     pendingSwap = false;
-    if (song && song.hash !== latestSongHash) return;
     swapToSong(song);
   }, 200);
 
   createEffect(
     on(currentSong, (song) => {
-      latestSongHash = song?.hash ?? null;
+      // Still scrolling: stop the old preview right away instead of letting it play on.
       if (pendingSwap) {
         clearActiveSlot();
       }
@@ -111,41 +108,20 @@ export default function SingScreen() {
     navigate({ to: "/sing/select" });
   };
 
+  /** Five random solo songs, replacing any queued medley. */
   const startRandomMedley = () => {
-    const songsList = songs();
-    const nonDuetSongs = songsList.filter((song) => song.voices.length < 2);
+    const pool = songsStore.songs().filter((song) => !isDuet(song));
+    if (pool.length === 0) return;
 
-    if (nonDuetSongs.length === 0) {
-      return;
-    }
-
-    const selectedSongs: LocalSong[] = [];
-    const targetCount = 5;
-
-    // Try to dedup if we have enough songs
-    if (nonDuetSongs.length >= targetCount) {
-      const available = [...nonDuetSongs];
-      for (let i = 0; i < targetCount; i++) {
-        const randomIndex = Math.floor(Math.random() * available.length);
-        const song = available[randomIndex];
-        if (song) {
-          selectedSongs.push(song);
-          available.splice(randomIndex, 1);
-        }
-      }
-    } else {
-      // Not enough songs to dedup, pick random ones allowing duplicates
-      for (let i = 0; i < targetCount; i++) {
-        const randomIndex = Math.floor(Math.random() * nonDuetSongs.length);
-        const song = nonDuetSongs[randomIndex];
-        if (song) {
-          selectedSongs.push(song);
-        }
-      }
-    }
+    const count = 5;
+    // Without duplicates when the library allows it.
+    const picked =
+      pool.length >= count
+        ? toShuffled(pool).slice(0, count)
+        : Array.from({ length: count }, () => pool[Math.floor(Math.random() * pool.length)]!);
 
     playSound("confirm");
-    selectionStore.set(selectedSongs, "medley");
+    selectionStore.set(picked, "medley");
     navigate({ to: "/sing/select" });
   };
 
@@ -186,10 +162,11 @@ export default function SingScreen() {
     <SongBrowser
       title={t("sing.songs")}
       state={browserState}
-      items={songs()}
+      items={songsStore.songs()}
       getId={(song) => song.hash}
       describe={describeSong}
       coverOf={(song) => song.coverUrl}
+      searchIndex={songsStore.searchIndex}
       sortOptions={["artist", "title", "year", "date"]}
       countLabel={(filtered, total) =>
         filtered !== total
@@ -231,7 +208,7 @@ export default function SingScreen() {
       ]}
       side={(song, view) => (
         <>
-          <Show when={song}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
+          <Show when={song()}>{(song) => <DebouncedHighscoreList songHash={song().hash} />}</Show>
           {/* In the grid, up/down move through covers, so the medley list uses other keys. */}
           {medleyList(view === "grid")}
         </>

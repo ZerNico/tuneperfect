@@ -2,9 +2,9 @@ import { createMemo, For, Show } from "solid-js";
 import IconX from "~icons/ph/x-bold";
 
 import SlantPanel from "~/components/ui/slant-panel";
-import type { SongFilters, SongTypeFilter } from "~/hooks/use-song-filter";
+import type { SongFilters } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
-import { formatDecade } from "~/lib/utils/song-facets";
+import { formatDecade, typeLabel } from "~/lib/utils/song-facets";
 
 interface FilterChipsProps {
   filters: SongFilters;
@@ -12,12 +12,6 @@ interface FilterChipsProps {
   /** Whether to show the solo/duet type chip. Defaults to true (local library). */
   showTypeFilter?: boolean;
 }
-
-const typeLabel = (value: SongTypeFilter): string => {
-  if (value === "duet") return t("sing.filter.duet");
-  if (value === "solo") return t("sing.filter.solo");
-  return t("sing.filter.any");
-};
 
 interface ChipDef {
   isActive: (f: SongFilters) => boolean;

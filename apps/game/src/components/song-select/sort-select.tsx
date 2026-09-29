@@ -12,25 +12,15 @@ import { t } from "~/lib/i18n";
 import KeyGlyph from "../ui/key-glyph";
 import SlantPanel from "../ui/slant-panel";
 
-const DEFAULT_SORT_OPTIONS: SortOption[] = ["artist", "title", "year", "date"];
-
 interface SortSelectProps {
   selected: SortOption;
+  options: SortOption[];
   onSelect: (sort: SortOption) => void;
-  options?: SortOption[];
+  /** The arrows: previous/next option, wrapping around. */
+  onMove: (direction: -1 | 1) => void;
 }
 
 export function SortSelect(props: SortSelectProps) {
-  const sortOptions = () => props.options ?? DEFAULT_SORT_OPTIONS;
-
-  const moveSorting = (direction: "left" | "right") => {
-    const opts = sortOptions();
-    const currentIndex = opts.indexOf(props.selected);
-    const newIndex =
-      direction === "left" ? (currentIndex - 1 + opts.length) % opts.length : (currentIndex + 1) % opts.length;
-    props.onSelect(opts[newIndex] as SortOption);
-  };
-
   return (
     <div class="flex items-center gap-3">
       <KeyGlyph keyboard={IconF6Key} gamepad={IconGamepadLB} class="text-sm opacity-70" />
@@ -38,12 +28,12 @@ export function SortSelect(props: SortSelectProps) {
         class="flex h-10 items-center gap-1 p-1"
         surface="rounded-md bg-black/30 ring-1 ring-white/15 backdrop-blur-md ring-inset"
       >
-        <button type="button" class="cursor-pointer px-1 text-lg active:scale-95" onClick={() => moveSorting("left")}>
+        <button type="button" class="cursor-pointer px-1 text-lg active:scale-95" onClick={() => props.onMove(-1)}>
           <IconCaretLeft />
         </button>
-        <For each={sortOptions()}>
+        <For each={props.options}>
           {(sortOption) => {
-            const selected = () => sortOption.toLowerCase() === props.selected;
+            const selected = () => sortOption === props.selected;
             return (
               <SlantPanel
                 as="button"
@@ -61,7 +51,7 @@ export function SortSelect(props: SortSelectProps) {
             );
           }}
         </For>
-        <button type="button" class="cursor-pointer px-1 text-lg active:scale-95" onClick={() => moveSorting("right")}>
+        <button type="button" class="cursor-pointer px-1 text-lg active:scale-95" onClick={() => props.onMove(1)}>
           <IconCaretRight />
         </button>
       </SlantPanel>

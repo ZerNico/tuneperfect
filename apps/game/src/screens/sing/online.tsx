@@ -11,13 +11,11 @@ import { t } from "~/lib/i18n";
 import { native, safe } from "~/lib/native/client";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
+import { firstFacetValue } from "~/lib/utils/song-facets";
 import { selectionStore } from "~/stores/selection";
 import { type UsdbSearchEntry, usdbStore } from "~/stores/usdb";
 
 const ONLINE_SORT_OPTIONS: SortOption[] = ["views", "artist", "title", "year"];
-
-/** Genre fields are often comma lists ("Pop, Dance-Pop, …"); the first entry is enough. */
-const firstOf = (value: string) => value.split(",")[0]?.trim();
 
 const describeEntry = (entry: UsdbSearchEntry): SongInfo => ({
   id: String(entry.songId),
@@ -25,8 +23,8 @@ const describeEntry = (entry: UsdbSearchEntry): SongInfo => ({
   title: entry.title,
   meta: [
     entry.year?.toString(),
-    firstOf(entry.genre),
-    firstOf(entry.language),
+    firstFacetValue(entry.genre),
+    firstFacetValue(entry.language),
     entry.creator ? `${t("online.by")} ${entry.creator}` : undefined,
   ].filter((value): value is string => !!value),
   duet: false,
@@ -81,7 +79,8 @@ export default function OnlineSearchScreen() {
       coverOf={(entry) => entry.coverUrl}
       lazyCovers
       sortOptions={ONLINE_SORT_OPTIONS}
-      filterOptions={{ idField: "songId", searchIndex: () => usdbStore.searchIndex(), showTypeFilter: false }}
+      searchIndex={usdbStore.searchIndex}
+      showTypeFilter={false}
       countLabel={(filtered, total) =>
         filtered !== total
           ? t("sing.songCount.filtered", { filtered, total })

@@ -1,31 +1,15 @@
-import MiniSearch from "minisearch";
-import { createRoot, createSignal } from "solid-js";
+import type MiniSearch from "minisearch";
+import { batch, createRoot, createSignal } from "solid-js";
 import * as v from "valibot";
 
+import { createSongSearchIndex } from "~/hooks/use-song-filter";
 import { native, safe } from "~/lib/native/client";
 import type { UsdbSearchEntry } from "~/lib/native/types.gen";
 import { createPersistentStore } from "~/lib/utils/store";
 
 export type { UsdbSearchEntry } from "~/lib/native/types.gen";
 
-const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
-
-const normalizeText = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-function buildSearchIndex(items: UsdbSearchEntry[]): MiniSearch<UsdbSearchEntry> {
-  const miniSearch = new MiniSearch<UsdbSearchEntry>({
-    fields: [...SEARCH_FIELDS],
-    idField: "songId",
-    storeFields: [],
-    processTerm: (term) => normalizeText(term),
-  });
-  miniSearch.addAll(items);
-  return miniSearch;
-}
+const buildSearchIndex = (items: UsdbSearchEntry[]) => createSongSearchIndex(items, "songId");
 
 const usdbSettingsSchema = v.object({
   version: v.literal("1.0.0"),
@@ -83,9 +67,7 @@ async function saveCatalog(data: CatalogData): Promise<void> {
 
 function createUsdbStore() {
   const [catalog, setCatalog] = createSignal<UsdbSearchEntry[]>([]);
-  const [searchIndex, setSearchIndex] = createSignal<MiniSearch<UsdbSearchEntry>>(
-    new MiniSearch({ fields: [...SEARCH_FIELDS], idField: "songId" }),
-  );
+  const [searchIndex, setSearchIndex] = createSignal<MiniSearch<UsdbSearchEntry>>(buildSearchIndex([]));
 
   const loggedIn = () => usdbSettingsStore.settings().loggedIn;
   const setLoggedIn = (value: boolean) => usdbSettingsStore.updateSettings("loggedIn", value);
@@ -101,9 +83,34 @@ function createUsdbStore() {
   const catalogCount = () => usdbSettingsStore.settings().catalogCount;
 
   const updateCatalog = (items: UsdbSearchEntry[]) => {
-    setCatalog(items);
-    setSearchIndex(buildSearchIndex(items));
+    batch(() => {
+      setCatalog(items);
+      setSearchIndex(buildSearchIndex(items));
+    });
     usdbSettingsStore.updateSettings("catalogCount", items.length);
+  };
+
+  /** Applies an incremental sync: changed songs are replaced in place, new ones appended. */
+  const mergeIntoCatalog = (entries: UsdbSearchEntry[]) => {
+    const index = searchIndex();
+    const prev = catalog();
+    const existingIds = new Set(prev.map((s) => s.songId));
+    const changed = new Map<number, UsdbSearchEntry>();
+    const brandNew = new Map<number, UsdbSearchEntry>();
+    for (const entry of entries) {
+      if (existingIds.has(entry.songId)) {
+        changed.set(entry.songId, entry);
+        index.replace(entry);
+      } else {
+        brandNew.set(entry.songId, entry);
+      }
+    }
+    index.addAll([...brandNew.values()]);
+
+    const merged = [...prev.map((s) => changed.get(s.songId) ?? s), ...brandNew.values()];
+    // The index was updated in place; the new catalog array tells readers to search again.
+    setCatalog(merged);
+    usdbSettingsStore.updateSettings("catalogCount", merged.length);
   };
 
   const credentials = () => usdbSettingsStore.settings().credentials;
@@ -158,8 +165,9 @@ function createUsdbStore() {
     setCredentials("", "");
   };
 
-  const syncCatalog = async (force = false) => {
-    if (syncing() || !sessionActive()) return;
+  /** Fetches new and changed songs (everything on the first or a forced sync). Resolves whether it succeeded. */
+  const syncCatalog = async (force = false): Promise<boolean> => {
+    if (syncing() || !sessionActive()) return false;
 
     setSyncing(true);
     setSyncProgress(null);
@@ -186,30 +194,31 @@ function createUsdbStore() {
         }
       }
 
+      if (!isFullSync && newEntries.length === 0) return true;
+
       if (isFullSync) {
         updateCatalog(newEntries);
-      } else if (newEntries.length > 0) {
-        const updatedMap = new Map(newEntries.map((s) => [s.songId, s]));
-        const prev = catalog();
-        const merged = prev.map((s) => updatedMap.get(s.songId) ?? s);
-        const existingIds = new Set(prev.map((s) => s.songId));
-        const brandNew = newEntries.filter((s) => !existingIds.has(s.songId));
-        updateCatalog([...merged, ...brandNew]);
+      } else {
+        mergeIntoCatalog(newEntries);
       }
 
       const allSongs = catalog();
-      if (allSongs.length > 0) {
-        lastMtime = Math.max(...allSongs.map((s) => s.usdbMtime));
-        lastSongIds = allSongs.filter((s) => s.usdbMtime === lastMtime).map((s) => s.songId);
+      let maxMtime = 0;
+      for (const song of allSongs) {
+        if (song.usdbMtime > maxMtime) maxMtime = song.usdbMtime;
       }
+      lastMtime = maxMtime;
+      lastSongIds = allSongs.filter((s) => s.usdbMtime === lastMtime).map((s) => s.songId);
 
-      await saveCatalog({ catalog: catalog(), lastMtime, lastSongIds });
+      await saveCatalog({ catalog: allSongs, lastMtime, lastSongIds });
 
       if (isFullSync) {
         setSyncProgress({ fetched: allSongs.length, total: allSongs.length });
       }
+      return true;
     } catch (error) {
       console.error("Catalog sync error:", error);
+      return false;
     } finally {
       setSyncing(false);
       setSyncProgress(null);

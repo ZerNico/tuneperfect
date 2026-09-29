@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, type JSX, on, Show, untrack } from "solid-js";
+import { createEffect, createSignal, For, type JSX, on, onCleanup, Show, untrack } from "solid-js";
 import IconDuet from "~icons/ph/users-fill";
 
 import SlantPanel from "~/components/ui/slant-panel";
@@ -43,6 +43,8 @@ interface Layer {
 export function SongTitle(props: SongTitleProps) {
   const [layers, setLayers] = createSignal<Layer[]>([]);
   let nextId = 0;
+  const exitTimers = new Set<ReturnType<typeof setTimeout>>();
+  onCleanup(() => exitTimers.forEach(clearTimeout));
 
   createEffect(
     // Keyed by id: a fresh SongInfo object for the same song must not replay the transition.
@@ -63,7 +65,11 @@ export function SongTitle(props: SongTitleProps) {
         });
 
         if (animate) {
-          setTimeout(() => setLayers((current) => current.filter((layer) => !layer.leaving)), EXIT_MS);
+          const timer = setTimeout(() => {
+            exitTimers.delete(timer);
+            setLayers((current) => current.filter((layer) => !layer.leaving));
+          }, EXIT_MS);
+          exitTimers.add(timer);
         }
       },
     ),

@@ -1,5 +1,16 @@
 import type MiniSearch from "minisearch";
-import { type Accessor, createMemo, createSignal, type JSX, Match, Show, Switch } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  createMemo,
+  createSignal,
+  type JSX,
+  Match,
+  on,
+  Show,
+  Switch,
+  untrack,
+} from "solid-js";
 import IconCoverflow from "~icons/ph/cards-fill";
 import IconDices from "~icons/ph/dice-five-fill";
 import IconMenu from "~icons/ph/list-bold";
@@ -81,21 +92,21 @@ interface SongBrowserProps<T extends SongLike> {
   /** Defer cover loading while scrolling (remote catalogues). */
   lazyCovers?: boolean;
   sortOptions: SortOption[];
-  filterOptions?: {
-    idField?: keyof T & string;
-    searchIndex?: Accessor<MiniSearch<T>>;
-    showTypeFilter?: boolean;
-  };
+  /** Prebuilt search index over `items` (see `createSongSearchIndex`). */
+  searchIndex: Accessor<MiniSearch<T>>;
+  /** Whether solo/duet can be filtered. Defaults to true (local library). */
+  showTypeFilter?: boolean;
   countLabel: (filtered: number, total: number) => string;
   emptyLabel?: string;
   /** Called after back has nothing left to clear (search, then filters). */
   onBack: () => void;
   onConfirm: (item: T) => void;
+  /** Called once per change of the selected song; null while nothing matches. */
   onSelectedChange?: (item: T | null) => void;
   /** Screen-specific entries for the top-right menu, after the view switch. */
   menuItems?: MenuPopupItem[];
-  /** Next to the title panel, e.g. highscores. */
-  side?: (item: T | null, view: SongBrowserView) => JSX.Element;
+  /** Next to the title panel, e.g. highscores. Called once per view; `item` follows the selection. */
+  side?: (item: Accessor<T | null>, view: SongBrowserView) => JSX.Element;
   background?: JSX.Element;
 }
 
@@ -112,31 +123,33 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
   const togglePanel = (panel: "search" | "filter" | "menu") =>
     setOpenPanel((current) => (current === panel ? null : panel));
 
-  // oxlint-disable-next-line solid/reactivity
-  const filterOptions = props.filterOptions;
-  const { filteredItems } = useSongFilter<T>({
+  const filteredItems = useSongFilter<T>({
     items: () => props.items,
+    getId: (item) => props.getId(item),
+    searchIndex: () => props.searchIndex(),
     sortOption: state.sortOption,
     searchQuery: state.searchQuery,
     searchFieldScope: state.searchFieldScope,
     filters: state.filters,
-    idField: filterOptions?.idField,
-    searchIndex: filterOptions?.searchIndex,
   });
 
+  // Falls back to the first result like the grid and coverflow do, so a selected song
+  // dropping out of the results switches straight to the new one (no null in between).
   const selected = createMemo(() => {
+    const items = filteredItems();
     const id = state.selectedId();
-    return id === null ? null : (filteredItems().find((item) => props.getId(item) === id) ?? null);
+    return (id === null ? undefined : items.find((item) => props.getId(item) === id)) ?? items[0] ?? null;
   });
   const selectedInfo = createMemo(() => {
     const item = selected();
     return item ? props.describe(item) : null;
   });
 
-  const handleSelectionChange = (item: T | null) => {
-    state.setSelectedId(item ? props.getId(item) : null);
-    props.onSelectedChange?.(item);
-  };
+  // The one place that reports the selection: the grid and coverflow only update the id,
+  // and unmount without reporting when nothing matches.
+  createEffect(on(selected, (item) => props.onSelectedChange?.(item)));
+
+  const handleSelectionChange = (item: T | null) => state.setSelectedId(item ? props.getId(item) : null);
 
   const view = (): SongBrowserView => settingsStore.general().songSelectStyle;
   const toggleView = () =>
@@ -161,8 +174,9 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
   let scrollerRef: SongScrollerRef<T> | undefined;
 
   const selectRandom = () => {
-    const item = view() === "grid" ? gridRef?.goToRandomSong() : scrollerRef?.goToRandomSong();
-    if (item) handleSelectionChange(item);
+    // The grid/coverflow reports the new song like any other move.
+    if (view() === "grid") gridRef?.goToRandomSong();
+    else scrollerRef?.goToRandomSong();
     playSound("select");
   };
 
@@ -243,14 +257,14 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                     filters={state.filters()}
                     onChange={state.setFilters}
                     onClose={() => setOpenPanel(null)}
-                    showTypeFilter={props.filterOptions?.showTypeFilter}
+                    showTypeFilter={props.showTypeFilter}
                   />
                 </Show>
               </div>
               <FilterChips
                 filters={state.filters()}
                 onChange={state.setFilters}
-                showTypeFilter={props.filterOptions?.showTypeFilter}
+                showTypeFilter={props.showTypeFilter}
               />
               <ChipButton static icon={IconMusic} class="opacity-90">
                 {props.countLabel(filteredItems().length, total())}
@@ -280,7 +294,12 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
               leadingHint={<KeyGlyph keyboard={IconF5Key} gamepad={IconGamepadSelect} />}
               onClick={selectRandom}
             />
-            <SortSelect selected={state.sortOption()} onSelect={state.setSortOption} options={props.sortOptions} />
+            <SortSelect
+              selected={state.sortOption()}
+              options={props.sortOptions}
+              onSelect={state.setSortOption}
+              onMove={moveSort}
+            />
           </div>
         </div>
       }
@@ -319,7 +338,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                 <div class="flex h-1/3 items-center">
                   <SongTitle song={selectedInfo()} />
                 </div>
-                <div class="mt-8 flex min-h-0 flex-1 gap-2">{props.side?.(selected(), "grid")}</div>
+                <div class="mt-8 flex min-h-0 flex-1 gap-2">{untrack(() => props.side?.(selected, "grid"))}</div>
               </div>
             </div>
           </Match>
@@ -329,7 +348,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                 <div class="flex grow flex-col">
                   <SongTitle song={selectedInfo()} maxWidthClass="max-w-200" />
                 </div>
-                <div class="flex h-full gap-2">{props.side?.(selected(), "coverflow")}</div>
+                <div class="flex h-full gap-2">{untrack(() => props.side?.(selected, "coverflow"))}</div>
               </div>
               <SongScroller
                 ref={scrollerRef}

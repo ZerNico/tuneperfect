@@ -19,6 +19,8 @@ export function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
       () => props.songHash,
       () => {
         setHighscores([]);
+        // A newer song (or unmounting) makes a pending request's answer stale.
+        let stale = false;
         const timeout = setTimeout(async () => {
           const hash = props.songHash;
           if (!hash) return;
@@ -40,6 +42,7 @@ export function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
             }
           }
 
+          if (stale) return;
           const localScores = localStore.getScoresForSong(hash, difficulty);
           const highscores = [...onlineScores, ...localScores];
 
@@ -47,6 +50,7 @@ export function DebouncedHighscoreList(props: DebouncedHighscoreListProps) {
         }, 1000);
 
         onCleanup(() => {
+          stale = true;
           clearTimeout(timeout);
         });
       },

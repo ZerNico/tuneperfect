@@ -17,16 +17,10 @@ function createSelectionStore() {
     setMode(nextMode);
   };
 
-  const clear = () => {
-    setSongs([]);
-    setMode("single");
-  };
-
   return {
     songs,
     mode,
     set,
-    clear,
   };
 }
 

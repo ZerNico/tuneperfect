@@ -50,12 +50,10 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   const [hasInitialized, setHasInitialized] = createSignal(false);
   const [rowHeight, setRowHeight] = createSignal(120);
 
-  const filteredItems = () => props.items;
-
-  const rowCount = createMemo(() => Math.ceil(filteredItems().length / COLUMNS));
+  const rowCount = createMemo(() => Math.ceil(props.items.length / COLUMNS));
 
   const rows = createMemo(() => {
-    const items = filteredItems();
+    const items = props.items;
     const result: T[][] = [];
     for (let i = 0; i < items.length; i += COLUMNS) {
       result.push(items.slice(i, i + COLUMNS));
@@ -91,7 +89,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
 
   createEffect(
     on(
-      () => [props.initialId, filteredItems()] as const,
+      () => [props.initialId, props.items] as const,
       ([initialId, items]) => {
         if (hasInitialized() || items.length === 0) return;
 
@@ -120,34 +118,32 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   );
 
   createEffect(
-    on(filteredItems, (items) => {
-      // Skip if not initialized yet - let the initialization effect handle it
-      if (!hasInitialized()) return;
+    on(
+      () => props.items,
+      (items) => {
+        // Skip if not initialized yet - let the initialization effect handle it
+        if (!hasInitialized()) return;
 
-      if (items.length === 0) {
-        props.onSelectedItemChange?.(null, -1);
-        return;
-      }
+        const currentHash = selectedHash();
 
-      const currentHash = selectedHash();
-
-      if (currentHash) {
-        const newIndex = items.findIndex((item) => props.getId(item) === currentHash);
-        if (newIndex !== -1) {
-          setSelectedIndex(newIndex);
-          scrollToIndex(newIndex, false);
-          props.onSelectedItemChange?.(items[newIndex]!, newIndex);
-          return;
+        if (currentHash) {
+          const newIndex = items.findIndex((item) => props.getId(item) === currentHash);
+          if (newIndex !== -1) {
+            setSelectedIndex(newIndex);
+            scrollToIndex(newIndex, false);
+            props.onSelectedItemChange?.(items[newIndex]!, newIndex);
+            return;
+          }
         }
-      }
 
-      setSelectedIndex(0);
-      const firstSong = items[0];
-      if (firstSong) {
-        setSelectedHash(props.getId(firstSong));
-        props.onSelectedItemChange?.(firstSong, 0);
-      }
-    }),
+        setSelectedIndex(0);
+        const firstSong = items[0];
+        if (firstSong) {
+          setSelectedHash(props.getId(firstSong));
+          props.onSelectedItemChange?.(firstSong, 0);
+        }
+      },
+    ),
   );
 
   createEffect(
@@ -155,7 +151,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
       // Skip if not initialized yet - let the initialization effect handle first selection
       if (!hasInitialized()) return;
 
-      const items = filteredItems();
+      const items = props.items;
       const item = items[index];
       if (item) {
         setSelectedHash(props.getId(item));
@@ -191,7 +187,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   };
 
   const navigate = (direction: "up" | "down" | "left" | "right") => {
-    const items = filteredItems();
+    const items = props.items;
     if (items.length === 0) return;
 
     const current = selectedIndex();
@@ -219,7 +215,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   };
 
   const goToRandomSong = (): T | null => {
-    const items = filteredItems();
+    const items = props.items;
     if (items.length === 0) return null;
 
     const randomIndex = Math.floor(Math.random() * items.length);
@@ -255,7 +251,11 @@ export function SongGrid<T>(props: SongGridProps<T>) {
     },
   });
 
-  const handleMouseEnter = (index: number) => setSelectedIndex(index);
+  // Real pointer movement only: smooth scrolling moves cards under a resting pointer,
+  // which must not steal the keyboard's selection (browsers fake hover events for that).
+  const handlePointerMove = (event: PointerEvent, index: number) => {
+    if (event.movementX !== 0 || event.movementY !== 0) setSelectedIndex(index);
+  };
   const handleClick = (song: T) => props.onConfirm?.(song);
 
   return (
@@ -278,7 +278,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
                     const itemIndex = () => baseIndex() + colIndex();
                     return (
                       <div
-                        onMouseEnter={() => handleMouseEnter(itemIndex())}
+                        onPointerMove={(event) => handlePointerMove(event, itemIndex())}
                         onClick={() => handleClick(song)}
                         onKeyDown={(e) => e.key === "Enter" && handleClick(song)}
                       >
