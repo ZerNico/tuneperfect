@@ -14,7 +14,8 @@
     "**/.output/**",
     "**/drizzle/meta/**",
     "**/drizzle/**/snapshot.json",
-    "helm/tuneperfect/templates/**"
+    "helm/tuneperfect/templates/**",
+    "**/*.icon/**"
   ],
   "overrides": [
     {
