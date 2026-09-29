@@ -21,14 +21,14 @@ import SlantPanel from "~/components/ui/slant-panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
+import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { type Round, versusStore } from "~/stores/party/versus";
-import { type PlayerSelection, useRoundActions } from "~/stores/round";
+import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
-import { songsStore } from "~/stores/songs";
 
 const SPIN_MS = 3000;
 /** The reel is a short strip of random songs, not the whole library. */
@@ -38,6 +38,8 @@ const KEEP_AROUND = 7;
 /** A re-roll passes this many covers, plus a little random variance. */
 const SPIN_STEPS = 16;
 const SPIN_VARIANCE = 7;
+/** Songs whose preview fails are re-rolled for free, up to this many in a row. */
+const MAX_AUTO_REROLLS = 5;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -91,12 +93,16 @@ export default function VersusScreen() {
   const onBack = () => navigate({ to: "/party/versus/settings" });
 
   const state = () => versusStore.state();
-  const availableSongs = createMemo(() => songsStore.songs().filter((song) => song.voices.length === 1));
+  const availableSongs = createMemo(() => {
+    const failed = new Set(state().failedSongs);
+    return partySongs().filter((song) => !failed.has(song.hash));
+  });
 
   const randomUnplayedSong = (exclude?: LocalSong | null) => {
     const played = new Set(state().playedSongs.map((song) => song.hash));
-    const pool = availableSongs().filter((song) => !played.has(song.hash) && song.hash !== exclude?.hash);
-    const from = pool.length > 0 ? pool : availableSongs();
+    const others = availableSongs().filter((song) => song.hash !== exclude?.hash);
+    const unplayed = others.filter((song) => !played.has(song.hash));
+    const from = unplayed.length > 0 ? unplayed : others.length > 0 ? others : availableSongs();
     return from[Math.floor(Math.random() * from.length)] ?? null;
   };
 
@@ -104,7 +110,8 @@ export default function VersusScreen() {
   // Slot index in the id: a song may appear more than once, and refilled slots get fresh covers.
   const slot = (index: number, song: LocalSong): ReelSlot => ({ id: `${index}:${song.hash}`, song });
 
-  // Picked once; later picks come from re-rolls.
+  // Picked once; later picks come from re-rolls. After a failed round this is already a new song for the same
+  // matchup, as the failed one is never picked again.
   const initialSong = untrack(() => randomUnplayedSong());
   const [strip, setStrip] = createSignal<ReelSlot[]>(
     initialSong
@@ -124,10 +131,18 @@ export default function VersusScreen() {
   const maxJokers = versusStore.settings()?.jokers ?? 0;
   const [jokers, setJokers] = createSignal<[number, number]>([maxJokers, maxJokers]);
 
-  const reroll = async (player: 0 | 1) => {
-    if (spinning() || !matchup() || jokers()[player] <= 0) return;
+  // Free re-rolls in a row after a preview failed; reset once a preview plays or a joker is used.
+  let autoRerolls = 0;
+
+  /** The song a re-roll would land on, or null when there's nothing (else) to spin to right now. */
+  const nextSong = () => {
+    if (spinning() || !matchup()) return null;
     const next = randomUnplayedSong(currentSong());
-    if (!next || !scroller) return;
+    return next && next.hash !== currentSong()?.hash ? next : null;
+  };
+
+  const spinTo = async (next: LocalSong) => {
+    if (!scroller) return;
 
     // Refill everything off screen with fresh songs and put the pick a set distance ahead.
     const steps = SPIN_STEPS + Math.floor(Math.random() * SPIN_VARIANCE);
@@ -143,12 +158,6 @@ export default function VersusScreen() {
     // Warm the cache so the landing cover is there when the reel stops.
     if (next.coverUrl) new Image().src = next.coverUrl;
 
-    setJokers((current) => {
-      const updated: [number, number] = [...current];
-      updated[player] -= 1;
-      return updated;
-    });
-    playSound("confirm");
     setSpinning(true);
     await scroller.spinTo(target, effectsEnabled() ? SPIN_MS : 1);
     batch(() => {
@@ -157,16 +166,40 @@ export default function VersusScreen() {
     });
   };
 
+  const reroll = async (player: 0 | 1) => {
+    if (jokers()[player] <= 0) return;
+    const next = nextSong();
+    if (!next || !scroller) return;
+
+    autoRerolls = 0;
+    setJokers((current) => {
+      const updated: [number, number] = [...current];
+      updated[player] -= 1;
+      return updated;
+    });
+    playSound("confirm");
+    await spinTo(next);
+  };
+
+  // A song whose preview can't be played is broken: never pick it again and spin to another one without a joker.
+  // Capped, so a library full of broken songs doesn't keep the reel spinning forever.
+  const onPreviewError = (song: LocalSong) => {
+    versusStore.markSongFailed(song);
+    if (autoRerolls >= MAX_AUTO_REROLLS) return;
+    const next = nextSong();
+    if (!next) return;
+
+    autoRerolls += 1;
+    void spinTo(next);
+  };
+
   const startRound = () => {
     const song = currentSong();
     const pair = matchup();
     if (!song || !pair || spinning()) return;
 
-    const players: PlayerSelection[] = [];
-    for (const [index, player] of pair.entries()) {
-      const microphone = settingsStore.microphones()[index];
-      if (microphone) players.push({ player, voice: 0, microphone });
-    }
+    const players = buildDuelPlayers(pair[0], pair[1], "versus");
+    if (!players) return;
 
     playSound("confirm");
     roundActions.startRound({ songs: [{ song, players, mode: "single", length: "full" }], returnTo: "/party/versus" });
@@ -186,8 +219,6 @@ export default function VersusScreen() {
     { type: "button", label: t("party.versus.continue"), action: () => versusStore.continueRound() },
     { type: "button", label: t("party.versus.exit"), action: onBack },
   ];
-
-  const micColor = (index: 0 | 1) => settingsStore.microphones()[index]?.color ?? (index === 0 ? "sky" : "red");
 
   return (
     <Layout
@@ -220,6 +251,8 @@ export default function VersusScreen() {
                 class="h-full w-full opacity-40"
                 playing
                 song={song}
+                onCanPlayThrough={() => (autoRerolls = 0)}
+                onError={() => onPreviewError(song)}
               />
             </div>
           )}
@@ -241,7 +274,7 @@ export default function VersusScreen() {
                   <PlayerCard
                     user={pair()[0]}
                     index={0}
-                    color={micColor(0)}
+                    color={slotColor(0)}
                     jokers={jokers()[0]}
                     maxJokers={maxJokers}
                     onReroll={() => void reroll(0)}
@@ -250,7 +283,7 @@ export default function VersusScreen() {
                   <PlayerCard
                     user={pair()[1]}
                     index={1}
-                    color={micColor(1)}
+                    color={slotColor(1)}
                     jokers={jokers()[1]}
                     maxJokers={maxJokers}
                     onReroll={() => void reroll(1)}

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/solid-query";
+import { useMutation, useQueryClient } from "@tanstack/solid-query";
 import { useNavigate } from "@tanstack/solid-router";
 import { differenceInDays } from "date-fns";
 import { Match, onMount, Switch } from "solid-js";
@@ -10,12 +10,12 @@ import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
-import { queryClient } from "~/main";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
 
 export default function IndexScreen() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const createLobbyMutation = useMutation(() =>
     client.lobby.createLobby.mutationOptions({

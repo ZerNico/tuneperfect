@@ -1,3 +1,5 @@
+import type { Dict } from "./en";
+
 const de = {
   common: {
     notifications: {
@@ -10,7 +12,6 @@ const de = {
       navigate: "Navigieren",
       confirm: "Bestätigen",
       back: "Zurück",
-      "add-to-medley": "Zu Medley hinzufügen",
     },
     players: {
       guest: "Gast",
@@ -28,8 +29,6 @@ const de = {
     },
   },
   home: {
-    title: "Willkommen",
-    startGame: "Spiel starten",
     joinLobby: "Lobby beitreten",
     party: "Party",
     singDescription: "Singe deine Lieblingslieder, allein oder mit Freunden!",
@@ -71,8 +70,6 @@ const de = {
     unknownPlayer: "Unbekannter Spieler",
     club: "Club",
     selectClub: "Club auswählen",
-    changeClub: "Club wechseln",
-    selectedClub: "Ausgewählter Club",
     noClub: "Kein Club",
     recreateLobby: "Lobby neu erstellen",
   },
@@ -88,10 +85,7 @@ const de = {
     title: "Singen",
     songs: "Lieder",
     search: "Suchen",
-    players: "Spieler",
-    player: "Spieler",
     voice: "Stimme",
-    start: "Starten",
     random: "Zufällig",
     filter: {
       all: "Alle",
@@ -144,27 +138,14 @@ const de = {
   },
   online: {
     title: "USDB",
-    search: "Lieder suchen...",
     noResults: "Keine Lieder gefunden",
     loginRequired: "Melde dich in den Einstellungen bei USDB an, um nach Liedern zu suchen.",
-    play: "Spielen",
-    loading: "Laden...",
     by: "von",
-    rating: "Bewertung",
-    year: "Jahr",
-    language: "Sprache",
-    genre: "Genre",
-    creator: "Ersteller",
-    views: "Aufrufe",
     goldenNotes: "Goldene Noten",
-    noYoutubeVideo: "Kein YouTube-Video für dieses Lied verfügbar.",
-    fetchingDetails: "Songdetails werden geladen...",
     loadFailed: "Songdaten konnten nicht geladen werden",
+    syncFailed: "Der USDB-Katalog konnte nicht synchronisiert werden. Bitte versuche es erneut.",
     syncing: "USDB-Katalog wird synchronisiert...",
-    syncProgress: "{{fetched}} / {{total}}",
     songsCached: "{{count}} Lieder",
-    refresh: "Aktualisieren",
-    startSearch: "Suche nach einem Lied, um loszulegen.",
     initializing: "Initialisierung...",
     loadingCatalog: "Katalog wird geladen...",
     loggingIn: "Bei USDB anmelden...",
@@ -185,8 +166,6 @@ const de = {
       s: "Superstar",
       splus: "Tune Perfect",
     },
-    normal: "Normal",
-    golden: "Gold",
     bonus: "Bonus",
   },
   game: {
@@ -242,17 +221,15 @@ const de = {
         outputLatency: "Audio-Ausgabelatenz",
         outputLatencyPreviewStart: "Audio-Ausgabe-Sync testen",
         outputLatencyPreviewStop: "Audio-Ausgabe-Test stoppen",
+        micPlayback: "Mikrofon-Wiedergabe",
       },
       songs: {
         title: "Lieder",
       },
       microphones: {
         title: "Mikrofone",
-        name: "Name",
-        device: "Gerät",
         microphone: "Mikrofon",
         channel: "Kanal",
-        player: "Spieler",
         color: "Farbe",
         delay: "Verzögerung",
         gain: "Verstärkung",
@@ -276,7 +253,6 @@ const de = {
         preview: "Vorschaulautstärke",
         menu: "Menülautstärke",
         effects: "Effektlautstärke",
-        micPlayback: "Mikrofon-Wiedergabe",
         micPlaybackVolume: "Mikrofon-Wiedergabelautstärke",
       },
       usdb: {
@@ -307,6 +283,7 @@ const de = {
       jokers: "Joker",
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Versus-Spiels.",
       microphoneRequired: "Du brauchst 2 Mikrofone zum Starten eines Versus-Spiels.",
+      noSongs: "Keine Songs verfügbar. Füge Songs hinzu, um Versus zu spielen.",
       exit: "Beenden",
       continue: "Weiter",
       restart: "Neustart",
@@ -324,7 +301,6 @@ const de = {
       restart: "Neustart",
       exit: "Beenden",
       continue: "Weiter",
-      assignTeams: "Teams einteilen",
       gridSize: "Spielfeldgröße",
       winLength: "In einer Reihe zum Gewinnen",
       singerSelection: "Sänger-Auswahl",
@@ -346,7 +322,6 @@ const de = {
       noLine: "Diesmal keine Reihe",
       boardFull: "Alle Felder sind belegt. Nochmal?",
       wins: "gewinnt!",
-      draw: "Unentschieden",
       notEnoughPlayers: "Nicht genug Spieler. Du brauchst mindestens 2 Spieler zum Starten eines Tic-Tac-Toe-Spiels.",
       microphoneRequired: "Du brauchst mindestens 2 Mikrofone zum Starten eines Tic-Tac-Toe-Spiels.",
       teamNeedsPlayer: "Jedes Team braucht mindestens einen Spieler.",
@@ -360,8 +335,6 @@ const de = {
     space: "Leertaste",
     done: "Fertig",
   },
-};
+} satisfies Dict;
 
-export type Dict = typeof de;
-export type DictDe = typeof de;
-export const dict = de;
+export const dict: Dict = de;

@@ -74,6 +74,24 @@ export default function RouteScreen() {
     },
   ];
 
+  const retryInstall = () => {
+    installUpdateMutation.reset();
+    installUpdateMutation.mutate();
+  };
+
+  const installFailedMenuItems: MenuItem[] = [
+    {
+      type: "button",
+      label: t("update.retry"),
+      action: retryInstall,
+    },
+    {
+      type: "button",
+      label: t("update.continue"),
+      action: skipUpdate,
+    },
+  ];
+
   const errorMenuItems: MenuItem[] = [
     {
       type: "button",
@@ -112,7 +130,7 @@ export default function RouteScreen() {
         <Match when={installUpdateMutation.isError}>
           <div class="flex w-full grow flex-col justify-center">
             <h1 class="mb-[10cqh] text-center text-5xl text-display">{t("update.installFailed")}</h1>
-            <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
+            <Menu items={installFailedMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
 

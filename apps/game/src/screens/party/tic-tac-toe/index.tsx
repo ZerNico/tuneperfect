@@ -16,14 +16,14 @@ import SlantPanel from "~/components/ui/slant-panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
+import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getCurrentSinger, getTeam, type Mark, type Team, ticTacToeStore } from "~/stores/party/tic-tac-toe";
-import { type PlayerSelection, useRoundActions } from "~/stores/round";
+import { useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
-import { songsStore } from "~/stores/songs";
 
 export default function TicTacToeScreen() {
   const navigate = useNavigate();
@@ -70,10 +70,7 @@ export default function TicTacToeScreen() {
     return cell.song;
   });
 
-  const teamColor = (mark: Mark) => {
-    const index = mark === "x" ? 0 : 1;
-    return settingsStore.microphones()[index]?.color ?? (mark === "x" ? "sky" : "red");
-  };
+  const teamColor = (mark: Mark) => slotColor(mark === "x" ? 0 : 1);
 
   const moveCursor = (action: "up" | "down" | "left" | "right") => {
     const size = gridSize();
@@ -96,14 +93,8 @@ export default function TicTacToeScreen() {
     const cell = board()[index];
     if (!cell || !cell.song) return;
 
-    const micX = settingsStore.microphones()[0];
-    const micO = settingsStore.microphones()[1];
-    if (!micX || !micO) return;
-
-    const players: PlayerSelection[] = [
-      { player: singerX, voice: 0, microphone: micX },
-      { player: singerO, voice: 0, microphone: micO },
-    ];
+    const players = buildDuelPlayers(singerX, singerO, "ticTacToe");
+    if (!players) return;
 
     playSound("confirm");
     ticTacToeStore.setContestedCell(index);
@@ -240,7 +231,7 @@ export default function TicTacToeScreen() {
       type: "button",
       label: t("party.ticTacToe.playAgain"),
       action: () => {
-        ticTacToeStore.playAgain(songsStore.songs().filter((song) => song.voices.length === 1));
+        ticTacToeStore.playAgain(partySongs());
         setCursor(0);
       },
     },

@@ -10,7 +10,6 @@ const en = {
       navigate: "Navigate",
       confirm: "Confirm",
       back: "Back",
-      "add-to-medley": "Add to Medley",
     },
     players: {
       guest: "Guest",
@@ -28,8 +27,6 @@ const en = {
     },
   },
   home: {
-    title: "Welcome",
-    startGame: "Start Game",
     joinLobby: "Join Lobby",
     party: "Party",
     singDescription: "Sing your favorite songs, alone or with your friends!",
@@ -71,8 +68,6 @@ const en = {
     unknownPlayer: "Unknown Player",
     club: "Club",
     selectClub: "Select Club",
-    changeClub: "Change Club",
-    selectedClub: "Selected Club",
     noClub: "No Club",
     recreateLobby: "Recreate Lobby",
   },
@@ -88,10 +83,7 @@ const en = {
     title: "Sing",
     songs: "Songs",
     search: "Search",
-    players: "Players",
-    player: "Player",
     voice: "Voice",
-    start: "Start",
     random: "Random",
     filter: {
       all: "All",
@@ -144,27 +136,14 @@ const en = {
   },
   online: {
     title: "USDB",
-    search: "Search songs...",
     noResults: "No songs found",
     loginRequired: "Log in to USDB in Settings to search for songs.",
-    play: "Play",
-    loading: "Loading...",
     by: "by",
-    rating: "Rating",
-    year: "Year",
-    language: "Language",
-    genre: "Genre",
-    creator: "Creator",
-    views: "Views",
     goldenNotes: "Golden Notes",
-    noYoutubeVideo: "No YouTube video available for this song.",
-    fetchingDetails: "Loading song details...",
     loadFailed: "Failed to load song data",
+    syncFailed: "Couldn't sync the USDB catalog. Please try again.",
     syncing: "Syncing USDB catalog...",
-    syncProgress: "{{fetched}} / {{total}}",
     songsCached: "{{count}} songs",
-    refresh: "Refresh",
-    startSearch: "Search for a song to get started.",
     initializing: "Initializing...",
     loadingCatalog: "Loading catalog...",
     loggingIn: "Logging in to USDB...",
@@ -185,8 +164,6 @@ const en = {
       s: "Superstar",
       splus: "Tune Perfect",
     },
-    normal: "Normal",
-    golden: "Golden",
     bonus: "Bonus",
   },
   game: {
@@ -242,17 +219,15 @@ const en = {
         outputLatency: "Audio Output Latency",
         outputLatencyPreviewStart: "Test Audio Output Sync",
         outputLatencyPreviewStop: "Stop Audio Output Test",
+        micPlayback: "Microphone Playback",
       },
       songs: {
         title: "Songs",
       },
       microphones: {
         title: "Microphones",
-        name: "Name",
-        device: "Device",
         microphone: "Microphone",
         channel: "Channel",
-        player: "Player",
         color: "Color",
         delay: "Delay",
         gain: "Gain",
@@ -276,7 +251,6 @@ const en = {
         preview: "Preview Volume",
         menu: "Menu Volume",
         effects: "Effects Volume",
-        micPlayback: "Microphone Playback",
         micPlaybackVolume: "Microphone Playback Volume",
       },
       usdb: {
@@ -307,6 +281,7 @@ const en = {
       jokers: "Jokers",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a versus game.",
       microphoneRequired: "You need at least 2 microphones to start a versus game.",
+      noSongs: "No songs available. Add some songs to play Versus.",
       exit: "Exit",
       continue: "Continue",
       restart: "Restart",
@@ -324,7 +299,6 @@ const en = {
       restart: "Restart",
       exit: "Exit",
       continue: "Continue",
-      assignTeams: "Assign Teams",
       gridSize: "Grid Size",
       winLength: "In a Row to Win",
       singerSelection: "Singer Selection",
@@ -346,7 +320,6 @@ const en = {
       noLine: "No line this time",
       boardFull: "Every cell is taken. Run it back?",
       wins: "wins!",
-      draw: "It's a draw",
       notEnoughPlayers: "Not enough players. You need at least 2 players to start a Tic Tac Toe game.",
       microphoneRequired: "You need at least 2 microphones to start a Tic Tac Toe game.",
       teamNeedsPlayer: "Each team needs at least one player.",
@@ -362,6 +335,8 @@ const en = {
   },
 };
 
-export type Dict = typeof en;
-export type DictEn = typeof en;
-export const dict = en;
+/** A dictionary's shape with every text widened to `string`, so other languages must have exactly en's keys. */
+type DeepStringify<T> = { [K in keyof T]: T[K] extends string ? string : DeepStringify<T[K]> };
+
+export type Dict = DeepStringify<typeof en>;
+export const dict: Dict = en;

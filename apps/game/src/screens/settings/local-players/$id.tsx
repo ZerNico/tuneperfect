@@ -10,6 +10,7 @@ import ImageCrop from "~/components/ui/image-crop";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
 import { popup } from "~/lib/popup";
+import { lobbyStore } from "~/stores/lobby";
 import { localStore } from "~/stores/local";
 
 const route = getRouteApi("/settings/local-players/$id");
@@ -34,6 +35,7 @@ export default function LocalPlayerScreen() {
   const deletePlayer = () => {
     if (!isNew()) {
       localStore.deletePlayer(params().id);
+      lobbyStore.removeLocalPlayer(params().id);
     }
     onBack();
   };

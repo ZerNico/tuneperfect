@@ -6,7 +6,7 @@ import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
-import { settingsStore } from "~/stores/settings";
+import { settingsStore, type VolumeSettings } from "~/stores/settings";
 
 export default function VolumeScreen() {
   const navigate = useNavigate();
@@ -21,73 +21,27 @@ export default function VolumeScreen() {
     onBack();
   };
 
+  const sliders: { key: keyof VolumeSettings; label: string }[] = [
+    { key: "master", label: t("settings.sections.volume.master") },
+    { key: "game", label: t("settings.sections.volume.game") },
+    { key: "preview", label: t("settings.sections.volume.preview") },
+    { key: "menu", label: t("settings.sections.volume.menu") },
+    { key: "effects", label: t("settings.sections.volume.effects") },
+    { key: "micPlayback", label: t("settings.sections.volume.micPlaybackVolume") },
+  ];
+
   const menuItems: MenuItem[] = [
-    {
+    ...sliders.map(({ key, label }): MenuItem => ({
       type: "slider",
-      label: t("settings.sections.volume.master"),
-      value: () => Math.round(volume().master * 100),
+      label,
+      value: () => Math.round(volume()[key] * 100),
       min: 0,
       max: 100,
       step: 1,
       onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, master: Math.round(value) / 100 }));
+        setVolume((prev) => ({ ...prev, [key]: Math.round(value) / 100 }));
       },
-    },
-    {
-      type: "slider",
-      label: t("settings.sections.volume.game"),
-      value: () => Math.round(volume().game * 100),
-      min: 0,
-      max: 100,
-      step: 1,
-      onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, game: Math.round(value) / 100 }));
-      },
-    },
-    {
-      type: "slider",
-      label: t("settings.sections.volume.preview"),
-      value: () => Math.round(volume().preview * 100),
-      min: 0,
-      max: 100,
-      step: 1,
-      onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, preview: Math.round(value) / 100 }));
-      },
-    },
-    {
-      type: "slider",
-      label: t("settings.sections.volume.menu"),
-      value: () => Math.round(volume().menu * 100),
-      min: 0,
-      max: 100,
-      step: 1,
-      onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, menu: Math.round(value) / 100 }));
-      },
-    },
-    {
-      type: "slider",
-      label: t("settings.sections.volume.effects"),
-      value: () => Math.round(volume().effects * 100),
-      min: 0,
-      max: 100,
-      step: 1,
-      onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, effects: Math.round(value) / 100 }));
-      },
-    },
-    {
-      type: "slider",
-      label: t("settings.sections.volume.micPlaybackVolume"),
-      value: () => Math.round(volume().micPlayback * 100),
-      min: 0,
-      max: 100,
-      step: 1,
-      onInput: (value: number) => {
-        setVolume((prev) => ({ ...prev, micPlayback: Math.round(value) / 100 }));
-      },
-    },
+    })),
     {
       type: "button",
       label: t("settings.save"),

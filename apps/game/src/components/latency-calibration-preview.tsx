@@ -16,8 +16,12 @@ const TICK_INTERVAL_SEC = 1;
 const TICK_FREQUENCY_HZ = 1000;
 const TICK_DURATION_SEC = 0.05;
 const PULSE_DECAY_MS = 120;
-const SCHEDULE_LOOKAHEAD_SEC = 0.3;
 const SCHEDULER_TICK_MS = 100;
+// A tick's visual pulse fires `outputLatency` ms after its sound, so with the most negative offset (-750 ms, see the
+// general settings slider) the pulse is due before the sound. Ticks are scheduled at least this far ahead, leaving time
+// for that early pulse; the scheduler interval is added because a tick can be picked up up to one interval late.
+const MIN_TICK_LEAD_SEC = 0.8;
+const SCHEDULE_LOOKAHEAD_SEC = MIN_TICK_LEAD_SEC + SCHEDULER_TICK_MS / 1000;
 
 export default function LatencyCalibrationPreview(props: LatencyCalibrationPreviewProps) {
   const [enabled, setEnabled] = createSignal(false);
@@ -96,7 +100,7 @@ export default function LatencyCalibrationPreview(props: LatencyCalibrationPrevi
 
   const startMetronome = () => {
     const audioCtx = getAudioContext();
-    nextTickTime = audioCtx.currentTime + 0.1;
+    nextTickTime = audioCtx.currentTime + MIN_TICK_LEAD_SEC;
 
     const runScheduler = () => {
       while (nextTickTime < audioCtx.currentTime + SCHEDULE_LOOKAHEAD_SEC) {

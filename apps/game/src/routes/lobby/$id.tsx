@@ -14,11 +14,8 @@ export const Route = createFileRoute("/lobby/$id")({
       throw redirect({ to: "/lobby" });
     }
 
-    const user = lobby.users.find((user) => user.id === userId);
-    if (!user) {
+    if (!lobby.users.some((user) => user.id === userId)) {
       throw redirect({ to: "/lobby" });
     }
-
-    return { data: user };
   },
 });

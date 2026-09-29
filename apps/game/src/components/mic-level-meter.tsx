@@ -19,9 +19,17 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   const [active, setActive] = createSignal(false);
 
   let restarting = false;
+  // A device/channel/gain change while a start is in flight: run start once more afterwards so it isn't dropped.
+  let pendingRestart = false;
+  // Set on unmount: an in-flight start must not leave the microphone recording.
+  let disposed = false;
 
   const startPreview = async () => {
-    if (restarting) return;
+    if (disposed) return;
+    if (restarting) {
+      pendingRestart = true;
+      return;
+    }
     restarting = true;
 
     try {
@@ -33,6 +41,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const deviceId = props.deviceId();
 
       await native.recording.stop().catch(() => {});
+      if (disposed) return;
 
       const started = await native.recording
         .start({
@@ -45,11 +54,20 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
           () => false,
         );
 
+      if (disposed) {
+        if (started) await native.recording.stop().catch(() => {});
+        return;
+      }
+
       if (started) {
         setActive(true);
       }
     } finally {
       restarting = false;
+      if (pendingRestart && !disposed) {
+        pendingRestart = false;
+        void startPreview();
+      }
     }
   };
 
@@ -112,6 +130,8 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   });
 
   onCleanup(() => {
+    disposed = true;
+    pendingRestart = false;
     stopPreview();
   });
 

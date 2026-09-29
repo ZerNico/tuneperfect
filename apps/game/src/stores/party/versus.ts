@@ -19,6 +19,8 @@ export interface State {
   rounds: Record<User["id"], Round[]>;
   matchups: Matchup[];
   playedSongs: LocalSong[];
+  /** Hashes of songs that failed to play (in a round or as the preview); they're never picked again. */
+  failedSongs: string[];
   playing: boolean;
 }
 
@@ -29,6 +31,7 @@ function createVersusStore() {
     rounds: {},
     matchups: [],
     playedSongs: [],
+    failedSongs: [],
     playing: false,
   });
 
@@ -39,6 +42,7 @@ function createVersusStore() {
       rounds: {},
       matchups: generateMatchups(toShuffled(players)),
       playedSongs: [],
+      failedSongs: [],
       playing: true,
     });
   };
@@ -50,6 +54,16 @@ function createVersusStore() {
     }));
   };
 
+  const addPlayedSong = (song: LocalSong) => {
+    setState((state) => ({ ...state, playedSongs: [...state.playedSongs, song] }));
+  };
+
+  const markSongFailed = (song: LocalSong) => {
+    setState((state) =>
+      state.failedSongs.includes(song.hash) ? state : { ...state, failedSongs: [...state.failedSongs, song.hash] },
+    );
+  };
+
   return {
     settings,
     state,
@@ -57,6 +71,8 @@ function createVersusStore() {
     setState,
     startRound,
     continueRound,
+    addPlayedSong,
+    markSongFailed,
   };
 }
 

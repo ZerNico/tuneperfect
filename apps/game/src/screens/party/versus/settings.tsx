@@ -7,11 +7,9 @@ import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
+import { partyUsers, validatePartyStart } from "~/lib/party/common";
 import { lobbyQueryOptions } from "~/lib/queries";
-import { notify } from "~/lib/toast";
-import { lobbyStore } from "~/stores/lobby";
 import { type Settings, versusStore } from "~/stores/party/versus";
-import { settingsStore } from "~/stores/settings";
 
 export default function VersusSettingsScreen() {
   const navigate = useNavigate();
@@ -19,29 +17,12 @@ export default function VersusSettingsScreen() {
 
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
 
-  const [settings, setSettings] = createSignal<Settings>({
-    jokers: 5,
-  });
+  // Restarting keeps the options of the game being replaced.
+  const [settings, setSettings] = createSignal<Settings>(untrack(() => versusStore.settings()) ?? { jokers: 5 });
 
   const startRound = () => {
-    const users = [...(lobbyQuery.data?.users ?? []), ...lobbyStore.localPlayersInLobby()];
-
-    if (users.length < 2) {
-      notify({
-        message: t("party.versus.notEnoughPlayers"),
-        intent: "error",
-      });
-      return;
-    }
-
-    const microphones = settingsStore.microphones();
-    if (microphones.length < 2) {
-      notify({
-        message: t("party.versus.microphoneRequired"),
-        intent: "error",
-      });
-      return;
-    }
+    const users = partyUsers(lobbyQuery.data?.users);
+    if (!validatePartyStart(users, "versus")) return;
 
     versusStore.startRound(settings(), users);
     navigate({ to: "/party/versus" });

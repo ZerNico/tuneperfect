@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 
 import type { User } from "~/lib/types";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { toShuffled } from "~/lib/utils/array";
 
 export type Mark = "x" | "o";
 
@@ -52,7 +53,7 @@ export function winLengthOptions(gridSize: number): number[] {
   for (let length = 3; length <= gridSize; length++) {
     options.push(length);
   }
-  return options.length > 0 ? options : [gridSize];
+  return options;
 }
 
 /**
@@ -107,20 +108,14 @@ function emptyState(): State {
   };
 }
 
-/** Returns a shuffled array of indices [0, count) (Fisher–Yates). */
-function shuffledOrder(count: number): number[] {
-  const order = Array.from({ length: count }, (_, i) => i);
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [order[i], order[j]] = [order[j]!, order[i]!];
-  }
-  return order;
-}
+/** A random singing order: the player indices [0, count) shuffled. */
+const shuffledOrder = (count: number): number[] => toShuffled([...Array(count).keys()]);
 
 /** Picks a random song for a cell, avoiding ones already on the board when possible. */
 function pickSong(songs: LocalSong[], used: LocalSong[]): LocalSong | null {
   if (songs.length === 0) return null;
-  const available = songs.filter((song) => !used.includes(song));
+  const usedHashes = new Set(used.map((song) => song.hash));
+  const available = songs.filter((song) => !usedHashes.has(song.hash));
   const pool = available.length > 0 ? available : songs;
   return pool[Math.floor(Math.random() * pool.length)] ?? null;
 }
@@ -204,7 +199,7 @@ function createTicTacToeStore() {
       const used = prev.board.map((cell) => cell.song).filter((song): song is LocalSong => song !== null);
       // Never re-pick the exact song we're replacing when any alternative exists, otherwise a
       // broken/unplayable song could be rolled onto the same cell again and again.
-      const candidates = current ? songs.filter((song) => song !== current) : songs;
+      const candidates = current ? songs.filter((song) => song.hash !== current.hash) : songs;
       const pool = candidates.length > 0 ? candidates : songs;
       const song = pickSong(pool, used);
       const board = prev.board.map((cell, i) => (i === index ? { ...cell, song } : cell));

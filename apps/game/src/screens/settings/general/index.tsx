@@ -5,7 +5,7 @@ import IconEnUs from "~icons/circle-flags/en-us";
 
 import LatencyCalibrationPreview from "~/components/latency-calibration-preview";
 import Layout from "~/components/layout";
-import type { MenuItem } from "~/components/menu";
+import { select, type MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
@@ -26,71 +26,63 @@ export default function GeneralSettingsScreen() {
   };
 
   const menuItems: MenuItem[] = [
-    {
-      type: "select-string",
+    select({
       label: t("settings.sections.general.language"),
       value: () => general().language,
       options: ["en", "de"],
       onChange: (value) => setGeneral({ ...general(), language: value }),
       renderValue: () => (general().language === "en" ? <IconEnUs /> : general().language === "de" ? <IconDe /> : null),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.forceOfflineMode"),
       value: () => (general().forceOfflineMode ? "yes" : "no"),
       options: ["yes", "no"],
       onChange: (value) => setGeneral({ ...general(), forceOfflineMode: value === "yes" }),
       renderValue: (value) => t(`common.${value as "yes" | "no"}`),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.showNoteSegments"),
       value: () => (general().showNoteSegments ? "yes" : "no"),
       options: ["no", "yes"],
       onChange: (value) => setGeneral({ ...general(), showNoteSegments: value === "yes" }),
       renderValue: (value) => t(`common.${value as "yes" | "no"}`),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.difficulty"),
       value: () => general().difficulty,
       options: ["easy", "medium", "hard"],
       onChange: (value) => setGeneral({ ...general(), difficulty: value as "easy" | "medium" | "hard" }),
       renderValue: (value) => t(`settings.sections.general.difficultyOptions.${value as "easy" | "medium" | "hard"}`),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.audioMode"),
       value: () => general().audioMode,
       options: ["normal", "preferInstrumental"],
       onChange: (value) => setGeneral({ ...general(), audioMode: value as "normal" | "preferInstrumental" }),
       renderValue: (value) =>
         t(`settings.sections.general.audioModeOptions.${value as "normal" | "preferInstrumental"}`),
-    },
-    {
-      type: "select-string",
-      label: t("settings.sections.volume.micPlayback"),
+    }),
+    select({
+      label: t("settings.sections.general.micPlayback"),
       value: () => (general().micPlaybackEnabled ? "yes" : "no"),
       options: ["yes", "no"],
       onChange: (value) => setGeneral({ ...general(), micPlaybackEnabled: value === "yes" }),
       renderValue: (value) => t(`common.${value as "yes" | "no"}`),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.songSelectStyle"),
       value: () => general().songSelectStyle,
       options: ["coverflow", "grid"],
       onChange: (value) => setGeneral({ ...general(), songSelectStyle: value as "coverflow" | "grid" }),
       renderValue: (value) => t(`settings.sections.general.songSelectStyleOptions.${value as "coverflow" | "grid"}`),
-    },
-    {
-      type: "select-string",
+    }),
+    select({
       label: t("settings.sections.general.visualEffects"),
       value: () => general().visualEffects,
       options: ["full", "reduced"],
       onChange: (value) => setGeneral({ ...general(), visualEffects: value as "full" | "reduced" }),
       renderValue: (value) => t(`settings.sections.general.visualEffectsOptions.${value as "full" | "reduced"}`),
-    },
+    }),
     {
       type: "slider",
       label: t("settings.sections.general.outputLatency"),

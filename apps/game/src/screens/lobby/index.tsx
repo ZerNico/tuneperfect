@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { useNavigate } from "@tanstack/solid-router";
 import { createMemo, Show } from "solid-js";
 import IconRefreshCw from "~icons/ph/arrows-clockwise-bold";
@@ -16,7 +16,6 @@ import { lobbyStore } from "~/stores/lobby";
 
 export default function LobbyScreen() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const onBack = () => navigate({ to: "/home" });
 
   const lobbyQuery = useQuery(() => lobbyQueryOptions());
@@ -24,7 +23,6 @@ export default function LobbyScreen() {
 
   const recreateLobby = () => {
     lobbyStore.clearLobby();
-    queryClient.clear();
     navigate({ to: "/create-lobby" });
   };
 

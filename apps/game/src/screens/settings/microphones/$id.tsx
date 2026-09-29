@@ -3,12 +3,13 @@ import { createResource, createSignal, Show, Suspense } from "solid-js";
 import IconLoaderCircle from "~icons/ph/spinner-gap-bold";
 
 import Layout from "~/components/layout";
-import Menu, { type MenuItem } from "~/components/menu";
+import Menu, { select, type MenuItem } from "~/components/menu";
 import MicLevelMeter from "~/components/mic-level-meter";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
+import { getColorVar } from "~/lib/utils/color";
 import { type Microphone, settingsStore } from "~/stores/settings";
 
 const route = getRouteApi("/settings/microphones/$id");
@@ -87,8 +88,7 @@ export default function MicrophoneScreen() {
             };
 
             const menuItems: MenuItem[] = [
-              {
-                type: "select-string",
+              select({
                 label: t("settings.sections.microphones.microphone"),
                 value: () => microphone().name,
                 onChange: (name: string) => {
@@ -98,9 +98,8 @@ export default function MicrophoneScreen() {
                   setMicrophone((prev) => ({ ...prev, name, deviceId }));
                 },
                 options: microphones().map((microphone) => microphone.name),
-              },
-              {
-                type: "select-number",
+              }),
+              select({
                 label: t("settings.sections.microphones.channel"),
                 value: () => microphone().channel,
                 onChange: (channel: number) => {
@@ -108,9 +107,8 @@ export default function MicrophoneScreen() {
                 },
                 renderValue: (channel: number | null) => <span>{channel !== null ? `${channel + 1}` : "?"}</span>,
                 options: [0, 1, 2, 3, 4, 5, 6, 7],
-              },
-              {
-                type: "select-string",
+              }),
+              select({
                 label: t("settings.sections.microphones.color"),
                 value: () => microphone().color,
                 onChange: (color: string) => {
@@ -120,10 +118,10 @@ export default function MicrophoneScreen() {
                 renderValue: (color: string | null) => (
                   <div
                     class="h-8 w-8 rounded-full border-[0.2cqw] border-white"
-                    style={{ background: color ? `var(--color-${color}-500)` : "transparent" }}
+                    style={{ background: color ? getColorVar(color, 500) : "transparent" }}
                   />
                 ),
-              },
+              }),
               {
                 type: "slider",
                 label: t("settings.sections.microphones.delay"),
@@ -170,11 +168,16 @@ export default function MicrophoneScreen() {
                   />
                 ),
               },
-              {
-                type: "button",
-                label: t("settings.delete"),
-                action: deleteMicrophone,
-              },
+              // A new microphone isn't saved yet, so there's nothing to delete.
+              ...(existing
+                ? [
+                    {
+                      type: "button",
+                      label: t("settings.delete"),
+                      action: deleteMicrophone,
+                    } satisfies MenuItem,
+                  ]
+                : []),
               {
                 type: "button",
                 label: t("settings.save"),
