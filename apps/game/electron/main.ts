@@ -12,7 +12,7 @@ import { native } from "./native";
 import { createRpcHandler, listenForRpc } from "./rpc";
 import { grantSongFolders } from "./song-folders";
 import { JsonStores } from "./store";
-import { migrateFromTauri, removeTauriInstall } from "./tauri-migration";
+import { cleanUpAfterTauri, migrateFromTauri } from "./tauri-migration";
 import { loadWindowState, saveWindowState } from "./window-state";
 
 /** Set by the dev script; packaged and preview builds load the bundled frontend instead. */
@@ -148,7 +148,7 @@ async function start() {
   }
 
   migrateFromTauri(dataDir, logger);
-  removeTauriInstall(logger);
+  cleanUpAfterTauri(logger);
   const stores = new JsonStores(dataDir);
   const songPaths = songPathArgs(process.argv);
   await grantSongFolders(stores, songPaths ?? []);
