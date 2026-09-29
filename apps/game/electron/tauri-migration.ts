@@ -10,9 +10,9 @@ import { type WindowState, writeWindowState } from "./window-state";
 
 /**
  * One-time move of the Tauri version's data into this app's data directory: settings,
- * players, scores and the other stores, plus the window position. On Windows the Tauri
- * version was installed elsewhere, so it's uninstalled afterwards. Remove this module once
- * no Tauri installs are left.
+ * players, scores and the other stores, plus the window position. Afterwards what the Tauri
+ * version left behind (logs, webview caches, and on Windows the install itself) is removed.
+ * Remove this module once no Tauri installs are left.
  */
 
 // The Tauri builds kept their data in directories named after their identifier.
@@ -106,18 +106,61 @@ export function migrateFromTauri(target: string, logger: Logger) {
   logger.write("INFO", "tuneperfect", `Moved the data of the Tauri version from ${legacy.data} to ${target}`);
 }
 
+/**
+ * Directories only the Tauri version used, next to its data: its logs and the system
+ * webview's caches and storage (nothing the game needs; its data lived in the stores).
+ * On Linux both sit inside the data directory, which the move already deletes.
+ */
+function tauriLeftovers(): string[] {
+  if (process.platform === "darwin") {
+    const library = path.join(home, "Library");
+    return [
+      path.join(library, "Logs", identifier),
+      path.join(library, "Caches", identifier),
+      path.join(library, "WebKit", identifier),
+      path.join(library, "HTTPStorages", identifier),
+      path.join(library, "HTTPStorages", `${identifier}.binarycookies`),
+    ];
+  }
+  if (process.platform === "win32") {
+    // Logs and the WebView2 profile.
+    return process.env.LOCALAPPDATA ? [path.join(process.env.LOCALAPPDATA, identifier)] : [];
+  }
+  return [path.join(process.env.XDG_CACHE_HOME || path.join(home, ".cache"), identifier)];
+}
+
+/**
+ * Removes what the Tauri version left behind once its data is gone, so the only log and
+ * data directories are this app's. Runs on every launch until nothing is left, which also
+ * covers installs that moved before this existed; failures (e.g. files still in use) are
+ * retried next time.
+ */
+export function cleanUpAfterTauri(logger: Logger) {
+  if (fs.existsSync(path.join(tauriDirectories().data, "settings.json"))) return;
+
+  for (const leftover of tauriLeftovers()) {
+    if (!fs.existsSync(leftover)) continue;
+    try {
+      fs.rmSync(leftover, { recursive: true, force: true });
+      logger.write("INFO", "tuneperfect", `Removed ${leftover}, left behind by the Tauri version`);
+    } catch (error) {
+      logger.write("WARN", "tuneperfect", `Removing ${leftover} failed: ${String(error)}`);
+    }
+  }
+
+  if (process.platform === "win32" && app.isPackaged) uninstallTauri(logger);
+}
+
 /** Tauri's installer registered itself under the product name; this app's key is a GUID. */
 const TAURI_UNINSTALL_KEY = String.raw`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Tune Perfect`;
 
 /**
- * Silently uninstalls the Tauri version on Windows, once its data has been moved. Its
- * uninstaller keeps app data and only removes shortcuts that point at its own executable,
- * so this app's shortcuts stay. On macOS and Linux the Tauri app was replaced in place.
+ * Silently uninstalls the Tauri version on Windows, where it was installed in another
+ * directory. Its uninstaller keeps app data and only removes shortcuts that point at its own
+ * executable, so this app's shortcuts stay. On macOS and Linux the Tauri app was replaced in
+ * place.
  */
-export function removeTauriInstall(logger: Logger) {
-  if (process.platform !== "win32" || !app.isPackaged) return;
-  if (fs.existsSync(path.join(tauriDirectories().data, "settings.json"))) return;
-
+function uninstallTauri(logger: Logger) {
   execFile("reg", ["query", TAURI_UNINSTALL_KEY, "/v", "UninstallString"], (error, stdout) => {
     // No key: never installed, or already removed.
     if (error) return;
