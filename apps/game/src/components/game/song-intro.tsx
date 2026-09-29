@@ -3,6 +3,7 @@ import TagChip from "~/components/fx/tag-chip";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { isLocalSong, isUsdbSong, type Song } from "~/lib/ultrastar/song";
+import { getColorVar } from "~/lib/utils/color";
 
 // The card leaves with a diagonal wipe to the right.
 const CLIP_VISIBLE = "polygon(-20% 0, 120% 0, 120% 100%, 0% 100%)";
@@ -52,7 +53,7 @@ export default function SongIntro(props: SongIntroProps) {
       <div class="absolute top-1/2 left-[-10%] h-[14cqw] w-[120%] -translate-y-1/2 -rotate-6">
         <div
           class="h-full w-full origin-left animate-band-in opacity-85 shadow-xl [animation-delay:400ms]"
-          style={{ "background-color": `var(--color-${props.accentColor}-500)` }}
+          style={{ "background-color": getColorVar(props.accentColor, 500) }}
         >
           <div class="h-full w-full bg-stripes opacity-15" style={{ "--fx-color": "white" }} />
         </div>
@@ -62,14 +63,14 @@ export default function SongIntro(props: SongIntroProps) {
           <TagChip
             label={t("game.nowSinging")}
             accent={<span class="block max-w-120 truncate">{props.song.artist}</span>}
-            accentColor={`var(--color-${props.accentColor}-700)`}
+            accentColor={getColorVar(props.accentColor, 700)}
           />
         </SlamText>
         <div class="max-w-240 px-8 text-center">
           <SlamText
             trigger={props.song.hash}
             class="text-8xl leading-tight text-display text-white [animation-delay:650ms]"
-            style={{ "--display-shadow": `var(--color-${props.accentColor}-900)` }}
+            style={{ "--display-shadow": getColorVar(props.accentColor, 900) }}
           >
             {props.song.title}
           </SlamText>

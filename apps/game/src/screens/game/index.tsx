@@ -60,7 +60,6 @@ export default function GameScreen() {
     skip,
     setPreferInstrumental,
     preferInstrumental,
-    resetScores,
   } = createGame(() => ({
     songPlayerRef: songPlayerRef(),
     song: roundSong()?.song,
@@ -94,9 +93,10 @@ export default function GameScreen() {
   onMount(() => {
     // Long enough for the intro card to play out after the route wipe.
     const startTimeout = roundSong()?.length === "full" ? 3000 : 1600;
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setReady(true);
     }, startTimeout);
+    onCleanup(() => clearTimeout(timer));
   });
 
   onCleanup(async () => {
@@ -133,7 +133,6 @@ export default function GameScreen() {
   };
 
   const handleRestart = () => {
-    resetScores();
     navigate({ to: "/game/restart", replace: true });
   };
 
@@ -144,16 +143,6 @@ export default function GameScreen() {
 
   const players = createMemo(() => roundSong()?.players || []);
   const playerCount = createMemo(() => players().length);
-
-  const voiceCount = createMemo(() => roundSong()?.song.voices.length || 1);
-
-  const topVoice = createMemo(() => players()[0]?.voice ?? 0);
-  const bottomVoice = createMemo(() => {
-    if (voiceCount() > 1) {
-      return topVoice() === 0 ? 1 : 0;
-    }
-    return topVoice();
-  });
 
   const useQuadLayout = createMemo(() => playerCount() >= 3);
   const topPlayerCount = createMemo(() => (useQuadLayout() ? 2 : 1));
@@ -167,6 +156,10 @@ export default function GameScreen() {
     }
     return players().slice(topPlayerCount(), topPlayerCount() + bottomPlayerCount());
   });
+
+  // Each lyrics bar follows the first player of its half; with nobody below, it mirrors the top.
+  const topLyricsPlayer = () => topPlayers()[0];
+  const bottomLyricsPlayer = () => bottomPlayers()[0] ?? topLyricsPlayer();
 
   return (
     <GameLayout>
@@ -214,7 +207,11 @@ export default function GameScreen() {
                 </div>
 
                 <div class="relative z-1 flex h-full grow flex-col">
-                  <Lyrics voiceIndex={topVoice()} position="top" />
+                  <Lyrics
+                    voiceIndex={topLyricsPlayer()?.voice ?? 0}
+                    color={topLyricsPlayer()?.microphone.color}
+                    position="top"
+                  />
 
                   <div class="flex grow flex-col" style={{ flex: topPlayerCount() }}>
                     <For each={topPlayers()}>
@@ -253,7 +250,11 @@ export default function GameScreen() {
                     </Show>
                   </div>
 
-                  <Lyrics voiceIndex={bottomVoice()} position="bottom" />
+                  <Lyrics
+                    voiceIndex={bottomLyricsPlayer()?.voice ?? 0}
+                    color={bottomLyricsPlayer()?.microphone.color}
+                    position="bottom"
+                  />
                 </div>
               </div>
 

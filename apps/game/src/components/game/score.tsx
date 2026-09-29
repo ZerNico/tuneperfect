@@ -33,17 +33,25 @@ export default function Score(props: ScoreProps) {
   const [displayScore, setDisplayScore] = createSignal(0);
   const [pop, setPop] = createSignal(false);
 
+  let popFrame: number | undefined;
+  onCleanup(() => {
+    if (popFrame !== undefined) cancelAnimationFrame(popFrame);
+  });
+
   createEffect(
     on(targetScore, (target, previousTarget) => {
-      const start = displayScore();
-      if (target === start) {
+      // The tween starts from whatever is shown right now, even mid-tween.
+      const initialScore = displayScore();
+      if (target === initialScore) {
         return;
       }
 
       // Pop when a meaningful amount of points lands at once.
       if (previousTarget !== undefined && target - previousTarget > POP_THRESHOLD) {
         setPop(false);
-        requestAnimationFrame(() => setPop(true));
+        // Restart the animation on the next frame.
+        if (popFrame !== undefined) cancelAnimationFrame(popFrame);
+        popFrame = requestAnimationFrame(() => setPop(true));
       }
 
       const startTime = performance.now();
@@ -53,7 +61,7 @@ export default function Score(props: ScoreProps) {
         const progress = Math.min((currentTime - startTime) / TWEEN_DURATION_MS, 1);
         const easeProgress = 1 - (1 - progress) ** 3;
 
-        setDisplayScore(Math.round(start + (target - start) * easeProgress));
+        setDisplayScore(Math.round(initialScore + (target - initialScore) * easeProgress));
 
         if (progress < 1) {
           animationFrame = requestAnimationFrame(animate);
@@ -66,8 +74,6 @@ export default function Score(props: ScoreProps) {
     }),
   );
 
-  // White digits on a shadow in the singer's colour, like the rest of the display type.
-  const shadowColor = () => `var(--color-${player.microphone().color}-800)`;
   const isCompact = () => game.playerCount() > 2;
 
   return (
@@ -80,7 +86,8 @@ export default function Score(props: ScoreProps) {
           "animate-score-pop": pop() && !effectsEnabled(),
           "animate-score-rush": pop() && effectsEnabled(),
         }}
-        style={{ "--display-shadow": shadowColor() }}
+        // White digits on a shadow in the singer's colour, like the rest of the display type.
+        style={{ "--display-shadow": player.micColor(800) }}
         onAnimationEnd={() => setPop(false)}
       >
         {displayScore().toLocaleString("en-US", {

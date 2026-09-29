@@ -1,6 +1,6 @@
 import type { Score } from "~/stores/round";
 
-import type { Note } from "../ultrastar/note";
+import { isGolden, type Note } from "../ultrastar/note";
 import type { Voice } from "../ultrastar/voice";
 
 export const MAX_POSSIBLE_SCORE = 100000;
@@ -81,15 +81,11 @@ export function getMaxScore(voice: Voice) {
 
   for (const phrase of voice.phrases) {
     for (const note of phrase.notes) {
-      const noteScore = getNoteScore(note) * note.length;
+      if (note.type === "Freestyle") continue;
 
-      if (note.type === "Normal" || note.type === "Rap") {
-        score.normal += noteScore;
-        score.bonus += note.length;
-      } else if (note.type === "Golden" || note.type === "RapGolden") {
-        score.golden += noteScore;
-        score.bonus += note.length;
-      }
+      const noteScore = getNoteScore(note) * note.length;
+      score[isGolden(note) ? "golden" : "normal"] += noteScore;
+      score.bonus += note.length;
     }
   }
 

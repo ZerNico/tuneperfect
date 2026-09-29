@@ -90,9 +90,10 @@ export function useRoundResults() {
 
   const topScore = createMemo(() => Math.max(0, ...players().map((result) => result.total)));
 
+  const onlineEnabled = () => tracksHighscore() && !!songHash();
   const onlineHighscores = useQuery(() => {
     const options = highscoreQueryOptions(songHash() ?? "", difficulty());
-    return { ...options, enabled: tracksHighscore() && !!songHash() };
+    return { ...options, enabled: onlineEnabled() };
   });
 
   /** Online and local highscores plus this round's scores (the list de-duplicates per player). */
@@ -110,12 +111,16 @@ export function useRoundResults() {
   };
 
   // Each player's best before this round, captured before the new scores are saved.
-  const previousBest = new Map<string, number>();
+  const [previousBest, setPreviousBest] = createSignal<ReadonlyMap<string, number>>(new Map());
   const rememberBest = (scores: { user: User; score: number }[]) => {
-    for (const { user, score } of scores) {
-      const id = String(user.id);
-      previousBest.set(id, Math.max(previousBest.get(id) ?? 0, score));
-    }
+    setPreviousBest((previous) => {
+      const next = new Map(previous);
+      for (const { user, score } of scores) {
+        const id = String(user.id);
+        next.set(id, Math.max(next.get(id) ?? 0, score));
+      }
+      return next;
+    });
   };
 
   const save = useMutation(() => ({
@@ -144,19 +149,22 @@ export function useRoundResults() {
     },
   }));
 
-  // Online scores only count as "previous" if they arrived before ours were saved.
-  const [onlineCaptured, setOnlineCaptured] = createSignal(false);
+  const [committed, setCommitted] = createSignal(false);
+  const onlineSettled = () => !onlineEnabled() || !onlineHighscores.isPending;
+
+  // Saves once the online scores are in (the query never fails, it returns null offline), so
+  // they are the ones from before this round and a record is never missed.
   createEffect(() => {
-    const data = onlineHighscores.data;
-    if (data && !onlineCaptured() && !save.isSuccess) {
-      rememberBest(data);
-      setOnlineCaptured(true);
-    }
+    if (!committed() || !onlineSettled() || !save.isIdle) return;
+
+    const online = onlineHighscores.data;
+    if (online) rememberBest(online);
+    save.mutate();
   });
 
   const isNewRecord = (result: PlayerResult) => {
     if (!tracksHighscore() || isGuestUser(result.player)) return false;
-    const best = previousBest.get(String(result.player.id));
+    const best = previousBest().get(String(result.player.id));
     return best !== undefined && result.total > best;
   };
 
@@ -171,7 +179,7 @@ export function useRoundResults() {
       rememberBest(localStore.getScoresForSong(hash, difficulty()));
     }
 
-    save.mutate();
+    setCommitted(true);
   };
 
   return {
@@ -182,6 +190,6 @@ export function useRoundResults() {
     highscores,
     isNewRecord,
     commit,
-    saving: () => save.isPending,
+    saving: () => committed() && (save.isIdle || save.isPending),
   };
 }

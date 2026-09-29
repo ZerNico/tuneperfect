@@ -37,7 +37,6 @@ export default function PhraseRating() {
     ),
   );
 
-  const micColor = () => `var(--color-${player.microphone().color}-500)`;
   const isCompact = () => game.playerCount() > 2;
 
   const backgroundColor = (tier: PhraseRatingTier) => {
@@ -47,7 +46,7 @@ export default function PhraseRating() {
       case "boo":
         return "var(--color-slate-600)";
       default:
-        return micColor();
+        return player.micColor(500);
     }
   };
 

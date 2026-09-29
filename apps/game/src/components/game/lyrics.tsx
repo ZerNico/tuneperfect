@@ -5,11 +5,13 @@ import { useGame } from "~/lib/game/game-context";
 import { createVoiceTracker } from "~/lib/game/voice-tracker";
 import { msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Note } from "~/lib/ultrastar/note";
+import { getColorVar } from "~/lib/utils/color";
 import { clamp } from "~/lib/utils/math";
-import { roundStore } from "~/stores/round";
 
 interface LyricsProps {
   voiceIndex: number;
+  /** Mic colour of the player singing this voice; white without one. */
+  color?: string;
   position: "top" | "bottom";
 }
 
@@ -37,19 +39,9 @@ export default function Lyrics(props: LyricsProps) {
     };
   });
 
-  const lyricsColor = createMemo(() => {
-    const players = roundStore.settings()?.songs[0]?.players || [];
-    const playerIndex = props.position === "top" ? 0 : players.length - 1;
-    const microphone = players.at(playerIndex)?.microphone;
-    return microphone ? `var(--color-${microphone.color}-500)` : "var(--color-white)";
-  });
+  const lyricsColor = () => (props.color ? getColorVar(props.color, 500) : "var(--color-white)");
   // Sung text uses a lighter shade so it stays readable on the dark bar.
-  const sungColor = createMemo(() => {
-    const players = roundStore.settings()?.songs[0]?.players || [];
-    const playerIndex = props.position === "top" ? 0 : players.length - 1;
-    const microphone = players.at(playerIndex)?.microphone;
-    return microphone ? `var(--color-${microphone.color}-300)` : "var(--color-white)";
-  });
+  const sungColor = () => (props.color ? getColorVar(props.color, 300) : "var(--color-white)");
 
   const isCompact = () => game.playerCount() > 2;
 

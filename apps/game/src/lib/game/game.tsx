@@ -9,7 +9,7 @@ import type { Song } from "~/lib/ultrastar/song";
 import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
-import { type GameContextValue, GameProvider } from "./game-context";
+import { GameContext, type GameContextValue } from "./game-context";
 
 export interface CreateGameOptions {
   songPlayerRef?: SongPlayerRef;
@@ -153,6 +153,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const flooredBeat = () => Math.floor(beat());
 
+  // One request per beat; a slow response must not overwrite a newer one.
+  let latestPitchRequest = 0;
+  let appliedPitchRequest = 0;
+
   createEffect(() => {
     flooredBeat();
     if (!started() || !playing()) return;
@@ -163,9 +167,13 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     // One beat as the analysis window; Rust converts to samples and clamps it.
     const windowMs = beatToMsWithoutGap(song, 1);
 
+    const request = ++latestPitchRequest;
     void (async () => {
       try {
-        setPitches(await timeCall("getPitches", () => native.pitch.get({ windowMs })));
+        const result = await timeCall("getPitches", () => native.pitch.get({ windowMs }));
+        if (request < appliedPitchRequest) return;
+        appliedPitchRequest = request;
+        setPitches(result);
       } catch (error) {
         console.error("Failed to get pitches:", error);
       }
@@ -230,17 +238,15 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     addScore,
     stats,
     setPlayerStats,
-    resetScores: () => {
-      setScores([]);
-      setStats([]);
-    },
     preferInstrumental,
     setPreferInstrumental,
     pitches,
     playerCount,
   };
 
-  const Provider = (props: { children: JSX.Element }) => <GameProvider value={values}>{props.children}</GameProvider>;
+  const Provider = (props: { children: JSX.Element }) => (
+    <GameContext.Provider value={values}>{props.children}</GameContext.Provider>
+  );
 
   return {
     GameProvider: Provider,

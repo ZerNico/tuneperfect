@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
 import Confetti from "~/components/fx/confetti";
 import HighscoreList from "~/components/highscore-list";
@@ -146,7 +146,7 @@ export default function ScoreScreen() {
     roundActions.returnRound();
   };
 
-  const isWinner = createMemo(() => (total: number) => round.players().length > 1 && total === round.topScore());
+  const isWinner = (total: number) => round.players().length > 1 && total === round.topScore();
 
   return (
     <Layout
@@ -192,7 +192,7 @@ export default function ScoreScreen() {
                 tierRevealed={tiersShown() > index()}
                 statsRevealed={statsShown()}
                 newRecord={statsShown() && round.isNewRecord(result)}
-                winner={done() && isWinner()(result.total)}
+                winner={done() && isWinner(result.total)}
                 instant={instant()}
               />
             )}

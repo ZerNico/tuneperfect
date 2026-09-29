@@ -21,14 +21,22 @@ interface NoteSegment {
   end: number;
 }
 
+/**
+ * The part of the media that is played, in seconds: `#START`/`#END` (milliseconds) shorten it,
+ * e.g. for medleys and short rounds. `duration` is the media's, NaN until its metadata loaded.
+ */
+const getPlayedRange = (song: Song, duration: number) => {
+  const start = song.start ? song.start / 1000 : 0;
+  const end = song.end ? song.end / 1000 : duration;
+  return { start, duration: Math.max(0, end - start) || 0 };
+};
+
 const calculateNoteSegments = (song: Song | undefined, duration: number): NoteSegment[] => {
-  if (!song || !song.voices || song.voices.length === 0 || duration === 0) {
+  if (!song || !song.voices || song.voices.length === 0 || !(duration > 0)) {
     return [];
   }
 
-  const startOffset = song.start ?? 0;
-  const endOffset = song.end ? song.end / 1000 : duration;
-  const effectiveDuration = Math.max(0, endOffset - startOffset);
+  const { start: startOffset, duration: effectiveDuration } = getPlayedRange(song, duration);
 
   if (effectiveDuration === 0) {
     return [];
@@ -96,7 +104,7 @@ export default function Progress() {
     const rawCurrentTime = game.currentTime();
     const rawDuration = game.duration();
 
-    if (!song || rawDuration === 0) {
+    if (!song || !(rawDuration > 0)) {
       return {
         progress: 0,
         elapsed: 0,
@@ -104,11 +112,8 @@ export default function Progress() {
       };
     }
 
-    const startOffset = song.start ? song.start / 1000 : 0;
-    const endOffset = song.end ? song.end / 1000 : rawDuration;
-
+    const { start: startOffset, duration: effectiveDuration } = getPlayedRange(song, rawDuration);
     const effectiveCurrentTime = Math.max(0, rawCurrentTime - startOffset);
-    const effectiveDuration = Math.max(0, endOffset - startOffset);
 
     if (effectiveDuration === 0) {
       return {
@@ -180,9 +185,10 @@ export default function Progress() {
                 )}
               </For>
             </Show>
+            {/* Scaled instead of resized: no layout per frame. The skew is on the surface, so it still slants. */}
             <span
-              class="absolute inset-y-0 left-0 transition-colors duration-500"
-              style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
+              class="absolute inset-0 origin-left transition-colors duration-500"
+              style={{ transform: `scaleX(${timingInfo().progress})`, "background-color": progressColor() }}
             />
           </>
         }

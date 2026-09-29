@@ -13,7 +13,6 @@ export default function ComboCounter() {
   const game = useGame();
   const player = usePlayer();
   const isCompact = () => game.playerCount() > 2;
-  const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   // Every finished note produces a new event object, so keying on it replays the pop.
   const activeCombo = () => {
@@ -57,7 +56,7 @@ export default function ComboCounter() {
               <TagChip
                 label={t("game.combo")}
                 accent={<span class="tabular-nums">{event.combo}</span>}
-                accentColor={micColor()}
+                accentColor={player.micColor(500)}
               />
             </div>
           </div>

@@ -5,13 +5,15 @@ import { createEmptyStats, roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
-import type { Note } from "../ultrastar/note";
+import { isGolden, isRap, type Note } from "../ultrastar/note";
+import { type ColorShade, getColorVar } from "../utils/color";
 import { getMaxScore, getNoteScore, getPhraseRating, type PhraseRating } from "../utils/score";
 import { createComboTracker } from "./combo";
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
-import { type NoteEvent, type PlayerContextValue, PlayerProvider } from "./player-context";
+import { type NoteEvent, PlayerContext, type PlayerContextValue, type ProcessedBeat } from "./player-context";
 import { beatsToProcess } from "./score-loop";
+import { createVoiceTracker } from "./voice-tracker";
 
 interface CreatePlayerOptions {
   index: number;
@@ -24,14 +26,9 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const game = useGame();
   const roundSong = () => roundStore.settings()?.songs[0];
 
-  const voice = createMemo(() => {
-    const voiceIndex = roundSong()?.players[options().index]?.voice;
-    if (voiceIndex === undefined) {
-      return undefined;
-    }
-
-    return roundSong()?.song.voices[voiceIndex];
-  });
+  const { voice, phrase } = createVoiceTracker(() => ({
+    voiceIndex: roundSong()?.players[options().index]?.voice,
+  }));
 
   const maxScore = createMemo(() => {
     const v = voice();
@@ -46,25 +43,6 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return getMaxScore(v);
   });
 
-  const [phraseIndex, setPhraseIndex] = createSignal(0);
-  const phrase = createMemo(() => {
-    return voice()?.phrases[phraseIndex()];
-  });
-  const nextPhrase = createMemo(() => {
-    return voice()?.phrases[phraseIndex() + 1];
-  });
-
-  createEffect(() => {
-    const p = phrase();
-    if (!p) {
-      return;
-    }
-
-    if (game.beat() >= p.disappearBeat) {
-      setPhraseIndex((i) => i + 1);
-    }
-  });
-
   const microphone = createMemo(() => {
     const mic = roundSong()?.players[options().index]?.microphone;
     if (!mic) {
@@ -72,6 +50,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     }
     return mic;
   });
+  const micColor = (shade: ColorShade) => getColorVar(microphone().color, shade);
 
   const delayedBeat = createMemo(() => {
     const song = game.song();
@@ -88,7 +67,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const beats = createMemo(() => {
     const beatMap = new Map<
       number,
-      { note: Note; isFirstInPhrase: boolean; isLastInPhrase: boolean; isFirstInNote: boolean; isLastInNote: boolean }
+      { note: Note; isLastInPhrase: boolean; isFirstInNote: boolean; isLastInNote: boolean }
     >();
     for (const phrase of voice()?.phrases || []) {
       for (const [noteIndex, note] of phrase.notes.entries()) {
@@ -99,7 +78,6 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
           beatMap.set(note.startBeat + i, {
             note,
-            isFirstInPhrase: noteIndex === 0 && i === 0,
             isLastInPhrase: isLastNoteInPhrase && isLastBeatInNote,
             isFirstInNote: i === 0,
             isLastInNote: isLastBeatInNote,
@@ -111,10 +89,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return beatMap;
   });
 
-  const processedBeats = new ReactiveMap<
-    number,
-    { note: Note; midiNote: number; rawMidiNote: number; isFirstInPhrase: boolean; isFirstInNote: boolean }
-  >();
+  const processedBeats = new ReactiveMap<number, ProcessedBeat>();
 
   let correctBeats = 0;
   let totalBeats = 0;
@@ -124,7 +99,6 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
   const comboTracker = createComboTracker();
   const [combo, setCombo] = createSignal(0);
-  const noteResults = new ReactiveMap<Note, "hit" | "miss">();
   const [noteEvent, setNoteEvent] = createSignal<NoteEvent | null>(null);
   let noteEventId = 0;
 
@@ -143,17 +117,16 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       return;
     }
 
-    const isGolden = note.type === "Golden" || note.type === "RapGolden";
+    const golden = isGolden(note);
     stats.notesTotal++;
-    if (isGolden) stats.goldenNotesTotal++;
+    if (golden) stats.goldenNotesTotal++;
     if (outcome.hit) {
       stats.notesHit++;
-      if (isGolden) stats.goldenNotesHit++;
+      if (golden) stats.goldenNotesHit++;
     }
 
-    noteResults.set(note, outcome.hit ? "hit" : "miss");
     setCombo(outcome.combo);
-    setNoteEvent({ id: noteEventId++, note, golden: isGolden, ...outcome });
+    setNoteEvent({ id: noteEventId++, ...outcome });
     publishStats();
   };
 
@@ -201,27 +174,23 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
       const { midiNote, rawMidiNote } = pitchProcessor.process(pitch, beatInfo.note);
 
-      const isRap = beatInfo.note.type.startsWith("Rap");
+      const rap = isRap(beatInfo.note);
 
-      const isCorrect = isRap ? midiNote > 0 && midiNote !== -1 : midiNote === beatInfo.note.midiNote;
+      const isCorrect = rap ? midiNote > 0 : midiNote === beatInfo.note.midiNote;
 
       if (isCorrect) {
         correctBeats++;
         noteCorrectBeats++;
 
-        if (beatInfo.note.type === "Golden" || beatInfo.note.type === "RapGolden") {
-          addScore("golden", noteScore);
-        } else if (beatInfo.note.type === "Normal" || beatInfo.note.type === "Rap") {
-          addScore("normal", noteScore);
-        }
+        // noteScore > 0 rules out freestyle, so every other note is normal.
+        addScore(isGolden(beatInfo.note) ? "golden" : "normal", noteScore);
       }
 
       if (midiNote > 0) {
         processedBeats.set(beatNumber, {
           note: beatInfo.note,
-          midiNote: isRap ? beatInfo.note.midiNote : midiNote,
-          rawMidiNote: isRap ? beatInfo.note.midiNote : rawMidiNote,
-          isFirstInPhrase: beatInfo.isFirstInPhrase,
+          midiNote: rap ? beatInfo.note.midiNote : midiNote,
+          rawMidiNote: rap ? beatInfo.note.midiNote : rawMidiNote,
           isFirstInNote: beatInfo.isFirstInNote,
         });
       }
@@ -236,7 +205,8 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     }
   };
 
-  let lastProcessedBeat = -1;
+  /** `null` until the first pitch update; beats can be negative, so no number works as "not started". */
+  let lastProcessedBeat: number | null = null;
 
   createEffect(
     on(
@@ -247,21 +217,18 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         // earlier beat.
         const flooredBeat = delayedFlooredBeat();
 
-        if (flooredBeat <= lastProcessedBeat) {
-          return;
-        }
-
         // First update: start at the current beat instead of back-filling from
         // the song start (e.g. when a player joins mid-song).
-        if (lastProcessedBeat === -1) {
-          lastProcessedBeat = flooredBeat - 1;
+        const from = lastProcessedBeat ?? flooredBeat - 1;
+        if (flooredBeat <= from) {
+          return;
         }
 
         // Only the latest pitch sample exists, so every back-filled beat is
         // scored against it.
         const pitch = allPitches[options().index] ?? -1;
 
-        for (const beatNumber of beatsToProcess(lastProcessedBeat, flooredBeat)) {
+        for (const beatNumber of beatsToProcess(from, flooredBeat)) {
           processBeat(beatNumber, pitch);
         }
 
@@ -278,25 +245,21 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const player = () => roundSong()?.players[options().index]?.player ?? null;
 
   const values: PlayerContextValue = {
-    index: () => options().index,
-    phraseIndex,
     phrase,
-    nextPhrase,
     microphone,
+    micColor,
     delayedBeat,
     processedBeats,
-    addScore,
     maxScore,
     player,
     score,
     phraseRating,
     combo,
-    noteResults,
     noteEvent,
   };
 
   const Provider = (props: { children: JSX.Element }) => (
-    <PlayerProvider value={values}>{props.children}</PlayerProvider>
+    <PlayerContext.Provider value={values}>{props.children}</PlayerContext.Provider>
   );
 
   return {

@@ -1,4 +1,4 @@
-import { createEffect, createSignal, Show } from "solid-js";
+import { createMemo, Show } from "solid-js";
 
 import { MIN_VISIBLE_COMBO } from "~/lib/game/combo";
 import { useGame } from "~/lib/game/game-context";
@@ -21,36 +21,34 @@ export default function PlayerLane(props: PlayerLaneProps) {
   const playerState = createPlayer(() => ({
     index: props.index,
   }));
-  const { PlayerProvider, player, phrase, combo, microphone } = playerState;
+  const { PlayerProvider, player, phrase, combo, micColor } = playerState;
   const game = useGame();
   const isCompact = () => game.playerCount() > 2;
 
-  const [shouldHide, setShouldHide] = createSignal(false);
-
-  createEffect(() => {
+  // Hide the lane during long breaks: more than 20s to the next phrase hides it, 10s before it
+  // shows again. Recomputed every frame, but only notifies when the flag flips.
+  const shouldHide = createMemo((hidden: boolean) => {
     const p = phrase();
     const song = game.song();
     if (!p || !song || !game.started()) {
-      setShouldHide(false);
-      return;
+      return false;
     }
 
     const phraseStartBeat = p.notes[0]?.startBeat;
     if (phraseStartBeat === undefined) {
-      setShouldHide(false);
-      return;
+      return false;
     }
 
-    const currentTimeMs = game.ms();
-    const phraseStartMs = beatToMs(song, phraseStartBeat);
-    const timeUntilPhraseMs = phraseStartMs - currentTimeMs;
+    const timeUntilPhraseMs = beatToMs(song, phraseStartBeat) - game.ms();
 
     if (timeUntilPhraseMs > 20000) {
-      setShouldHide(true);
-    } else if (timeUntilPhraseMs <= 10000) {
-      setShouldHide(false);
+      return true;
     }
-  });
+    if (timeUntilPhraseMs <= 10000) {
+      return false;
+    }
+    return hidden;
+  }, false);
 
   // The lane edge heats up as the combo grows.
   const heat = () => {
@@ -73,7 +71,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
           }}
           style={{
             opacity: heat(),
-            background: `linear-gradient(to ${props.position === "top" ? "top" : "bottom"}, var(--color-${microphone().color}-500), transparent)`,
+            background: `linear-gradient(to ${props.position === "top" ? "top" : "bottom"}, ${micColor(500)}, transparent)`,
           }}
         />
         <div
@@ -101,10 +99,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
                 class="flex items-center gap-3 py-1.5 pr-5 pl-4"
                 surface="overflow-hidden rounded-lg bg-black/55 shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)] backdrop-blur-sm"
                 surfaceContent={
-                  <span
-                    class="absolute inset-y-0 left-0 w-[0.5cqw]"
-                    style={{ background: `var(--color-${microphone().color}-400)` }}
-                  />
+                  <span class="absolute inset-y-0 left-0 w-[0.5cqw]" style={{ background: micColor(400) }} />
                 }
               >
                 <div classList={{ "size-[2.6cqw]": !isCompact(), "size-[1.9cqw]": isCompact() }}>
