@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/solid-router";
 import { batch, createMemo, createSignal, For, type JSX, Show, untrack } from "solid-js";
 import IconCrown from "~icons/ph/crown-simple-fill";
 import IconDice from "~icons/ph/dice-five-fill";
+import IconMusic from "~icons/ph/music-notes-fill";
 import IconF1Key from "~icons/sing/f1-key";
 import IconF2Key from "~icons/sing/f2-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
@@ -11,13 +12,12 @@ import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import SongPlayer from "~/components/song-player";
-import { SongCard } from "~/components/song-select/song-card";
 import { SongScroller, type SongScrollerRef } from "~/components/song-select/song-scroller";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import KeyGlyph from "~/components/ui/key-glyph";
-import SlantPanel from "~/components/ui/slant-panel";
+import Panel from "~/components/ui/panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
@@ -279,7 +279,9 @@ export default function VersusScreen() {
                     maxJokers={maxJokers}
                     onReroll={() => void reroll(0)}
                   />
-                  <span class="w-[13cqw] text-center text-9xl leading-none text-display text-yellow-300">VS</span>
+                  <span class="w-[13cqw] text-center text-9xl leading-none font-black tracking-tight text-yellow-300">
+                    VS
+                  </span>
                   <PlayerCard
                     user={pair()[1]}
                     index={1}
@@ -308,14 +310,11 @@ export default function VersusScreen() {
                 onConfirm={() => startRound()}
               >
                 {(reelSlot, _index, item) => (
-                  <SongCard
-                    coverUrl={reelSlot.song.coverUrl}
-                    title={reelSlot.song.title}
+                  <ReelCover
+                    song={reelSlot.song}
                     emphasis={item().emphasis}
                     // Only the picked cover can be clicked (to start the round).
                     clickable={Math.abs(item().offset) < 0.5 && !spinning()}
-                    // Shadows smear into a mess while the reel spins.
-                    shadow={false}
                   />
                 )}
               </SongScroller>
@@ -330,7 +329,7 @@ export default function VersusScreen() {
                     classList={{ "animate-title-in": effectsEnabled() }}
                   >
                     <span class="text-xl font-semibold">{song.artist}</span>
-                    <span class="gradient-party line-clamp-1 bg-linear-to-b bg-clip-text pr-[0.15em] pb-[0.1em] text-5xl font-black text-transparent italic">
+                    <span class="line-clamp-1 pb-[0.1em] text-5xl leading-tight font-extrabold tracking-tight">
                       {song.title}
                     </span>
                   </div>
@@ -353,26 +352,26 @@ interface PlayerCardProps {
   onReroll: () => void;
 }
 
-/** A player's face-off card, leaning towards the middle (mirrored for the right player). */
+/** A player's face-off card, filled with their mic colour (gradient mirrored for the right player). */
 function PlayerCard(props: PlayerCardProps) {
-  const color = (shade: 400 | 800) => getColorVar(props.color, shade);
+  const color = (shade: 400 | 700 | 800) => getColorVar(props.color, shade);
 
   return (
-    <SlantPanel
-      lean={props.index === 0 ? "left" : "right"}
+    <Panel
       // Fixed proportions, capped by the height so wide screens don't overflow; `--card` sizes the contents.
       class="flex aspect-[0.925] h-(--card) flex-col items-center justify-center gap-4 px-4 pt-4 pb-5 [--card:min(19.5cqw,30cqh)]"
-      surface="overflow-hidden rounded-2xl shadow-[0.5cqw_0.5cqw_0_rgb(0_0_0/0.4)]"
+      surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-white/80 ring-inset"
       surfaceStyle={{
-        background: `linear-gradient(${props.index ? "225deg" : "135deg"}, ${color(400)}, ${color(800)})`,
+        background: `linear-gradient(${props.index ? "200deg" : "160deg"}, ${color(400)}, ${color(800)})`,
+        "box-shadow": `0 1.2cqw 3.5cqw -1cqw ${color(700)}`,
       }}
       surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
       <div class="mt-auto size-[calc(var(--card)*0.36)]">
-        <Avatar user={props.user} class="h-full w-full shadow-lg ring-[0.35cqw] ring-white" />
+        <Avatar user={props.user} class="h-full w-full shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)]" />
       </div>
       <span
-        class="max-w-full truncate px-2 leading-tight text-display"
+        class="max-w-full truncate px-2 leading-tight font-black tracking-tight"
         // Long names shrink to fit the card; only extreme ones get truncated.
         style={{
           "font-size": `calc(var(--card) * ${Math.min(0.174, 0.97 / Math.max(props.user.username?.length ?? 1, 1)).toFixed(3)})`,
@@ -395,7 +394,7 @@ function PlayerCard(props: PlayerCardProps) {
           onClick={props.onReroll}
         />
       </div>
-    </SlantPanel>
+    </Panel>
   );
 }
 
@@ -437,7 +436,7 @@ function Jokers(props: { count: number; max: number; hint: JSX.Element; mirrored
 function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?: string }) {
   return (
     <div class={`flex max-h-full min-h-0 flex-col gap-1.5 ${props.class ?? ""}`}>
-      <div class="flex items-center gap-2.5 px-5 pb-1 text-xs font-black tracking-widest text-white/50 uppercase italic">
+      <div class="flex items-center gap-2.5 px-5 pb-1 text-xs font-bold tracking-[0.15em] text-white/50 uppercase">
         <span class="grow">{t("party.versus.standings")}</span>
         <span class="w-[3.5cqw] shrink-0 text-center">{t("party.versus.winsColumn")}</span>
         <span class="w-[5cqw] shrink-0 text-right">{t("party.versus.score")}</span>
@@ -445,18 +444,19 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
       <div class="styled-scrollbars flex min-h-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto px-2 py-1">
         <For each={props.standings}>
           {(standing) => (
-            <SlantPanel
-              skew={12}
-              class="flex h-11 shrink-0 items-center gap-2.5 px-3"
-              surface="rounded-md bg-black/40 backdrop-blur-sm"
-              surfaceClassList={{
-                "ring-2 ring-white/70 ring-inset": props.highlight.includes(String(standing.user.id)),
+            <div
+              class="flex h-11 shrink-0 items-center gap-2.5 rounded-[0.9cqw] bg-black/35 px-3 backdrop-blur-sm"
+              classList={{
+                "ring-[0.15cqw] ring-white/70 ring-inset": props.highlight.includes(String(standing.user.id)),
               }}
             >
               <span
-                class={`w-5 shrink-0 text-center text-lg font-black ${RANK_COLORS[standing.rank - 1] ?? "text-white/60"}`}
+                class={`flex w-5 shrink-0 justify-center text-lg font-black ${RANK_COLORS[standing.rank - 1] ?? "text-white/60"}`}
               >
-                {standing.rank}
+                {/* The leader (or leaders, when tied) get the crown instead of the number. */}
+                <Show when={standing.rank === 1 && standing.played > 0} fallback={standing.rank}>
+                  <IconCrown />
+                </Show>
               </span>
               <Avatar user={standing.user} class="h-7 w-7 shrink-0" />
               {/* Room for ~14 characters; only unusually long names get cut */}
@@ -469,14 +469,11 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
                 <span class="flex w-[3.25cqw] gap-0.5">
                   <For each={standing.form.slice(-FORM_ROUNDS)}>
                     {(result) => (
-                      <SlantPanel
-                        as="span"
-                        skew={12}
-                        class="flex h-5 w-4 items-center justify-center text-[0.6cqw] font-black"
-                        surface={`rounded-sm ${PIP_COLORS[result]}`}
+                      <span
+                        class={`flex h-5 w-4 items-center justify-center rounded-[0.3cqw] text-[0.6cqw] font-black ${PIP_COLORS[result]}`}
                       >
                         {result === "win" ? "W" : result === "draw" ? "D" : "L"}
-                      </SlantPanel>
+                      </span>
                     )}
                   </For>
                 </span>
@@ -484,10 +481,10 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
               <span class="w-[3.5cqw] shrink-0 text-center font-black tabular-nums">
                 {standing.wins}/{standing.played}
               </span>
-              <span class="w-[5cqw] shrink-0 text-right font-black italic tabular-nums">
+              <span class="w-[5cqw] shrink-0 text-right font-black tabular-nums">
                 {standing.totalScore.toLocaleString("en-US")}
               </span>
-            </SlantPanel>
+            </div>
           )}
         </For>
       </div>
@@ -528,7 +525,7 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
                 <For each={byPlace(step.place)}>
                   {(standing) => (
                     <div classList={{ "size-[5cqw]": step.place === 1, "size-[3.5cqw]": step.place !== 1 }}>
-                      <Avatar user={standing.user} class="h-full w-full ring-[0.25cqw] ring-white" />
+                      <Avatar user={standing.user} class="h-full w-full" />
                     </div>
                   )}
                 </For>
@@ -538,17 +535,53 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
                   .map((standing) => standing.user.username)
                   .join(" & ") || "—"}
               </span>
-              <SlantPanel
-                class={`flex w-full items-start justify-center pt-3 ${step.height}`}
-                surface={`rounded-t-lg bg-linear-to-b shadow-[0.4cqw_0.4cqw_0_rgb(0_0_0/0.35)] ${step.colors}`}
+              <div
+                class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 shadow-[0_1cqw_3cqw_rgb(0_0_0/0.35)] ${step.colors} ${step.height}`}
               >
-                <span class="text-6xl text-display text-white">{step.place}</span>
-              </SlantPanel>
+                <span class="text-6xl text-display text-white [--display-shadow:rgb(0_0_0/0.25)]">{step.place}</span>
+              </div>
             </div>
           )}
         </For>
       </div>
       <Menu gradient="gradient-party" class="!h-auto max-w-160" items={props.menuItems} onBack={props.onBack} />
     </div>
+  );
+}
+
+/** A cover on the reel: the picked (centred) one lifts, brightens and gets a white outline. */
+function ReelCover(props: { song: LocalSong; emphasis: number; clickable: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-label={props.song.title}
+      class="relative aspect-square w-[84%]"
+      classList={{
+        "cursor-pointer active:scale-95 active:transition-transform active:duration-250": props.clickable,
+        "cursor-default": !props.clickable,
+      }}
+    >
+      <div
+        class="relative h-full w-full overflow-hidden rounded-[0.8cqw] bg-black outline-white"
+        style={{
+          transform: `translateY(${-props.emphasis * 0.6}cqw)`,
+          filter: `brightness(${0.6 + 0.4 * props.emphasis})`,
+          // Fades in as the cover reaches the centre.
+          "outline-width": `${(props.emphasis * 0.22).toFixed(3)}cqw`,
+          "outline-style": props.emphasis > 0.05 ? "solid" : "none",
+        }}
+      >
+        <Show
+          when={props.song.coverUrl}
+          fallback={
+            <div class="flex h-full w-full items-center justify-center bg-white/8">
+              <IconMusic class="text-4xl opacity-25" />
+            </div>
+          }
+        >
+          {(url) => <img class="h-full w-full object-cover" src={url()} alt={props.song.title} draggable={false} />}
+        </Show>
+      </div>
+    </button>
   );
 }

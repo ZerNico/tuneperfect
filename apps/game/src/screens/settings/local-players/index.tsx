@@ -21,7 +21,7 @@ export default function LocalPlayersScreen() {
     ...localStore.players().map((player) => ({
       id: player.id,
       label: player.username,
-      visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw] ring-[0.25cqw] ring-white" />,
+      visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw]" />,
       action: () => navigate({ to: "/settings/local-players/$id", params: { id: player.id } }),
     })),
     {

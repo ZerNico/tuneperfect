@@ -7,6 +7,17 @@ import { usePlayer } from "~/lib/game/player-context";
 const TWEEN_DURATION_MS = 250;
 const POP_THRESHOLD = 500;
 
+// Bigger score jumps: a quick swell and smear, like the digits are rushing in. Only transform and
+// filter, and the keyframes are shared, so a pop allocates nothing but the animation itself.
+const POP_KEYFRAMES: Keyframe[] = [{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }];
+const RUSH_KEYFRAMES: Keyframe[] = [
+  { transform: "scale(1)", filter: "blur(0)" },
+  { transform: "scale(1.14)", filter: "blur(0.12cqw)", offset: 0.35 },
+  { transform: "scale(1)", filter: "blur(0)" },
+];
+const POP_OPTIONS: KeyframeAnimationOptions = { duration: 200, easing: "ease-out" };
+const RUSH_OPTIONS: KeyframeAnimationOptions = { duration: 300, easing: "ease-out" };
+
 interface ScoreProps {
   class?: string;
   classList?: {
@@ -31,12 +42,18 @@ export default function Score(props: ScoreProps) {
   });
 
   const [displayScore, setDisplayScore] = createSignal(0);
-  const [pop, setPop] = createSignal(false);
 
-  let popFrame: number | undefined;
-  onCleanup(() => {
-    if (popFrame !== undefined) cancelAnimationFrame(popFrame);
-  });
+  let scoreRef: HTMLParagraphElement | undefined;
+  let popAnimation: Animation | undefined;
+  onCleanup(() => popAnimation?.cancel());
+
+  const pop = () => {
+    // Restarts a running pop.
+    popAnimation?.cancel();
+    popAnimation = effectsEnabled()
+      ? scoreRef?.animate(RUSH_KEYFRAMES, RUSH_OPTIONS)
+      : scoreRef?.animate(POP_KEYFRAMES, POP_OPTIONS);
+  };
 
   createEffect(
     on(targetScore, (target, previousTarget) => {
@@ -48,10 +65,7 @@ export default function Score(props: ScoreProps) {
 
       // Pop when a meaningful amount of points lands at once.
       if (previousTarget !== undefined && target - previousTarget > POP_THRESHOLD) {
-        setPop(false);
-        // Restart the animation on the next frame.
-        if (popFrame !== undefined) cancelAnimationFrame(popFrame);
-        popFrame = requestAnimationFrame(() => setPop(true));
+        pop();
       }
 
       const startTime = performance.now();
@@ -79,16 +93,14 @@ export default function Score(props: ScoreProps) {
   return (
     <div class={props.class} classList={props.classList}>
       <p
-        class="text-display tabular-nums"
+        ref={scoreRef}
+        class="font-black tracking-[-0.01em] tabular-nums [text-shadow:0_0.2cqw_0.8cqw_rgb(0_0_0/0.5)]"
         classList={{
           "text-5xl": !isCompact(),
           "text-3xl": isCompact(),
-          "animate-score-pop": pop() && !effectsEnabled(),
-          "animate-score-rush": pop() && effectsEnabled(),
         }}
-        // White digits on a shadow in the singer's colour, like the rest of the display type.
-        style={{ "--display-shadow": player.micColor(800) }}
-        onAnimationEnd={() => setPop(false)}
+        // Digits in the singer's colour, light enough to read on any video.
+        style={{ color: player.micColor(300) }}
       >
         {displayScore().toLocaleString("en-US", {
           maximumFractionDigits: 0,

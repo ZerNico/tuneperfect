@@ -12,7 +12,7 @@ import MarkGlyph from "~/components/tic-tac-toe/mark-glyph";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import MenuRow from "~/components/ui/menu-row";
-import SlantPanel from "~/components/ui/slant-panel";
+import Panel from "~/components/ui/panel";
 import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { partySongs, partyUsers, slotColor, validatePartyStart } from "~/lib/party/common";
@@ -210,7 +210,7 @@ interface TeamAssignmentRowProps {
   onSelect: (assignment: Assignment) => void;
 }
 
-/** A player's row: the player on the left, a slanted X · Unassigned · O switch on the right. */
+/** A player's row: the player on the left, an X · Unassigned · O switch on the right. */
 function TeamAssignmentRow(props: TeamAssignmentRowProps) {
   // Only left/right cycle the team; up/down stay with the Menu to move between players.
   useNavigation(() => ({
@@ -241,16 +241,16 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
             {(column) => {
               const active = () => props.assignment === column.value;
               return (
-                <SlantPanel
+                <Panel
                   as="button"
                   type="button"
                   class="flex h-10 min-w-0 cursor-pointer items-center justify-center gap-2 px-2 text-sm font-bold transition-opacity"
                   classList={{ "opacity-50 hover:opacity-80": !active() }}
-                  surface="rounded-md transition-colors"
+                  surface="rounded-[0.5cqw] transition-colors"
                   surfaceClassList={{
                     "bg-black/25": !active(),
                     "bg-white/20 ring-1 ring-white/40 ring-inset": active() && !column.mark,
-                    "shadow-[0.25cqw_0.25cqw_0_rgb(0_0_0/0.35)]": active(),
+                    "shadow-[0_0.3cqw_1cqw_rgb(0_0_0/0.3)]": active(),
                   }}
                   surfaceStyle={
                     active() && column.mark
@@ -270,13 +270,13 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
                   {/* Always shown (faded at 0), so the label never shifts when a team gets its first player */}
                   <Show when={column.mark}>
                     <span
-                      class="rounded-sm bg-black/25 px-1.5 text-xs tabular-nums transition-opacity"
+                      class="rounded-[0.3cqw] bg-black/25 px-1.5 text-xs tabular-nums transition-opacity"
                       classList={{ "opacity-40": props.teamSize(column.value) === 0 }}
                     >
                       {props.teamSize(column.value)}
                     </span>
                   </Show>
-                </SlantPanel>
+                </Panel>
               );
             }}
           </For>

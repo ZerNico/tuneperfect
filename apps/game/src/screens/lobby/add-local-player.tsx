@@ -26,7 +26,7 @@ export default function AddLocalPlayerScreen() {
       .map((player) => ({
         id: player.id,
         label: player.username,
-        visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw] ring-[0.25cqw] ring-white" />,
+        visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw]" />,
         accent: "orange",
         action: () => {
           lobbyStore.addLocalPlayer(player.id);

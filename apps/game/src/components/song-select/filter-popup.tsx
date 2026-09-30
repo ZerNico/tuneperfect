@@ -12,7 +12,6 @@ import { playSound } from "~/lib/sound";
 import { formatDecade, getDecades, getEditions, getGenres, getLanguages, typeLabel } from "~/lib/utils/song-facets";
 
 import Plate from "../ui/plate";
-import SlantPanel from "../ui/slant-panel";
 
 interface FilterPopupProps {
   songs: SongLike[];
@@ -189,7 +188,7 @@ export function FilterPopup(props: FilterPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-xl glass p-3 text-white"
+        class="w-96 rounded-2xl glass p-3 text-white"
       >
         <div class="flex flex-col gap-1">
           <For each={rows()}>
@@ -218,10 +217,9 @@ export function FilterPopup(props: FilterPopupProps) {
                     </Plate>
                   }
                 >
-                  <SlantPanel
-                    class="flex items-center gap-3 px-3 py-1.5"
-                    surface="rounded-md transition-colors"
-                    surfaceClassList={{ "bg-white/12 ring-1 ring-white/20 ring-inset": selected() }}
+                  <div
+                    class="flex items-center gap-3 rounded-lg px-3 py-1.5 transition-colors"
+                    classList={{ "bg-white/12 ring-1 ring-white/20 ring-inset": selected() }}
                     onMouseEnter={() => list.set(index())}
                   >
                     <span
@@ -245,18 +243,16 @@ export function FilterPopup(props: FilterPopupProps) {
                       >
                         <IconTriangleLeft class="text-xs" />
                       </button>
-                      <SlantPanel
-                        class="w-40 truncate px-3 py-0.5 text-center text-sm"
-                        classList={{ "font-bold text-white": !!row.active, "text-white/70": !row.active }}
-                        surface="rounded-md"
-                        surfaceClassList={{
-                          "gradient-sing bg-linear-to-r": !!row.active,
-                          "bg-white/10": !row.active,
+                      <span
+                        class="w-40 truncate rounded-md px-3 py-0.5 text-center text-sm"
+                        classList={{
+                          "gradient-sing bg-linear-to-r font-bold text-white": !!row.active,
+                          "bg-white/10 text-white/70": !row.active,
                         }}
                         title={row.valueLabel}
                       >
                         {row.valueLabel}
-                      </SlantPanel>
+                      </span>
                       <button
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -269,7 +265,7 @@ export function FilterPopup(props: FilterPopupProps) {
                         <IconTriangleRight class="text-xs" />
                       </button>
                     </div>
-                  </SlantPanel>
+                  </div>
                 </Show>
               );
             }}

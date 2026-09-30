@@ -39,7 +39,7 @@ export default function QuitScreen() {
     >
       <div class="grid grow grid-rows-[1fr_2fr]">
         <div class="flex items-end justify-center">
-          <div class="text-center text-5xl text-display">{t("quit.message")}</div>
+          <div class="text-center text-5xl font-bold">{t("quit.message")}</div>
         </div>
         <Menu items={menuItems} onBack={onBack} />
       </div>

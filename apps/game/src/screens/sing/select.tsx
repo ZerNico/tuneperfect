@@ -270,7 +270,7 @@ function SongHero(props: SongHeroProps) {
         <For each={props.covers.slice(0, 3).toReversed()}>
           {(cover, index) => (
             <img
-              class="absolute top-0 aspect-square h-full rounded-xl object-cover shadow-[0.5cqw_0.5cqw_0_0.3cqw_rgb(0_0_0/0.4)] ring-[0.3cqw] ring-white"
+              class="absolute top-0 aspect-square h-full rounded-[1.4cqw] object-cover shadow-[0_1cqw_3cqw_rgb(0_0_0/0.35)] ring-1 ring-white/15"
               style={{
                 left: `${(Math.min(props.covers.length, 3) - 1 - index()) * 3}cqh`,
                 transform: `rotate(${-4 + index() * 4}deg)`,
@@ -282,9 +282,8 @@ function SongHero(props: SongHeroProps) {
         </For>
       </div>
       <div class="flex min-w-0 flex-col gap-3">
-        <span class="text-xl font-semibold opacity-90">{props.subtitle}</span>
-        {/* Padding keeps the italic overhang inside line-clamp's clipping box. */}
-        <span class="line-clamp-2 pr-[0.2em] pb-[0.1em] text-5xl leading-tight text-display">{props.title}</span>
+        <span class="text-xl font-bold text-white/80">{props.subtitle}</span>
+        <span class="line-clamp-2 pb-[0.1em] text-5xl leading-tight font-black tracking-tight">{props.title}</span>
         {props.children}
       </div>
     </div>
@@ -382,11 +381,11 @@ function PlayerSlot(props: PlayerSlotProps) {
       type="button"
       onClick={openSelectPlayerPopup}
       onMouseEnter={() => props.onMouseEnter?.()}
-      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-2xl p-5 transition-all duration-200 ease-out"
+      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-[1.4cqw] p-5 transition-all duration-200 ease-out"
       classList={{
-        "-translate-y-2 shadow-[0.5cqw_0.5cqw_0_0.3cqw_rgb(0_0_0/0.4)] ring-[0.3cqw] ring-white":
-          props.selected && !pressed(),
-        "scale-95 ring-[0.3cqw] ring-white": props.selected && pressed(),
+        "-translate-y-2 outline-[0.22cqw] outline-white": props.selected && !pressed(),
+        "scale-95 outline-[0.22cqw] outline-white": props.selected && pressed(),
+        "focus-glow": props.selected && !!props.selection,
         "opacity-70 saturate-75": !props.selected,
         "border-[0.2cqw] border-dashed": !props.selection,
       }}
@@ -395,6 +394,7 @@ function PlayerSlot(props: PlayerSlotProps) {
           ? `linear-gradient(180deg, ${color(400)}, ${color(700)})`
           : `linear-gradient(180deg, color-mix(in oklch, ${color(500)} 25%, transparent), color-mix(in oklch, ${color(800)} 35%, transparent))`,
         "border-color": props.selection ? undefined : color(400),
+        "--mode-glow": color(500),
       }}
     >
       <Show when={props.selected && props.selection && effectsEnabled()}>
@@ -421,7 +421,7 @@ function PlayerSlot(props: PlayerSlotProps) {
           {(selection) => (
             <Avatar
               user={selection().player}
-              class="h-20 w-20 text-3xl shadow-lg ring-[0.25cqw] ring-white"
+              class="h-20 w-20 text-3xl shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)]"
               fallbackClass="bg-white/20"
             />
           )}
@@ -430,13 +430,11 @@ function PlayerSlot(props: PlayerSlotProps) {
       <div class="relative flex w-full flex-col items-center gap-1">
         <Show
           when={props.selection}
-          fallback={
-            <span class="text-sm font-black tracking-wide uppercase italic opacity-80">{t("select.addPlayer")}</span>
-          }
+          fallback={<span class="text-sm font-bold opacity-80">{t("select.addPlayer")}</span>}
         >
           {(selection) => (
             <>
-              <span class="max-w-full truncate text-2xl text-display">{selection().player.username}</span>
+              <span class="max-w-full truncate text-2xl font-bold">{selection().player.username}</span>
               <Show when={isDuet(props.song)}>
                 <TagChip class="text-xs" label={getVoiceName(props.song ?? null, selection().voice)} />
               </Show>

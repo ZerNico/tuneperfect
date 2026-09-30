@@ -1,7 +1,5 @@
 import { type JSX, Show } from "solid-js";
 
-import SlantPanel from "../ui/slant-panel";
-
 interface TagChipProps {
   label: JSX.Element;
   /** Optional coloured segment after the label. */
@@ -11,32 +9,21 @@ interface TagChipProps {
   classList?: Record<string, boolean | undefined>;
 }
 
-/** Slanted label chip, e.g. "COMBO | 25". */
+/** Boxed label chip, e.g. "COMBO | 25": dark text on white, then an optional coloured segment. */
 export default function TagChip(props: TagChipProps) {
   return (
-    // Each segment has its own slanted surface; with equal heights their shared edge lines up.
     <div
       classList={props.classList}
-      class={`inline-flex items-stretch font-black tracking-wider uppercase ${props.class ?? ""}`}
+      class={`inline-flex items-stretch overflow-hidden rounded-[0.3em] leading-tight font-black tracking-wide uppercase ${props.class ?? ""}`}
     >
-      <SlantPanel
-        as="span"
-        skew={12}
-        class="flex items-center px-[0.6em] py-[0.15em] text-black"
-        surface={`bg-white shadow-md ${props.accent ? "rounded-l-sm" : "rounded-sm"}`}
-      >
-        {props.label}
-      </SlantPanel>
+      <span class="flex items-center bg-white px-[0.5em] py-[0.12em] text-slate-900">{props.label}</span>
       <Show when={props.accent}>
-        <SlantPanel
-          as="span"
-          skew={12}
-          class="flex items-center px-[0.6em] py-[0.15em] text-white"
-          surface="rounded-r-sm shadow-md"
-          surfaceStyle={{ "background-color": props.accentColor ?? "var(--color-pink-500)" }}
+        <span
+          class="flex items-center px-[0.5em] py-[0.12em] text-white"
+          style={{ "background-color": props.accentColor ?? "var(--color-pink-500)" }}
         >
           {props.accent}
-        </SlantPanel>
+        </span>
       </Show>
     </div>
   );

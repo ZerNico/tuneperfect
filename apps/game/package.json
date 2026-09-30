@@ -20,7 +20,7 @@
     "native:types": "cargo test --manifest-path native/Cargo.toml typescript"
   },
   "dependencies": {
-    "@fontsource-variable/rubik": "^5.3.0",
+    "@fontsource/lato": "^5.3.0",
     "@iconify-json/circle-flags": "^1.2.11",
     "@iconify-json/ph": "^1.2.2",
     "@kobalte/core": "^0.13.14",

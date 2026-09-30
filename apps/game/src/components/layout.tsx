@@ -70,7 +70,7 @@ export default function Layout(props: LayoutProps) {
   );
 }
 
-/** Aurora glows drifting above a stage floor: a perspective grid under a spotlight. */
+/** Two aurora glows in the mode colours, drifting slowly. */
 function LayoutDecoration(props: { mode: LayoutMode }) {
   const animated = () => effectsEnabled();
   const glow = (index: 0 | 1, alpha: number) =>
@@ -92,30 +92,6 @@ function LayoutDecoration(props: { mode: LayoutMode }) {
           "animation-direction": "reverse",
         }}
       />
-
-      {/* Spotlight on the stage */}
-      <div
-        class="absolute right-[20%] bottom-[18%] left-[20%] h-[45%] blur-[3cqw]"
-        style={{
-          background: `radial-gradient(ellipse at bottom, color-mix(in oklch, var(--color-${MODE_COLORS[props.mode][1]}) 30%, transparent), transparent 70%)`,
-        }}
-      />
-
-      {/* Stage floor */}
-      <div
-        class="absolute -right-[10%] -bottom-[5%] -left-[10%] h-[40%] [perspective:40cqw]"
-        style={{ "mask-image": "linear-gradient(to top, black 10%, transparent 90%)" }}
-      >
-        <div
-          class="absolute inset-0 origin-bottom [transform:rotateX(62deg)]"
-          classList={{ "animate-stage-grid": animated() }}
-          style={{
-            "background-image":
-              "linear-gradient(rgb(255 255 255 / 0.1) 0.12cqw, transparent 0.12cqw), linear-gradient(90deg, rgb(255 255 255 / 0.1) 0.12cqw, transparent 0.12cqw)",
-            "background-size": "5cqw 5cqw",
-          }}
-        />
-      </div>
     </div>
   );
 }

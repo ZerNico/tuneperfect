@@ -1,4 +1,4 @@
-import { Show } from "solid-js";
+import { type JSX, Show } from "solid-js";
 
 import { effectsEnabled } from "~/lib/fx";
 import { MIN_VISIBLE_COMBO } from "~/lib/game/combo";
@@ -7,7 +7,6 @@ import { usePlayer } from "~/lib/game/player-context";
 import { t } from "~/lib/i18n";
 
 import Burst from "../fx/burst";
-import TagChip from "../fx/tag-chip";
 
 export default function ComboCounter() {
   const game = useGame();
@@ -29,8 +28,8 @@ export default function ComboCounter() {
     <div
       class="relative flex items-center"
       classList={{
-        "text-2xl": !isCompact(),
-        "text-base": isCompact(),
+        "text-lg": !isCompact(),
+        "text-sm": isCompact(),
       }}
     >
       <Show when={activeCombo()} keyed>
@@ -53,11 +52,11 @@ export default function ComboCounter() {
                 "animate-slam": event.milestone && effectsEnabled(),
               }}
             >
-              <TagChip
-                label={t("game.combo")}
-                accent={<span class="tabular-nums">{event.combo}</span>}
-                accentColor={player.micColor(500)}
-              />
+              <ComboChip>
+                <span class="font-black tabular-nums" style={{ color: player.micColor(300) }}>
+                  {event.combo}
+                </span>
+              </ComboChip>
             </div>
           </div>
         )}
@@ -65,14 +64,22 @@ export default function ComboCounter() {
       <Show when={brokenCombo()} keyed>
         {(event) => (
           <div class="animate-[shake_0.4s_ease-in-out,hide_0.3s_ease-in_0.6s_forwards] opacity-60 grayscale">
-            <TagChip
-              label={t("game.combo")}
-              accent={<span class="tabular-nums line-through">{event.brokenCombo}</span>}
-              accentColor="var(--color-slate-600)"
-            />
+            <ComboChip>
+              <span class="font-black text-white/80 tabular-nums line-through">{event.brokenCombo}</span>
+            </ComboChip>
           </div>
         )}
       </Show>
+    </div>
+  );
+}
+
+/** Quiet stat chip: "Combo" and the count on a dark translucent box. */
+function ComboChip(props: { children: JSX.Element }) {
+  return (
+    <div class="flex items-center gap-[0.4em] rounded-[0.5cqw] bg-black/55 px-[0.6em] py-[0.2em] leading-tight backdrop-blur-sm">
+      <span class="font-semibold text-white/70">{t("game.combo")}</span>
+      {props.children}
     </div>
   );
 }

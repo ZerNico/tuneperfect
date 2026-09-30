@@ -6,7 +6,7 @@ import { createListNavigation } from "~/hooks/list-navigation";
 import { playSound } from "~/lib/sound";
 import { getColorVar } from "~/lib/utils/color";
 
-import SlantPanel from "./slant-panel";
+import Panel from "./panel";
 
 export interface GridCard {
   id: string;
@@ -32,7 +32,7 @@ interface CardGridProps {
 }
 
 /**
- * A wrapping grid of slanted cards (players, microphones, song folders) that scrolls vertically.
+ * A wrapping grid of cards (players, microphones, song folders) that scrolls vertically.
  * Arrows move in two dimensions, the mouse selects by hover, confirm opens.
  */
 export default function CardGrid(props: CardGridProps) {
@@ -75,21 +75,21 @@ export default function CardGrid(props: CardGridProps) {
             const selected = () => list.isSelected(index());
             const accent = (shade: 400 | 500 | 800) => (card.accent ? getColorVar(card.accent, shade) : undefined);
             return (
-              <SlantPanel
+              <Panel
                 as="button"
                 type="button"
                 ref={list.itemRef(index)}
-                class="flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center gap-3 p-4 text-center transition-[scale,opacity] duration-150 active:scale-95"
+                class="flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center gap-3 p-4 text-center transition-[scale,opacity,translate] duration-150 active:scale-95"
                 classList={{
-                  "scale-105": selected() && !list.pressed(),
+                  "-translate-y-[0.4cqw] scale-105": selected() && !list.pressed(),
                   "scale-95": selected() && list.pressed(),
-                  "opacity-65 hover:opacity-90": !selected(),
+                  "opacity-70 hover:opacity-90": !selected(),
                 }}
-                surface="overflow-hidden rounded-2xl transition-[box-shadow,background] duration-150"
+                surface="overflow-hidden rounded-[1.4cqw] transition-[background] duration-150"
                 surfaceClassList={{
-                  "bg-white/6 ring-1 ring-white/12 ring-inset": !selected() && !card.add,
-                  "border-[0.2cqw] border-dashed border-white/35": !!card.add && !selected(),
-                  "shadow-[0.45cqw_0.45cqw_0_rgb(0_0_0/0.4)]": selected(),
+                  "bg-white/6": !selected() && !card.add,
+                  "border-[0.18cqw] border-dashed border-white/30": !!card.add && !selected(),
+                  "outline-[0.22cqw] outline-white": selected(),
                   [`${props.gradient ?? "gradient-settings"} bg-linear-to-b`]: selected() && !card.accent,
                 }}
                 surfaceStyle={
@@ -98,18 +98,26 @@ export default function CardGrid(props: CardGridProps) {
                     : undefined
                 }
                 surfaceContent={
-                  <>
-                    <Show when={card.accent && !selected()}>
-                      <span class="absolute inset-y-0 left-0 w-[0.45cqw]" style={{ background: accent(500) }} />
-                    </Show>
-                    <Show when={selected()}>
-                      <span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />
-                    </Show>
-                  </>
+                  // The card's colour as a soft light behind its picture.
+                  <Show when={card.accent && !selected()}>
+                    <span
+                      class="absolute inset-0"
+                      style={{
+                        background: `radial-gradient(circle at 50% 38%, color-mix(in oklch, ${accent(500)} 22%, transparent), transparent 55%)`,
+                      }}
+                    />
+                  </Show>
                 }
                 onMouseEnter={() => list.set(index())}
                 onClick={() => activate(index())}
               >
+                {/* Soft glow of the card's colour behind the selected card. */}
+                <span
+                  aria-hidden="true"
+                  class={`pointer-events-none absolute inset-x-[8%] top-[30%] -bottom-[6%] -z-20 opacity-0 blur-[1.4cqw] transition-opacity duration-200 ${card.accent ? "" : `${props.gradient ?? "gradient-settings"} bg-linear-to-b`}`}
+                  classList={{ "opacity-50": selected() }}
+                  style={card.accent ? { background: accent(500) } : undefined}
+                />
                 <div class="flex h-[6cqw] items-center justify-center text-[4.5cqw]">
                   <Show when={card.loading} fallback={card.add ? <IconPlus /> : card.visual}>
                     <IconSpinner class="animate-spin" />
@@ -119,7 +127,7 @@ export default function CardGrid(props: CardGridProps) {
                   <span class="w-full truncate text-xl font-bold">{card.label}</span>
                   <span class="h-5 w-full truncate text-sm font-semibold text-white/70">{card.subtitle}</span>
                 </div>
-              </SlantPanel>
+              </Panel>
             );
           }}
         </For>

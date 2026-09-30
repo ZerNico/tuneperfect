@@ -18,7 +18,6 @@ import { t } from "~/lib/i18n";
 import type { LocalSong } from "~/lib/ultrastar/song";
 
 import KeyGlyph from "../ui/key-glyph";
-import SlantPanel from "../ui/slant-panel";
 
 interface MedleyListProps {
   songs: LocalSong[];
@@ -82,10 +81,10 @@ export function MedleyList(props: MedleyListProps) {
 
   return (
     <div class="h-full w-[24cqw]">
-      <div class="flex h-full flex-col gap-3 rounded-2xl glass p-4">
+      <div class="flex h-full flex-col gap-3 rounded-[1.4cqw] glass p-4">
         <div class="flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-baseline gap-3">
-            <span class="text-3xl text-display">{t("sing.medley.title")}</span>
+            <span class="text-2xl font-bold">{t("sing.medley.title")}</span>
             <span class="shrink-0 text-sm font-bold text-white/60">
               {props.songs.length === 1
                 ? t("sing.songCount.one", { count: 1 })
@@ -110,16 +109,15 @@ export function MedleyList(props: MedleyListProps) {
                   const isSelected = () => list.isSelected(index());
                   return (
                     <div ref={list.itemRef(index)} class="shrink-0">
-                      <SlantPanel
-                        class="group flex h-[3.6cqw] items-center gap-3 pr-2 pl-3"
-                        surface="rounded-lg transition-[background,box-shadow] duration-200"
-                        surfaceClassList={{
+                      <div
+                        class="group flex h-[3.6cqw] items-center gap-3 rounded-[0.8cqw] pr-2 pl-3 transition-[background] duration-200"
+                        classList={{
                           "bg-white/8 ring-1 ring-white/10 ring-inset": !isSelected(),
-                          "gradient-sing bg-linear-to-r shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)]": isSelected(),
+                          "gradient-sing bg-linear-to-r": isSelected(),
                         }}
                         onClick={() => list.set(index())}
                       >
-                        <span class="w-5 shrink-0 text-center text-lg text-display tabular-nums">{index() + 1}</span>
+                        <span class="w-5 shrink-0 text-center text-lg font-black tabular-nums">{index() + 1}</span>
                         <div class="size-[2.6cqw] shrink-0 overflow-hidden rounded-md bg-black/40">
                           <Show when={song.coverUrl}>
                             {(url) => <img src={url()} alt="" class="size-full object-cover" draggable={false} />}
@@ -148,7 +146,7 @@ export function MedleyList(props: MedleyListProps) {
                             <IconX class="text-sm" />
                           </button>
                         </div>
-                      </SlantPanel>
+                      </div>
                     </div>
                   );
                 }}
@@ -159,15 +157,13 @@ export function MedleyList(props: MedleyListProps) {
 
         <div class="flex items-center justify-between gap-3">
           <Show when={props.onStart}>
-            <SlantPanel
-              as="button"
+            <button
               type="button"
-              class="flex h-10 grow cursor-pointer items-center justify-center px-4 text-sm font-bold transition-[scale] active:scale-95"
-              surface="gradient-sing rounded-lg bg-linear-to-r shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)]"
+              class="gradient-sing flex h-10 grow cursor-pointer items-center justify-center rounded-[0.8cqw] bg-linear-to-r px-4 text-sm font-bold focus-glow transition-[scale] active:scale-95"
               onClick={() => props.onStart?.()}
             >
               {t("sing.menu.startMedley")}
-            </SlantPanel>
+            </button>
           </Show>
           <button
             type="button"

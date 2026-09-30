@@ -7,8 +7,6 @@ import { getColorVar } from "~/lib/utils/color";
 import { roundStore } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
-import SlantPanel from "../ui/slant-panel";
-
 const formatTime = (seconds: number): string => {
   const minutes = Math.floor(Math.abs(seconds) / 60);
   const remainingSeconds = Math.floor(Math.abs(seconds) % 60);
@@ -169,30 +167,26 @@ export default function Progress() {
     // Full width like the name plates and scores; the bar fills between the times.
     <div class="grid h-full w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-[3cqw]">
       <span class="text-sm font-black tabular-nums">{formatTime(timingInfo().elapsed)}</span>
-      <SlantPanel
-        skew={12}
-        class="h-[0.6cqw]"
-        surface="overflow-hidden rounded-sm bg-white/20"
-        surfaceContent={
-          <>
-            <Show when={settingsStore.general().showNoteSegments}>
-              <For each={noteSegments()}>
-                {(segment) => (
-                  <span
-                    class="absolute inset-y-0 bg-white/30"
-                    style={{ left: `${segment.start * 100}%`, width: `${(segment.end - segment.start) * 100}%` }}
-                  />
-                )}
-              </For>
-            </Show>
-            {/* Scaled instead of resized: no layout per frame. The skew is on the surface, so it still slants. */}
-            <span
-              class="absolute inset-0 origin-left transition-colors duration-500"
-              style={{ transform: `scaleX(${timingInfo().progress})`, "background-color": progressColor() }}
-            />
-          </>
-        }
-      />
+      <div class="relative h-[0.5cqw] overflow-hidden rounded-full bg-white/20">
+        <Show when={settingsStore.general().showNoteSegments}>
+          <For each={noteSegments()}>
+            {(segment) => (
+              <span
+                class="absolute inset-y-0 bg-white/30"
+                style={{ left: `${segment.start * 100}%`, width: `${(segment.end - segment.start) * 100}%` }}
+              />
+            )}
+          </For>
+        </Show>
+        {/* Slid in instead of resized: no layout per frame, and the leading end stays round. */}
+        <span
+          class="absolute inset-0 rounded-full transition-colors duration-500"
+          style={{
+            transform: `translateX(${(timingInfo().progress - 1) * 100}%)`,
+            "background-color": progressColor(),
+          }}
+        />
+      </div>
       <span class="text-sm font-black text-white/60 tabular-nums">{formatTime(timingInfo().remaining)}</span>
     </div>
   );

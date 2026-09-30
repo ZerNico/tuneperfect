@@ -89,7 +89,7 @@ export function SearchPopup(props: SearchPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-xl glass p-4 text-white"
+        class="w-96 rounded-2xl glass p-4 text-white"
       >
         <div class="space-y-3">
           <div class="flex items-center justify-between">
@@ -106,7 +106,7 @@ export function SearchPopup(props: SearchPopupProps) {
 
             <div class="flex justify-center">
               <div class="rounded-md bg-white/10 px-3 py-1">
-                <span class="text-sm font-medium text-white">{currentScopeLabel()}</span>
+                <span class="text-sm font-bold text-white">{currentScopeLabel()}</span>
               </div>
             </div>
 
@@ -129,7 +129,7 @@ export function SearchPopup(props: SearchPopupProps) {
             type="text"
             placeholder={t("sing.search")}
             aria-label={t("sing.search")}
-            class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
+            class="focus:gradient-sing w-full rounded-lg bg-white/10 px-3 py-2 font-bold text-white placeholder-white/50 transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>
 

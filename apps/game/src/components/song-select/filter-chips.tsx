@@ -1,7 +1,6 @@
 import { createMemo, For, Show } from "solid-js";
 import IconX from "~icons/ph/x-bold";
 
-import SlantPanel from "~/components/ui/slant-panel";
 import type { SongFilters } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { formatDecade, typeLabel } from "~/lib/utils/song-facets";
@@ -60,20 +59,18 @@ export function FilterChips(props: FilterChipsProps) {
   // Render nothing without active filters, so the toolbar doesn't get an extra gap.
   return (
     <Show when={activeChips().length > 0}>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-[0.5cqw]">
         <For each={activeChips()}>
           {(def) => (
-            <SlantPanel
-              as="button"
+            <button
               type="button"
               aria-label={`${def.label(props.filters)} (${t("sing.filter.clearAll")})`}
-              class="group flex h-8 max-w-44 cursor-pointer items-center gap-1.5 px-2.5 text-xs font-bold text-white transition-[scale] active:scale-95"
-              surface="gradient-sing rounded-md bg-linear-to-r shadow-[0.2cqw_0.2cqw_0_rgb(0_0_0/0.3)] transition-[filter] group-hover:brightness-110"
+              class="gradient-sing flex h-[2.2cqw] max-w-[12cqw] cursor-pointer items-center gap-[0.4cqw] rounded-[0.6cqw] bg-linear-to-r px-[0.8cqw] text-[0.9cqw] font-bold text-white transition-[scale,filter] hover:brightness-110 active:scale-95"
               onClick={() => props.onChange(def.reset(props.filters))}
             >
               <span class="truncate">{def.label(props.filters)}</span>
               <IconX class="shrink-0 opacity-80" />
-            </SlantPanel>
+            </button>
           )}
         </For>
       </div>

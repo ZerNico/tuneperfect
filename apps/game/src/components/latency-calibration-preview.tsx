@@ -5,6 +5,8 @@ import { getAudioContext } from "~/lib/audio/context";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 
+import Plate from "./ui/plate";
+
 interface LatencyCalibrationPreviewProps {
   outputLatency: () => number;
   selected: () => boolean;
@@ -149,42 +151,29 @@ export default function LatencyCalibrationPreview(props: LatencyCalibrationPrevi
   const active = () => pressed() && props.selected();
 
   return (
-    <button
-      type="button"
+    <Plate
+      as="button"
+      selected={props.selected()}
+      gradient={props.gradient()}
+      pressed={active()}
       onClick={toggle}
-      aria-label={
-        enabled()
-          ? t("settings.sections.general.outputLatencyPreviewStop")
-          : t("settings.sections.general.outputLatencyPreviewStart")
-      }
-      class="grid h-16 w-full cursor-pointer items-center overflow-hidden rounded-lg transition-all ease-in-out active:scale-95"
-      classList={{
-        "scale-95": active(),
-      }}
+      class="w-full"
+      contentClass="grid grid-cols-[2fr_3fr] items-center gap-8 px-10"
     >
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity"
-        classList={{
-          [props.gradient()]: true,
-          "opacity-0": !props.selected(),
-        }}
-      />
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">
-          <Show when={enabled()} fallback={t("settings.sections.general.outputLatencyPreviewStart")}>
-            {t("settings.sections.general.outputLatencyPreviewStop")}
-          </Show>
-        </div>
-        <div class="flex items-center justify-center gap-4">
-          <div
-            class="h-6 w-6 rounded-full bg-white transition-[opacity,transform] duration-100 ease-out"
-            style={{
-              opacity: pulsing() ? 1 : 0.2,
-              transform: pulsing() ? "scale(1.4)" : "scale(1)",
-            }}
-          />
-        </div>
+      <div class="truncate text-xl font-bold">
+        <Show when={enabled()} fallback={t("settings.sections.general.outputLatencyPreviewStart")}>
+          {t("settings.sections.general.outputLatencyPreviewStop")}
+        </Show>
       </div>
-    </button>
+      <div class="flex items-center justify-center">
+        <div
+          class="h-6 w-6 rounded-full bg-white transition-[opacity,transform] duration-100 ease-out"
+          style={{
+            opacity: pulsing() ? 1 : 0.2,
+            transform: pulsing() ? "scale(1.4)" : "scale(1)",
+          }}
+        />
+      </div>
+    </Plate>
   );
 }

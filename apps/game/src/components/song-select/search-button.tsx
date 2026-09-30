@@ -31,17 +31,17 @@ export function SearchButton(props: SearchButtonProps) {
 
   return (
     <ChipButton
-      class="w-56"
+      class="w-[16cqw]"
       icon={IconSearch}
       label={t("sing.search")}
       hint={<KeyGlyph keyboard={IconF3Key} gamepad={IconGamepadX} />}
       onClick={() => props.onClick()}
     >
-      <span class="grow truncate text-start" classList={{ "opacity-60": !props.searchQuery }}>
+      <span class="grow truncate text-start" classList={{ "font-semibold text-white/60": !props.searchQuery }}>
         {props.searchQuery || t("sing.search")}
       </span>
       <Show when={props.searchQuery}>
-        <span class="shrink-0 rounded-sm bg-white/20 px-1.5 text-xs uppercase">{scopeLabel()}</span>
+        <span class="shrink-0 rounded-[0.3cqw] bg-white/20 px-[0.5cqw] py-[0.1cqw] text-[0.75cqw]">{scopeLabel()}</span>
       </Show>
     </ChipButton>
   );

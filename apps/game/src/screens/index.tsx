@@ -122,14 +122,14 @@ export default function RouteScreen() {
 
         <Match when={checkUpdateQuery.isError}>
           <div class="flex w-full grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center text-5xl text-display">{t("update.checkFailed")}</h1>
+            <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("update.checkFailed")}</h1>
             <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
 
         <Match when={installUpdateMutation.isError}>
           <div class="flex w-full grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center text-5xl text-display">{t("update.installFailed")}</h1>
+            <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("update.installFailed")}</h1>
             <Menu items={installFailedMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
@@ -138,7 +138,7 @@ export default function RouteScreen() {
           {(update) => (
             <div class="flex w-full grow flex-col justify-center">
               <div class="mb-[10cqh] flex flex-col items-center gap-3">
-                <h1 class="text-center text-6xl text-display">{t("update.available")}</h1>
+                <h1 class="text-center text-6xl font-bold">{t("update.available")}</h1>
                 <TagChip label={t("update.version")} accent={update()?.version} class="text-lg" />
               </div>
               <Menu items={updateMenuItems} gradient="gradient-settings" class="h-min grow-0" />

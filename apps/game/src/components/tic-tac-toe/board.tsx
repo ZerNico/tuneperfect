@@ -127,8 +127,8 @@ export default function Board(props: BoardProps) {
       <Show when={props.result === "draw"}>
         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span
-            class="text-9xl text-display whitespace-nowrap text-yellow-300 [--stamp-rotate:-8deg]"
-            classList={{ "animate-stamp [animation-delay:200ms]": effectsEnabled(), "-rotate-8": !effectsEnabled() }}
+            class="text-9xl text-display whitespace-nowrap text-yellow-300 [--display-shadow:var(--color-yellow-800)]"
+            classList={{ "animate-stamp [animation-delay:200ms]": effectsEnabled() }}
           >
             {t("party.ticTacToe.drawStamp")}
           </span>
@@ -160,16 +160,14 @@ function BoardCell(props: BoardCellProps) {
       disabled={props.disabled}
       onClick={() => props.onClick()}
       onMouseEnter={() => props.onMouseEnter()}
-      class="relative block aspect-square w-full rounded-xl transition-[scale,box-shadow] duration-200"
+      class="relative block aspect-square w-full rounded-[1cqw] shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.35)] transition-[scale,translate] duration-200"
       classList={{
         "cursor-pointer active:scale-95": !props.disabled,
-        "z-10 scale-108 shadow-[0_0_0_0.3cqw_white,0.5cqw_0.5cqw_0_0.3cqw_rgb(0_0_0/0.4)]": props.selected,
-        "shadow-[0_0_0_0.3cqw_var(--color-yellow-300),0.5cqw_0.5cqw_0_0.3cqw_rgb(0_0_0/0.4)]":
-          props.winning && !props.selected,
-        "shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)]": !props.selected && !props.winning,
+        "z-10 -translate-y-[0.3cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,
+        "outline-[0.22cqw] outline-yellow-300": props.winning && !props.selected,
       }}
     >
-      <div class="absolute inset-0 overflow-hidden rounded-xl bg-black">
+      <div class="absolute inset-0 overflow-hidden rounded-[1cqw] bg-black">
         <Show when={props.cell.song?.coverUrl}>
           {(url) => (
             <img

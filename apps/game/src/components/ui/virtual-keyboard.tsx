@@ -11,8 +11,6 @@ import { useNavigation } from "~/hooks/navigation";
 import { useTextInput } from "~/hooks/use-text-input";
 import { t } from "~/lib/i18n";
 
-import SlantPanel from "./slant-panel";
-
 interface VirtualKeyboardProps {
   inputRef: HTMLInputElement;
   layer?: number;
@@ -180,21 +178,20 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   });
 
   return (
-    <div class="grid grid-cols-[repeat(10,2.4cqw)] gap-1.5 rounded-2xl glass p-3 text-white">
+    <div class="grid grid-cols-[repeat(10,2.4cqw)] gap-1.5 rounded-[1.4cqw] glass p-3 text-white">
       <For each={activeKeys()}>
         {(row, rowIndex) => (
           <For each={row}>
             {(key, colIndex) => {
               const selected = () => rowIndex() === position().row && colIndex() === position().col;
               return (
-                <SlantPanel
-                  as="button"
+                <button
                   type="button"
-                  class="flex h-[2.4cqw] cursor-pointer items-center justify-center text-base font-bold transition-[scale] duration-100"
-                  classList={{ "scale-110": selected() && !pressed(), "scale-95": selected() && pressed() }}
-                  surface="rounded-md transition-colors duration-100"
-                  surfaceClassList={{
-                    "gradient-settings bg-linear-to-r shadow-[0.2cqw_0.2cqw_0_rgb(0_0_0/0.4)]": selected(),
+                  class="relative flex h-[2.4cqw] cursor-pointer items-center justify-center rounded-[0.5cqw] text-base font-bold transition-[scale,background-color] duration-100"
+                  classList={{
+                    "gradient-settings bg-linear-to-r focus-glow": selected(),
+                    "scale-110": selected() && !pressed(),
+                    "scale-95": selected() && pressed(),
                     "bg-white/15": !selected() && !!key.highlight,
                     "bg-white/6": !selected() && !key.highlight,
                   }}
@@ -211,7 +208,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
                 >
                   {key.content}
                   {key.hint && <div class="absolute top-0.5 left-1 text-[0.55cqw] opacity-70">{key.hint}</div>}
-                </SlantPanel>
+                </button>
               );
             }}
           </For>

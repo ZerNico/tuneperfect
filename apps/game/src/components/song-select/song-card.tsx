@@ -37,7 +37,7 @@ interface SongCardProps extends CoverProps {
   emphasis?: number;
   /** Pointer cursor and press feedback; off for covers that can't be clicked. Defaults to true. */
   clickable?: boolean;
-  /** Drop shadow under the cover. Defaults to true. */
+  /** Soft drop shadow under the cover. Defaults to true. */
   shadow?: boolean;
 }
 
@@ -55,13 +55,12 @@ export function SongCard(props: SongCardProps) {
       }}
     >
       <div
-        class="relative h-full w-full overflow-hidden rounded-xl bg-black"
+        class="relative h-full w-full overflow-hidden rounded-[1cqw] bg-black"
         style={{
           transform: `translateY(${-emphasis() * 0.6}cqw)`,
-          "box-shadow":
-            props.shadow === false
-              ? undefined
-              : `0 ${0.4 + emphasis()}cqw ${1 + emphasis() * 2}cqw rgb(0 0 0 / ${0.35 + emphasis() * 0.25})`,
+          // The centred cover gets a white outline, fading in as it arrives; no glow around images.
+          outline: `0.18cqw solid rgb(255 255 255 / ${emphasis()})`,
+          "box-shadow": props.shadow === false ? undefined : "0 0.6cqw 1.6cqw rgb(0 0 0 / 0.3)",
           filter: `brightness(${0.6 + 0.4 * emphasis()})`,
         }}
       >
@@ -79,11 +78,10 @@ interface SongGridCardProps extends CoverProps {
 export function SongGridCard(props: SongGridCardProps) {
   return (
     <div
-      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-black transition-all duration-200 ease-out active:scale-95"
-      style={{
-        transform: props.selected ? "translateY(-0.4cqw) scale(1.04)" : undefined,
-        "box-shadow": props.selected ? "0 1.2cqw 2.5cqw rgb(0 0 0 / 0.55)" : "0 0.3cqw 0.8cqw rgb(0 0 0 / 0.35)",
-        filter: props.selected ? undefined : "brightness(0.65)",
+      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)] transition-all duration-200 ease-out active:scale-95"
+      classList={{
+        "-translate-y-[0.4cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,
+        "brightness-65": !props.selected,
       }}
     >
       <Cover coverUrl={props.coverUrl} title={props.title} lazy={props.lazy} />

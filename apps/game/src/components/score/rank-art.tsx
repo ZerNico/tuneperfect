@@ -4,6 +4,15 @@ import type { TierId } from "~/lib/utils/score";
 
 const INK = "#1b1b3a";
 
+/** White sticker edge all around, then a soft shadow underneath. */
+const STICKER_FILTER = [
+  "drop-shadow(0.15cqw 0 0 white)",
+  "drop-shadow(-0.15cqw 0 0 white)",
+  "drop-shadow(0 0.15cqw 0 white)",
+  "drop-shadow(0 -0.15cqw 0 white)",
+  "drop-shadow(0 0.5cqw 0.8cqw rgb(0 0 0 / 0.35))",
+].join(" ");
+
 const shape = (fill: string) => ({ fill, stroke: INK, "stroke-width": 4, "stroke-linejoin": "round" as const });
 const line = (color: string, width: number) => ({
   stroke: color,
@@ -40,7 +49,12 @@ export default function RankArt(props: RankArtProps) {
   const delay = (ms: number) => ({ "animation-delay": `${ms}ms` });
 
   return (
-    <svg viewBox="0 0 120 120" class={`overflow-visible sticker-edge ${props.class ?? ""}`} aria-hidden="true">
+    <svg
+      viewBox="0 0 120 120"
+      class={`overflow-visible ${props.class ?? ""}`}
+      style={{ filter: STICKER_FILTER }}
+      aria-hidden="true"
+    >
       <Show when={props.tier === "d"}>
         {/* Shower head with falling drops and rising bubbles */}
         <path d="M22 6 V40 Q22 52 34 52 H56" fill="none" {...line(INK, 14)} />
@@ -91,7 +105,7 @@ export default function RankArt(props: RankArtProps) {
         <path d="M34 90 V114 M86 90 V114" {...line(INK, 7)} />
         <rect x="10" y="22" width="100" height="70" rx="12" {...shape("#ec4899")} />
         <rect x="24" y="36" width="72" height="42" rx="6" {...shape("#fdf2f8")} />
-        <text x="60" y="66" text-anchor="middle" font-size="22" font-weight="900" font-style="italic" fill={INK}>
+        <text x="60" y="66" text-anchor="middle" font-size="22" font-weight="900" fill={INK}>
           LIVE
         </text>
         <For each={[18, 32, 46, 60, 74, 88, 102]}>

@@ -80,7 +80,7 @@ export default function IndexScreen() {
         </Match>
         <Match when={createLobbyMutation.isError}>
           <div class="flex w-full grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center text-5xl text-display">{t("createLobby.failed")}</h1>
+            <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("createLobby.failed")}</h1>
             <Menu items={menuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>

@@ -105,11 +105,12 @@ interface ModeCardProps {
 function ModeCard(props: ModeCardProps) {
   return (
     <div
-      class="relative flex min-w-0 flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-b p-8 transition-[flex-grow,translate,scale,box-shadow,opacity,filter] duration-300 ease-out"
+      class="relative flex min-w-0 flex-col justify-end overflow-hidden rounded-[1.6cqw] bg-linear-to-b p-8 transition-[flex-grow,translate,scale,box-shadow,opacity,filter] duration-300 ease-out"
       classList={{
         [props.gradient || ""]: true,
-        "grow-[2.6] -translate-y-2 shadow-[0.6cqw_0.6cqw_0_rgb(0_0_0/0.4)]": props.selected && !props.active,
-        "grow-[2.6] scale-[0.97] shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.4)]": props.selected && props.active,
+        "grow-[2.6] focus-glow outline-[0.22cqw] outline-white": props.selected,
+        "-translate-y-2": props.selected && !props.active,
+        "scale-[0.97]": props.selected && props.active,
         "grow opacity-60 saturate-50": !props.selected,
       }}
       style={{ "flex-basis": "0" }}
@@ -132,7 +133,7 @@ function ModeCard(props: ModeCardProps) {
       </div>
       <div class="relative">
         <div
-          class="origin-bottom-left text-6xl text-display whitespace-nowrap transition-transform duration-300 ease-out"
+          class="origin-bottom-left text-6xl font-black whitespace-nowrap transition-transform duration-300 ease-out"
           style={{ transform: props.selected ? "scale(1)" : "scale(0.5)" }}
         >
           {props.label}

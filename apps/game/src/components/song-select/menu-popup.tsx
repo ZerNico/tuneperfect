@@ -53,7 +53,7 @@ export function MenuPopup(props: MenuPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-70 rounded-xl glass p-2"
+        class="w-70 rounded-2xl glass p-2"
       >
         <div class="flex flex-col gap-1">
           <For each={props.items}>

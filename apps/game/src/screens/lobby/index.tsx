@@ -34,7 +34,7 @@ export default function LobbyScreen() {
         id: `online-${user.id}`,
         label: user.username ?? t("lobby.unknownPlayer"),
         subtitle: t("lobby.online"),
-        visual: <Avatar user={user} class="size-[6cqw] text-[2.5cqw] ring-[0.25cqw] ring-white" />,
+        visual: <Avatar user={user} class="size-[6cqw] text-[2.5cqw]" />,
         accent: "yellow",
         action: () => navigate({ to: "/lobby/$id", params: { id: user.id } }),
       });
@@ -45,7 +45,7 @@ export default function LobbyScreen() {
         id: `local-${player.id}`,
         label: player.username,
         subtitle: t("lobby.local"),
-        visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw] ring-[0.25cqw] ring-white" />,
+        visual: <Avatar user={player} class="size-[6cqw] text-[2.5cqw]" />,
         accent: "orange",
         action: () => navigate({ to: "/lobby/local/$id", params: { id: player.id } }),
       });
@@ -91,7 +91,7 @@ export default function LobbyScreen() {
           <CardGrid cards={cards()} onBack={onBack} columns={4} gradient="gradient-lobby" />
         </div>
         <Show when={lobbyStore.lobby()}>
-          {(lobby) => <JoinPanel code={lobby().lobby.id} vertical class="w-[20cqw] shrink-0" />}
+          {(lobby) => <JoinPanel code={lobby().lobby.id} vertical class="w-[22cqw] shrink-0" />}
         </Show>
       </div>
     </Layout>

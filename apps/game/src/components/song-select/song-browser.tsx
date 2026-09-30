@@ -266,7 +266,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                 onChange={state.setFilters}
                 showTypeFilter={props.showTypeFilter}
               />
-              <ChipButton static icon={IconMusic} class="opacity-90">
+              <ChipButton static icon={IconMusic}>
                 {props.countLabel(filteredItems().length, total())}
               </ChipButton>
             </div>
@@ -277,7 +277,9 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
               label={t("sing.menu.title")}
               leadingHint={<KeyGlyph keyboard={IconTabKey} gamepad={IconGamepadStart} />}
               onClick={() => setOpenPanel("menu")}
-            />
+            >
+              {t("sing.menu.title")}
+            </ChipButton>
             <Show when={openPanel() === "menu"}>
               <MenuPopup items={menuItems()} onClose={() => setOpenPanel(null)} />
             </Show>
@@ -293,7 +295,9 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
               label={t("sing.random")}
               leadingHint={<KeyGlyph keyboard={IconF5Key} gamepad={IconGamepadSelect} />}
               onClick={selectRandom}
-            />
+            >
+              {t("sing.random")}
+            </ChipButton>
             <SortSelect
               selected={state.sortOption()}
               options={props.sortOptions}

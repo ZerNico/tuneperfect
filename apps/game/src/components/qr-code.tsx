@@ -40,7 +40,7 @@ export default function QRCodeView(props: QRCodeProps) {
   });
 
   return (
-    <div class={`aspect-square rounded-2xl bg-white p-[4.5%] ${props.class ?? ""}`}>
+    <div class={`aspect-square rounded-[1cqw] bg-white p-[4.5%] ${props.class ?? ""}`}>
       <svg viewBox={`0 0 ${matrix().size} ${matrix().size}`} class="block h-full w-full" aria-hidden="true">
         <g fill="black">
           <For each={matrix().dots}>{(dot) => <circle cx={dot.col + 0.5} cy={dot.row + 0.5} r="0.45" />}</For>

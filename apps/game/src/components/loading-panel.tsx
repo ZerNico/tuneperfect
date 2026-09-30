@@ -2,8 +2,6 @@ import { For, type JSX, Show } from "solid-js";
 
 import { effectsEnabled } from "~/lib/fx";
 
-import SlantPanel from "./ui/slant-panel";
-
 interface LoadingPanelProps {
   title: JSX.Element;
   /** 0–100, or null while the amount of work isn't known yet (the bar shows moving stripes). */
@@ -18,41 +16,36 @@ interface LoadingPanelProps {
 
 const BARS = [0.55, 0.9, 0.7, 1, 0.6];
 
-/** Calm loading state: a small equalizer, a title and a slanted progress bar. */
+/** Calm loading state: a small equalizer, a title and a rounded progress bar. */
 export default function LoadingPanel(props: LoadingPanelProps) {
   return (
     <div class="flex w-[46cqw] flex-col items-center gap-[3cqh]">
       <Equalizer />
-      <span class="text-center text-6xl text-display">{props.title}</span>
+      <span class="text-center text-6xl font-bold tracking-tight">{props.title}</span>
 
       <div class="flex w-full flex-col gap-2">
-        <div class="flex items-baseline justify-between gap-4 text-sm font-black tracking-widest text-white/70 uppercase">
+        <div class="flex items-baseline justify-between gap-4 text-sm font-bold tracking-[0.15em] text-white/60 uppercase">
           <span class="min-w-0 truncate">{props.detail}</span>
-          <span class="shrink-0 text-xl text-white tabular-nums">
+          <span class="shrink-0 text-xl font-black tracking-normal text-white tabular-nums">
             {props.count ?? (props.progress !== null ? `${Math.round(props.progress)}%` : "")}
           </span>
         </div>
-        <SlantPanel
-          skew={12}
-          class="h-[1.4cqw] w-full"
-          surface="overflow-hidden rounded-md bg-black/35"
-          surfaceContent={
-            <Show
-              when={props.progress !== null}
-              fallback={
-                <span
-                  class="absolute inset-0 bg-stripes opacity-25 [--fx-color:white]"
-                  classList={{ "animate-stripes-move": effectsEnabled() }}
-                />
-              }
-            >
+        <div class="relative h-[1.2cqw] w-full overflow-hidden rounded-full bg-black/35">
+          <Show
+            when={props.progress !== null}
+            fallback={
               <span
-                class={`absolute inset-y-0 left-0 transition-[width] duration-300 ${props.fill ?? "bg-white"}`}
-                style={{ width: `${Math.max(props.progress ?? 0, 2)}%` }}
+                class="absolute inset-0 bg-stripes opacity-25 [--fx-color:white]"
+                classList={{ "animate-stripes-move": effectsEnabled() }}
               />
-            </Show>
-          }
-        />
+            }
+          >
+            <span
+              class={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ${props.fill ?? "bg-white"}`}
+              style={{ width: `${Math.max(props.progress ?? 0, 2)}%` }}
+            />
+          </Show>
+        </div>
       </div>
     </div>
   );

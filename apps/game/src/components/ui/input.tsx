@@ -115,7 +115,7 @@ export default function Input(props: InputProps) {
             onBlur={handleBlur}
             class="w-full bg-transparent py-2 text-xl font-bold text-white placeholder:text-white/40 focus:outline-none"
           />
-          <div class="h-1 w-full -skew-x-12 rounded-sm bg-white/80" />
+          <div class="h-1 w-full rounded-full bg-white/80" />
         </div>
       </MenuRow>
 

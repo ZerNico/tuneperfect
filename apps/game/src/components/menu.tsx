@@ -1,4 +1,18 @@
-import { createEffect, createMemo, createSelector, Index, type JSX, Match, Switch, untrack } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSelector,
+  createSignal,
+  Index,
+  type JSX,
+  Match,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+  Switch,
+  untrack,
+} from "solid-js";
 import { twMerge } from "tailwind-merge";
 
 import { createListNavigation } from "~/hooks/list-navigation";
@@ -95,7 +109,25 @@ export default function Menu(props: MenuProps) {
     },
   });
 
-  const isSelected = createSelector(() => interactiveIndices()[list.position()] ?? 0);
+  const selectedIndex = () => interactiveIndices()[list.position()] ?? 0;
+  const isSelected = createSelector(selectedIndex);
+
+  // One glow behind all rows that follows the selection, so it lights up from behind the
+  // neighbouring rows instead of lying on top of some of them (the plates' own glow is hidden).
+  let rows: HTMLDivElement | undefined;
+  const [glowBox, setGlowBox] = createSignal<{ top: number; left: number; width: number; height: number }>();
+  const placeGlow = () => {
+    const item = props.items[selectedIndex()];
+    const row = rows?.children[selectedIndex()] as HTMLElement | undefined;
+    if (!item || item.type === "custom" || !row) return setGlowBox(undefined);
+    setGlowBox({ top: row.offsetTop, left: row.offsetLeft, width: row.offsetWidth, height: row.offsetHeight });
+  };
+  createEffect(on([selectedIndex, () => props.items], () => queueMicrotask(placeGlow)));
+  onMount(() => {
+    const observer = new ResizeObserver(placeGlow);
+    if (rows) observer.observe(rows);
+    onCleanup(() => observer.disconnect());
+  });
   const select = (index: number) => list.set(Math.max(0, positionOf(index)));
 
   // Jump to the initial item once, as soon as it's there (items may arrive after a query).
@@ -110,8 +142,11 @@ export default function Menu(props: MenuProps) {
   return (
     <div class={twMerge("flex h-full max-h-full w-full grow flex-col", props.class)}>
       <div class="styled-scrollbars flex min-h-0 grow flex-col overflow-y-auto">
-        {/* Side padding leaves room for the slant and the selection marker. */}
-        <div class="m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-3">
+        {/* Side padding leaves room for the selection marker. */}
+        <div
+          ref={rows}
+          class="relative isolate m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-3 [&_.plate-glow]:hidden"
+        >
           {/* By position, not identity: menus that rebuild their items on every change keep their rows
               (and their state and animations) instead of recreating them. */}
           <Index each={props.items}>
@@ -211,6 +246,20 @@ export default function Menu(props: MenuProps) {
               </Switch>
             )}
           </Index>
+          <Show when={glowBox()}>
+            {(box) => (
+              <div
+                aria-hidden="true"
+                class={`pointer-events-none absolute -z-10 bg-linear-to-r opacity-45 blur-[1.4cqw] transition-[top] duration-200 ease-out ${props.gradient || "gradient-settings"}`}
+                style={{
+                  top: `${box().top + box().height * 0.25}px`,
+                  left: `${box().left + box().width * 0.04}px`,
+                  width: `${box().width * 0.92}px`,
+                  height: `${box().height * 0.9}px`,
+                }}
+              />
+            )}
+          </Show>
         </div>
       </div>
     </div>

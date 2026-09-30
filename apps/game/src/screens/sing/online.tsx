@@ -1,11 +1,11 @@
 import { useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
+import { twMerge } from "tailwind-merge";
 import IconStar from "~icons/ph/star-fill";
 import IconStarHalf from "~icons/ph/star-half-fill";
 
 import { createSongBrowserState, SongBrowser } from "~/components/song-select/song-browser";
-import type { SongInfo } from "~/components/song-select/song-title";
-import SlantPanel from "~/components/ui/slant-panel";
+import { CHIP, type SongInfo } from "~/components/song-select/song-title";
 import type { SortOption } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { native, safe } from "~/lib/native/client";
@@ -32,14 +32,7 @@ const describeEntry = (entry: UsdbSearchEntry): SongInfo => ({
   extras: (
     <>
       <Show when={entry.goldenNotes}>
-        <SlantPanel
-          as="span"
-          skew={12}
-          class="inline-block px-2.5 py-0.5 text-sm font-black text-black uppercase"
-          surface="rounded-sm bg-yellow-400 shadow-md"
-        >
-          {t("online.goldenNotes")}
-        </SlantPanel>
+        <span class={`bg-yellow-300 text-slate-900 ${CHIP}`}>{t("online.goldenNotes")}</span>
       </Show>
       <Show when={entry.rating}>{(rating) => <RatingStars rating={rating()} />}</Show>
     </>
@@ -109,17 +102,12 @@ function RatingStars(props: { rating: number }) {
   const empty = () => 5 - full() - (half() ? 1 : 0);
 
   return (
-    <SlantPanel
-      as="span"
-      skew={12}
-      class="inline-flex items-center gap-0.5 px-2.5 py-1 text-sm text-yellow-400"
-      surface="rounded-sm bg-black/35 backdrop-blur-sm"
-    >
+    <span class={twMerge(CHIP, "gap-[0.15cqw] bg-black/30 text-yellow-300")}>
       <For each={Array.from({ length: full() })}>{() => <IconStar />}</For>
       <Show when={half()}>
         <IconStarHalf />
       </Show>
       <For each={Array.from({ length: Math.max(0, empty()) })}>{() => <IconStar class="text-white/25" />}</For>
-    </SlantPanel>
+    </span>
   );
 }

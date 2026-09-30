@@ -21,7 +21,7 @@ export default function TitleBar(props: TitleBarProps) {
           <IconCaretLeft />
         </button>
       </Show>
-      <h1 class="text-4xl text-display">{props.title}</h1>
+      <h1 class="text-4xl font-bold">{props.title}</h1>
       <Show when={props.description}>
         <TagChip class="text-base" label={props.description} />
       </Show>

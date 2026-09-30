@@ -50,7 +50,7 @@ export default function SongIntro(props: SongIntroProps) {
         class="absolute inset-0 bg-halftone opacity-20"
         style={{ "--fx-color": "white", "mask-image": "linear-gradient(to top, black, transparent 50%)" }}
       />
-      <div class="absolute top-1/2 left-[-10%] h-[14cqw] w-[120%] -translate-y-1/2 -rotate-6">
+      <div class="absolute inset-x-0 top-1/2 h-[14cqw] -translate-y-1/2">
         <div
           class="h-full w-full origin-left animate-band-in opacity-85 shadow-xl [animation-delay:400ms]"
           style={{ "background-color": getColorVar(props.accentColor, 500) }}

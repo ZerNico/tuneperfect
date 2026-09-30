@@ -1,7 +1,6 @@
 import { createEffect, createSignal, For, type JSX, on, onCleanup, Show, untrack } from "solid-js";
 import IconDuet from "~icons/ph/users-fill";
 
-import SlantPanel from "~/components/ui/slant-panel";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 
@@ -17,6 +16,10 @@ export interface SongInfo {
   /** Extra badges after the meta chips, e.g. rating stars for online songs. */
   extras?: JSX.Element;
 }
+
+/** Info chip under the title: year, genre, duet, new. */
+export const CHIP =
+  "inline-flex items-center gap-[0.4cqw] rounded-[0.5cqw] px-[0.9cqw] py-[0.2cqw] text-[0.85cqw] font-bold backdrop-blur-sm";
 
 // "Fade through": the old text leaves first, then the new one enters. Overlapping
 // them reads as ghosting, especially when consecutive titles are similar.
@@ -78,7 +81,7 @@ export function SongTitle(props: SongTitleProps) {
   return (
     // Fixed height for artist + two title lines + badges, with each layer anchored to
     // the bottom: one- and two-line titles swap without moving anything around them.
-    <div class="relative grid h-[11.5cqw]">
+    <div class="relative grid h-[12.5cqw]">
       {/* Soft scrim keeps the title readable over bright preview videos. */}
       <div
         class="pointer-events-none absolute -inset-x-16 -inset-y-10 -z-1"
@@ -93,57 +96,32 @@ export function SongTitle(props: SongTitleProps) {
             }}
           >
             <p
-              class="text-xl font-semibold"
+              class="truncate text-[1.4cqw] leading-tight font-bold text-white/80"
               classList={{ "animate-title-in [animation-delay:100ms]": !layer.leaving && effectsEnabled() }}
             >
               {layer.song.artist}
             </p>
             <div class={props.maxWidthClass ?? "max-w-full"}>
               <span
-                // Padding (offset by negative margins) gives italic overhangs and
-                // descenders room inside the gradient's box so they aren't clipped.
-                class="gradient-sing -mx-[0.1em] -my-[0.12em] line-clamp-2 bg-linear-to-b bg-clip-text px-[0.1em] py-[0.12em] pr-[0.2em] text-6xl leading-[1.1] font-black text-transparent italic"
+                class="mt-[0.3cqw] line-clamp-2 pb-[0.1em] text-[3.8cqw] leading-[1.05] font-black tracking-tight"
                 classList={{ "animate-title-in [animation-delay:130ms]": !layer.leaving && effectsEnabled() }}
               >
                 {layer.song.title}
               </span>
             </div>
             <div
-              class="flex h-8 origin-left items-center gap-2 pt-1"
+              class="mt-[0.5cqw] flex h-[1.8cqw] origin-left items-center gap-[0.5cqw]"
               classList={{ "animate-badge-in": !layer.leaving && effectsEnabled() }}
             >
+              <Show when={layer.song.isNew}>
+                <span class={`gradient-sing bg-linear-to-r ${CHIP}`}>{t("sing.badge.new")}</span>
+              </Show>
+              <For each={layer.song.meta}>{(value) => <span class={`bg-white/15 ${CHIP}`}>{value}</span>}</For>
               <Show when={layer.song.duet}>
-                <SlantPanel
-                  as="span"
-                  skew={12}
-                  class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-sm font-black text-black uppercase"
-                  surface="rounded-sm bg-white shadow-md"
-                >
+                <span class={`bg-white/15 ${CHIP}`}>
                   <IconDuet />
                   {t("sing.badge.duet")}
-                </SlantPanel>
-              </Show>
-              <For each={layer.song.meta}>
-                {(value) => (
-                  <SlantPanel
-                    as="span"
-                    skew={12}
-                    class="inline-block px-2.5 py-0.5 text-sm font-bold text-white/90"
-                    surface="rounded-sm bg-black/35 backdrop-blur-sm"
-                  >
-                    {value}
-                  </SlantPanel>
-                )}
-              </For>
-              <Show when={layer.song.isNew}>
-                <SlantPanel
-                  as="span"
-                  skew={12}
-                  class="inline-block px-2.5 py-0.5 text-sm font-black text-white uppercase"
-                  surface="gradient-sing rounded-sm bg-linear-to-b shadow-md"
-                >
-                  {t("sing.badge.new")}
-                </SlantPanel>
+                </span>
               </Show>
               {layer.song.extras}
             </div>

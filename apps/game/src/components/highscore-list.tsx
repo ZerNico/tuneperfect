@@ -1,16 +1,15 @@
 import { createMemo, For, onCleanup, onMount, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
-import IconCrown from "~icons/ph/crown-simple-fill";
+import IconCrown from "~icons/ph/crown-fill";
 
 import { effectsEnabled } from "~/lib/fx";
 import type { User } from "~/lib/types";
 
 import Avatar from "./ui/avatar";
-import SlantPanel from "./ui/slant-panel";
 
 /** Gold, silver and bronze for the podium; white for everyone else. */
 function rankText(rank: number) {
-  if (rank === 1) return "var(--color-yellow-400)";
+  if (rank === 1) return "var(--color-yellow-300)";
   if (rank === 2) return "var(--color-slate-300)";
   if (rank === 3) return "var(--color-orange-400)";
   return "rgb(255 255 255 / 0.6)";
@@ -116,24 +115,24 @@ export default function HighscoreList(props: HighscoreListProps) {
           <div class="flex flex-col gap-1">
             <For each={rankedScores()}>
               {(score, index) => (
-                <SlantPanel
-                  skew={12}
-                  class="flex h-9 w-full items-center gap-2.5 px-3 text-base"
-                  classList={{ "animate-title-in": effectsEnabled() }}
+                <div
+                  class="flex h-9 w-full shrink-0 items-center gap-2.5 rounded-[0.7cqw] bg-black/30 px-3 text-base font-bold"
+                  classList={{
+                    "animate-title-in": effectsEnabled(),
+                    "ring-[0.12cqw] ring-yellow-300/70 ring-inset": score.rank === 1,
+                  }}
                   style={{ "animation-delay": `${Math.min(index(), 8) * 40}ms` }}
-                  surface="rounded-sm bg-black/40 backdrop-blur-sm"
-                  surfaceClassList={{ "ring-1 ring-yellow-400/60 ring-inset": score.rank === 1 }}
                 >
                   <span class="w-5 shrink-0 text-center font-black" style={{ color: rankText(score.rank) }}>
                     {score.rank}
                   </span>
                   <Avatar user={score.user} class="h-6 w-6 shrink-0" />
-                  <span class="min-w-0 truncate font-semibold">{score.user.username || "?"}</span>
+                  <span class="min-w-0 truncate">{score.user.username || "?"}</span>
                   <Show when={score.rank === 1}>
-                    <IconCrown class="shrink-0 text-yellow-400" />
+                    <IconCrown class="shrink-0 text-yellow-300" />
                   </Show>
                   <span class="ml-auto shrink-0 pl-3 font-black tabular-nums">{fmt(score.score)}</span>
-                </SlantPanel>
+                </div>
               )}
             </For>
           </div>

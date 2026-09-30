@@ -98,10 +98,7 @@ export default function Lyrics(props: LyricsProps) {
           </div>
         )}
       </Show>
-      <div
-        class="text-center font-semibold text-white/45"
-        classList={{ "text-3xl": !isCompact(), "text-xl": isCompact() }}
-      >
+      <div class="text-center font-bold text-white/45" classList={{ "text-3xl": !isCompact(), "text-xl": isCompact() }}>
         <Show when={voiceTracker.nextPhrase()} keyed fallback={<span class="text-transparent">{"\u00A0"}</span>}>
           {(phrase) => (
             <div classList={{ "animate-lyric-fade": effectsEnabled() }}>

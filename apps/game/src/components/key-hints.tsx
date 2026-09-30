@@ -9,7 +9,6 @@ import IconLeftArrowKey from "~icons/sing/left-arrow-key";
 import IconRightArrowKey from "~icons/sing/right-arrow-key";
 import IconUpArrowKey from "~icons/sing/up-arrow-key";
 
-import SlantPanel from "~/components/ui/slant-panel";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 
@@ -45,7 +44,7 @@ export default function KeyHints(props: KeyHintsProps) {
   };
 
   return (
-    <div class="flex items-center gap-3 text-base">
+    <div class="flex items-center gap-8 text-base">
       <For each={props.hints}>
         {(hint) => {
           const label = t(`common.keyHints.${hint}`);
@@ -62,11 +61,9 @@ interface KeyHintProps {
 }
 function KeyHint(props: KeyHintProps) {
   return (
-    <SlantPanel
-      class="flex items-center gap-2 px-3 py-1.5 font-bold tracking-wide uppercase"
-      surface="rounded-md bg-black/25"
-    >
-      {props.icon} <span class="text-sm">{props.label}</span>
-    </SlantPanel>
+    <div class="flex items-center gap-2.5 text-white/85">
+      <span class="flex text-2xl">{props.icon}</span>
+      <span class="text-lg font-bold">{props.label}</span>
+    </div>
   );
 }

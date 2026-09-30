@@ -141,12 +141,12 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   const thresholdPercentage = () => ampToMeter(props.threshold() / 100) * 100;
 
   return (
-    <div class="grid h-16 items-center overflow-hidden rounded-lg">
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">{t("settings.sections.microphones.level")}</div>
+    <div class="grid h-16 items-center overflow-hidden rounded-[0.8cqw]">
+      <div class="z-2 col-start-1 row-start-1 grid w-full grid-cols-[2fr_3fr] items-center gap-8 px-10">
+        <div class="truncate text-xl font-bold">{t("settings.sections.microphones.level")}</div>
         <div class="flex items-center gap-8">
-          <div class="relative grid h-5 grow items-center overflow-hidden rounded-md">
-            <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
+          <div class="relative grid h-3 grow items-center overflow-hidden rounded-full">
+            <div class="col-start-1 row-start-1 h-full w-full rounded-full bg-black/20" />
             <div
               class="col-start-1 row-start-1 h-full w-full transition-[clip-path] duration-75"
               style={{

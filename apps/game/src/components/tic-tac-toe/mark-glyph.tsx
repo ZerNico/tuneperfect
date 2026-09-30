@@ -12,13 +12,13 @@ interface MarkGlyphProps {
   style?: JSX.CSSProperties;
 }
 
-/** Chunky sticker X or O: white outline, team-coloured core, hard offset shadow. */
+/** Chunky sticker X or O: white outline, team-coloured core, soft shadow. */
 export default function MarkGlyph(props: MarkGlyphProps) {
   const color = () => getColorVar(props.color, 400);
 
   return (
     <svg viewBox="0 0 100 100" class={props.class} classList={props.classList} style={props.style} aria-hidden="true">
-      <g class="drop-shadow-[0.35cqw_0.35cqw_0_rgb(0_0_0/0.35)]">
+      <g class="drop-shadow-[0_0.3cqw_0.6cqw_rgb(0_0_0/0.4)]">
         <Show
           when={props.mark === "x"}
           fallback={

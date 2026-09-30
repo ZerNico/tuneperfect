@@ -73,10 +73,21 @@ export default function HomeScreen() {
     <Layout
       header={
         <div class="flex items-center justify-between">
-          <h1 class="text-5xl text-display">Tune Perfect</h1>
-          <div class="flex -space-x-2">
-            <For each={lobbyQuery.data?.users}>{(user) => <Avatar user={user} class="ring-2 ring-black/40" />}</For>
-          </div>
+          <h1 class="text-5xl font-black tracking-tight">
+            Tune <span class="bg-linear-to-r from-green-300 to-cyan-300 bg-clip-text text-transparent">Perfect</span>
+          </h1>
+          <Show when={(lobbyQuery.data?.users.length ?? 0) > 0}>
+            <div class="flex h-10 items-center gap-3 rounded-[0.9cqw] bg-black/25 pr-4 pl-1.5 text-sm font-bold ring-1 ring-white/10 ring-inset">
+              <div class="flex -space-x-2">
+                <For each={lobbyQuery.data?.users}>
+                  {(user) => <Avatar user={user} class="size-7 ring-2 ring-black/40" />}
+                </For>
+              </div>
+              <span>
+                {t("lobby.title")} <span class="text-white/60 tabular-nums">· {lobbyQuery.data?.users.length}</span>
+              </span>
+            </div>
+          </Show>
         </div>
       }
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}

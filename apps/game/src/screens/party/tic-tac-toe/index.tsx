@@ -12,7 +12,7 @@ import MarkGlyph from "~/components/tic-tac-toe/mark-glyph";
 import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
-import SlantPanel from "~/components/ui/slant-panel";
+import Panel from "~/components/ui/panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
@@ -364,7 +364,7 @@ export default function TicTacToeScreen() {
                         </div>
                         {/* Short titles big on one line; longer ones a size down, wrapping to two */}
                         <span
-                          class="gradient-party line-clamp-2 bg-linear-to-b bg-clip-text pr-[0.15em] pb-[0.1em] leading-[1.1] font-black text-transparent italic"
+                          class="line-clamp-2 pb-[0.1em] leading-[1.1] font-extrabold tracking-tight"
                           classList={{ "text-6xl": song().title.length <= 14, "text-5xl": song().title.length > 14 }}
                         >
                           {song().title}
@@ -378,7 +378,7 @@ export default function TicTacToeScreen() {
                     {(mark, index) => (
                       <>
                         <Show when={index() === 1}>
-                          <span class="self-center text-4xl text-display text-yellow-300">VS</span>
+                          <span class="self-center text-4xl font-black tracking-tight text-yellow-300">VS</span>
                         </Show>
                         <MatchupBox
                           mark={mark}
@@ -425,12 +425,14 @@ export default function TicTacToeScreen() {
 
 function TurnBanner(props: { mark: Mark; color: string; subtitle: string }) {
   return (
-    <SlantPanel
+    <Panel
       class="flex items-center gap-4 px-6 py-4"
-      surface="rounded-xl shadow-[0.4cqw_0.4cqw_0_rgb(0_0_0/0.4)]"
+      surface="overflow-hidden rounded-[1.4cqw] ring-[0.15cqw] ring-white/25 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 800)})`,
+        "box-shadow": `0 1cqw 3cqw -1cqw ${getColorVar(props.color, 700)}`,
       }}
+      surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
       <MarkGlyph mark={props.mark} color={props.color} class="size-[5cqw] shrink-0" />
       <div class="flex min-w-0 flex-col">
@@ -439,7 +441,7 @@ function TurnBanner(props: { mark: Mark; color: string; subtitle: string }) {
         </span>
         <span class="font-bold text-white/80">{props.subtitle}</span>
       </div>
-    </SlantPanel>
+    </Panel>
   );
 }
 
@@ -470,13 +472,17 @@ function MatchupBox(props: MatchupBoxProps) {
 
   return (
     <div
-      class="flex min-w-0 flex-1 flex-col gap-3 rounded-xl bg-black/30 p-4 transition-opacity"
+      class="flex min-w-0 flex-1 flex-col gap-3 rounded-[1.2cqw] bg-black/35 p-4 transition-opacity"
       classList={{ "opacity-45": props.mode === "wait" }}
-      style={props.mode === "pick" ? { "box-shadow": `0 0 0 0.25cqw ${getColorVar(props.color, 400)}` } : undefined}
+      style={
+        props.mode === "pick"
+          ? { outline: `0.22cqw solid ${getColorVar(props.color, 400)}`, "outline-offset": "-0.22cqw" }
+          : undefined
+      }
     >
       <div class="flex items-center gap-2">
         <MarkGlyph mark={props.mark} color={props.color} class="size-[2.2cqw] shrink-0" />
-        <span class="truncate text-sm font-black tracking-widest text-white/70 uppercase">{heading()}</span>
+        <span class="truncate text-sm font-bold tracking-[0.15em] text-white/70 uppercase">{heading()}</span>
       </div>
       <Show
         when={props.mode === "pick"}
@@ -487,16 +493,16 @@ function MatchupBox(props: MatchupBoxProps) {
               fallback={
                 <div class="flex -space-x-2">
                   <For each={props.team.players.slice(0, 4)}>
-                    {(player) => <Avatar user={player} class="size-[2.6cqw] ring-2 ring-white/60" />}
+                    {(player) => <Avatar user={player} class="size-[2.6cqw]" />}
                   </For>
                 </div>
               }
             >
               {(singer) => (
                 <>
-                  <Avatar user={singer()} class="size-[4cqw] shrink-0 ring-[0.2cqw] ring-white" />
+                  <Avatar user={singer()} class="size-[4cqw] shrink-0" />
                   {/* Under the avatar, so names get the box's full width */}
-                  <span class="truncate pr-[0.2em] text-2xl text-display">{singer().username}</span>
+                  <span class="truncate text-2xl font-black tracking-tight">{singer().username}</span>
                 </>
               )}
             </Show>
@@ -506,16 +512,16 @@ function MatchupBox(props: MatchupBoxProps) {
         <div class="flex flex-col gap-1.5">
           <For each={props.team.players}>
             {(player, index) => (
-              <SlantPanel
+              <Panel
                 as="button"
                 type="button"
                 class="flex h-11 cursor-pointer items-center gap-2 px-3 text-left"
-                surface="rounded-md bg-white/8"
-                surfaceClassList={{ "shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)]": props.cursor === index() }}
+                surface="rounded-[0.8cqw] bg-white/8"
                 surfaceStyle={
                   props.cursor === index()
                     ? {
                         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 700)})`,
+                        "box-shadow": `0 0.4cqw 1.6cqw -0.4cqw ${getColorVar(props.color, 500)}`,
                       }
                     : undefined
                 }
@@ -524,7 +530,7 @@ function MatchupBox(props: MatchupBoxProps) {
               >
                 <Avatar user={player} class="size-7 shrink-0" />
                 <span class="truncate font-bold">{player.username}</span>
-              </SlantPanel>
+              </Panel>
             )}
           </For>
         </div>
@@ -535,12 +541,13 @@ function MatchupBox(props: MatchupBoxProps) {
 
 function WinnerCard(props: { mark: Mark; color: string; team: Team }) {
   return (
-    <SlantPanel
+    <Panel
       class="flex flex-col gap-4 px-10 py-6"
       classList={{ "animate-pop-scale [animation-delay:1100ms]": effectsEnabled() }}
-      surface="overflow-hidden rounded-2xl shadow-[0_0_0_0.3cqw_var(--color-yellow-300),0.5cqw_0.5cqw_0_0.3cqw_rgb(0_0_0/0.4)]"
+      surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-yellow-300 ring-inset"
       surfaceStyle={{
-        background: `linear-gradient(135deg, ${getColorVar(props.color, 400)}, ${getColorVar(props.color, 800)})`,
+        background: `linear-gradient(160deg, ${getColorVar(props.color, 400)}, ${getColorVar(props.color, 800)})`,
+        "box-shadow": "0 1.2cqw 4cqw -1cqw var(--color-yellow-300)",
       }}
       surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
@@ -557,12 +564,12 @@ function WinnerCard(props: { mark: Mark; color: string; team: Team }) {
         <For each={props.team.players}>
           {(player) => (
             <div class="flex w-[5cqw] flex-col items-center gap-1">
-              <Avatar user={player} class="size-[3.5cqw] ring-[0.2cqw] ring-white" />
+              <Avatar user={player} class="size-[3.5cqw]" />
               <span class="max-w-full truncate text-sm font-bold">{player.username}</span>
             </div>
           )}
         </For>
       </div>
-    </SlantPanel>
+    </Panel>
   );
 }

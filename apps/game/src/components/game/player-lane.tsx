@@ -6,7 +6,6 @@ import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 
 import Avatar from "../ui/avatar";
-import SlantPanel from "../ui/slant-panel";
 import ComboCounter from "./combo-counter";
 import PhraseRating from "./phrase-rating";
 import Pitch from "./pitch";
@@ -95,24 +94,20 @@ export default function PlayerLane(props: PlayerLaneProps) {
         >
           <Show when={player()}>
             {(player) => (
-              <SlantPanel
-                class="flex items-center gap-3 py-1.5 pr-5 pl-4"
-                surface="overflow-hidden rounded-lg bg-black/55 shadow-[0.3cqw_0.3cqw_0_rgb(0_0_0/0.35)] backdrop-blur-sm"
-                surfaceContent={
-                  <span class="absolute inset-y-0 left-0 w-[0.5cqw]" style={{ background: micColor(400) }} />
-                }
+              <div
+                class="flex items-center rounded-[0.7cqw] bg-black/55 backdrop-blur-sm"
+                classList={{
+                  "gap-[0.7cqw] py-[0.4cqw] pr-[1.2cqw] pl-[0.5cqw]": !isCompact(),
+                  "gap-[0.5cqw] py-[0.3cqw] pr-[0.9cqw] pl-[0.4cqw]": isCompact(),
+                }}
               >
-                <div classList={{ "size-[2.6cqw]": !isCompact(), "size-[1.9cqw]": isCompact() }}>
-                  <Avatar
-                    user={player()}
-                    class="size-full ring-white"
-                    classList={{ "ring-[0.18cqw]": !isCompact(), "ring-[0.14cqw]": isCompact() }}
-                  />
+                <div class="shrink-0" classList={{ "size-[2.6cqw]": !isCompact(), "size-[1.9cqw]": isCompact() }}>
+                  <Avatar user={player()} class="size-full" />
                 </div>
                 <span class="font-bold" classList={{ "text-xl": !isCompact(), "text-base": isCompact() }}>
                   {player().username}
                 </span>
-              </SlantPanel>
+              </div>
             )}
           </Show>
           <div

@@ -2,7 +2,7 @@ import { type JSX, type Ref, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import IconCaretRight from "~icons/ph/caret-right-fill";
 
-import SlantPanel from "./slant-panel";
+import Panel from "./panel";
 
 export interface PlateProps {
   selected?: boolean;
@@ -24,15 +24,16 @@ export interface PlateProps {
 }
 
 /**
- * The slanted "sticker" surface behind every interactive row and button:
- * a faint plate when idle, the mode gradient with a hard offset shadow and a
- * marker when selected.
+ * The surface behind every interactive row and button: a faint plate when idle, the mode
+ * gradient with a ▶ marker and a soft glow of the gradient behind it when selected.
+ * Lists that draw one glow behind all their rows (see `Menu`) hide the per-plate glow
+ * through its `plate-glow` class.
  */
 export default function Plate(props: PlateProps) {
-  const rounding = () => (props.size === "sm" ? "rounded-md" : "rounded-lg");
+  const rounding = () => (props.size === "sm" ? "rounded-[0.6cqw]" : "rounded-[0.8cqw]");
 
   return (
-    <SlantPanel
+    <Panel
       as={props.as}
       ref={props.ref}
       type={props.as === "button" ? "button" : undefined}
@@ -47,8 +48,7 @@ export default function Plate(props: PlateProps) {
         props.class,
       )}
       classList={{ "scale-[1.015]": props.selected && !props.pressed, "scale-95": props.pressed }}
-      surface={`${rounding()} bg-white/6 ring-1 ring-white/10 ring-inset transition-shadow duration-150`}
-      surfaceClassList={{ "shadow-[0.35cqw_0.35cqw_0_rgb(0_0_0/0.35)]": props.selected && !props.pressed }}
+      surface={`${rounding()} bg-white/6`}
       surfaceContent={
         <span
           class={`absolute inset-0 ${rounding()} bg-linear-to-r transition-opacity duration-150 ${props.gradient ?? "gradient-settings"}`}
@@ -56,12 +56,17 @@ export default function Plate(props: PlateProps) {
         />
       }
     >
+      <span
+        aria-hidden="true"
+        class={`plate-glow pointer-events-none absolute inset-x-[4%] top-[25%] -bottom-[15%] -z-20 bg-linear-to-r opacity-0 blur-[1.2cqw] transition-opacity duration-200 ${props.gradient ?? "gradient-settings"}`}
+        classList={{ "opacity-45": props.selected }}
+      />
       <Show when={props.selected && props.size !== "sm"}>
         <div class="absolute top-1/2 -left-8 -translate-y-1/2">
           <IconCaretRight class="animate-pop-in text-2xl drop-shadow-md" />
         </div>
       </Show>
       <div class={twMerge("relative h-full", props.contentClass)}>{props.children}</div>
-    </SlantPanel>
+    </Panel>
   );
 }
