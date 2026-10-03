@@ -2,6 +2,7 @@ import type { Dict } from "./en";
 
 const de: Dict = {
   signIn: {
+    emailVerified: "E-Mail bestätigt. Melde dich an, um weiterzumachen.",
     title: "Anmelden",
     email: "E-Mail",
     password: "Passwort",
@@ -68,6 +69,8 @@ const de: Dict = {
     back: "Zurück",
   },
   verifyEmail: {
+    sentTo: "Wir haben einen Bestätigungslink gesendet an",
+    sentToHint: "Öffne ihn, um dein Konto zu aktivieren. Nichts angekommen? Sende ihn unten erneut.",
     title: "E-Mail bestätigen",
     description:
       "Bitte überprüfe deine E-Mail für einen Bestätigungslink. Wenn du keinen erhalten hast, kannst du unten einen neuen anfordern.",
@@ -78,6 +81,7 @@ const de: Dict = {
     error: "Fehler beim Senden der Bestätigungs-E-Mail",
   },
   completeProfile: {
+    description: "Wähle den Namen, den andere Spieler im Spiel und in Clubs sehen.",
     title: "Profil vervollständigen",
     username: "Benutzername",
     usernameMinLength: "Benutzername muss mindestens 3 Zeichen lang sein",
@@ -87,7 +91,10 @@ const de: Dict = {
     submit: "Profil vervollständigen",
   },
   editProfile: {
-    title: "Profil bearbeiten",
+    signOut: "Abmelden",
+    changePicture: "Profilbild ändern",
+    account: "Konto",
+    title: "Profil",
     username: "Benutzername",
     usernameMinLength: "Benutzername muss mindestens 3 Zeichen lang sein",
     usernameMaxLength: "Benutzername darf höchstens 20 Zeichen lang sein",
@@ -192,8 +199,6 @@ const de: Dict = {
   },
   header: {
     appName: "Tune Perfect",
-    editProfile: "Profil bearbeiten",
-    signOut: "Abmelden",
   },
   nav: {
     profile: "Profil",
