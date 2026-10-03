@@ -11,7 +11,6 @@ import TitleBar from "~/components/title-bar";
 import Avatar from "~/components/ui/avatar";
 import { createLoop } from "~/hooks/loop";
 import { useNavigation } from "~/hooks/navigation";
-import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { popup } from "~/lib/popup";
 import { lobbyQueryOptions } from "~/lib/queries";
@@ -270,7 +269,7 @@ function SongHero(props: SongHeroProps) {
         <For each={props.covers.slice(0, 3).toReversed()}>
           {(cover, index) => (
             <img
-              class="absolute top-0 aspect-square h-full rounded-[1.4cqw] object-cover shadow-[0_1cqw_3cqw_rgb(0_0_0/0.35)] ring-1 ring-white/15"
+              class="absolute top-0 aspect-square h-full rounded-[1.4cqw] object-cover shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]"
               style={{
                 left: `${(Math.min(props.covers.length, 3) - 1 - index()) * 3}cqh`,
                 transform: `rotate(${-4 + index() * 4}deg)`,
@@ -397,9 +396,6 @@ function PlayerSlot(props: PlayerSlotProps) {
         "--mode-glow": color(500),
       }}
     >
-      <Show when={props.selected && props.selection && effectsEnabled()}>
-        <div class="absolute inset-0 animate-stripes-move bg-stripes opacity-10" style={{ "--fx-color": "white" }} />
-      </Show>
       <TagChip
         class="relative self-start text-xs"
         label={t("select.micLabel", { number: props.number })}
@@ -418,13 +414,7 @@ function PlayerSlot(props: PlayerSlotProps) {
             </div>
           }
         >
-          {(selection) => (
-            <Avatar
-              user={selection().player}
-              class="h-20 w-20 text-3xl shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)]"
-              fallbackClass="bg-white/20"
-            />
-          )}
+          {(selection) => <Avatar user={selection().player} class="h-20 w-20 text-3xl" fallbackClass="bg-white/20" />}
         </Show>
       </div>
       <div class="relative flex w-full flex-col items-center gap-1">

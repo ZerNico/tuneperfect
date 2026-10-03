@@ -114,8 +114,8 @@ export default function CardGrid(props: CardGridProps) {
                 {/* Soft glow of the card's colour behind the selected card. */}
                 <span
                   aria-hidden="true"
-                  class={`pointer-events-none absolute inset-x-[8%] top-[30%] -bottom-[6%] -z-20 opacity-0 blur-[1.4cqw] transition-opacity duration-200 ${card.accent ? "" : `${props.gradient ?? "gradient-settings"} bg-linear-to-b`}`}
-                  classList={{ "opacity-50": selected() }}
+                  class={`pointer-events-none absolute inset-x-[10%] inset-y-[15%] -z-20 opacity-0 blur-[1.2cqw] transition-opacity duration-200 ${card.accent ? "" : `${props.gradient ?? "gradient-settings"} bg-linear-to-b`}`}
+                  classList={{ "opacity-35": selected() }}
                   style={card.accent ? { background: accent(500) } : undefined}
                 />
                 <div class="flex h-[6cqw] items-center justify-center text-[4.5cqw]">

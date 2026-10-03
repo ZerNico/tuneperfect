@@ -94,17 +94,18 @@ export default function PlayerLane(props: PlayerLaneProps) {
         >
           <Show when={player()}>
             {(player) => (
-              <div
-                class="flex items-center rounded-[0.7cqw] bg-black/55 backdrop-blur-sm"
-                classList={{
-                  "gap-[0.7cqw] py-[0.4cqw] pr-[1.2cqw] pl-[0.5cqw]": !isCompact(),
-                  "gap-[0.5cqw] py-[0.3cqw] pr-[0.9cqw] pl-[0.4cqw]": isCompact(),
-                }}
-              >
+              <div class="flex items-center" classList={{ "gap-[0.7cqw]": !isCompact(), "gap-[0.5cqw]": isCompact() }}>
                 <div class="shrink-0" classList={{ "size-[2.6cqw]": !isCompact(), "size-[1.9cqw]": isCompact() }}>
                   <Avatar user={player()} class="size-full" />
                 </div>
-                <span class="font-bold" classList={{ "text-xl": !isCompact(), "text-base": isCompact() }}>
+                {/* White tag, like the title chips; `text-box` centres the letters in it. */}
+                <span
+                  class="rounded-[0.4cqw] bg-white font-black text-slate-900 [text-box:trim-both_cap_alphabetic]"
+                  classList={{
+                    "px-[0.6cqw] py-[0.45cqw] text-lg": !isCompact(),
+                    "px-[0.45cqw] py-[0.35cqw] text-sm": isCompact(),
+                  }}
+                >
                   {player().username}
                 </span>
               </div>

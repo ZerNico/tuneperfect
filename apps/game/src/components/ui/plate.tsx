@@ -58,8 +58,8 @@ export default function Plate(props: PlateProps) {
     >
       <span
         aria-hidden="true"
-        class={`plate-glow pointer-events-none absolute inset-x-[4%] top-[25%] -bottom-[15%] -z-20 bg-linear-to-r opacity-0 blur-[1.2cqw] transition-opacity duration-200 ${props.gradient ?? "gradient-settings"}`}
-        classList={{ "opacity-45": props.selected }}
+        class={`plate-glow pointer-events-none absolute inset-x-[6%] inset-y-[15%] -z-20 bg-linear-to-r opacity-0 blur-[1cqw] transition-opacity duration-200 ${props.gradient ?? "gradient-settings"}`}
+        classList={{ "opacity-30": props.selected }}
       />
       <Show when={props.selected && props.size !== "sm"}>
         <div class="absolute top-1/2 -left-8 -translate-y-1/2">

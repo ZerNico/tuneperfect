@@ -294,7 +294,7 @@ export default function TicTacToeScreen() {
               class="w-[16cqw]"
               onClick={() => startSingOff(cursor())}
             >
-              {t("party.ticTacToe.singThis")}
+              {t("party.ticTacToe.start")}
             </Button>
           </Show>
         </div>
@@ -427,12 +427,11 @@ function TurnBanner(props: { mark: Mark; color: string; subtitle: string }) {
   return (
     <Panel
       class="flex items-center gap-4 px-6 py-4"
-      surface="overflow-hidden rounded-[1.4cqw] ring-[0.15cqw] ring-white/25 ring-inset"
+      surface="overflow-hidden rounded-[1.4cqw] "
       surfaceStyle={{
         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": `0 1cqw 3cqw -1cqw ${getColorVar(props.color, 700)}`,
+        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
-      surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
       <MarkGlyph mark={props.mark} color={props.color} class="size-[5cqw] shrink-0" />
       <div class="flex min-w-0 flex-col">
@@ -521,7 +520,7 @@ function MatchupBox(props: MatchupBoxProps) {
                   props.cursor === index()
                     ? {
                         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 700)})`,
-                        "box-shadow": `0 0.4cqw 1.6cqw -0.4cqw ${getColorVar(props.color, 500)}`,
+                        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
                       }
                     : undefined
                 }
@@ -547,9 +546,8 @@ function WinnerCard(props: { mark: Mark; color: string; team: Team }) {
       surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-yellow-300 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(160deg, ${getColorVar(props.color, 400)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": "0 1.2cqw 4cqw -1cqw var(--color-yellow-300)",
+        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
-      surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
       <div class="flex items-center gap-5">
         <MarkGlyph mark={props.mark} color={props.color} class="size-[7cqw] shrink-0" />

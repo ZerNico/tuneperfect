@@ -219,7 +219,7 @@ export function FilterPopup(props: FilterPopupProps) {
                 >
                   <div
                     class="flex items-center gap-3 rounded-lg px-3 py-1.5 transition-colors"
-                    classList={{ "bg-white/12 ring-1 ring-white/20 ring-inset": selected() }}
+                    classList={{ "bg-white/12": selected() }}
                     onMouseEnter={() => list.set(index())}
                   >
                     <span

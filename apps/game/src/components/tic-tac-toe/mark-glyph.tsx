@@ -17,7 +17,14 @@ export default function MarkGlyph(props: MarkGlyphProps) {
   const color = () => getColorVar(props.color, 400);
 
   return (
-    <svg viewBox="0 0 100 100" class={props.class} classList={props.classList} style={props.style} aria-hidden="true">
+    // overflow-visible: the shadow spreads past the viewBox, and SVG clips it there by default (a hard square).
+    <svg
+      viewBox="0 0 100 100"
+      class={`overflow-visible ${props.class ?? ""}`}
+      classList={props.classList}
+      style={props.style}
+      aria-hidden="true"
+    >
       <g class="drop-shadow-[0_0.3cqw_0.6cqw_rgb(0_0_0/0.4)]">
         <Show
           when={props.mark === "x"}

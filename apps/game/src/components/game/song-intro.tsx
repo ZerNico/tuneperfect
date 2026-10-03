@@ -12,7 +12,9 @@ const CLIP_HIDDEN = "polygon(100% 0, 120% 0, 120% 100%, 120% 100%)";
 interface SongIntroProps {
   song: Song;
   started: boolean;
-  /** Palette name, e.g. "teal". */
+  /** The mode gradient (e.g. "gradient-sing"), as on the rest of the mode's screens. */
+  gradient: string;
+  /** Palette name for the darker accents (chip segment, title shadow), e.g. "teal". */
   accentColor: string;
 }
 
@@ -52,11 +54,8 @@ export default function SongIntro(props: SongIntroProps) {
       />
       <div class="absolute inset-x-0 top-1/2 h-[14cqw] -translate-y-1/2">
         <div
-          class="h-full w-full origin-left animate-band-in opacity-85 shadow-xl [animation-delay:400ms]"
-          style={{ "background-color": getColorVar(props.accentColor, 500) }}
-        >
-          <div class="h-full w-full bg-stripes opacity-15" style={{ "--fx-color": "white" }} />
-        </div>
+          class={`h-full w-full origin-left animate-band-in bg-linear-to-r shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] [animation-delay:400ms] ${props.gradient}`}
+        />
       </div>
       <div class="relative flex h-full w-full flex-col items-center justify-center gap-6">
         <SlamText trigger={props.song.hash} class="text-2xl [animation-delay:500ms]">

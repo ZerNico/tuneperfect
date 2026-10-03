@@ -53,7 +53,7 @@ export default function ComboCounter() {
               }}
             >
               <ComboChip>
-                <span class="font-black tabular-nums" style={{ color: player.micColor(300) }}>
+                <span class="font-black tabular-nums" style={{ color: player.micColor(500) }}>
                   {event.combo}
                 </span>
               </ComboChip>

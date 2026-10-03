@@ -363,12 +363,11 @@ function PlayerCard(props: PlayerCardProps) {
       surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-white/80 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(${props.index ? "200deg" : "160deg"}, ${color(400)}, ${color(800)})`,
-        "box-shadow": `0 1.2cqw 3.5cqw -1cqw ${color(700)}`,
+        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
-      surfaceContent={<span class="absolute inset-0 bg-stripes opacity-10 [--fx-color:white]" />}
     >
       <div class="mt-auto size-[calc(var(--card)*0.36)]">
-        <Avatar user={props.user} class="h-full w-full shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)]" />
+        <Avatar user={props.user} class="h-full w-full" />
       </div>
       <span
         class="max-w-full truncate px-2 leading-tight font-black tracking-tight"
@@ -536,7 +535,7 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
                   .join(" & ") || "—"}
               </span>
               <div
-                class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 shadow-[0_1cqw_3cqw_rgb(0_0_0/0.35)] ${step.colors} ${step.height}`}
+                class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] ${step.colors} ${step.height}`}
               >
                 <span class="text-6xl text-display text-white [--display-shadow:rgb(0_0_0/0.25)]">{step.place}</span>
               </div>

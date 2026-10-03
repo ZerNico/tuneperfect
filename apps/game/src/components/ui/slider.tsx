@@ -1,4 +1,4 @@
-import type { JSX, Ref } from "solid-js";
+import { createSignal, type JSX, type Ref, Show } from "solid-js";
 import IconCaretLeft from "~icons/ph/caret-left-fill";
 import IconCaretRight from "~icons/ph/caret-right-fill";
 
@@ -30,7 +30,22 @@ export default function Slider(props: SliderProps) {
     return decimal === -1 ? 0 : stepStr.length - decimal - 1;
   };
 
-  const percentage = () => ((props.value - props.min) / (props.max - props.min)) * 100;
+  // Arrow-key steps glide; a mouse drag follows the cursor directly, or the handle trails behind it.
+  const [dragging, setDragging] = createSignal(false);
+  const startDrag = () => {
+    setDragging(true);
+    window.addEventListener("pointerup", () => setDragging(false), { once: true });
+  };
+
+  const toPercent = (value: number) => ((value - props.min) / (props.max - props.min)) * 100;
+  const percentage = () => toPercent(props.value);
+  /** Ranges around 0 (e.g. latency) fill out from 0, so 0 reads as empty rather than half full. */
+  const bipolar = () => props.min < 0 && props.max > 0;
+  const fill = () => {
+    if (!bipolar()) return { left: 0, width: percentage() };
+    const zero = toPercent(0);
+    return { left: Math.min(zero, percentage()), width: Math.abs(percentage() - zero) };
+  };
 
   const changeValue = (direction: "right" | "left", amount: number = props.step) => {
     const newValue = Number(
@@ -76,13 +91,31 @@ export default function Slider(props: SliderProps) {
         <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("left")}>
           <IconCaretLeft />
         </button>
-        <div class="grid h-6 grow items-center">
+        {/* Inset by about half a value tag, so the tag stays inside the row at either end. */}
+        <div class="mx-[2.8cqw] grid h-[2.2cqw] grow items-center">
           {/* The visible track; the range input on top of it is only there for the mouse. */}
-          <span class="col-start-1 row-start-1 h-[0.5cqw] overflow-hidden rounded-full bg-black/25">
+          <span class="relative col-start-1 row-start-1 h-[0.45cqw] rounded-full bg-black/25">
             <span
-              class="block h-full rounded-full bg-white transition-[width] duration-100"
-              style={{ width: `${percentage()}%` }}
+              class="absolute inset-y-0 rounded-full bg-white"
+              classList={{ "transition-[left,width] duration-100": !dragging() }}
+              style={{ left: `${fill().left}%`, width: `${fill().width}%` }}
             />
+            <Show when={bipolar()}>
+              <span
+                class="absolute top-1/2 h-[1.1cqw] w-[0.15cqw] -translate-1/2 rounded-full bg-white/70"
+                style={{ left: `${toPercent(0)}%` }}
+              />
+            </Show>
+          </span>
+          {/* The value is the handle and rides along the track. */}
+          <span class="pointer-events-none relative col-start-1 row-start-1 h-0">
+            <span
+              class="absolute top-1/2 -translate-1/2 rounded-[0.4cqw] bg-white px-[0.6cqw] py-[0.45cqw] text-base font-black whitespace-nowrap text-slate-900 tabular-nums shadow-[0_0.15cqw_0_rgb(0_0_0/0.25)] [text-box:trim-both_cap_alphabetic]"
+              classList={{ "transition-[left] duration-100": !dragging() }}
+              style={{ left: `${percentage()}%` }}
+            >
+              {props.renderValue ? props.renderValue(props.value) : props.value}
+            </span>
           </span>
           <input
             type="range"
@@ -92,14 +125,11 @@ export default function Slider(props: SliderProps) {
             max={props.max}
             step={props.step}
             value={props.value}
+            onPointerDown={startDrag}
             onInput={(e) => handleInput(e)}
             onKeyDown={(e) => e.preventDefault()}
           />
         </div>
-        {/* Beside the track, not on it, so it never covers the fill. */}
-        <span class="-ml-2 w-[5.5cqw] shrink-0 text-right text-lg font-bold whitespace-nowrap tabular-nums">
-          {props.renderValue ? props.renderValue(props.value) : props.value}
-        </span>
         <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("right")}>
           <IconCaretRight />
         </button>

@@ -145,7 +145,7 @@ export default function Menu(props: MenuProps) {
         {/* Side padding leaves room for the selection marker. */}
         <div
           ref={rows}
-          class="relative isolate m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-3 [&_.plate-glow]:hidden"
+          class="relative isolate m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-[2cqw] [&_.plate-glow]:hidden"
         >
           {/* By position, not identity: menus that rebuild their items on every change keep their rows
               (and their state and animations) instead of recreating them. */}
@@ -250,14 +250,19 @@ export default function Menu(props: MenuProps) {
             {(box) => (
               <div
                 aria-hidden="true"
-                class={`pointer-events-none absolute -z-10 bg-linear-to-r opacity-45 blur-[1.4cqw] transition-[top] duration-200 ease-out ${props.gradient || "gradient-settings"}`}
+                class="pointer-events-none absolute -z-10 opacity-30 blur-[1cqw]"
                 style={{
-                  top: `${box().top + box().height * 0.25}px`,
-                  left: `${box().left + box().width * 0.04}px`,
-                  width: `${box().width * 0.92}px`,
-                  height: `${box().height * 0.9}px`,
+                  top: `${box().top + box().height * 0.15}px`,
+                  left: `${box().left + box().width * 0.06}px`,
+                  width: `${box().width * 0.88}px`,
+                  height: `${box().height * 0.8}px`,
                 }}
-              />
+              >
+                {/* Jumps with the selection and fades in there; sliding made it trail behind fast moves. */}
+                <Show when={selectedIndex() + 1} keyed>
+                  <div class={`size-full animate-glow-in bg-linear-to-r ${props.gradient || "gradient-settings"}`} />
+                </Show>
+              </div>
             )}
           </Show>
         </div>

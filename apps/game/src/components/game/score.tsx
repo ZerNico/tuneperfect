@@ -94,13 +94,13 @@ export default function Score(props: ScoreProps) {
     <div class={props.class} classList={props.classList}>
       <p
         ref={scoreRef}
-        class="font-black tracking-[-0.01em] tabular-nums [text-shadow:0_0.2cqw_0.8cqw_rgb(0_0_0/0.5)]"
+        class="font-black tracking-[-0.01em] tabular-nums [text-shadow:0_0.15cqw_0_rgb(0_0_0/0.35)]"
         classList={{
           "text-5xl": !isCompact(),
           "text-3xl": isCompact(),
         }}
-        // Digits in the singer's colour, light enough to read on any video.
-        style={{ color: player.micColor(300) }}
+        // Digits in the singer's colour; a short, unblurred shadow (no haze on light videos).
+        style={{ color: player.micColor(500) }}
       >
         {displayScore().toLocaleString("en-US", {
           maximumFractionDigits: 0,

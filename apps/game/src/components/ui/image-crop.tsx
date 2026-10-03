@@ -256,13 +256,13 @@ export default function ImageCrop(props: ImageCropProps) {
             onWheel={handleWheel}
           />
 
-          <div class="pointer-events-none absolute inset-0 rounded-full border-3 border-white shadow-lg" />
+          <div class="pointer-events-none absolute inset-0 rounded-full border-3 border-white" />
 
           <div class="absolute top-1/2 -right-24 flex -translate-y-1/2 flex-col gap-2">
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 shadow-lg backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("in")}
               >
                 <IconPlus class="h-5 w-5 text-white" />
@@ -272,7 +272,7 @@ export default function ImageCrop(props: ImageCropProps) {
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 shadow-lg backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("out")}
               >
                 <IconMinus class="h-5 w-5 text-white" />

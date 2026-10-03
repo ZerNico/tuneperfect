@@ -249,8 +249,8 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
                   surface="rounded-[0.5cqw] transition-colors"
                   surfaceClassList={{
                     "bg-black/25": !active(),
-                    "bg-white/20 ring-1 ring-white/40 ring-inset": active() && !column.mark,
-                    "shadow-[0_0.3cqw_1cqw_rgb(0_0_0/0.3)]": active(),
+                    "bg-white/20": active() && !column.mark,
+                    "shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]": active(),
                   }}
                   surfaceStyle={
                     active() && column.mark

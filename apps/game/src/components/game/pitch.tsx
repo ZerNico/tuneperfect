@@ -238,9 +238,9 @@ function PitchNote(props: PitchNoteProps) {
       }}
     >
       <div class="relative h-2/1 w-full -translate-y-1/4 transform">
-        {/* One outline and a soft shadow; hits show through the sung fill, nothing else. */}
+        {/* One outline and a short, unblurred drop shadow (a blurred one turns into a grey haze on light videos). */}
         <div
-          class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] shadow-[0_0.3cqw_1cqw_rgb(0_0_0/0.35)] transition-opacity duration-300"
+          class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-opacity duration-300"
           classList={{
             "border-yellow-300 bg-yellow-300/25": golden(),
             "border-white bg-black/35": !golden(),
@@ -368,7 +368,8 @@ function ProcessedNote(props: ProcessedNoteProps) {
         "grid-column": `${props.column} / span ${props.length}`,
       }}
     >
-      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.35cqw]">
+      {/* Outline (0.22cqw) + a 0.2cqw gap before the sung fill. */}
+      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.42cqw]">
         <div class="relative h-full w-full">
           <div
             style={{

@@ -273,7 +273,8 @@ export default function GameScreen() {
               <SongIntro
                 song={roundSong().song}
                 started={started()}
-                accentColor={gradient() === "gradient-party" ? "pink" : "teal"}
+                gradient={gradient()}
+                accentColor={gradient() === "gradient-party" ? "purple" : "teal"}
               />
             </div>
           )}

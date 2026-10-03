@@ -42,7 +42,7 @@ export default function Toast(props: ToastProps) {
       class="pointer-events-auto w-[26cqw] data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
     >
       <div
-        class="flex items-start gap-3 rounded-[1cqw] bg-black/75 p-3 pl-4 text-white shadow-[0_1cqw_3cqw_rgb(0_0_0/0.35)] ring-1 ring-white/10 backdrop-blur-md ring-inset"
+        class="flex items-start gap-3 rounded-[1cqw] bg-black/75 p-3 pl-4 text-white shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] ring-1 ring-white/10 backdrop-blur-md ring-inset"
         style={{
           // A soft wash of the intent colour behind the icon.
           "background-image": `radial-gradient(circle at 1.4cqw 1.4cqw, color-mix(in oklch, ${colors().tint} 28%, transparent), transparent 9cqw)`,

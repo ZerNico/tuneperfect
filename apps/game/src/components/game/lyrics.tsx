@@ -40,8 +40,6 @@ export default function Lyrics(props: LyricsProps) {
   });
 
   const lyricsColor = () => (props.color ? getColorVar(props.color, 500) : "var(--color-white)");
-  // Sung text uses a lighter shade so it stays readable on the dark bar.
-  const sungColor = () => (props.color ? getColorVar(props.color, 300) : "var(--color-white)");
 
   const isCompact = () => game.playerCount() > 2;
 
@@ -91,7 +89,7 @@ export default function Lyrics(props: LyricsProps) {
             </div>
             <div>
               <For each={phrase.notes}>
-                {(note) => <LyricsNote note={note} color={sungColor()} compact={isCompact()} />}
+                {(note) => <LyricsNote note={note} color={lyricsColor()} compact={isCompact()} />}
               </For>
             </div>
             <div />

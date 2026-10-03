@@ -120,8 +120,9 @@ function ModeCard(props: ModeCardProps) {
         <div class="absolute inset-0 animate-stripes-move bg-stripes opacity-10" style={{ "--fx-color": "white" }} />
       </Show>
       {/* Same icon area in every card (a size container), so the icon fits any
-          aspect ratio; unselected cards show it smaller. */}
-      <div class="[container-type:size] absolute inset-x-0 top-0 bottom-[42%] flex items-center justify-center p-6">
+          aspect ratio; unselected cards show it smaller. Nudged down from the top so the
+          big icon sits between the top edge and the title, not against the top. */}
+      <div class="[container-type:size] absolute inset-x-0 top-[6%] bottom-[36%] flex items-center justify-center p-6">
         <div
           class="transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
           style={{ transform: props.selected ? "scale(1) rotate(-6deg)" : "scale(0.6) rotate(0deg)" }}

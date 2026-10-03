@@ -315,7 +315,6 @@ const en = {
       waiting: "Waiting…",
       pickedEachRound: "Picked each round",
       taken: "Already taken",
-      singThis: "Sing this",
       drawStamp: "Draw!",
       noLine: "No line this time",
       boardFull: "Every cell is taken. Run it back?",

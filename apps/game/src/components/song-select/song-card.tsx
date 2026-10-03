@@ -60,7 +60,7 @@ export function SongCard(props: SongCardProps) {
           transform: `translateY(${-emphasis() * 0.6}cqw)`,
           // The centred cover gets a white outline, fading in as it arrives; no glow around images.
           outline: `0.18cqw solid rgb(255 255 255 / ${emphasis()})`,
-          "box-shadow": props.shadow === false ? undefined : "0 0.6cqw 1.6cqw rgb(0 0 0 / 0.3)",
+          "box-shadow": props.shadow === false ? undefined : "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
           filter: `brightness(${0.6 + 0.4 * emphasis()})`,
         }}
       >
@@ -78,7 +78,7 @@ interface SongGridCardProps extends CoverProps {
 export function SongGridCard(props: SongGridCardProps) {
   return (
     <div
-      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.6cqw_1.6cqw_rgb(0_0_0/0.3)] transition-all duration-200 ease-out active:scale-95"
+      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-all duration-200 ease-out active:scale-95"
       classList={{
         "-translate-y-[0.4cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,
         "brightness-65": !props.selected,

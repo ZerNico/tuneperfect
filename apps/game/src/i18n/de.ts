@@ -317,7 +317,6 @@ const de = {
       waiting: "Wartet…",
       pickedEachRound: "Wird jede Runde gewählt",
       taken: "Schon vergeben",
-      singThis: "Singen",
       drawStamp: "Remis!",
       noLine: "Diesmal keine Reihe",
       boardFull: "Alle Felder sind belegt. Nochmal?",

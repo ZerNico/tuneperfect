@@ -17,6 +17,8 @@ import { notify } from "~/lib/toast";
 import { lobbyStore } from "~/stores/lobby";
 import { settingsStore } from "~/stores/settings";
 
+const MAX_LOBBY_AVATARS = 6;
+
 export default function HomeScreen() {
   const navigate = useNavigate();
   const cards: ModeCardItem[] = [
@@ -77,15 +79,16 @@ export default function HomeScreen() {
             Tune <span class="bg-linear-to-r from-green-300 to-cyan-300 bg-clip-text text-transparent">Perfect</span>
           </h1>
           <Show when={(lobbyQuery.data?.users.length ?? 0) > 0}>
-            <div class="flex h-10 items-center gap-3 rounded-[0.9cqw] bg-black/25 pr-4 pl-1.5 text-sm font-bold ring-1 ring-white/10 ring-inset">
-              <div class="flex -space-x-2">
-                <For each={lobbyQuery.data?.users}>
-                  {(user) => <Avatar user={user} class="size-7 ring-2 ring-black/40" />}
-                </For>
-              </div>
-              <span>
-                {t("lobby.title")} <span class="text-white/60 tabular-nums">· {lobbyQuery.data?.users.length}</span>
-              </span>
+            {/* Just the faces of who's in the lobby; the join code below says what it is. */}
+            <div class="flex -space-x-2.5">
+              <For each={lobbyQuery.data?.users.slice(0, MAX_LOBBY_AVATARS)}>
+                {(user) => <Avatar user={user} class="size-10 ring-2 ring-black/40" />}
+              </For>
+              <Show when={(lobbyQuery.data?.users.length ?? 0) > MAX_LOBBY_AVATARS}>
+                <div class="flex size-10 items-center justify-center rounded-full bg-white/15 text-sm font-bold tabular-nums ring-2 ring-black/40 backdrop-blur-sm">
+                  +{(lobbyQuery.data?.users.length ?? 0) - MAX_LOBBY_AVATARS}
+                </div>
+              </Show>
             </div>
           </Show>
         </div>
