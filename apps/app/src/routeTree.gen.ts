@@ -23,7 +23,6 @@ import { Route as NoAuthSignUpRouteImport } from './routes/_no-auth/sign-up'
 import { Route as NoAuthVerifyEmailRouteImport } from './routes/_no-auth/verify-email'
 import { Route as AuthLobbyIndexRouteImport } from './routes/_auth/_lobby/index'
 import { Route as AuthLobbyConnectedRouteImport } from './routes/_auth/_lobby/_connected'
-import { Route as AuthLobbyPlayersRouteImport } from './routes/_auth/_lobby/players'
 import { Route as AuthClubsIndexRouteImport } from './routes/_auth/clubs/index'
 import { Route as AuthClubsIdRouteImport } from './routes/_auth/clubs/$id'
 import { Route as AuthLobbyConnectedSongsRouteImport } from './routes/_auth/_lobby/_connected/songs'
@@ -95,11 +94,6 @@ const AuthLobbyConnectedRoute = AuthLobbyConnectedRouteImport.update({
   id: '/_connected',
   getParentRoute: () => AuthLobbyRoute,
 } as any)
-const AuthLobbyPlayersRoute = AuthLobbyPlayersRouteImport.update({
-  id: '/players',
-  path: '/players',
-  getParentRoute: () => AuthLobbyRoute,
-} as any)
 const AuthClubsIndexRoute = AuthClubsIndexRouteImport.update({
   id: '/clubs/',
   path: '/clubs/',
@@ -136,7 +130,6 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/players': typeof AuthLobbyPlayersRoute
   '/clubs/$id': typeof AuthClubsIdRoute
   '/clubs/': typeof AuthClubsIndexRoute
   '/songs': typeof AuthLobbyConnectedSongsRoute
@@ -153,7 +146,6 @@ export interface FileRoutesByTo {
   '/sign-in': typeof NoAuthSignInRoute
   '/sign-up': typeof NoAuthSignUpRoute
   '/verify-email': typeof NoAuthVerifyEmailRoute
-  '/players': typeof AuthLobbyPlayersRoute
   '/clubs/$id': typeof AuthClubsIdRoute
   '/clubs': typeof AuthClubsIndexRoute
   '/songs': typeof AuthLobbyConnectedSongsRoute
@@ -175,7 +167,6 @@ export interface FileRoutesById {
   '/_no-auth/sign-up': typeof NoAuthSignUpRoute
   '/_no-auth/verify-email': typeof NoAuthVerifyEmailRoute
   '/_auth/_lobby/_connected': typeof AuthLobbyConnectedRouteWithChildren
-  '/_auth/_lobby/players': typeof AuthLobbyPlayersRoute
   '/_auth/clubs/$id': typeof AuthClubsIdRoute
   '/_auth/_lobby/': typeof AuthLobbyIndexRoute
   '/_auth/clubs/': typeof AuthClubsIndexRoute
@@ -195,7 +186,6 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
-    | '/players'
     | '/clubs/$id'
     | '/clubs/'
     | '/songs'
@@ -212,7 +202,6 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
-    | '/players'
     | '/clubs/$id'
     | '/clubs'
     | '/songs'
@@ -233,7 +222,6 @@ export interface FileRouteTypes {
     | '/_no-auth/sign-up'
     | '/_no-auth/verify-email'
     | '/_auth/_lobby/_connected'
-    | '/_auth/_lobby/players'
     | '/_auth/clubs/$id'
     | '/_auth/_lobby/'
     | '/_auth/clubs/'
@@ -347,13 +335,6 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AuthLobbyConnectedRouteImport
       parentRoute: typeof AuthLobbyRoute
     }
-    '/_auth/_lobby/players': {
-      id: '/_auth/_lobby/players'
-      path: '/players'
-      fullPath: '/players'
-      preLoaderRoute: typeof AuthLobbyPlayersRouteImport
-      parentRoute: typeof AuthLobbyRoute
-    }
     '/_auth/clubs/': {
       id: '/_auth/clubs/'
       path: '/clubs'
@@ -405,13 +386,11 @@ const AuthLobbyConnectedRouteWithChildren =
 
 interface AuthLobbyRouteChildren {
   AuthLobbyConnectedRoute: typeof AuthLobbyConnectedRouteWithChildren
-  AuthLobbyPlayersRoute: typeof AuthLobbyPlayersRoute
   AuthLobbyIndexRoute: typeof AuthLobbyIndexRoute
 }
 
 const AuthLobbyRouteChildren: AuthLobbyRouteChildren = {
   AuthLobbyConnectedRoute: AuthLobbyConnectedRouteWithChildren,
-  AuthLobbyPlayersRoute: AuthLobbyPlayersRoute,
   AuthLobbyIndexRoute: AuthLobbyIndexRoute,
 }
 

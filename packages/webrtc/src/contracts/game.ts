@@ -6,11 +6,20 @@ export const SongSummarySchema = v.object({
   hash: v.string(),
   title: v.string(),
   artist: v.string(),
+  // Optional so the app keeps working with game versions that don't send them yet.
+  year: v.optional(v.nullable(v.number())),
+  /** When the song was added to the library (ms since epoch), for "newest first". */
+  addedAt: v.optional(v.nullable(v.number())),
 });
 
 export type SongSummary = v.InferOutput<typeof SongSummarySchema>;
 
 export const listSongsContract = oc.output(v.array(SongSummarySchema));
+
+/** A small JPEG thumbnail of a song's cover as a data URL, or null if it has none. */
+export const songCoverContract = oc
+  .input(v.object({ hash: v.string() }))
+  .output(v.object({ dataUrl: v.nullable(v.string()) }));
 
 export const pingContract = oc.output(v.object({ timestamp: v.number() }));
 
@@ -18,6 +27,7 @@ export const gameContract = {
   ping: pingContract,
   songs: {
     list: listSongsContract,
+    cover: songCoverContract,
   },
 };
 

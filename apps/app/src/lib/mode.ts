@@ -3,7 +3,7 @@ export type Mode = "lobby" | "sing" | "party" | "settings";
 /** The game's mode colours per section: lobby, songs (sing), clubs (party), account (settings). */
 export function modeForPath(pathname: string): Mode {
   if (pathname === "/songs") return "sing";
-  if (pathname === "/" || pathname === "/players" || pathname.startsWith("/join")) return "lobby";
+  if (pathname === "/" || pathname.startsWith("/join")) return "lobby";
   if (pathname.startsWith("/clubs")) return "party";
   return "settings";
 }

@@ -2,11 +2,14 @@ import { createContext, createSignal, type JSX, Show, useContext } from "solid-j
 
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
+import { t } from "~/lib/i18n";
 
 interface DialogOptions {
   title: string;
   description: JSX.Element;
   intent?: "delete" | "confirm";
+  /** Label of the confirm button; "Confirm" by default. */
+  confirmLabel?: string;
 }
 
 interface DialogContextType {
@@ -41,13 +44,13 @@ export function DialogProvider(props: { children: JSX.Element }) {
         {(dialogOptions) => (
           <Dialog onClose={() => handleClose(false)} title={dialogOptions()?.title ?? ""}>
             <Dialog.Description>{dialogOptions()?.description}</Dialog.Description>
-            <div class="mt-4 flex justify-end gap-2">
-              <Button onClick={() => handleClose(false)}>Cancel</Button>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <Button onClick={() => handleClose(false)}>{t("common.cancel")}</Button>
               <Button
                 onClick={() => handleClose(true)}
                 intent={dialogOptions()?.intent === "delete" ? "danger" : "gradient"}
               >
-                Confirm
+                {dialogOptions()?.confirmLabel ?? t("common.confirm")}
               </Button>
             </div>
           </Dialog>

@@ -1,18 +1,12 @@
-import type { ClientContext } from "@orpc/client";
-import { createORPCClient } from "@orpc/client";
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/solid-router";
-import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
-import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
-import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
-import { createHeartbeat, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { createEffect, createMemo, createRoot, onCleanup, Show } from "solid-js";
+import { WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
+import { createEffect, createMemo, createRoot, Show } from "solid-js";
 import IconLoaderCircle from "~icons/lucide/loader-circle";
 import IconWifiOff from "~icons/lucide/wifi-off";
 
 import Button from "~/components/ui/button";
-import { GameClientProvider } from "~/contexts/game-client";
+import { GameClientProvider, useGameConnection } from "~/contexts/game-client";
 import { t } from "~/lib/i18n";
-import { appRouter } from "~/lib/webrtc/router";
 import { connectionStore } from "~/stores/connection";
 
 async function waitForChannelsReady() {
@@ -59,64 +53,7 @@ export const Route = createFileRoute("/_auth/_lobby/_connected")({
 
 function ConnectedLayout() {
   const navigate = useNavigate();
-
-  let currentGameRpcLink: RPCLink<ClientContext> | null = null;
-
-  const gameClient = createMemo(() => {
-    const conn = connectionStore.connection();
-    if (!conn || !connectionStore.channelsReady()) {
-      if (currentGameRpcLink) {
-        currentGameRpcLink.close();
-        currentGameRpcLink = null;
-      }
-      return null;
-    }
-
-    if (currentGameRpcLink !== null) {
-      return createORPCClient(currentGameRpcLink) as GameClient;
-    }
-
-    currentGameRpcLink = new RPCLink({ channel: conn.gameRpcChannel });
-    return createORPCClient(currentGameRpcLink) as GameClient;
-  });
-
-  createEffect(() => {
-    const conn = connectionStore.connection();
-    if (!conn || !connectionStore.channelsReady()) return;
-
-    const handler = new RPCHandler(appRouter);
-    const cleanup = handler.upgrade(conn.appRpcChannel);
-
-    onCleanup(cleanup);
-  });
-
-  createEffect(() => {
-    const client = gameClient();
-    if (!client) return;
-
-    const heartbeat = createHeartbeat(
-      async () => {
-        await client.ping();
-      },
-      {
-        interval: WEBRTC_CONFIG.heartbeat.interval,
-        timeout: WEBRTC_CONFIG.heartbeat.timeout,
-        onFailure: () => {
-          console.warn("[WebRTC] Heartbeat failed, connection lost");
-        },
-      },
-    );
-
-    heartbeat.start();
-    onCleanup(() => heartbeat.stop());
-  });
-
-  onCleanup(() => {
-    if (currentGameRpcLink) {
-      currentGameRpcLink.close();
-      currentGameRpcLink = null;
-    }
-  });
+  const gameClient = useGameConnection();
 
   const isConnected = createMemo(() => connectionStore.connectionState() === "connected");
   const isDisconnected = createMemo(() => {
