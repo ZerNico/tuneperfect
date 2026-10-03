@@ -75,9 +75,7 @@ export default function HomeScreen() {
     <Layout
       header={
         <div class="flex items-center justify-between">
-          <h1 class="text-5xl font-black tracking-tight">
-            Tune <span class="bg-linear-to-r from-green-300 to-cyan-300 bg-clip-text text-transparent">Perfect</span>
-          </h1>
+          <h1 class="text-5xl font-black tracking-tight">Tune Perfect</h1>
           <Show when={(lobbyQuery.data?.users.length ?? 0) > 0}>
             {/* Just the faces of who's in the lobby; the join code below says what it is. */}
             <div class="flex -space-x-2.5">
