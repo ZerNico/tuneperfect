@@ -3,24 +3,40 @@ import { Link } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
-import IconEarth from "~icons/lucide/earth";
+import IconEarth from "~icons/ph/globe-bold";
 
+import { useScrolled } from "~/hooks/use-scrolled";
 import { sessionQueryOptions } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
+import { HEADER_HEIGHT, stuckBarHeight } from "~/lib/top-bar";
 
 import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
 export default function Header() {
   const sessionQuery = createQuery(() => sessionQueryOptions());
+  // Transparent at the top (the aurora shows through), a solid bar once content scrolls under it.
+  const scrolled = useScrolled();
 
   return (
     <>
       <div class="h-16" />
-      <header
-        class="fixed top-0 right-0 left-0 z-10 bg-[rgb(16_16_36/0.55)] backdrop-blur-xl"
-        style={{ "margin-right": "var(--scrollbar-width, 0px)" }}
-      >
+      {/*
+        One backdrop for the header and a bar stuck under it (see top-bar.ts), between the page (below) and
+        the stuck bar and header (above). It fades as a whole; when going back to the top it shrinks only
+        once faded out, so it never splits.
+      */}
+      <div
+        aria-hidden="true"
+        class="pointer-events-none fixed top-0 right-0 left-0 z-5 bar-backdrop"
+        style={{
+          height: `${HEADER_HEIGHT + stuckBarHeight()}px`,
+          opacity: scrolled() ? 1 : 0,
+          transition: scrolled() ? "opacity 300ms" : "opacity 300ms, height 0s 300ms",
+          "margin-right": "var(--scrollbar-width, 0px)",
+        }}
+      />
+      <header class="fixed top-0 right-0 left-0 z-10" style={{ "margin-right": "var(--scrollbar-width, 0px)" }}>
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
             <span class="text-xl font-black tracking-tight">{t("header.appName")}</span>

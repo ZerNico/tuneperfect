@@ -11,6 +11,7 @@ import AuthScreen from "~/components/auth-screen";
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
+import Divider from "~/components/ui/divider";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -167,11 +168,7 @@ function SignInComponent() {
           </form.Subscribe>
         </div>
       </form>
-      <div class="flex items-center gap-2 text-white/45">
-        <div class="h-0.5 flex-1 rounded-full bg-white/15" />
-        {t("signIn.or")}
-        <div class="h-0.5 flex-1 rounded-full bg-white/15" />
-      </div>
+      <Divider>{t("signIn.or")}</Divider>
       <div class="flex flex-wrap gap-4">
         <DiscordLogin redirect={absoluteRedirect()} />
         <GoogleLogin redirect={absoluteRedirect()} />

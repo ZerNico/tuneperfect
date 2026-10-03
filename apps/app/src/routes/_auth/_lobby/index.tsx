@@ -2,7 +2,7 @@ import { isDefinedError } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, type JSX, Match, Show, Switch } from "solid-js";
+import { createMemo, createSignal, For, type JSX, Match, Show, Suspense, Switch } from "solid-js";
 import IconArrowClockwise from "~icons/ph/arrow-clockwise-bold";
 import IconCaretRight from "~icons/ph/caret-right-bold";
 import IconCheckCircle from "~icons/ph/check-circle-fill";
@@ -66,14 +66,19 @@ function LobbyComponent() {
         subtitle={<ConnectionStatus />}
       />
 
-      <div class="flex grow flex-col gap-6">
-        <BrowseSongs />
+      <div class="flex flex-col gap-6">
+        {/* Its own boundary, so loading the song list doesn't blank the whole lobby screen. */}
+        <Suspense fallback={<BrowseSongsPlaceholder />}>
+          <BrowseSongs />
+        </Suspense>
         <Players />
       </div>
 
       <button
         type="button"
-        class="mt-8 mb-2 flex cursor-pointer items-center justify-center gap-2 self-center rounded-[10px] px-4 py-3 font-bold text-red-300 transition-colors hover:bg-red-400/10"
+        // Right under the players, styled like "Sign out" on the profile: on tall screens a bottom-pinned
+        // button ends up far from everything else.
+        class="mt-6 mb-2 flex min-h-14 cursor-pointer items-center gap-3 rounded-[12px] bg-white/7 px-4 text-start font-bold text-red-300 transition-colors hover:bg-red-400/10"
         onClick={() => void leave()}
       >
         <IconSignOut />
@@ -126,6 +131,10 @@ function ConnectionStatus() {
       </Match>
     </Switch>
   );
+}
+
+function BrowseSongsPlaceholder() {
+  return <div class="h-17 rounded-[14px] bg-white/7" aria-hidden="true" />;
 }
 
 /** The way into the song list: a preview of the first covers and the count, once connected to the game. */

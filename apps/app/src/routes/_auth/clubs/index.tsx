@@ -3,19 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
-import IconArrowRight from "~icons/lucide/arrow-right";
-import IconCheck from "~icons/lucide/check";
-import IconPlus from "~icons/lucide/plus";
-import IconUsers from "~icons/lucide/users";
-import IconX from "~icons/lucide/x";
+import IconCaretRight from "~icons/ph/caret-right-bold";
+import IconCheck from "~icons/ph/check-bold";
+import IconPlus from "~icons/ph/plus-bold";
+import IconUsersThree from "~icons/ph/users-three-fill";
+import IconX from "~icons/ph/x-bold";
 
+import ClubBadge from "~/components/club-badge";
+import PageHeader from "~/components/page-header";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
-import Card from "~/components/ui/card";
 import Dialog from "~/components/ui/dialog";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
+import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_auth/clubs/")({
   component: ClubsIndexComponent,
@@ -32,6 +34,7 @@ function ClubsIndexComponent() {
 
   const acceptInviteMutation = useMutation(() =>
     client.club.acceptInvite.mutationOptions({
+      onError: () => notify({ message: t("error.unknown"), intent: "error" }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
@@ -40,6 +43,7 @@ function ClubsIndexComponent() {
 
   const declineInviteMutation = useMutation(() =>
     client.club.declineInvite.mutationOptions({
+      onError: () => notify({ message: t("error.unknown"), intent: "error" }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
@@ -48,6 +52,7 @@ function ClubsIndexComponent() {
 
   const createClubMutation = useMutation(() =>
     client.club.createClub.mutationOptions({
+      onError: () => notify({ message: t("error.unknown"), intent: "error" }),
       onSuccess: (club) => {
         queryClient.invalidateQueries({
           queryKey: client.club.key(),
@@ -84,124 +89,139 @@ function ClubsIndexComponent() {
     declineInviteMutation.mutate({ clubId });
   };
 
+  const hasClubs = () => clubsQuery.isSuccess && (clubsQuery.data?.length ?? 0) > 0;
+
   return (
-    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
-      <div class="mb-6 flex items-center justify-between">
-        <h1 class="text-3xl font-bold">{t("clubs.title")}</h1>
-        <Button intent="gradient" onClick={() => setCreateClubDialog(true)}>
-          {t("clubs.create")}
-        </Button>
-      </div>
+    <main class="mx-auto flex w-full max-w-md grow flex-col px-6 pt-4 pb-8">
+      <PageHeader
+        title={t("clubs.title")}
+        action={
+          // The empty state has its own button; one "create" on screen at a time.
+          <Show when={hasClubs()}>
+            <button
+              type="button"
+              aria-label={t("clubs.create")}
+              class="gradient-accent flex size-11 cursor-pointer items-center justify-center rounded-[12px] text-xl shadow-crisp transition-transform active:scale-95"
+              onClick={() => setCreateClubDialog(true)}
+            >
+              <IconPlus />
+            </button>
+          </Show>
+        }
+      />
 
       <Show when={invitesQuery.isSuccess && invitesCount() > 0}>
-        <div class="mb-8">
-          <div class="mb-4 flex items-start gap-1">
-            <h2 class="text-2xl font-bold">{t("clubs.invites")}</h2>
-            <span class="text-sm">{invitesCount()}</span>
-          </div>
-          <div class="flex flex-col gap-4">
-            <For each={invitesQuery.data}>
-              {(invite) => (
-                <Card class="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
-                  <div>
-                    <div class="font-semibold text-white">{invite.club?.name}</div>
-                    <div class="text-sm text-white/60">
+        <section class="mb-8 flex flex-col gap-2">
+          <h2 class="text-xs font-black tracking-[0.2em] text-white/50 uppercase">
+            {t("clubs.invites")} · {invitesCount()}
+          </h2>
+          <For each={invitesQuery.data}>
+            {(invite) => (
+              <div class="flex flex-col gap-3 rounded-[14px] bg-white/7 p-3">
+                <div class="flex items-center gap-3">
+                  <ClubBadge name={invite.club?.name ?? ""} />
+                  <div class="flex min-w-0 flex-col">
+                    <span class="truncate text-[17px] font-bold">{invite.club?.name}</span>
+                    <span class="truncate text-sm text-white/60">
                       {t("clubs.invitedBy", { username: invite.inviter?.username || "" })}
-                    </div>
+                    </span>
                   </div>
-                  <div class="flex w-full shrink-0 gap-2 sm:w-auto">
-                    <Button
-                      type="button"
-                      intent="gradient"
-                      class="w-full"
-                      loading={
-                        acceptInviteMutation.isPending && acceptInviteMutation.variables.clubId === invite.club?.id
-                      }
-                      onClick={() => handleAcceptInvite(invite.club?.id || "")}
-                    >
-                      <IconCheck class="mr-2 h-4 w-4" />
-                      {t("clubs.accept")}
-                    </Button>
-                    <Button
-                      type="button"
-                      intent="danger"
-                      class="w-full"
-                      loading={
-                        declineInviteMutation.isPending && declineInviteMutation.variables.clubId === invite.club?.id
-                      }
-                      onClick={() => handleDeclineInvite(invite.club?.id || "")}
-                    >
-                      <IconX class="mr-2 h-4 w-4" />
-                      {t("clubs.decline")}
-                    </Button>
-                  </div>
-                </Card>
-              )}
-            </For>
-          </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    loading={
+                      declineInviteMutation.isPending && declineInviteMutation.variables.clubId === invite.club?.id
+                    }
+                    onClick={() => handleDeclineInvite(invite.club?.id || "")}
+                  >
+                    <IconX />
+                    {t("clubs.decline")}
+                  </Button>
+                  <Button
+                    type="button"
+                    intent="gradient"
+                    loading={
+                      acceptInviteMutation.isPending && acceptInviteMutation.variables.clubId === invite.club?.id
+                    }
+                    onClick={() => handleAcceptInvite(invite.club?.id || "")}
+                  >
+                    <IconCheck />
+                    {t("clubs.accept")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </For>
+        </section>
+      </Show>
+
+      <Show when={clubsQuery.isPending}>
+        <p class="py-4 text-white/50">{t("common.loading")}</p>
+      </Show>
+
+      <Show when={hasClubs()}>
+        <section class="flex flex-col gap-2">
+          <Show when={invitesCount() > 0}>
+            <h2 class="text-xs font-black tracking-[0.2em] text-white/50 uppercase">{t("clubs.yourClubs")}</h2>
+          </Show>
+          <For each={clubsQuery.data}>
+            {(club) => (
+              <Link
+                to="/clubs/$id"
+                params={{ id: club.id }}
+                class="flex min-h-16 items-center gap-3 rounded-[14px] bg-white/7 p-3 transition-colors hover:bg-white/10"
+              >
+                <ClubBadge name={club.name} />
+                <div class="flex min-w-0 grow flex-col">
+                  <span class="truncate text-[17px] font-bold">{club.name}</span>
+                  <span class="text-sm text-white/60">
+                    {club.members.length === 1
+                      ? t("clubs.membersOne", { count: club.members.length })
+                      : t("clubs.membersOther", { count: club.members.length })}
+                  </span>
+                </div>
+                <div class="flex shrink-0 -space-x-2">
+                  <For each={club.members.slice(0, 3)}>
+                    {(member) => (
+                      <Show when={member.user}>
+                        {(user) => (
+                          // The ring only separates overlapping avatars; a lone avatar looks like everywhere else.
+                          <Avatar
+                            user={user()}
+                            size="sm"
+                            class={club.members.length > 1 ? "rounded-full ring-2 ring-black/30" : undefined}
+                          />
+                        )}
+                      </Show>
+                    )}
+                  </For>
+                </div>
+                <IconCaretRight class="shrink-0 text-white/40" />
+              </Link>
+            )}
+          </For>
+        </section>
+      </Show>
+
+      <Show when={clubsQuery.isSuccess && !clubsQuery.data?.length}>
+        <div class="flex flex-col items-center gap-3 py-12 text-center">
+          <span class="gradient-accent flex size-16 items-center justify-center rounded-[18px] text-3xl shadow-crisp">
+            <IconUsersThree />
+          </span>
+          <h2 class="mt-2 text-xl font-bold">{t("clubs.noClubs")}</h2>
+          <p class="max-w-xs text-white/60">{t("clubs.noClubsDescription")}</p>
+          <Button intent="gradient" class="mt-3" onClick={() => setCreateClubDialog(true)}>
+            <IconPlus />
+            {t("clubs.create")}
+          </Button>
         </div>
       </Show>
 
-      <div>
-        <h2 class="mb-4 text-2xl font-bold">{t("clubs.yourClubs")}</h2>
-        <Show when={clubsQuery.isPending}>
-          <div class="text-center">{t("common.loading")}</div>
-        </Show>
-        <Show when={clubsQuery.isSuccess && clubsQuery.data?.length}>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <For each={clubsQuery.data}>
-              {(club) => (
-                <Link to="/clubs/$id" params={{ id: club.id }} class="group">
-                  <Card class="flex h-full flex-col justify-between transition-all group-hover:scale-105 group-hover:shadow-lg">
-                    <div>
-                      <div class="text-lg font-bold">{club.name}</div>
-                      <div class="text-sm text-white/60">
-                        {club.members.length === 1
-                          ? t("clubs.membersOne", { count: club.members.length })
-                          : t("clubs.membersOther", { count: club.members.length })}
-                      </div>
-                    </div>
-                    <div class="mt-4 flex items-center justify-between">
-                      <div class="flex -space-x-3">
-                        <For each={club.members.slice(0, 5)}>
-                          {(member) => (
-                            <div class="rounded-full border-2 border-white">
-                              <Show when={member.user}>{(user) => <Avatar user={user()} size="sm" />}</Show>
-                            </div>
-                          )}
-                        </For>
-                        <Show when={club.members.length > 5}>
-                          <div class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-600 text-xs text-white">
-                            +{club.members.length - 5}
-                          </div>
-                        </Show>
-                      </div>
-                      <IconArrowRight class="h-5 w-5 text-white/45 transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </Card>
-                </Link>
-              )}
-            </For>
-          </div>
-        </Show>
-        <Show when={clubsQuery.isSuccess && !clubsQuery.data?.length}>
-          <div class="py-12 text-center">
-            <IconUsers class="mx-auto h-12 w-12 text-white/45" />
-            <h3 class="mt-2 text-sm font-medium text-white">{t("clubs.noClubs")}</h3>
-            <p class="mt-1 text-sm text-white/60">{t("clubs.noClubsDescription")}</p>
-            <div class="mt-6">
-              <Button intent="gradient" onClick={() => setCreateClubDialog(true)}>
-                <IconPlus class="mr-2 h-5 w-5" />
-                {t("clubs.create")}
-              </Button>
-            </div>
-          </div>
-        </Show>
-      </div>
       <Show when={createClubDialog()}>
         <Dialog onClose={() => setCreateClubDialog(false)} title={t("clubs.create")}>
           <form
-            class="mt-4 flex flex-col gap-4"
+            class="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -241,6 +261,6 @@ function ClubsIndexComponent() {
           </form>
         </Dialog>
       </Show>
-    </div>
+    </main>
   );
 }

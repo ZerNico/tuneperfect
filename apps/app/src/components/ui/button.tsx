@@ -1,7 +1,7 @@
 import { Link, type LinkProps as TanstackLinkProps } from "@tanstack/solid-router";
 import { cva, type VariantProps } from "cva";
 import { type JSX, Show } from "solid-js";
-import LoaderCircle from "~icons/lucide/loader-circle";
+import LoaderCircle from "~icons/ph/circle-notch-bold";
 
 interface ButtonProps extends BaseProps {
   type?: "button" | "submit" | "reset";

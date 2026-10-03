@@ -1,6 +1,6 @@
 import { createSignal, type JSX, Show } from "solid-js";
-import Eye from "~icons/lucide/eye";
-import EyeOff from "~icons/lucide/eye-off";
+import Eye from "~icons/ph/eye-bold";
+import EyeOff from "~icons/ph/eye-slash-bold";
 
 interface InputProps {
   class?: string;

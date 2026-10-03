@@ -36,7 +36,7 @@ const FALLBACK_GRADIENTS = [
   "from-orange-400 to-red-500",
 ];
 
-function fallbackGradient(name: string) {
+export function fallbackGradient(name: string) {
   let hash = 0;
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) | 0;
   return FALLBACK_GRADIENTS[Math.abs(hash) % FALLBACK_GRADIENTS.length];

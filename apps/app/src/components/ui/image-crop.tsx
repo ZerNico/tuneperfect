@@ -1,6 +1,6 @@
 import { createEffect, createMemo, createSignal, on } from "solid-js";
-import IconMinus from "~icons/lucide/minus";
-import IconPlus from "~icons/lucide/plus";
+import IconMinus from "~icons/ph/minus-bold";
+import IconPlus from "~icons/ph/plus-bold";
 
 import { t } from "~/lib/i18n";
 
@@ -313,7 +313,7 @@ export default function ImageCrop(props: ImageCropProps) {
             aria-label={t("editProfile.cropImage")}
             width={canvasSize()}
             height={canvasSize()}
-            class="aspect-square w-full cursor-move rounded-lg border-2 border-slate-200 shadow-md select-none"
+            class="aspect-square w-full cursor-move rounded-[16px] ring-1 ring-white/10 select-none"
             style={{ "touch-action": "none" }}
             onPointerDown={handlePointerStart}
             onPointerMove={handlePointerMove}
@@ -325,34 +325,36 @@ export default function ImageCrop(props: ImageCropProps) {
           />
 
           <div
-            class="pointer-events-none absolute inset-0 h-full w-full rounded-lg"
+            class="pointer-events-none absolute inset-0 h-full w-full rounded-[16px]"
             style={{ background: "radial-gradient(circle at center, transparent 70%, rgba(0, 0, 0, 0.6) 70%)" }}
           />
 
-          <div class="pointer-events-none absolute inset-0 h-full w-full rounded-full border-3 border-white shadow-lg" />
+          <div class="pointer-events-none absolute inset-0 h-full w-full rounded-full border-3 border-white" />
 
           <div class="absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-2">
             <button
               type="button"
-              class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
+              aria-label={t("imageCrop.zoomIn")}
+              class="flex size-10 cursor-pointer items-center justify-center rounded-[10px] bg-black/60 text-lg backdrop-blur-sm transition-[scale,background-color,opacity] hover:bg-black/70 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               onClick={() => handleZoomButtonClick("in")}
               disabled={currentScale() >= 5}
             >
-              <IconPlus class="h-5 w-5 text-white" />
+              <IconPlus />
             </button>
             <button
               type="button"
-              class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/60 shadow-lg backdrop-blur-sm transition-transform hover:bg-black/70 active:scale-95"
+              aria-label={t("imageCrop.zoomOut")}
+              class="flex size-10 cursor-pointer items-center justify-center rounded-[10px] bg-black/60 text-lg backdrop-blur-sm transition-[scale,background-color,opacity] hover:bg-black/70 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               onClick={() => handleZoomButtonClick("out")}
               disabled={currentScale() <= minScale()}
             >
-              <IconMinus class="h-5 w-5 text-white" />
+              <IconMinus />
             </button>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <div class="grid grid-cols-2 gap-2">
         <Button onClick={props.onCancel}>{t("common.cancel")}</Button>
         <Button intent="gradient" onClick={exportCroppedImage}>
           {t("imageCrop.confirm")}

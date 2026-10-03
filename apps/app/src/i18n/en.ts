@@ -59,6 +59,7 @@ const en = {
     passwordMinLength: "Password must be at least 8 characters",
   },
   common: {
+    close: "Close",
     backToSignIn: "Back to Sign In",
     loading: "Loading...",
     save: "Save",
@@ -154,6 +155,8 @@ const en = {
     alreadyMember: "{{ username }} is already a member of this club",
     userNotFound: "User not found",
     detail: {
+      settings: "Club settings",
+      memberOptions: "Member options",
       delete: "Delete",
       leave: "Leave Club",
       leaveConfirmation: "Are you sure you want to leave this club?",
@@ -205,6 +208,7 @@ const en = {
     songs: "Songs",
   },
   lobby: {
+    backToLobby: "Back to lobby",
     title: "Lobby",
     connected: "Connected to the game",
     playersTitle: "Players",
