@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
-import IconBan from "~icons/lucide/ban";
 import IconEarth from "~icons/lucide/earth";
 import IconLogOut from "~icons/lucide/log-out";
 import IconUser from "~icons/lucide/user";
@@ -13,7 +12,6 @@ import { sessionQueryOptions } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import { tryCatch } from "~/lib/utils/try-catch";
 import { queryClient } from "~/main";
 
 import NavItems from "./nav-items";
@@ -38,22 +36,6 @@ export default function Header() {
 
     await queryClient.resetQueries();
     await navigate({ to: "/sign-in" });
-  };
-
-  const leaveLobby = async () => {
-    const [error, _data] = await tryCatch(client.lobby.leaveLobby.call());
-
-    if (error) {
-      notify({
-        message: t("error.unknown"),
-        intent: "error",
-      });
-      return;
-    }
-
-    await queryClient.invalidateQueries(sessionQueryOptions());
-    await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
-    await navigate({ to: "/join" });
   };
 
   return (
@@ -85,11 +67,6 @@ export default function Header() {
                   <DropdownMenu.Item onSelect={() => navigate({ to: "/edit-profile" })}>
                     <IconUser /> {t("header.editProfile")}
                   </DropdownMenu.Item>
-                  <Show when={session().lobbyId !== null}>
-                    <DropdownMenu.Item onSelect={leaveLobby}>
-                      <IconBan /> {t("header.leaveLobby")}
-                    </DropdownMenu.Item>
-                  </Show>
                   <DropdownMenu.Item onSelect={logout}>
                     <IconLogOut /> {t("header.signOut")}
                   </DropdownMenu.Item>
