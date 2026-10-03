@@ -246,6 +246,13 @@
     0 0.25rem 0 rgb(0 0 0 / 0.3);
 }
 
+/* Header and sticky bars once content scrolls under them: neutral black with a strong blur, like the
+   game's popups, so it takes on the page's own colour. Faded in via opacity by the elements using it. */
+@utility bar-backdrop {
+  background-color: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(24px) saturate(1.4);
+}
+
 /* Short unblurred drop, as on the game's buttons and cards. */
 @utility shadow-crisp {
   box-shadow: 0 3px 0 rgb(0 0 0 / 0.3);

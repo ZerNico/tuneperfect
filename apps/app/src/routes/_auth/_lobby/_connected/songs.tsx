@@ -1,7 +1,8 @@
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import type { SongSummary } from "@tuneperfect/webrtc/contracts/game";
-import { createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createWindowVirtualizer } from "@tanstack/solid-virtual";
+import type { GameClient, SongSummary } from "@tuneperfect/webrtc/contracts/game";
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import IconArrowClockwise from "~icons/ph/arrow-clockwise-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -13,6 +14,7 @@ import { useGameClient } from "~/contexts/game-client";
 import { useSongSearch } from "~/hooks/use-song-search";
 import { songsQueryOptions } from "~/lib/game-query";
 import { t } from "~/lib/i18n";
+import { HEADER_HEIGHT, setStuckBarHeight } from "~/lib/top-bar";
 
 export const Route = createFileRoute("/_auth/_lobby/_connected/songs")({
   component: SongsComponent,
@@ -53,15 +55,32 @@ function SongsComponent() {
 
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts a fresh copy
   const sortedSongs = createMemo(() => [...(songsQuery.data ?? [])].sort(COMPARE[sort()]));
-  // The sticky search bar only gets a backdrop once the list scrolls under it; at rest it would cut a
-  // hard edge into the background.
-  const [scrolled, setScrolled] = createSignal(false);
+  // While the search bar is stuck under the header, the header's backdrop grows to cover it (one layer,
+  // no seam). A marker just above the bar leaves the area under the header exactly when the bar sticks.
+  const [marker, setMarker] = createSignal<HTMLDivElement>();
+  const [bar, setBar] = createSignal<HTMLDivElement>();
+  const [stuck, setStuck] = createSignal(false);
+  const [barHeight, setBarHeight] = createSignal(0);
   onMount(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onCleanup(() => window.removeEventListener("scroll", onScroll));
+    const markerElement = marker();
+    const barElement = bar();
+    if (!markerElement || !barElement) return;
+
+    const intersection = new IntersectionObserver(([entry]) => setStuck(!!entry && !entry.isIntersecting), {
+      rootMargin: `-${HEADER_HEIGHT}px 0px 0px 0px`,
+    });
+    intersection.observe(markerElement);
+    // The sort chips hide while searching, so the bar's height changes.
+    const resize = new ResizeObserver(() => setBarHeight(barElement.offsetHeight));
+    resize.observe(barElement);
+
+    onCleanup(() => {
+      intersection.disconnect();
+      resize.disconnect();
+      setStuckBarHeight(0);
+    });
   });
+  createEffect(() => setStuckBarHeight(stuck() ? barHeight() : 0));
 
   // Searching ranks by relevance; browsing uses the chosen order.
   const { filteredSongs } = useSongSearch({ songs: sortedSongs, searchQuery });
@@ -85,10 +104,8 @@ function SongsComponent() {
         }
       />
 
-      <div
-        class="sticky top-16 z-1 -mx-6 flex flex-col gap-3 px-6 pt-1 pb-3 transition-colors duration-200"
-        classList={{ "bg-[rgb(16_16_36/0.85)] backdrop-blur-xl": scrolled() }}
-      >
+      <div ref={setMarker} aria-hidden="true" />
+      <div ref={setBar} class="sticky top-16 z-6 flex flex-col gap-3 pt-1 pb-3">
         <label class="flex h-11 items-center gap-2 rounded-[12px] bg-white/8 px-3 focus-within:ring-2 focus-within:ring-white/40">
           <IconMagnifyingGlass class="shrink-0 text-white/45" />
           <input
@@ -145,23 +162,81 @@ function SongsComponent() {
           </div>
         }
       >
-        <ul class="flex flex-col gap-1 pb-4">
-          <For each={filteredSongs()}>
-            {(song) => (
-              <li class="flex items-center gap-3 rounded-[12px] bg-white/6 p-2">
-                <SongCover hash={song.hash} client={gameClient} class="size-12 rounded-[8px]" />
-                <div class="flex min-w-0 grow flex-col">
-                  <span class="truncate text-[16px] font-bold">{song.title}</span>
-                  <span class="truncate text-sm text-white/55">{song.artist}</span>
-                </div>
-                <Show when={song.year}>
-                  <span class="shrink-0 pr-1 text-sm text-white/40 tabular-nums">{song.year}</span>
-                </Show>
-              </li>
-            )}
-          </For>
-        </ul>
+        <SongList songs={filteredSongs()} client={gameClient} />
       </Show>
     </main>
+  );
+}
+
+/** Row height incl. the gap; fixed, so the list never needs measuring. */
+const ROW_HEIGHT = 68;
+
+/**
+ * Only the rows near the screen exist (libraries can have tens of thousands of songs). Rows are keyed by
+ * song, so a row never switches songs while scrolling and its cover loads for exactly that song.
+ */
+function SongList(props: { songs: SongSummary[]; client: GameClient }) {
+  let list: HTMLUListElement | undefined;
+  // Where the list starts in the page; the virtualizer works in page coordinates.
+  const [offset, setOffset] = createSignal(0);
+
+  const virtualizer = createWindowVirtualizer({
+    get count() {
+      return props.songs.length;
+    },
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+    get scrollMargin() {
+      return offset();
+    },
+  });
+
+  const measureOffset = () => {
+    if (list) setOffset(list.getBoundingClientRect().top + window.scrollY);
+  };
+  onMount(() => {
+    measureOffset();
+    // Content above the list changes height (the sort chips hide while searching).
+    const observer = new ResizeObserver(measureOffset);
+    if (list?.parentElement) observer.observe(list.parentElement);
+    onCleanup(() => observer.disconnect());
+  });
+
+  const positions = createMemo(() => new Map(props.songs.map((song, index) => [song.hash, index])));
+  const visible = createMemo(() =>
+    virtualizer
+      .getVirtualItems()
+      .map((item) => props.songs[item.index]?.hash)
+      .filter((hash): hash is string => !!hash),
+  );
+
+  return (
+    <ul ref={list} class="relative mb-4" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+      <For each={visible()}>
+        {(hash) => {
+          const index = () => positions().get(hash) ?? 0;
+          const song = () => props.songs[index()];
+          return (
+            <Show when={song()}>
+              {(song) => (
+                <li
+                  class="absolute inset-x-0 flex h-16 items-center gap-3 rounded-[12px] bg-white/6 p-2"
+                  style={{ top: `${index() * ROW_HEIGHT}px` }}
+                >
+                  <SongCover hash={hash} client={props.client} class="size-12 rounded-[8px]" />
+                  <div class="flex min-w-0 grow flex-col">
+                    <span class="truncate text-[16px] font-bold">{song().title}</span>
+                    <span class="truncate text-sm text-white/55">{song().artist}</span>
+                  </div>
+                  <Show when={song().year}>
+                    <span class="shrink-0 pr-1 text-sm text-white/40 tabular-nums">{song().year}</span>
+                  </Show>
+                </li>
+              )}
+            </Show>
+          );
+        }}
+      </For>
+    </ul>
   );
 }

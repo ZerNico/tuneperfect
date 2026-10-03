@@ -19,7 +19,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootComponent() {
   return (
     <DialogProvider>
-      <div class="gradient-bg-primary relative isolate flex min-h-[100dvh] flex-col pb-24 text-white md:pb-0">
+      <div class="gradient-bg-primary relative isolate flex min-h-[100dvh] flex-col overflow-x-clip pb-24 text-white md:pb-0">
         <Aurora />
         <Header />
         <Suspense>

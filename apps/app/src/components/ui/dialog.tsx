@@ -1,6 +1,6 @@
 import { Dialog as KDialog } from "@kobalte/core/dialog";
 import type { JSX } from "solid-js";
-import IconX from "~icons/lucide/x";
+import IconX from "~icons/ph/x-bold";
 
 interface DialogProps {
   onClose: () => void;

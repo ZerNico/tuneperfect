@@ -40,7 +40,8 @@ export function songCoverQueryOptions(client: GameClient | null, hash: string) {
     },
     enabled: !!client,
     staleTime: Number.POSITIVE_INFINITY,
-    gcTime: 30 * 60_000,
+    // Unused covers (rows scrolled away) are dropped after a while; the game caches them, so they come back fast.
+    gcTime: 5 * 60_000,
     retry: false,
   });
 }

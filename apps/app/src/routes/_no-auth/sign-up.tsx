@@ -9,6 +9,7 @@ import AuthScreen from "~/components/auth-screen";
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
+import Divider from "~/components/ui/divider";
 import Input from "~/components/ui/input";
 import { emailVerifiedUrl } from "~/lib/auth";
 import { config } from "~/lib/config";
@@ -144,11 +145,7 @@ function SignUpComponent() {
           </form.Subscribe>
         </div>
       </form>
-      <div class="flex items-center gap-2 text-white/45">
-        <div class="h-0.5 flex-1 rounded-full bg-white/15" />
-        {t("signUp.or")}
-        <div class="h-0.5 flex-1 rounded-full bg-white/15" />
-      </div>
+      <Divider>{t("signUp.or")}</Divider>
       <div class="flex flex-wrap gap-4">
         <DiscordLogin redirect={absoluteRedirect()} />
         <GoogleLogin redirect={absoluteRedirect()} />

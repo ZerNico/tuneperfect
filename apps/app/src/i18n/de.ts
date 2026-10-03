@@ -61,6 +61,7 @@ const de: Dict = {
     passwordMinLength: "Passwort muss mindestens 8 Zeichen lang sein",
   },
   common: {
+    close: "Schließen",
     backToSignIn: "Zurück zur Anmeldung",
     loading: "Wird geladen...",
     save: "Speichern",
@@ -156,6 +157,8 @@ const de: Dict = {
     alreadyMember: "{{ username }} ist bereits Mitglied dieses Clubs",
     userNotFound: "Benutzer nicht gefunden",
     detail: {
+      settings: "Club-Einstellungen",
+      memberOptions: "Mitglied-Optionen",
       delete: "Löschen",
       leave: "Club verlassen",
       leaveConfirmation: "Bist du sicher, dass du diesen Club verlassen möchtest?",
@@ -208,6 +211,7 @@ const de: Dict = {
     songs: "Songs",
   },
   lobby: {
+    backToLobby: "Zurück zur Lobby",
     title: "Lobby",
     connected: "Mit dem Spiel verbunden",
     playersTitle: "Spieler",

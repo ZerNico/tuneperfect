@@ -8,6 +8,7 @@ import CodeInput, { LOBBY_CODE_LENGTH } from "~/components/code-input";
 import PageHeader from "~/components/page-header";
 import QrScanDialog from "~/components/qr-scan-dialog";
 import Button from "~/components/ui/button";
+import Divider from "~/components/ui/divider";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -80,11 +81,7 @@ function JoinComponent() {
         </Button>
       </form>
 
-      <div class="my-6 flex items-center gap-3 text-sm text-white/40">
-        <span class="h-px grow bg-white/15" />
-        {t("join.or")}
-        <span class="h-px grow bg-white/15" />
-      </div>
+      <Divider class="my-6">{t("join.or")}</Divider>
 
       <Button class="w-full" onClick={() => setScanning(true)}>
         <IconQrCode class="text-xl" />

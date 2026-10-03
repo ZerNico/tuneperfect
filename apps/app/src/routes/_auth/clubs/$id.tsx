@@ -1,29 +1,33 @@
+import { isDefinedError } from "@orpc/client";
 import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
+import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
 import * as v from "valibot";
-import IconArrowLeft from "~icons/lucide/arrow-left";
-import IconCrown from "~icons/lucide/crown";
-import IconEdit from "~icons/lucide/edit";
-import IconMoreVertical from "~icons/lucide/more-vertical";
-import IconSettings from "~icons/lucide/settings";
-import IconShield from "~icons/lucide/shield";
-import IconShieldMinus from "~icons/lucide/shield-minus";
-import IconShieldPlus from "~icons/lucide/shield-plus";
-import IconTrash from "~icons/lucide/trash";
-import IconUserMinus from "~icons/lucide/user-minus";
-import IconUserPlus from "~icons/lucide/user-plus";
+import IconCrown from "~icons/ph/crown-fill";
+import IconDotsThree from "~icons/ph/dots-three-vertical-bold";
+import IconGear from "~icons/ph/gear-six-fill";
+import IconPencil from "~icons/ph/pencil-simple-bold";
+import IconShield from "~icons/ph/shield-fill";
+import IconShieldPlus from "~icons/ph/shield-plus-bold";
+import IconShieldMinus from "~icons/ph/shield-slash-bold";
+import IconSignOut from "~icons/ph/sign-out-bold";
+import IconTrash from "~icons/ph/trash-bold";
+import IconUserMinus from "~icons/ph/user-minus-bold";
+import IconUserPlus from "~icons/ph/user-plus-bold";
 
+import PageHeader from "~/components/page-header";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
 import DropdownMenu from "~/components/ui/dropdown-menu";
 import Input from "~/components/ui/input";
+import Tag from "~/components/ui/tag";
 import { sessionQueryOptions } from "~/lib/auth";
 import { useDialog } from "~/lib/dialog";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
+import { notify } from "~/lib/toast";
 
 export const Route = createFileRoute("/_auth/clubs/$id")({
   component: ClubDetailComponent,
@@ -59,7 +63,7 @@ function getMemberMenuItems(
       label: t("clubs.detail.removeMember"),
       icon: IconUserMinus,
       onSelect: () => handlers.removeMember(userId, username),
-      class: "text-red-500",
+      class: "text-red-300",
     });
   }
 
@@ -106,15 +110,18 @@ function MemberActions(props: {
     <Show when={menuItems.length > 0}>
       <DropdownMenu
         trigger={
-          <DropdownMenu.Trigger class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-black/10">
-            <IconMoreVertical />
+          <DropdownMenu.Trigger
+            aria-label={t("clubs.detail.memberOptions")}
+            class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] text-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <IconDotsThree />
           </DropdownMenu.Trigger>
         }
       >
         <For each={menuItems}>
           {(item) => (
             <DropdownMenu.Item class={item.class} onSelect={item.onSelect}>
-              <item.icon class="mr-2 h-4 w-4" /> {item.label}
+              <item.icon /> {item.label}
             </DropdownMenu.Item>
           )}
         </For>
@@ -136,6 +143,7 @@ function ClubDetailComponent() {
 
   const deleteClubMutation = useMutation(() =>
     client.club.deleteClub.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
         navigate({ to: "/clubs" });
@@ -145,6 +153,7 @@ function ClubDetailComponent() {
 
   const removeMemberMutation = useMutation(() =>
     client.club.removeMember.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
@@ -153,6 +162,7 @@ function ClubDetailComponent() {
 
   const transferOwnershipMutation = useMutation(() =>
     client.club.transferOwnership.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
@@ -161,15 +171,31 @@ function ClubDetailComponent() {
 
   const inviteMemberMutation = useMutation(() =>
     client.club.invite.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (_data, variables) => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
         setDialog(null);
+        notify({
+          intent: "success",
+          message: t("lobby.memberInvited", { username: variables.username, clubName: clubQuery.data?.name ?? "" }),
+        });
+      },
+      onError: (error, variables) => {
+        if (isDefinedError(error) && error.code === "USER_NOT_FOUND") {
+          notify({ intent: "error", message: t("clubs.userNotFound", { username: variables.username }) });
+          return;
+        }
+        if (isDefinedError(error) && error.code === "ALREADY_MEMBER") {
+          notify({ intent: "error", message: t("clubs.alreadyMember", { username: variables.username }) });
+          return;
+        }
+        notify({ intent: "error", message: t("error.unknown") });
       },
     }),
   );
 
   const changeRoleMutation = useMutation(() =>
     client.club.changeRole.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
       },
@@ -178,6 +204,7 @@ function ClubDetailComponent() {
 
   const leaveClubMutation = useMutation(() =>
     client.club.leaveClub.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: client.club.key() });
         navigate({ to: "/clubs" });
@@ -187,6 +214,7 @@ function ClubDetailComponent() {
 
   const updateClubMutation = useMutation(() =>
     client.club.updateClub.mutationOptions({
+      onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
         setDialog(null);
@@ -234,6 +262,7 @@ function ClubDetailComponent() {
       title: t("clubs.detail.delete"),
       description: <p>{t("clubs.detail.deleteConfirmation")}</p>,
       intent: "delete",
+      confirmLabel: t("clubs.detail.delete"),
     });
 
     if (!confirmed) return;
@@ -246,6 +275,7 @@ function ClubDetailComponent() {
       title: t("clubs.detail.removeMember"),
       description: <p>{t("clubs.detail.removeMemberConfirmation", { username })}</p>,
       intent: "delete",
+      confirmLabel: t("clubs.detail.removeMember"),
     });
 
     if (!confirmed) return;
@@ -258,6 +288,7 @@ function ClubDetailComponent() {
       title: t("clubs.detail.transferOwnership"),
       description: <p>{t("clubs.detail.transferOwnershipConfirmation", { username })}</p>,
       intent: "delete",
+      confirmLabel: t("clubs.detail.transferOwnership"),
     });
 
     if (!confirmed) return;
@@ -276,7 +307,8 @@ function ClubDetailComponent() {
           })}
         </p>
       ),
-      intent: "delete",
+      intent: "confirm",
+      confirmLabel: t("clubs.detail.changeRole"),
     });
 
     if (!confirmed) return;
@@ -295,6 +327,7 @@ function ClubDetailComponent() {
       title: t("clubs.detail.leave"),
       description: <p>{t("clubs.detail.leaveConfirmation")}</p>,
       intent: "delete",
+      confirmLabel: t("clubs.detail.leave"),
     });
 
     if (!confirmed) return;
@@ -302,99 +335,108 @@ function ClubDetailComponent() {
     leaveClubMutation.mutate({ clubId: params().id });
   };
 
-  return (
-    <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
-      <div class="mb-6">
-        <Link to="/clubs" class="flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white">
-          <IconArrowLeft class="h-4 w-4" /> {t("clubs.detail.backToClubs")}
-        </Link>
-      </div>
+  const canInvite = () => currentUserRole() === "owner" || currentUserRole() === "admin";
 
-      <Show when={clubQuery.data} fallback={<div>{t("common.loading")}</div>}>
+  return (
+    <main class="mx-auto flex w-full max-w-md grow flex-col px-6 pt-4 pb-8">
+      <Show
+        when={clubQuery.data}
+        fallback={
+          <>
+            <PageHeader back={{ to: "/clubs", label: t("clubs.title") }} title="" />
+            <p class="text-white/50">{t("common.loading")}</p>
+          </>
+        }
+      >
         {(club) => (
           <>
-            <header class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-              <h1 class="text-3xl font-bold">{club().name}</h1>
-              <div class="flex w-full shrink-0 items-center justify-end gap-2 md:w-auto">
-                <Show when={currentUserRole() === "owner" || currentUserRole() === "admin"}>
-                  <Button intent="gradient" class="w-full md:w-auto" onClick={() => setDialog("invite")}>
-                    <IconUserPlus class="mr-2 h-4 w-4" /> {t("clubs.detail.inviteMember")}
-                  </Button>
-                </Show>
+            <PageHeader
+              back={{ to: "/clubs", label: t("clubs.title") }}
+              title={club().name}
+              action={
                 <DropdownMenu
                   trigger={
-                    <DropdownMenu.Trigger class="flex h-10 w-10 shrink-0 transform items-center justify-center rounded-md bg-white/6 text-white transition-all ease-in-out hover:bg-white/15 active:scale-95">
-                      <IconSettings class="h-5 w-5" />
+                    <DropdownMenu.Trigger
+                      aria-label={t("clubs.detail.settings")}
+                      class="flex size-11 cursor-pointer items-center justify-center rounded-[12px] bg-white/8 text-xl transition-colors hover:bg-white/12"
+                    >
+                      <IconGear />
                     </DropdownMenu.Trigger>
                   }
                 >
                   <Show when={currentUserRole() === "owner"}>
                     <DropdownMenu.Item onSelect={() => setDialog("rename")}>
-                      <IconEdit class="mr-2 h-4 w-4" /> {t("clubs.detail.rename")}
+                      <IconPencil /> {t("clubs.detail.rename")}
                     </DropdownMenu.Item>
-                    <DropdownMenu.Item class="text-red-500" onSelect={handleDeleteClub}>
-                      <IconTrash class="mr-2 h-4 w-4" /> {t("clubs.detail.delete")}
+                    <DropdownMenu.Item class="text-red-300" onSelect={handleDeleteClub}>
+                      <IconTrash /> {t("clubs.detail.delete")}
                     </DropdownMenu.Item>
                   </Show>
                   <Show when={currentUserRole() !== "owner"}>
-                    <DropdownMenu.Item class="text-red-500" onSelect={handleLeaveClub}>
-                      <IconUserMinus class="mr-2 h-4 w-4" /> {t("clubs.detail.leave")}
+                    <DropdownMenu.Item class="text-red-300" onSelect={handleLeaveClub}>
+                      <IconSignOut /> {t("clubs.detail.leave")}
                     </DropdownMenu.Item>
                   </Show>
                 </DropdownMenu>
-              </div>
-            </header>
+              }
+            />
 
-            <h2 class="mb-4 text-xl font-semibold">{t("clubs.members", { count: club().members.length })}</h2>
+            <Show when={canInvite()}>
+              <Button intent="gradient" class="mb-6 w-full" onClick={() => setDialog("invite")}>
+                <IconUserPlus /> {t("clubs.detail.inviteMember")}
+              </Button>
+            </Show>
 
-            <div class="flex flex-col gap-3">
+            <section class="flex flex-col gap-2">
+              <h2 class="text-xs font-black tracking-[0.2em] text-white/50 uppercase">
+                {club().members.length === 1
+                  ? t("clubs.membersOne", { count: club().members.length })
+                  : t("clubs.membersOther", { count: club().members.length })}
+              </h2>
               <For each={club().members}>
-                {(member) => (
-                  <div class="flex items-center justify-between rounded-lg border border-white/10 bg-white/6 p-4">
-                    <div class="flex items-center gap-4">
-                      <Show when={member.user} fallback={<div class="bg-gray-400 h-10 w-10 rounded-full" />}>
+                {(member) => {
+                  const isYou = () => member.user?.id === session.data?.id;
+                  return (
+                    <div class="flex min-h-16 items-center gap-3 rounded-[12px] bg-white/7 px-3 py-2">
+                      <Show when={member.user} fallback={<span class="size-10 shrink-0 rounded-full bg-white/15" />}>
                         {(user) => <Avatar class="shrink-0" user={user()} />}
                       </Show>
-                      <div class="flex items-center gap-2">
-                        <div>
-                          <div class="font-semibold text-white">{member.user?.username}</div>
-                          <div class="flex items-center gap-1.5 text-sm text-white/60">
-                            <Show when={member.role === "owner"}>
-                              <IconCrown class="h-4 w-4 text-yellow-500" />
-                              <span>{t("clubs.detail.roleOwner")}</span>
-                            </Show>
-                            <Show when={member.role === "admin"}>
-                              <IconShield class="h-4 w-4" />
-                              <span>{t("clubs.detail.roleAdmin")}</span>
-                            </Show>
-                            <Show when={member.role === "member"}>
-                              <span>{t("clubs.detail.roleMember")}</span>
-                            </Show>
-                          </div>
-                        </div>
+                      <div class="flex min-w-0 grow flex-col">
+                        <span class="truncate text-[17px] font-bold">{member.user?.username}</span>
+                        <span class="flex items-center gap-1.5 text-sm text-white/60">
+                          <Show when={member.role === "owner"}>
+                            <IconCrown class="text-yellow-400" />
+                            {t("clubs.detail.roleOwner")}
+                          </Show>
+                          <Show when={member.role === "admin"}>
+                            <IconShield class="text-sky-300" />
+                            {t("clubs.detail.roleAdmin")}
+                          </Show>
+                          <Show when={member.role === "member"}>{t("clubs.detail.roleMember")}</Show>
+                        </span>
                       </div>
+                      <Show when={!isYou()} fallback={<Tag class="text-[11px]">{t("lobby.you")}</Tag>}>
+                        <MemberActions
+                          member={member}
+                          currentUserRole={currentUserRole()}
+                          handlers={{
+                            removeMember: handleRemoveMember,
+                            transferOwnership: handleTransferOwnership,
+                            changeRole: handleChangeRole,
+                          }}
+                        />
+                      </Show>
                     </div>
-                    <Show when={member.user?.id !== session.data?.id}>
-                      <MemberActions
-                        member={member}
-                        currentUserRole={currentUserRole()}
-                        handlers={{
-                          removeMember: handleRemoveMember,
-                          transferOwnership: handleTransferOwnership,
-                          changeRole: handleChangeRole,
-                        }}
-                      />
-                    </Show>
-                  </div>
-                )}
+                  );
+                }}
               </For>
-            </div>
+            </section>
 
             <Show when={dialog() === "invite"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.inviteMember")}>
-                <p class="mt-2 text-sm text-white/60">{t("clubs.detail.inviteDescription")}</p>
+                <Dialog.Description>{t("clubs.detail.inviteDescription")}</Dialog.Description>
                 <form
-                  class="mt-4 flex flex-col gap-4"
+                  class="flex flex-col gap-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -421,7 +463,7 @@ function ClubDetailComponent() {
                       <Button
                         type="submit"
                         intent="gradient"
-                        loading={state().isSubmitting}
+                        loading={state().isSubmitting || inviteMemberMutation.isPending}
                         disabled={!state().canSubmit}
                       >
                         {t("clubs.detail.invite")}
@@ -434,9 +476,9 @@ function ClubDetailComponent() {
 
             <Show when={dialog() === "rename"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.rename")}>
-                <p class="mt-2 text-sm text-white/60">{t("clubs.detail.renameDescription")}</p>
+                <Dialog.Description>{t("clubs.detail.renameDescription")}</Dialog.Description>
                 <form
-                  class="mt-4 flex flex-col gap-4"
+                  class="flex flex-col gap-4"
                   onSubmit={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -476,7 +518,7 @@ function ClubDetailComponent() {
           </>
         )}
       </Show>
-    </div>
+    </main>
   );
 }
 
