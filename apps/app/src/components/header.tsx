@@ -1,42 +1,18 @@
-import { safe } from "@orpc/client";
 import { createQuery } from "@tanstack/solid-query";
-import { useNavigate } from "@tanstack/solid-router";
+import { Link } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
 import IconEarth from "~icons/lucide/earth";
-import IconLogOut from "~icons/lucide/log-out";
-import IconUser from "~icons/lucide/user";
 
 import { sessionQueryOptions } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
-import { notify } from "~/lib/toast";
-import { queryClient } from "~/main";
 
 import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
 export default function Header() {
   const sessionQuery = createQuery(() => sessionQueryOptions());
-
-  const navigate = useNavigate();
-
-  const logout = async () => {
-    const [error, _data, _isDefined] = await safe(client.auth.signOut.call());
-
-    if (error) {
-      notify({
-        message: t("error.unknown"),
-        intent: "error",
-      });
-
-      return;
-    }
-
-    await queryClient.resetQueries();
-    await navigate({ to: "/sign-in" });
-  };
 
   return (
     <>
@@ -50,27 +26,21 @@ export default function Header() {
             <span class="text-xl font-black tracking-tight">{t("header.appName")}</span>
           </div>
           <div class="flex grow justify-center">
-            <Show when={sessionQuery.data}>
+            <Show when={sessionQuery.data?.username}>
               <NavItems class="hidden md:flex" />
             </Show>
           </div>
           <div class="flex justify-end gap-2">
-            <Show when={sessionQuery.data}>
+            {/* Only once the profile is set up: before that there's no profile to go to. */}
+            <Show when={sessionQuery.data?.username ? sessionQuery.data : undefined}>
               {(session) => (
-                <DropdownMenu
-                  trigger={
-                    <DropdownMenu.Trigger class="cursor-pointer rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-white">
-                      <Avatar class="rounded-full" user={session()} />
-                    </DropdownMenu.Trigger>
-                  }
+                <Link
+                  to="/edit-profile"
+                  aria-label={t("nav.profile")}
+                  class="rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  <DropdownMenu.Item onSelect={() => navigate({ to: "/edit-profile" })}>
-                    <IconUser /> {t("header.editProfile")}
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item onSelect={logout}>
-                    <IconLogOut /> {t("header.signOut")}
-                  </DropdownMenu.Item>
-                </DropdownMenu>
+                  <Avatar user={session()} />
+                </Link>
               )}
             </Show>
 

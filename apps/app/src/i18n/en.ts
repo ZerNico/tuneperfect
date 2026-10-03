@@ -1,5 +1,6 @@
 const en = {
   signIn: {
+    emailVerified: "Email verified. Sign in to continue.",
     title: "Sign in",
     email: "Email",
     password: "Password",
@@ -66,6 +67,8 @@ const en = {
     back: "Back",
   },
   verifyEmail: {
+    sentTo: "We sent a verification link to",
+    sentToHint: "Open it to activate your account. Nothing arrived? Send it again below.",
     title: "Verify your email",
     description:
       "Please check your email for a verification link. If you haven't received it, you can request a new one below.",
@@ -76,6 +79,7 @@ const en = {
     error: "Failed to send verification email",
   },
   completeProfile: {
+    description: "Pick the name other players see in the game and in clubs.",
     title: "Complete your profile",
     username: "Username",
     usernameMinLength: "Username must be at least 3 characters",
@@ -85,7 +89,10 @@ const en = {
     submit: "Complete profile",
   },
   editProfile: {
-    title: "Edit Profile",
+    signOut: "Sign out",
+    changePicture: "Change profile picture",
+    account: "Account",
+    title: "Profile",
     username: "Username",
     usernameMinLength: "Username must be at least 3 characters",
     usernameMaxLength: "Username must be at most 20 characters",
@@ -189,8 +196,6 @@ const en = {
   },
   header: {
     appName: "Tune Perfect",
-    editProfile: "Edit profile",
-    signOut: "Sign out",
   },
   nav: {
     profile: "Profile",

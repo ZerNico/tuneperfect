@@ -1,17 +1,21 @@
 import { safe } from "@orpc/client";
 import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
-import { createFileRoute } from "@tanstack/solid-router";
+import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createSignal, Show } from "solid-js";
 import * as v from "valibot";
-import IconPencilLine from "~icons/lucide/pencil-line";
+import IconCaretRight from "~icons/ph/caret-right-bold";
+import IconLockKey from "~icons/ph/lock-key-bold";
+import IconPencil from "~icons/ph/pencil-simple-bold";
+import IconSignOut from "~icons/ph/sign-out-bold";
 
+import PageHeader from "~/components/page-header";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
-import Card from "~/components/ui/card";
 import Dialog from "~/components/ui/dialog";
 import ImageCrop from "~/components/ui/image-crop";
 import Input from "~/components/ui/input";
+import { useSignOut } from "~/hooks/use-sign-out";
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -28,6 +32,7 @@ function EditProfileComponent() {
   const [cropDialogOpen, setCropDialogOpen] = createSignal(false);
   const [tempImageUrl, setTempImageUrl] = createSignal<string | null>(null);
   const sessionQuery = useQuery(() => sessionQueryOptions());
+  const signOut = useSignOut();
 
   const form = createForm(() => ({
     defaultValues: {
@@ -130,74 +135,87 @@ function EditProfileComponent() {
   };
 
   return (
-    <div class="flex grow flex-col items-center justify-center p-2">
-      <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="text-xl font-semibold">{t("editProfile.title")}</h1>
-        <div class="flex justify-center">
-          <button
-            class="relative cursor-pointer transition-opacity hover:opacity-75"
-            type="button"
-            onClick={() => fileInputElement()?.click()}
-          >
-            <input
-              ref={setFileInputElement}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,image/webp"
-              onChange={handleFileChange}
-              aria-label={t("editProfile.title")}
-              class="hidden"
-            />
-            <Show
-              when={file()}
-              fallback={<Show when={sessionQuery.data}>{(session) => <Avatar size="lg" user={session()} />}</Show>}
-            >
-              <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />
-            </Show>
-            <div class="absolute right-1 bottom-1 rounded-full bg-slate-800 p-1.5 text-xs text-white">
-              <IconPencilLine />
-            </div>
-          </button>
-        </div>
-        <form
-          class="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-        >
-          <form.Field name="username">
-            {(field) => (
-              <Input
-                label={t("editProfile.username")}
-                name={field().name}
-                value={field().state.value}
-                onBlur={field().handleBlur}
-                onInput={(e) => field().handleChange(e.currentTarget.value)}
-                errorMessage={field().state.meta.errors?.[0]?.message}
-              />
-            )}
-          </form.Field>
+    <main class="mx-auto flex w-full max-w-md grow flex-col px-6 pt-4 pb-8">
+      <PageHeader title={t("editProfile.title")} subtitle={sessionQuery.data?.email} />
 
-          <div class="flex flex-col gap-2">
-            <form.Subscribe
-              selector={(state) => ({
-                canSubmit: state.canSubmit,
-                isSubmitting: state.isSubmitting,
-              })}
-            >
-              {(state) => (
-                <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                  {t("editProfile.save")}
-                </Button>
-              )}
-            </form.Subscribe>
-            <Button to="/change-password" type="button">
-              {t("editProfile.changePassword")}
+      <div class="flex justify-center pb-6">
+        <button
+          class="relative cursor-pointer rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          type="button"
+          aria-label={t("editProfile.changePicture")}
+          onClick={() => fileInputElement()?.click()}
+        >
+          <input
+            ref={setFileInputElement}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            onChange={handleFileChange}
+            aria-hidden="true"
+            tabIndex={-1}
+            class="hidden"
+          />
+          <Show
+            when={file()}
+            fallback={<Show when={sessionQuery.data}>{(session) => <Avatar size="lg" user={session()} />}</Show>}
+          >
+            <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />
+          </Show>
+          <span class="gradient-accent absolute right-0 bottom-0 flex size-10 items-center justify-center rounded-full text-lg shadow-crisp">
+            <IconPencil />
+          </span>
+        </button>
+      </div>
+
+      <form
+        class="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <form.Field name="username">
+          {(field) => (
+            <Input
+              label={t("editProfile.username")}
+              autocomplete="username"
+              name={field().name}
+              value={field().state.value}
+              onBlur={field().handleBlur}
+              onInput={(e) => field().handleChange(e.currentTarget.value)}
+              errorMessage={field().state.meta.errors?.[0]?.message}
+            />
+          )}
+        </form.Field>
+
+        <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
+          {(state) => (
+            <Button type="submit" intent="gradient" loading={state().isSubmitting}>
+              {t("editProfile.save")}
             </Button>
-          </div>
-        </form>
-      </Card>
+          )}
+        </form.Subscribe>
+      </form>
+
+      <section class="mt-8 flex flex-col gap-2">
+        <h2 class="text-xs font-black tracking-[0.2em] text-white/50 uppercase">{t("editProfile.account")}</h2>
+        <Link
+          to="/change-password"
+          class="flex min-h-14 items-center gap-3 rounded-[12px] bg-white/7 px-4 font-bold transition-colors hover:bg-white/10"
+        >
+          <IconLockKey class="text-xl text-white/60" />
+          <span class="grow">{t("editProfile.changePassword")}</span>
+          <IconCaretRight class="text-white/40" />
+        </Link>
+        <button
+          type="button"
+          class="flex min-h-14 cursor-pointer items-center gap-3 rounded-[12px] bg-white/7 px-4 text-start font-bold text-red-300 transition-colors hover:bg-red-400/10"
+          onClick={() => void signOut()}
+        >
+          <IconSignOut class="text-xl" />
+          {t("editProfile.signOut")}
+        </button>
+      </section>
 
       <Show when={cropDialogOpen() && tempImageUrl()}>
         {(imageUrl) => (
@@ -211,6 +229,6 @@ function EditProfileComponent() {
           </Dialog>
         )}
       </Show>
-    </div>
+    </main>
   );
 }

@@ -3,9 +3,10 @@ import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 import * as v from "valibot";
+import IconKey from "~icons/ph/key-fill";
 
+import AuthScreen from "~/components/auth-screen";
 import Button from "~/components/ui/button";
-import Card from "~/components/ui/card";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -46,66 +47,64 @@ function ForgotPasswordComponent() {
   }));
 
   return (
-    <div class="flex grow flex-col items-center justify-center p-2">
-      <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="text-xl font-semibold">{t("forgotPassword.title")}</h1>
-
-        {sent() ? (
-          <div class="flex flex-col gap-4">
-            <p>{t("forgotPassword.emailSent")}</p>
-            <Button intent="gradient" onClick={() => navigate({ to: "/sign-in" })}>
-              {t("common.backToSignIn")}
-            </Button>
-          </div>
-        ) : (
-          <>
-            <p class="text-white/60">{t("forgotPassword.description")}</p>
-            <form
-              class="flex flex-col gap-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                form.handleSubmit();
-              }}
-            >
-              <form.Field name="email">
-                {(field) => (
-                  <Input
-                    label={t("signIn.email")}
-                    name={field().name}
-                    value={field().state.value}
-                    onBlur={field().handleBlur}
-                    onInput={(e) => field().handleChange(e.currentTarget.value)}
-                    errorMessage={field().state.meta.errors?.[0]?.message}
-                  />
-                )}
-              </form.Field>
-
-              <div class="flex flex-col gap-2">
-                <form.Subscribe
-                  selector={(state) => ({
-                    canSubmit: state.canSubmit,
-                    isSubmitting: state.isSubmitting,
-                  })}
-                >
-                  {(state) => (
-                    <Button type="submit" intent="gradient" loading={state().isSubmitting}>
-                      {t("forgotPassword.sendResetLink")}
-                    </Button>
-                  )}
-                </form.Subscribe>
-              </div>
-            </form>
-          </>
-        )}
-
-        <p class="text-sm text-white/60">
-          {t("forgotPassword.rememberedPassword")}{" "}
-          <Link to="/sign-in" class="text-white">
+    <AuthScreen title={t("forgotPassword.title")} icon={IconKey}>
+      {sent() ? (
+        <div class="flex flex-col gap-4">
+          <p>{t("forgotPassword.emailSent")}</p>
+          <Button intent="gradient" onClick={() => navigate({ to: "/sign-in" })}>
             {t("common.backToSignIn")}
-          </Link>
-        </p>
-      </Card>
-    </div>
+          </Button>
+        </div>
+      ) : (
+        <>
+          <p class="text-white/60">{t("forgotPassword.description")}</p>
+          <form
+            class="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
+            <form.Field name="email">
+              {(field) => (
+                <Input
+                  label={t("signIn.email")}
+                  type="email"
+                  autocomplete="email"
+                  name={field().name}
+                  value={field().state.value}
+                  onBlur={field().handleBlur}
+                  onInput={(e) => field().handleChange(e.currentTarget.value)}
+                  errorMessage={field().state.meta.errors?.[0]?.message}
+                />
+              )}
+            </form.Field>
+
+            <div class="flex flex-col gap-2">
+              <form.Subscribe
+                selector={(state) => ({
+                  canSubmit: state.canSubmit,
+                  isSubmitting: state.isSubmitting,
+                })}
+              >
+                {(state) => (
+                  <Button type="submit" intent="gradient" loading={state().isSubmitting}>
+                    {t("forgotPassword.sendResetLink")}
+                  </Button>
+                )}
+              </form.Subscribe>
+            </div>
+          </form>
+        </>
+      )}
+
+      <p class="text-sm text-white/60">
+        {t("forgotPassword.rememberedPassword")}{" "}
+        <Link to="/sign-in" class="text-white">
+          {t("common.backToSignIn")}
+        </Link>
+      </p>
+    </AuthScreen>
   );
 }
