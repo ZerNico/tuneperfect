@@ -126,7 +126,7 @@ function LobbyCard(props: LobbyCardProps) {
     <Show
       when={!props.disabled}
       fallback={
-        <div class="group flex cursor-not-allowed overflow-hidden rounded-xl bg-white/50 opacity-60 shadow-lg">
+        <div class="group flex cursor-not-allowed overflow-hidden rounded-xl bg-white/50 opacity-60">
           <div
             class="flex w-24 shrink-0 items-center justify-center bg-gradient-to-br p-4 opacity-50"
             classList={{
@@ -136,15 +136,15 @@ function LobbyCard(props: LobbyCardProps) {
             <Dynamic component={props.icon} class="h-10 w-10 text-white" />
           </div>
           <div class="flex grow flex-col justify-center p-4">
-            <div class="text-lg font-semibold text-slate-800">{props.label}</div>
-            <div class="text-sm text-slate-500">{props.disabledReason ?? props.description}</div>
+            <div class="text-lg font-semibold text-white">{props.label}</div>
+            <div class="text-sm text-white/60">{props.disabledReason ?? props.description}</div>
           </div>
         </div>
       }
     >
       <Link
         to={props.to}
-        class="group flex cursor-pointer overflow-hidden rounded-xl bg-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]"
+        class="group flex cursor-pointer overflow-hidden rounded-xl bg-white/6 transition-all hover:scale-[1.02] active:scale-[0.98]"
       >
         <div
           class="flex w-24 shrink-0 items-center justify-center bg-gradient-to-br p-4"
@@ -155,8 +155,8 @@ function LobbyCard(props: LobbyCardProps) {
           <Dynamic component={props.icon} class="h-10 w-10 text-white" />
         </div>
         <div class="flex grow flex-col justify-center p-4">
-          <div class="text-lg font-semibold text-slate-800">{props.label}</div>
-          <div class="text-sm text-slate-500">{props.description}</div>
+          <div class="text-lg font-semibold text-white">{props.label}</div>
+          <div class="text-sm text-white/60">{props.description}</div>
         </div>
       </Link>
     </Show>

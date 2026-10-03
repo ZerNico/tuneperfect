@@ -59,7 +59,7 @@ function ForgotPasswordComponent() {
           </div>
         ) : (
           <>
-            <p class="text-slate-500">{t("forgotPassword.description")}</p>
+            <p class="text-white/60">{t("forgotPassword.description")}</p>
             <form
               class="flex flex-col gap-4"
               onSubmit={(e) => {
@@ -99,9 +99,9 @@ function ForgotPasswordComponent() {
           </>
         )}
 
-        <p class="text-sm text-slate-500">
+        <p class="text-sm text-white/60">
           {t("forgotPassword.rememberedPassword")}{" "}
-          <Link to="/sign-in" class="text-slate-800">
+          <Link to="/sign-in" class="text-white">
             {t("common.backToSignIn")}
           </Link>
         </p>

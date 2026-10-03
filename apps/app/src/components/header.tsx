@@ -60,12 +60,12 @@ export default function Header() {
     <>
       <div class="h-16" />
       <header
-        class="fixed top-0 right-0 left-0 z-10 border-b border-white/10 bg-[#203141]/60 backdrop-blur-lg"
+        class="fixed top-0 right-0 left-0 z-10 bg-[rgb(16_16_36/0.55)] backdrop-blur-xl"
         style={{ "margin-right": "var(--scrollbar-width, 0px)" }}
       >
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
-            <span class="text-lg font-bold">{t("header.appName")}</span>
+            <span class="text-xl font-black tracking-tight">{t("header.appName")}</span>
           </div>
           <div class="flex grow justify-center">
             <Show when={sessionQuery.data}>
@@ -99,8 +99,8 @@ export default function Header() {
 
             <DropdownMenu
               trigger={
-                <DropdownMenu.Trigger class="cursor-pointer rounded-full p-2 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">
-                  <IconEarth class="text-lg" />
+                <DropdownMenu.Trigger class="flex size-10 cursor-pointer items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+                  <IconEarth class="text-xl" />
                 </DropdownMenu.Trigger>
               }
             >

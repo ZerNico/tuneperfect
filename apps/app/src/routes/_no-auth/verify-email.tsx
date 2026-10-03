@@ -63,7 +63,7 @@ function VerifyEmailComponent() {
     <div class="flex grow flex-col items-center justify-center p-2">
       <Card class="flex w-100 max-w-full flex-col gap-4">
         <h1 class="text-xl font-semibold">{t("verifyEmail.title")}</h1>
-        <p class="text-sm text-slate-500">{t("verifyEmail.description")}</p>
+        <p class="text-sm text-white/60">{t("verifyEmail.description")}</p>
         <form
           class="flex flex-col gap-4"
           onSubmit={(e) => {

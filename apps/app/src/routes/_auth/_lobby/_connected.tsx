@@ -138,7 +138,7 @@ function ConnectedLayout() {
 
           <Show when={isDisconnected() && isReconnecting()}>
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8 shadow-xl">
+              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8">
                 <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
                 <p class="text-white">{t("songs.connecting")}</p>
                 <p class="text-sm text-white/60">{t("songs.connectionTrouble")}</p>
@@ -148,7 +148,7 @@ function ConnectedLayout() {
 
           <Show when={hasFailed()}>
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8 shadow-xl">
+              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8">
                 <IconWifiOff class="h-12 w-12 text-red-400" />
                 <p class="text-white">{t("songs.connectionFailed")}</p>
                 <Show when={connectionStore.error()}>

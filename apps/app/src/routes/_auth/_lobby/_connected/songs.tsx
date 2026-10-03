@@ -81,14 +81,14 @@ function SongsComponent() {
       <Show when={!songsQuery.isLoading && (songsQuery.data?.length ?? 0) > 0}>
         {/* Search input */}
         <div class="relative mb-4">
-          <IconSearch class="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <IconSearch class="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-white/45" />
           <input
             type="text"
             placeholder={t("songs.searchPlaceholder")}
             aria-label={t("songs.searchPlaceholder")}
             value={searchQuery()}
             onInput={(e) => setSearchQuery(e.currentTarget.value)}
-            class="w-full rounded-lg border border-slate-200 bg-white py-2 pr-4 pl-10 text-slate-800 focus:border-blue-500 focus:outline-none"
+            class="w-full rounded-lg border border-white/10 bg-white/6 py-2 pr-4 pl-10 text-white focus:border-blue-500 focus:outline-none"
           />
         </div>
 
@@ -96,16 +96,16 @@ function SongsComponent() {
         <div class="flex flex-col gap-2">
           <For each={filteredSongs()}>
             {(song) => (
-              <div class="rounded-lg bg-white p-4 shadow-sm">
-                <div class="font-semibold text-slate-800">{song.title}</div>
-                <div class="text-sm text-slate-500">{song.artist}</div>
+              <div class="rounded-lg bg-white/6 p-4">
+                <div class="font-semibold text-white">{song.title}</div>
+                <div class="text-sm text-white/60">{song.artist}</div>
               </div>
             )}
           </For>
         </div>
 
         <Show when={filteredSongs().length === 0 && searchQuery()}>
-          <div class="py-8 text-center text-slate-500">No songs match your search</div>
+          <div class="py-8 text-center text-white/60">No songs match your search</div>
         </Show>
       </Show>
     </div>

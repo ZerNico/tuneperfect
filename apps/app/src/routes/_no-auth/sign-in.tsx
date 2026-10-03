@@ -134,7 +134,7 @@ function SignInComponent() {
           </form.Field>
 
           <div class="flex items-center justify-between">
-            <Link to="/forgot-password" class="text-sm text-slate-600 hover:text-slate-800">
+            <Link to="/forgot-password" class="text-sm text-white/60 hover:text-white">
               {t("signIn.forgotPassword")}
             </Link>
           </div>
@@ -154,24 +154,24 @@ function SignInComponent() {
             </form.Subscribe>
           </div>
         </form>
-        <div class="flex items-center gap-2 text-slate-400">
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
+        <div class="flex items-center gap-2 text-white/45">
+          <div class="h-0.5 flex-1 rounded-full bg-white/15" />
           {t("signIn.or")}
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
+          <div class="h-0.5 flex-1 rounded-full bg-white/15" />
         </div>
         <div class="flex flex-wrap gap-4">
           <DiscordLogin redirect={absoluteRedirect()} />
           <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
-        <p class="text-sm text-slate-500">
+        <p class="text-sm text-white/60">
           {t("signIn.noAccount")}{" "}
           <Link
             to="/sign-up"
             search={{
               redirect: search().redirect,
             }}
-            class="text-slate-800"
+            class="text-white"
           >
             {t("signIn.signUp")}
           </Link>

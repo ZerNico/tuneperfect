@@ -2,9 +2,10 @@
 @import "@fontsource/lato/300.css";
 @import "@fontsource/lato/400.css";
 @import "@fontsource/lato/700.css";
+@import "@fontsource/lato/900.css";
 
 @theme {
-  --font-primary: "Lato", "sans-serif";
+  --font-primary: "Lato", sans-serif;
 
   --color-*: initial;
 
@@ -144,6 +145,7 @@
   --color-slate-950: oklch(0.129 0.042 264.695);
 
   --animate-hide: hide 0.1s ease-in;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
   --animate-slide-in: slideIn 0.15s ease-out;
   --animate-swipe-out: swipeOut 0.1s ease-in;
 
@@ -153,6 +155,16 @@
     }
     to {
       opacity: 0;
+    }
+  }
+
+  /* Background: slow drift of the aurora glows */
+  @keyframes aurora {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(8%, 10%) scale(1.15);
     }
   }
 
@@ -191,11 +203,68 @@
   @apply from-cyan-400 to-blue-500;
 }
 
-.gradient-bg-secondary {
-  background: radial-gradient(at top, #2d3438 0%, #203141 100%);
+/* Same page background as the game's main screens. */
+.gradient-bg-primary {
+  background: radial-gradient(at 60% top, rgb(30 36 75) 0%, rgb(16 16 36) 100%);
+}
+
+/*
+ * Each section has the game's mode colours (lobby = yellow/orange, songs = green, clubs = pink/purple,
+ * account = cyan/blue, also the default). The root layout sets data-mode on <html>; primary buttons, the active tab and the aurora read
+ * --accent-from/--accent-to.
+ */
+:root,
+[data-mode="settings"] {
+  --accent-from: var(--color-cyan-400);
+  --accent-to: var(--color-blue-500);
+}
+
+[data-mode="lobby"] {
+  --accent-from: var(--color-yellow-400);
+  --accent-to: var(--color-orange-500);
+}
+
+[data-mode="sing"] {
+  --accent-from: var(--color-green-400);
+  --accent-to: var(--color-teal-600);
+}
+
+[data-mode="party"] {
+  --accent-from: var(--color-pink-500);
+  --accent-to: var(--color-purple-600);
+}
+
+.gradient-accent {
+  background-image: linear-gradient(to right, var(--accent-from), var(--accent-to));
+}
+
+/* Popovers, dialogs and toasts: solid, so text stays readable over anything. */
+@utility surface-raised {
+  background-color: rgb(27 29 51);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 0.25rem 0 rgb(0 0 0 / 0.3);
+}
+
+/* Short unblurred drop, as on the game's buttons and cards. */
+@utility shadow-crisp {
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.3);
+}
+
+/* Trims the line box to cap height and baseline, so letters centre in tags and buttons. */
+@utility text-box-cap {
+  text-box: trim-both cap alphabetic;
 }
 
 html,
 body {
   overscroll-behavior: none;
+}
+
+/* On body (not the app root) so portalled dialogs, menus and toasts get it too. */
+body {
+  font-family: var(--font-primary);
+  color: var(--color-white);
+  background-color: rgb(16 16 36);
+  -webkit-font-smoothing: antialiased;
 }
