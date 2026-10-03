@@ -3,9 +3,10 @@ import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 
 import { DialogProvider } from "./lib/dialog.tsx";
-import { initPostHog } from "./lib/posthog";
+import { applyMode } from "./lib/mode";
 
 import "./styles.css";
+import { initPostHog } from "./lib/posthog";
 import { routeTree } from "./routeTree.gen";
 
 export const queryClient = new QueryClient({
@@ -26,6 +27,10 @@ const router = createRouter({
   defaultPreload: "intent",
   defaultPreloadStaleTime: 0,
 });
+
+// Section colours follow navigation; set outside Solid's reactivity, straight from the router.
+applyMode(window.location.pathname);
+router.subscribe("onBeforeNavigate", ({ toLocation }) => applyMode(toLocation.pathname));
 
 declare module "@tanstack/solid-router" {
   interface Register {

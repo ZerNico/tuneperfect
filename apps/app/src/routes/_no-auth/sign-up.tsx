@@ -140,23 +140,23 @@ function SignUpComponent() {
             </form.Subscribe>
           </div>
         </form>
-        <div class="flex items-center gap-2 text-slate-400">
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
+        <div class="flex items-center gap-2 text-white/45">
+          <div class="h-0.5 flex-1 rounded-full bg-white/15" />
           {t("signUp.or")}
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
+          <div class="h-0.5 flex-1 rounded-full bg-white/15" />
         </div>
         <div class="flex flex-wrap gap-4">
           <DiscordLogin redirect={absoluteRedirect()} />
           <GoogleLogin redirect={absoluteRedirect()} />
         </div>
 
-        <p class="text-xs text-slate-500">
+        <p class="text-xs text-white/60">
           {t("signUp.privacyPolicyPrefix")}{" "}
           <a
             target="_blank"
             rel="noreferrer"
             href={`${config.WEB_URL}/privacy-policy`}
-            class="text-slate-700 underline hover:text-slate-900"
+            class="text-white/80 underline hover:text-white"
           >
             {t("signUp.privacyPolicyLink")}
           </a>{" "}
@@ -165,21 +165,21 @@ function SignUpComponent() {
             target="_blank"
             rel="noreferrer"
             href={`${config.WEB_URL}/terms-of-service`}
-            class="text-slate-700 underline hover:text-slate-900"
+            class="text-white/80 underline hover:text-white"
           >
             {t("signUp.termsOfServiceLink")}
           </a>{" "}
           {t("signUp.privacyPolicySuffix")}
         </p>
 
-        <p class="text-sm text-slate-500">
+        <p class="text-sm text-white/60">
           {t("signUp.haveAccount")}{" "}
           <Link
             to="/sign-in"
             search={{
               redirect: search().redirect,
             }}
-            class="text-slate-800"
+            class="text-white"
           >
             {t("signUp.signIn")}
           </Link>

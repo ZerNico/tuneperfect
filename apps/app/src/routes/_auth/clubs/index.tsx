@@ -104,8 +104,8 @@ function ClubsIndexComponent() {
               {(invite) => (
                 <Card class="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
                   <div>
-                    <div class="font-semibold text-slate-800">{invite.club?.name}</div>
-                    <div class="text-sm text-slate-500">
+                    <div class="font-semibold text-white">{invite.club?.name}</div>
+                    <div class="text-sm text-white/60">
                       {t("clubs.invitedBy", { username: invite.inviter?.username || "" })}
                     </div>
                   </div>
@@ -155,7 +155,7 @@ function ClubsIndexComponent() {
                   <Card class="flex h-full flex-col justify-between transition-all group-hover:scale-105 group-hover:shadow-lg">
                     <div>
                       <div class="text-lg font-bold">{club.name}</div>
-                      <div class="text-sm text-slate-500">
+                      <div class="text-sm text-white/60">
                         {club.members.length === 1
                           ? t("clubs.membersOne", { count: club.members.length })
                           : t("clubs.membersOther", { count: club.members.length })}
@@ -176,7 +176,7 @@ function ClubsIndexComponent() {
                           </div>
                         </Show>
                       </div>
-                      <IconArrowRight class="h-5 w-5 text-slate-400 transition-transform group-hover:translate-x-1" />
+                      <IconArrowRight class="h-5 w-5 text-white/45 transition-transform group-hover:translate-x-1" />
                     </div>
                   </Card>
                 </Link>
@@ -186,9 +186,9 @@ function ClubsIndexComponent() {
         </Show>
         <Show when={clubsQuery.isSuccess && !clubsQuery.data?.length}>
           <div class="py-12 text-center">
-            <IconUsers class="text-gray-400 mx-auto h-12 w-12" />
-            <h3 class="text-gray-900 mt-2 text-sm font-medium">{t("clubs.noClubs")}</h3>
-            <p class="text-gray-500 mt-1 text-sm">{t("clubs.noClubsDescription")}</p>
+            <IconUsers class="mx-auto h-12 w-12 text-white/45" />
+            <h3 class="mt-2 text-sm font-medium text-white">{t("clubs.noClubs")}</h3>
+            <p class="mt-1 text-sm text-white/60">{t("clubs.noClubsDescription")}</p>
             <div class="mt-6">
               <Button intent="gradient" onClick={() => setCreateClubDialog(true)}>
                 <IconPlus class="mr-2 h-5 w-5" />

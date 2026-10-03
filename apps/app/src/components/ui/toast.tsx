@@ -17,10 +17,10 @@ const TOAST_ICONS = new Map([
 ]);
 
 const TOAST_COLORS = new Map([
-  ["success", "bg-green-400"],
-  ["error", "bg-red-400"],
-  ["info", "bg-blue-400"],
-  ["warning", "bg-yellow-400"],
+  ["success", "text-green-400"],
+  ["error", "text-red-400"],
+  ["info", "text-sky-400"],
+  ["warning", "text-yellow-400"],
 ]);
 
 interface ToastProps {
@@ -31,27 +31,24 @@ interface ToastProps {
 
 export default function Toast(props: ToastProps) {
   const IconComponent = createMemo(() => TOAST_ICONS.get(props.intent));
-  const bgColor = () => TOAST_COLORS.get(props.intent);
+  const iconColor = () => TOAST_COLORS.get(props.intent);
   const title = () => t(`toast.${props.intent}`);
 
   return (
     <KToast
       toastId={props.toastId}
-      class="flex w-full transform items-start justify-between rounded-lg p-3 data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
-      classList={{
-        [bgColor() || ""]: true,
-      }}
+      class="flex w-full transform items-start justify-between gap-3 rounded-[14px] surface-raised p-3.5 text-white data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
     >
       <div class="flex">
-        <div class={`mr-3 shrink-0 text-xl text-toast-${props.intent}`}>
+        <div class={`mr-3 shrink-0 text-xl ${iconColor() ?? ""}`}>
           <Dynamic component={IconComponent()} />
         </div>
         <div class="flex flex-col gap-1">
-          <KToast.Title class="font-semibold">{title()}</KToast.Title>
-          <KToast.Description>{props.message}</KToast.Description>
+          <KToast.Title class="font-bold">{title()}</KToast.Title>
+          <KToast.Description class="text-sm text-white/75">{props.message}</KToast.Description>
         </div>
       </div>
-      <KToast.CloseButton class="cursor-pointer">
+      <KToast.CloseButton class="cursor-pointer text-white/60 hover:text-white">
         <X />
       </KToast.CloseButton>
     </KToast>
@@ -62,7 +59,7 @@ export function ToastRegion() {
   return (
     <Portal>
       <KToast.Region swipeDirection="right" limit={5}>
-        <KToast.List class="fixed top-0 right-0 z-20 flex w-90 max-w-screen flex-col gap-2 p-8" />
+        <KToast.List class="fixed top-0 right-0 z-20 flex w-96 max-w-screen flex-col gap-2 p-4" />
       </KToast.Region>
     </Portal>
   );

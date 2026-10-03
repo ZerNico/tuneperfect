@@ -8,7 +8,7 @@ interface CardProps {
 export default function Card(props: CardProps) {
   return (
     <div
-      class="rounded-lg bg-white p-8 text-slate-800 shadow-md"
+      class="rounded-[20px] bg-white/6 p-6 text-white"
       classList={{
         [props.class || ""]: true,
       }}

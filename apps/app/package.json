@@ -11,6 +11,7 @@
     "@iconify-json/circle-flags": "^1.2.11",
     "@iconify-json/logos": "^1.2.14",
     "@iconify-json/lucide": "^1.2.137",
+    "@iconify-json/ph": "^1.2.2",
     "@kobalte/core": "^0.13.14",
     "@orpc/client": "^1.15.4",
     "@orpc/server": "^1.15.4",

@@ -29,12 +29,15 @@ export default function Input(props: InputProps) {
     <div class={props.class}>
       <Show when={props.label}>
         {(label) => (
-          <label for={props.name} class="block text-sm text-slate-800">
+          <label for={props.name} class="mb-1.5 block text-sm font-bold text-white/70">
             {label()}
           </label>
         )}
       </Show>
-      <div class="flex items-center gap-1 pb-1">
+      <div
+        class="flex h-12 items-center gap-1 rounded-[12px] bg-white/8 pr-1 pl-4 transition-shadow focus-within:ring-2 focus-within:ring-white/40"
+        classList={{ "ring-2 ring-red-400/70": !!props.errorMessage, "opacity-50": props.disabled }}
+      >
         <input
           id={props.name}
           value={props.value}
@@ -49,7 +52,7 @@ export default function Input(props: InputProps) {
           type={type()}
           onInput={(event) => props.onInput?.(event)}
           aria-label={props.label}
-          class="block w-full grow rounded focus:outline-none"
+          class="block h-full w-full grow bg-transparent text-white placeholder:text-white/35 focus:outline-none"
           classList={{
             [props.inputClass || ""]: true,
           }}
@@ -58,7 +61,7 @@ export default function Input(props: InputProps) {
         />
         <Show when={props.type === "password"}>
           <button
-            class="cursor-pointer rounded-full p-1 transition-colors hover:bg-slate-200"
+            class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             type="button"
             onClick={() => setShowPassword(!showPassword())}
             aria-label={showPassword() ? "Hide password" : "Show password"}
@@ -69,9 +72,8 @@ export default function Input(props: InputProps) {
           </button>
         </Show>
       </div>
-      <div class="h-0.5 rounded-full bg-slate-800" />
       <Show when={props.errorMessage}>
-        <div id={`${props.name}-error`} class="mt-1 text-sm text-red-600" role="alert">
+        <div id={`${props.name}-error`} class="mt-1.5 text-sm font-semibold text-red-300" role="alert">
           {props.errorMessage}
         </div>
       </Show>

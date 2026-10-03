@@ -305,7 +305,7 @@ function ClubDetailComponent() {
   return (
     <div class="container mx-auto flex w-full grow flex-col p-4 sm:max-w-4xl">
       <div class="mb-6">
-        <Link to="/clubs" class="flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-slate-400">
+        <Link to="/clubs" class="flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white">
           <IconArrowLeft class="h-4 w-4" /> {t("clubs.detail.backToClubs")}
         </Link>
       </div>
@@ -323,7 +323,7 @@ function ClubDetailComponent() {
                 </Show>
                 <DropdownMenu
                   trigger={
-                    <DropdownMenu.Trigger class="flex h-10 w-10 shrink-0 transform items-center justify-center rounded-md bg-white text-slate-800 transition-all ease-in-out hover:bg-slate-100 active:scale-95">
+                    <DropdownMenu.Trigger class="flex h-10 w-10 shrink-0 transform items-center justify-center rounded-md bg-white/6 text-white transition-all ease-in-out hover:bg-white/15 active:scale-95">
                       <IconSettings class="h-5 w-5" />
                     </DropdownMenu.Trigger>
                   }
@@ -350,15 +350,15 @@ function ClubDetailComponent() {
             <div class="flex flex-col gap-3">
               <For each={club().members}>
                 {(member) => (
-                  <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4">
+                  <div class="flex items-center justify-between rounded-lg border border-white/10 bg-white/6 p-4">
                     <div class="flex items-center gap-4">
                       <Show when={member.user} fallback={<div class="bg-gray-400 h-10 w-10 rounded-full" />}>
                         {(user) => <Avatar class="shrink-0" user={user()} />}
                       </Show>
                       <div class="flex items-center gap-2">
                         <div>
-                          <div class="font-semibold text-slate-800">{member.user?.username}</div>
-                          <div class="flex items-center gap-1.5 text-sm text-slate-500">
+                          <div class="font-semibold text-white">{member.user?.username}</div>
+                          <div class="flex items-center gap-1.5 text-sm text-white/60">
                             <Show when={member.role === "owner"}>
                               <IconCrown class="h-4 w-4 text-yellow-500" />
                               <span>{t("clubs.detail.roleOwner")}</span>
@@ -392,7 +392,7 @@ function ClubDetailComponent() {
 
             <Show when={dialog() === "invite"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.inviteMember")}>
-                <p class="mt-2 text-sm text-slate-600">{t("clubs.detail.inviteDescription")}</p>
+                <p class="mt-2 text-sm text-white/60">{t("clubs.detail.inviteDescription")}</p>
                 <form
                   class="mt-4 flex flex-col gap-4"
                   onSubmit={(e) => {
@@ -434,7 +434,7 @@ function ClubDetailComponent() {
 
             <Show when={dialog() === "rename"}>
               <Dialog onClose={() => setDialog(null)} title={t("clubs.detail.rename")}>
-                <p class="mt-2 text-sm text-slate-600">{t("clubs.detail.renameDescription")}</p>
+                <p class="mt-2 text-sm text-white/60">{t("clubs.detail.renameDescription")}</p>
                 <form
                   class="mt-4 flex flex-col gap-4"
                   onSubmit={(e) => {

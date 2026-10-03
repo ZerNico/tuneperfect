@@ -111,9 +111,9 @@ function PlayersComponent() {
             when={lobbyQuery.isPending}
             fallback={
               <div class="py-12 text-center">
-                <IconUsers class="text-gray-400 mx-auto h-12 w-12" />
-                <h3 class="text-gray-900 mt-2 text-sm font-medium">{t("lobby.noUsers")}</h3>
-                <p class="text-gray-500 mt-1 text-sm">{t("lobby.noUsersDescription")}</p>
+                <IconUsers class="mx-auto h-12 w-12 text-white/45" />
+                <h3 class="mt-2 text-sm font-medium text-white">{t("lobby.noUsers")}</h3>
+                <p class="mt-1 text-sm text-white/60">{t("lobby.noUsersDescription")}</p>
               </div>
             }
           >
@@ -124,11 +124,11 @@ function PlayersComponent() {
         <div class="flex flex-col gap-3">
           <Key each={lobbyQuery.data?.users || []} by={(user) => user.id}>
             {(user) => (
-              <div class="flex items-center justify-between rounded-lg bg-white p-4">
+              <div class="flex items-center justify-between rounded-lg bg-white/6 p-4">
                 <div class="flex items-center gap-3">
                   <Avatar class="shrink-0" user={user()} />
                   <div>
-                    <div class="font-semibold text-slate-800">{user().username}</div>
+                    <div class="font-semibold text-white">{user().username}</div>
                   </div>
                 </div>
                 <Show when={user().username}>
@@ -156,7 +156,7 @@ function PlayersComponent() {
           title={t("lobby.selectClub")}
         >
           <div class="flex flex-col gap-4">
-            <p class="text-slate-600">{t("lobby.selectClubDescription", { username: selectedUser() })}</p>
+            <p class="text-white/60">{t("lobby.selectClubDescription", { username: selectedUser() })}</p>
 
             <div class="flex flex-col gap-3">
               <For each={availableClubsForUser(selectedUser())}>
@@ -166,15 +166,15 @@ function PlayersComponent() {
                     aria-label={club.name}
                     class="flex w-full cursor-pointer items-center justify-between rounded-lg border-2 p-4 text-start transition-all hover:scale-[1.02] hover:shadow-md"
                     classList={{
-                      "border-blue-500 bg-blue-50 shadow-md": selectedClubId() === club.id,
-                      "border-slate-200 bg-white hover:border-slate-300": selectedClubId() !== club.id,
+                      "border-white/60 bg-white/12": selectedClubId() === club.id,
+                      "border-white/10 bg-white/6 hover:border-white/20": selectedClubId() !== club.id,
                     }}
                     onClick={() => setSelectedClubId(club.id)}
                   >
                     <div class="flex items-center gap-3">
                       <div>
-                        <div class="font-semibold text-slate-800">{club.name}</div>
-                        <div class="text-sm text-slate-500">
+                        <div class="font-semibold text-white">{club.name}</div>
+                        <div class="text-sm text-white/60">
                           {club.members.length === 1
                             ? t("clubs.membersOne", { count: club.members.length })
                             : t("clubs.membersOther", { count: club.members.length })}
@@ -185,7 +185,7 @@ function PlayersComponent() {
                       class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all"
                       classList={{
                         "border-blue-500 bg-blue-500": selectedClubId() === club.id,
-                        "border-slate-300 bg-white": selectedClubId() !== club.id,
+                        "border-white/20 bg-white/6": selectedClubId() !== club.id,
                       }}
                     >
                       <Show when={selectedClubId() === club.id}>
