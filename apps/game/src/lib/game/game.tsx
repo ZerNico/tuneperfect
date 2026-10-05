@@ -158,8 +158,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTime = opts.songPlayerRef.getCurrentTime();
     const duration = opts.songPlayerRef.getDuration();
+    // What's playing reaches the ears `outputLatency` ms late (e.g. Bluetooth or a TV's audio), so
+    // notes, lyrics and scoring follow the moment that's heard, like the calibration preview does.
     const outputLatency = settingsStore.general().outputLatency;
-    const ms = currentTime * 1000 + outputLatency;
+    const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
 
     batch(() => {
