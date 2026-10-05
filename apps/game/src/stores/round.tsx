@@ -1,13 +1,10 @@
-import { type LinkProps, useLocation, useNavigate } from "@tanstack/solid-router";
+import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 
-import { t } from "~/lib/i18n";
-import { notify } from "~/lib/toast";
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
 import { type Song, isLocalSong } from "~/lib/ultrastar/song";
 import { withVoices } from "~/lib/ultrastar/song-voices";
-import { tryCatch } from "~/lib/utils/try-catch";
 
 import type { Microphone } from "./settings";
 
@@ -92,57 +89,21 @@ function createRoundStore() {
 
 export const roundStore = createRoundStore();
 
-/** A round is being started (its songs' notes are loading); further starts are ignored until it's done. */
-let startingRound = false;
-
 export function useRoundActions() {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  /**
-   * Loads the songs' notes, then starts the round. `commit` runs only once the round actually
-   * starts, for state that belongs to it (a contested cell, clearing the medley queue). Resolves to
-   * whether it started: not when another start is in flight, loading failed, or the screen was left.
-   */
-  const startRound = async (settings: RoundSettings, commit?: () => void): Promise<boolean> => {
-    if (startingRound) return false;
-    startingRound = true;
-    const startedFrom = location().pathname;
-
-    try {
-      // Local songs come from the library without their notes; load them for the songs being played.
-      const [error, loaded] = await tryCatch(
-        Promise.all(
-          settings.songs.map(async (queued) =>
-            isLocalSong(queued.song) ? { ...queued, song: await withVoices(queued.song) } : queued,
-          ),
-        ),
-      );
-      if (error) {
-        console.error("Failed to load the songs' notes:", error);
-        notify({ message: t("game.songFailed"), intent: "error" });
-        return false;
-      }
-      if (location().pathname !== startedFrom) return false;
-
-      commit?.();
-      setRound(settings, loaded);
-      return true;
-    } finally {
-      startingRound = false;
-    }
-  };
-
-  const setRound = (settings: RoundSettings, loaded: QueuedSong[]) => {
-    const songs = loaded.map((queued) => {
+  const startRound = (settings: RoundSettings) => {
+    const songs = settings.songs.map((queued) => {
+      // Library songs carry their notes packed until they're played.
+      const song = isLocalSong(queued.song) ? withVoices(queued.song) : queued.song;
       const targetDurationMs = TARGET_DURATION_MS[queued.length];
       // Only local songs can be trimmed to a medley; online songs play full.
-      if (targetDurationMs === null || !isLocalSong(queued.song)) {
-        return queued;
+      if (targetDurationMs === null || !isLocalSong(song)) {
+        return { ...queued, song };
       }
       return {
         ...queued,
-        song: getMedleySong(queued.song, targetDurationMs),
+        song: getMedleySong(song, targetDurationMs),
       };
     });
     roundStore.setSettings({ ...settings, songs });

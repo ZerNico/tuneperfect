@@ -234,30 +234,8 @@ export default function SongPlayer(props: SongPlayerProps) {
     videoElementRef.muted = !!currentAudioUrl();
   });
 
-  // A preview without a set start looks for the chorus in the notes, which the library doesn't
-  // carry: load them alongside the media. Until then (and only then) the preview isn't ready.
-  const [previewNotes, setPreviewNotes] = createSignal<{ song: LocalSong; withVoices: LocalSong }>();
-  createEffect(
-    on(
-      () => props.song,
-      (song) => {
-        if (props.mode !== "preview" || !song || song.previewStart !== null) return;
-        let current = true;
-        onCleanup(() => (current = false));
-        void withVoices(song)
-          .catch(() => song)
-          .then((loaded) => current && setPreviewNotes({ song, withVoices: loaded }));
-      },
-    ),
-  );
-  const notesFor = (song: LocalSong) => {
-    const notes = previewNotes();
-    return notes?.song === song ? notes.withVoices : undefined;
-  };
-
   const isReady = () => {
     if (!props.song) return false;
-    if (props.mode === "preview" && props.song.previewStart === null && !notesFor(props.song)) return false;
 
     const hasAudio = !!currentAudioUrl();
     const hasVideo = videoActive();
@@ -273,7 +251,8 @@ export default function SongPlayer(props: SongPlayerProps) {
     const song = props.song;
     if (!song) return;
 
-    const previewStart = getPreviewStartTime(notesFor(song) ?? song, song.videoGap ?? 0);
+    // Without a set start, the chorus is looked for in the notes.
+    const previewStart = getPreviewStartTime(song.previewStart === null ? withVoices(song) : song, song.videoGap ?? 0);
     const videoGap = (song.videoGap ?? 0) / 1000;
     const outputLatencySec = settingsStore.general().outputLatency / 1000;
 

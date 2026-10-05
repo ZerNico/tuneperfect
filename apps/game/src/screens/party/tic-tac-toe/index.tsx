@@ -97,11 +97,11 @@ export default function TicTacToeScreen() {
     if (!players) return;
 
     playSound("confirm");
-    // The cell is only contested once its round really starts, not by a start that gets ignored.
-    void roundActions.startRound(
-      { songs: [{ song: cell.song, players, mode: "single", length: "full" }], returnTo: "/party/tic-tac-toe" },
-      () => ticTacToeStore.setContestedCell(index),
-    );
+    ticTacToeStore.setContestedCell(index);
+    roundActions.startRound({
+      songs: [{ song: cell.song, players, mode: "single", length: "full" }],
+      returnTo: "/party/tic-tac-toe",
+    });
   };
 
   // Resolves a team's singer when manual selection isn't needed (single-player team falls back to its only player).

@@ -12,12 +12,10 @@ export type LocalSong = {
 	replayGainTrackPeak: number | null,
 	createdAt: number | null,
 	/**
-	 *  Number of voices (2+ for duets). A scanned library leaves `voices` empty and loads them
-	 *  per song through `load_song_voices`, so this is what lists and filters read.
+	 *  Number of voices (2+ for duets). A scanned library carries its voices packed (see
+	 *  `packed_notes`) and leaves `voices` empty, so this is what lists and filters read.
 	 */
 	voiceCount: number,
-	/**  The song's `.txt`, for loading its voices later. */
-	txtPath: string,
 } & Song;
 
 export type Microphone = {

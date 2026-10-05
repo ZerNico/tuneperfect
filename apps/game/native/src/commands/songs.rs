@@ -1,6 +1,7 @@
 use crate::error::AppError;
 use crate::state::state;
 use crate::ultrastar::filesystem::find_txt_files_by_root;
+use crate::ultrastar::packed_notes::pack_voices;
 use crate::ultrastar::parser::parse_local_txt_file;
 use crate::ultrastar::song::LocalSong;
 use log;
@@ -40,10 +41,19 @@ fn get_media_base_url() -> Result<String, AppError> {
         .ok_or_else(|| AppError::IoError("local media server is not running".to_string()))
 }
 
+/// A scanned library: the songs' metadata, plus all their notes packed into one buffer (as JSON,
+/// a big library's notes don't even fit in one string). `note_ranges` holds an offset and a
+/// length into `notes` per song, in the order of the groups and their songs.
+pub struct ParsedLibrary {
+    pub groups: Vec<SongGroup>,
+    pub notes: Vec<u8>,
+    pub note_ranges: Vec<u32>,
+}
+
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
     on_event: ParseEventSink,
-) -> Result<Vec<SongGroup>, AppError> {
+) -> Result<ParsedLibrary, AppError> {
     let media_base_url = get_media_base_url()?;
     let allowlist = &state().allowlist;
 
@@ -73,6 +83,8 @@ pub async fn parse_songs_from_paths(
     }));
     let num_workers = num_cpus::get();
     let mut song_groups = Vec::with_capacity(roots.len());
+    let mut notes = Vec::new();
+    let mut note_ranges = Vec::new();
 
     for (root, txt_files) in roots {
         let mut songs_for_path = Vec::with_capacity(txt_files.len());
@@ -98,10 +110,9 @@ pub async fn parse_songs_from_paths(
                 for txt in batch {
                     match parse_local_txt_file(&txt.path, &txt.files, &media_base_url) {
                         Ok(mut song) => {
-                            // The library keeps metadata only: every note of every song would
-                            // be gigabytes across IPC. Voices are loaded per song when needed.
+                            let packed = pack_voices(&song.song.voices);
                             song.song.voices = Vec::new();
-                            parsed.push(song);
+                            parsed.push((song, packed));
                         }
                         Err(e) => log::error!("Failed to parse song at '{}': {}", txt.path, e),
                     }
@@ -124,7 +135,13 @@ pub async fn parse_songs_from_paths(
 
         for batch_task in batch_tasks {
             match batch_task.await {
-                Ok(parsed) => songs_for_path.extend(parsed),
+                Ok(parsed) => {
+                    for (song, packed) in parsed {
+                        note_ranges.extend([notes.len() as u32, packed.len() as u32]);
+                        notes.extend_from_slice(&packed);
+                        songs_for_path.push(song);
+                    }
+                }
                 Err(e) => log::error!("Batch task join error: {}", e),
             }
         }
@@ -135,20 +152,14 @@ pub async fn parse_songs_from_paths(
         });
     }
 
-    Ok(song_groups)
+    Ok(ParsedLibrary {
+        groups: song_groups,
+        notes,
+        note_ranges,
+    })
 }
 
 struct Progress {
     done: u32,
     last_report: Instant,
-}
-
-/// The voices of one song file below an allowed folder.
-pub fn load_song_voices(txt_path: &str) -> Result<Vec<crate::ultrastar::song::Voice>, AppError> {
-    if !state().allowlist.is_allowed(txt_path) {
-        return Err(AppError::IoError(format!(
-            "Path is not allowed: {txt_path}"
-        )));
-    }
-    crate::ultrastar::parser::parse_txt_voices(txt_path)
 }

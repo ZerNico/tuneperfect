@@ -346,11 +346,6 @@ fn read_txt(txt: &str) -> Result<String, AppError> {
     Ok(content.into_owned())
 }
 
-/// Just the notes of a song file, for a song whose metadata was scanned earlier.
-pub fn parse_txt_voices(txt: &str) -> Result<Vec<Voice>, AppError> {
-    Ok(parse_ultrastar_txt(&read_txt(txt)?)?.voices)
-}
-
 pub fn parse_local_txt_file(
     txt: &str,
     files: &Vec<FileEntry>,
@@ -446,7 +441,6 @@ pub fn parse_local_txt_file(
 
     Ok(LocalSong {
         voice_count: song.voices.len() as u32,
-        txt_path: txt.to_string(),
         song,
         audio_url,
         instrumental_url,

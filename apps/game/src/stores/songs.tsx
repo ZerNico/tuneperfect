@@ -33,9 +33,19 @@ function createSongsStore() {
       for await (const event of await native.songs.parse({ paths: pathsToUpdate })) {
         onProgress?.(event);
         if (event.type === "done") {
+          // Each song's packed notes are a view into the one buffer they came in.
+          let range = 0;
+          const groups = event.groups.map((group) => ({
+            path: group.path,
+            songs: group.songs.map((song): LocalSong => {
+              const offset = event.noteRanges[range++]!;
+              const length = event.noteRanges[range++]!;
+              return { ...song, notes: event.notes.subarray(offset, offset + length) };
+            }),
+          }));
           // One library update (and search index rebuild) for all folders.
           batch(() => {
-            for (const group of event.groups) {
+            for (const group of groups) {
               localSongs.set(group.path, group.songs);
             }
           });
