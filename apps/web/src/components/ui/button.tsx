@@ -9,6 +9,7 @@ interface ButtonProps extends BaseProps {
 
 interface InternalLinkProps extends BaseProps {
   to: TanstackLinkProps["to"];
+  hash?: string;
   onClick?: () => void;
 }
 
@@ -24,55 +25,52 @@ interface BaseProps extends VariantProps<typeof button> {
   class?: string;
 }
 
+/** The game's buttons: rounded rects (no pills), mode gradients with a short crisp drop. */
 const button = cva({
-  base: "inline-grid h-10 transform cursor-pointer items-center gap-4 rounded-lg px-6 font-semibold shadow-md transition-all ease-in-out focus:outline-slate-800 active:scale-95",
+  base: "inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-[12px] font-bold transition-[filter,background-color] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white",
   variants: {
     intent: {
-      primary: "bg-slate-800 text-white hover:bg-slate-700",
-      "gradient-sing": "gradient-sing bg-gradient-to-r text-white hover:opacity-90",
-      "gradient-settings": "gradient-settings bg-gradient-to-r text-white hover:opacity-90",
-      "gradient-lobby": "gradient-lobby bg-gradient-to-r text-white hover:opacity-90",
+      primary: "bg-white/10 text-white hover:bg-white/15",
+      white: "bg-white text-[#101024] shadow-crisp hover:brightness-95",
+      "gradient-sing": "gradient-sing text-white shadow-crisp hover:brightness-110",
+      "gradient-party": "gradient-party text-white shadow-crisp hover:brightness-110",
+      "gradient-lobby": "gradient-lobby text-white shadow-crisp hover:brightness-110",
+      "gradient-settings": "gradient-settings text-white shadow-crisp hover:brightness-110",
+    },
+    size: {
+      sm: "h-10 px-4 text-sm",
+      md: "h-12 px-5",
+      lg: "h-14 px-6 text-lg",
     },
   },
   defaultVariants: {
     intent: "primary",
+    size: "md",
   },
 });
 
 export default function Button(props: ButtonProps | InternalLinkProps | LinkProps) {
-  const classes = () => ({
-    [button({ intent: props.intent })]: true,
-    [props.class || ""]: true,
-  });
+  const classes = () => `${button({ intent: props.intent, size: props.size })} ${props.class ?? ""}`;
 
   // oxlint-disable-next-line solid/components-return-once
   return "to" in props ? (
-    <Link to={props.to} classList={classes()} onClick={() => props.onClick?.()}>
-      <ButtonContent>{props.children}</ButtonContent>
+    <Link to={props.to} hash={props.hash} class={classes()} onClick={() => props.onClick?.()}>
+      {props.children}
     </Link>
   ) : "href" in props ? (
     <a
       href={props.href}
       target={props.target}
-      classList={classes()}
+      rel={props.target === "_blank" ? "noopener noreferrer" : undefined}
+      class={classes()}
       download={props.download}
       onClick={() => props.onClick?.()}
     >
-      <ButtonContent>{props.children}</ButtonContent>
+      {props.children}
     </a>
   ) : (
-    <button type={props.type || "button"} onClick={() => props.onClick?.()} classList={classes()}>
-      <ButtonContent>{props.children}</ButtonContent>
+    <button type={props.type || "button"} onClick={() => props.onClick?.()} class={classes()}>
+      {props.children}
     </button>
-  );
-}
-
-function ButtonContent(props: { children: JSX.Element }) {
-  return (
-    <>
-      <span class="col-start-1 row-start-1 flex items-center justify-center gap-2 transition-opacity">
-        {props.children}
-      </span>
-    </>
   );
 }

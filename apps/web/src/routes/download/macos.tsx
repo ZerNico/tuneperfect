@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/solid-router";
-import IconChip from "~icons/lucide/cpu";
-import IconApple from "~icons/sing/apple";
+import IconAppleLogo from "~icons/ph/apple-logo-fill";
+import IconCpu from "~icons/ph/cpu-fill";
 
-import DownloadCard from "~/components/download-card";
+import CodeBlock from "~/components/download/code-block";
+import DownloadCard from "~/components/download/download-card";
+import PlatformPage, { InfoPanel, Requirements } from "~/components/download/platform-page";
 import { posthog } from "~/lib/posthog";
 
 export const Route = createFileRoute("/download/macos")({
@@ -24,83 +26,54 @@ function RouteComponent() {
   };
 
   return (
-    <div class="relative flex flex-col gap-y-16 bg-slate-900 px-4 pt-20 pb-20 text-white">
-      <section class="relative z-2 mx-auto w-full max-w-4xl">
-        <div class="mb-6 flex items-center gap-4">
-          <IconApple class="h-12 w-12 text-white" />
-          <div>
-            <h1 class="text-4xl font-bold">Download for macOS</h1>
-            <p class="text-slate-400">Choose the version that matches your Mac</p>
-          </div>
-        </div>
+    <PlatformPage
+      icon={<IconAppleLogo />}
+      title="Download for macOS"
+      subtitle="Choose the version that matches your Mac"
+    >
+      <div class="grid gap-4 md:grid-cols-2">
+        <DownloadCard
+          icon={<IconCpu />}
+          title="Apple Silicon"
+          subtitle="M1, M2, M3, M4 and newer"
+          description="Built for Apple's own processors. Best performance and battery life."
+          tags={["arm64"]}
+          recommended
+          extension="dmg"
+          onDownload={() => handleDownload("arm64", "dmg")}
+          url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_aarch64.dmg`}
+        />
+        <DownloadCard
+          icon={<IconCpu />}
+          title="Intel"
+          subtitle="x86_64 processors"
+          description="For older Macs with Intel processors."
+          tags={["x86_64"]}
+          extension="dmg"
+          onDownload={() => handleDownload("x86_64", "dmg")}
+          url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.dmg`}
+        />
+      </div>
 
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <DownloadCard
-            icon={<IconChip class="h-6 w-6 text-white" />}
-            gradientFrom="#3b82f6"
-            gradientTo="#8b5cf6"
-            title="Apple Silicon"
-            subtitle="M1, M2, M3, M4 chips"
-            description="Optimized for Apple's latest processors. Best performance and battery life."
-            tags={[
-              { text: "Recommended", color: "blue" },
-              { text: "arm64", color: "slate" },
-            ]}
-            extension="dmg"
-            platform="macos"
-            onDownload={() => handleDownload("arm64", "dmg")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_aarch64.dmg`}
-          />
+      <InfoPanel title="First launch">
+        <p>The app isn't signed yet, so remove the quarantine attribute once before opening it:</p>
+        <CodeBlock code={`xattr -d com.apple.quarantine "/Applications/Tune Perfect.app"`} />
+      </InfoPanel>
 
-          <DownloadCard
-            icon={<IconChip class="h-6 w-6 text-white" />}
-            gradientFrom="#6b7280"
-            gradientTo="#374151"
-            title="Intel"
-            subtitle="x86_64 processors"
-            description="For older Macs with Intel processors. Compatible with all Intel-based Macs."
-            tags={[{ text: "x86_64", color: "slate" }]}
-            extension="dmg"
-            platform="macos"
-            onDownload={() => handleDownload("x86_64", "dmg")}
-            url={`https://github.com/${githubRepo()}/releases/download/v${version()}/Tune.Perfect_${version()}_x64.dmg`}
-          />
-        </div>
-
-        <div class="mt-12 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
-          <h3 class="mb-4 font-semibold text-slate-200">Installation Instructions</h3>
-          <div class="space-y-4">
-            <div>
-              <h4 class="mb-2 text-sm font-medium text-slate-300">First Launch:</h4>
-              <p class="mb-2 text-sm text-slate-300">
-                Since the app is not signed, you'll need to remove the quarantine attribute before first launch:
-              </p>
-              <code class="block rounded bg-slate-900 p-2 text-xs text-slate-300">
-                xattr -d com.apple.quarantine "/Applications/Tune Perfect.app"
-              </code>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-6 rounded-xl border border-slate-700 bg-slate-800/50 p-6">
-          <h3 class="mb-3 font-semibold text-slate-200">Not sure which version to choose?</h3>
-          <p class="mb-4 text-sm text-slate-300">
-            Check your Mac's processor by clicking the Apple menu → About This Mac. If you see "Apple M1", "Apple M2",
-            etc., choose Apple Silicon. If you see "Intel", choose the Intel version.
-          </p>
-          <div class="space-y-2 text-xs text-slate-400">
-            <p>
-              <strong>System Requirements:</strong>
-            </p>
-            <ul class="ml-4 list-disc space-y-1">
-              <li>macOS 12.0 (Monterey) or later</li>
-              <li>2 GB RAM minimum, 4 GB recommended</li>
-              <li>Audio input device (microphone) required for gameplay</li>
-              <li>Your own UltraStar compatible songs</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-    </div>
+      <InfoPanel title="Which one do I need?">
+        <p>
+          Open the Apple menu → About This Mac. If the chip says "Apple M1", "Apple M2" and so on, take Apple Silicon;
+          if it says "Intel", take Intel.
+        </p>
+        <Requirements
+          items={[
+            "macOS 12 (Monterey) or later",
+            "2 GB RAM minimum, 4 GB recommended",
+            "A microphone to sing with",
+            "Your own UltraStar songs",
+          ]}
+        />
+      </InfoPanel>
+    </PlatformPage>
   );
 }

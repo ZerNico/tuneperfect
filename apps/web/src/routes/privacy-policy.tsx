@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/solid-router";
+
+import Glow from "~/components/glow";
+import Tag from "~/components/ui/tag";
+
 export const Route = createFileRoute("/privacy-policy")({
   component: PrivacyPolicyComponent,
 });
@@ -11,22 +15,24 @@ function PrivacyPolicyComponent() {
   const supportEmail = () => config.SUPPORT_EMAIL || "";
 
   return (
-    <div class="mx-auto max-w-4xl px-4 py-12">
-      <div class="mb-8">
-        <h1 class="mb-4 text-3xl font-bold md:text-4xl">Privacy Policy</h1>
-        <p class="text-slate-300">Last updated: May 30th, 2026</p>
+    <div class="relative mx-auto max-w-3xl px-5 pt-32 pb-24">
+      <Glow mode="title" class="-inset-x-[30%] top-0 h-[40rem]" strength={0.7} />
+      <div class="mb-14 flex flex-col items-start gap-4">
+        <Tag>Legal</Tag>
+        <h1 class="text-4xl font-bold md:text-6xl">Privacy Policy</h1>
+        <p class="text-white/50">Last updated: May 30th, 2026</p>
       </div>
 
-      <div class="space-y-8 text-slate-200">
+      <div class="space-y-12 leading-relaxed text-white/75">
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">1. Data Controller and Contact Information</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">1. Data Controller and Contact Information</h2>
           <div class="space-y-4">
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Responsible Party (Controller)</h3>
+              <h3 class="mb-2 text-lg font-bold text-white">Responsible Party (Controller)</h3>
               <p>
                 The data controller for this website is the operator of Tune Perfect, a non-commercial open-source
                 project. You can contact us at{" "}
-                <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+                <a href={`mailto:${supportEmail()}`} class="font-bold text-sky-400 underline-offset-4 hover:underline">
                   {supportEmail()}
                 </a>{" "}
                 or through our{" "}
@@ -34,7 +40,7 @@ function PrivacyPolicyComponent() {
                   href={githubUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-blue-400 underline hover:text-blue-300"
+                  class="font-bold text-sky-400 underline-offset-4 hover:underline"
                 >
                   GitHub repository
                 </a>
@@ -42,10 +48,10 @@ function PrivacyPolicyComponent() {
               </p>
             </div>
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Data Protection Officer</h3>
+              <h3 class="mb-2 text-lg font-bold text-white">Data Protection Officer</h3>
               <p>
                 If you have questions about data protection, you can contact us at{" "}
-                <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+                <a href={`mailto:${supportEmail()}`} class="font-bold text-sky-400 underline-offset-4 hover:underline">
                   {supportEmail()}
                 </a>
                 .
@@ -55,10 +61,10 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">2. General Information About Data Processing</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">2. General Information About Data Processing</h2>
           <div class="space-y-4">
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Scope of Personal Data Processing</h3>
+              <h3 class="mb-2 text-lg font-bold text-white">Scope of Personal Data Processing</h3>
               <p>
                 We process personal data of our users only to the extent necessary to provide a functional website and
                 our gaming services. Tune Perfect is a non-commercial, open-source project that does not generate
@@ -68,7 +74,7 @@ function PrivacyPolicyComponent() {
               </p>
             </div>
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Legal Basis for Data Processing</h3>
+              <h3 class="mb-2 text-lg font-bold text-white">Legal Basis for Data Processing</h3>
               <p>
                 Insofar as we obtain consent from the data subject for personal data processing operations, Art. 6 para.
                 1 lit. a EU General Data Protection Regulation (GDPR) serves as the legal basis.
@@ -96,12 +102,12 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">3. Server Log Files</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">3. Server Log Files</h2>
           <p>
             The website provider automatically collects and stores information in so-called server log files, which your
             browser automatically transmits to us. These are:
           </p>
-          <ul class="mt-2 list-disc space-y-2 pl-6">
+          <ul class="mt-2 list-disc space-y-2 pl-6 marker:text-white/40">
             <li>Browser type and browser version</li>
             <li>Operating system used</li>
             <li>Referrer URL</li>
@@ -116,7 +122,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">4. Analytics with PostHog (Cookieless)</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">4. Analytics with PostHog (Cookieless)</h2>
           <p>
             We use PostHog, an open-source product analytics platform, in fully cookieless mode across our website,
             companion app, and desktop game. PostHog Cloud EU (Frankfurt) is the data processor. We use this data to
@@ -126,7 +132,7 @@ function PrivacyPolicyComponent() {
             <p>
               <strong>What data do we collect?</strong>
             </p>
-            <ul class="list-disc space-y-2 pl-6">
+            <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
               <li>
                 <strong>Pageviews and page transitions:</strong> we count which pages are visited and how visitors move
                 between them.
@@ -154,7 +160,7 @@ function PrivacyPolicyComponent() {
           <p class="mt-4">
             <strong>Why do we collect this data?</strong>
           </p>
-          <ul class="mt-2 list-disc space-y-2 pl-6">
+          <ul class="mt-2 list-disc space-y-2 pl-6 marker:text-white/40">
             <li>To analyze aggregate website traffic to improve our content and offerings.</li>
             <li>To understand which platforms (e.g., Windows, macOS, Linux) are most popular for downloads.</li>
             <li>To monitor the performance and stability of our website and apps.</li>
@@ -169,7 +175,7 @@ function PrivacyPolicyComponent() {
               href="https://posthog.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-blue-400 underline hover:text-blue-300"
+              class="font-bold text-sky-400 underline-offset-4 hover:underline"
             >
               the PostHog privacy policy
             </a>
@@ -178,7 +184,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">4b. Backend Error Tracking</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">4b. Backend Error Tracking</h2>
           <p>
             We also use PostHog (Cloud EU) to capture unhandled errors that occur in our API server, so we can detect
             and fix bugs in our backend.
@@ -187,7 +193,7 @@ function PrivacyPolicyComponent() {
             <p>
               <strong>What data do we collect?</strong>
             </p>
-            <ul class="list-disc space-y-2 pl-6">
+            <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
               <li>Error message, stack trace, request path, and timestamp.</li>
               <li>
                 If you are signed in at the time of the error, your account ID is attached so we can investigate the
@@ -199,7 +205,7 @@ function PrivacyPolicyComponent() {
           <p class="mt-4">
             <strong>Legal basis:</strong> Art. 6 para. 1 lit. f GDPR (legitimate interest in service reliability and
             security). You may object to this processing at any time per Art. 21 GDPR by contacting{" "}
-            <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+            <a href={`mailto:${supportEmail()}`} class="font-bold text-sky-400 underline-offset-4 hover:underline">
               {supportEmail()}
             </a>
             .
@@ -207,50 +213,50 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">5. Information We Collect</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">5. Information We Collect</h2>
           <div class="space-y-4">
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Account Information</h3>
-              <ul class="list-disc space-y-2 pl-6">
+              <h3 class="mb-2 text-lg font-bold text-white">Account Information</h3>
+              <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
                 <li>Email address (required for account creation and verification)</li>
                 <li>Username (optional, for your profile display)</li>
                 <li>Password (securely hashed and stored)</li>
                 <li>Profile image (optional)</li>
               </ul>
-              <p class="mt-2 text-sm text-slate-300">
+              <p class="mt-2 text-sm text-white/55">
                 Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
               </p>
             </div>
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">OAuth Information</h3>
-              <ul class="list-disc space-y-2 pl-6">
+              <h3 class="mb-2 text-lg font-bold text-white">OAuth Information</h3>
+              <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
                 <li>When you sign in with Discord or Google, we store your account ID from those services</li>
                 <li>We do not store your passwords from third-party services</li>
               </ul>
-              <p class="mt-2 text-sm text-slate-300">
+              <p class="mt-2 text-sm text-white/55">
                 Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
               </p>
             </div>
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Game Data</h3>
-              <ul class="list-disc space-y-2 pl-6">
+              <h3 class="mb-2 text-lg font-bold text-white">Game Data</h3>
+              <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
                 <li>Your game scores and high scores</li>
                 <li>Lobby participation data</li>
                 <li>Game session information</li>
               </ul>
-              <p class="mt-2 text-sm text-slate-300">
+              <p class="mt-2 text-sm text-white/55">
                 Legal basis: Art. 6 para. 1 lit. b GDPR (performance of contract)
               </p>
             </div>
             <div>
-              <h3 class="mb-2 text-lg font-medium text-white">Technical Information</h3>
-              <ul class="list-disc space-y-2 pl-6">
+              <h3 class="mb-2 text-lg font-bold text-white">Technical Information</h3>
+              <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
                 <li>User agent information (for security purposes)</li>
                 <li>Session tokens (for keeping you logged in)</li>
                 <li>Account creation and update timestamps</li>
                 <li>IP addresses (for security and fraud prevention)</li>
               </ul>
-              <p class="mt-2 text-sm text-slate-300">
+              <p class="mt-2 text-sm text-white/55">
                 Legal basis: Art. 6 para. 1 lit. f GDPR (legitimate interests in security and fraud prevention)
               </p>
             </div>
@@ -258,8 +264,8 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">6. How We Use Your Information</h2>
-          <ul class="list-disc space-y-2 pl-6">
+          <h2 class="mb-4 text-2xl font-bold text-white">6. How We Use Your Information</h2>
+          <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
             <li>To create and manage your account</li>
             <li>To provide the karaoke gaming experience</li>
             <li>To save your game progress and high scores</li>
@@ -272,8 +278,8 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">7. Data Storage and Security</h2>
-          <ul class="list-disc space-y-2 pl-6">
+          <h2 class="mb-4 text-2xl font-bold text-white">7. Data Storage and Security</h2>
+          <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
             <li>Your data is stored securely in our database with appropriate technical and organizational measures</li>
             <li>Passwords are hashed using industry-standard encryption (argon2id)</li>
             <li>We use secure tokens for authentication</li>
@@ -284,9 +290,9 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">8. Data Sharing and Third Parties</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">8. Data Sharing and Third Parties</h2>
           <p class="mb-2">We do not sell, trade, or share your personal information with third parties, except:</p>
-          <ul class="list-disc space-y-2 pl-6">
+          <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
             <li>When required by law or legal process</li>
             <li>To protect our rights, property, and safety, or that of our users</li>
             <li>With your explicit consent</li>
@@ -302,12 +308,12 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">9. International Data Transfers</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">9. International Data Transfers</h2>
           <p>
             If we transfer personal data to countries outside the European Economic Area (EEA), we ensure appropriate
             safeguards are in place, such as:
           </p>
-          <ul class="mt-2 list-disc space-y-2 pl-6">
+          <ul class="mt-2 list-disc space-y-2 pl-6 marker:text-white/40">
             <li>Adequacy decisions by the European Commission</li>
             <li>Standard contractual clauses approved by the European Commission</li>
             <li>Binding corporate rules</li>
@@ -316,9 +322,9 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">10. Your Rights Under GDPR</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">10. Your Rights Under GDPR</h2>
           <p class="mb-2">Under the General Data Protection Regulation, you have the following rights:</p>
-          <ul class="list-disc space-y-2 pl-6">
+          <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
             <li>
               <strong>Right of access (Art. 15 GDPR):</strong> You can request information about your personal data we
               process
@@ -348,7 +354,7 @@ function PrivacyPolicyComponent() {
           </ul>
           <p class="mt-4">
             To exercise these rights, please contact us at{" "}
-            <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+            <a href={`mailto:${supportEmail()}`} class="font-bold text-sky-400 underline-offset-4 hover:underline">
               {supportEmail()}
             </a>
             .
@@ -356,12 +362,12 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">11. Data Retention</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">11. Data Retention</h2>
           <p class="mb-2">
             We retain your data for as long as your account is active or as needed to provide you services. When you
             delete your account:
           </p>
-          <ul class="list-disc space-y-2 pl-6">
+          <ul class="list-disc space-y-2 pl-6 marker:text-white/40">
             <li>
               Most of your personal data will be deleted. Some information, like high scores associated with your
               profile, may be retained anonymously.
@@ -374,7 +380,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">12. Cookies</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">12. Cookies</h2>
           <p>
             We use essential session cookies to maintain your login status and ensure the basic functionality of our
             service. We do not use any cookies, localStorage, or similar storage for analytics, tracking, or advertising
@@ -383,7 +389,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">13. Links to Other Websites</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">13. Links to Other Websites</h2>
           <p>
             Our website may contain links to other websites that are not operated by us. If you click on a third-party
             link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy
@@ -392,7 +398,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">14. Children's Privacy</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">14. Children's Privacy</h2>
           <p>
             Our service does not address anyone under the age of 13. We do not knowingly collect personal identifiable
             information from children under 13. If you are a parent or guardian and you are aware that your child has
@@ -401,7 +407,7 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">15. Changes to This Privacy Policy</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">15. Changes to This Privacy Policy</h2>
           <p>
             We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new
             Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
@@ -409,10 +415,10 @@ function PrivacyPolicyComponent() {
         </section>
 
         <section>
-          <h2 class="mb-4 text-xl font-semibold text-white">16. Contact Us</h2>
+          <h2 class="mb-4 text-2xl font-bold text-white">16. Contact Us</h2>
           <p>
             If you have any questions about this Privacy Policy, you can contact us at{" "}
-            <a href={`mailto:${supportEmail()}`} class="text-blue-400 underline hover:text-blue-300">
+            <a href={`mailto:${supportEmail()}`} class="font-bold text-sky-400 underline-offset-4 hover:underline">
               {supportEmail()}
             </a>
             .

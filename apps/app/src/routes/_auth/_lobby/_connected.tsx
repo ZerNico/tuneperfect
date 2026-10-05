@@ -94,7 +94,7 @@ function ConnectedLayout() {
                   </Button>
                 }
               >
-                {connectionStore.error()}
+                {t("songs.connectionFailedHint")}
               </ConnectionState>
             </ConnectionOverlay>
           </Show>

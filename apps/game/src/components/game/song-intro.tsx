@@ -9,6 +9,9 @@ import { getColorVar } from "~/lib/utils/color";
 const CLIP_VISIBLE = "polygon(-20% 0, 120% 0, 120% 100%, 0% 100%)";
 const CLIP_HIDDEN = "polygon(100% 0, 120% 0, 120% 100%, 120% 100%)";
 
+/** Long titles step down a size, so most stay on one line and the rest wrap into two even ones. */
+const titleSize = (title: string) => (title.length <= 22 ? "text-8xl" : "text-7xl");
+
 interface SongIntroProps {
   song: Song;
   started: boolean;
@@ -52,23 +55,23 @@ export default function SongIntro(props: SongIntroProps) {
         class="absolute inset-0 bg-halftone opacity-20"
         style={{ "--fx-color": "white", "mask-image": "linear-gradient(to top, black, transparent 50%)" }}
       />
-      <div class="absolute inset-x-0 top-1/2 h-[14cqw] -translate-y-1/2">
-        <div
-          class={`h-full w-full origin-left animate-band-in bg-linear-to-r shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] [animation-delay:400ms] ${props.gradient}`}
-        />
-      </div>
-      <div class="relative flex h-full w-full flex-col items-center justify-center gap-6">
-        <SlamText trigger={props.song.hash} class="text-2xl [animation-delay:500ms]">
-          <TagChip
-            label={t("game.nowSinging")}
-            accent={<span class="block max-w-120 truncate">{props.song.artist}</span>}
-            accentColor={getColorVar(props.accentColor, 700)}
+      {/* The chip sits above the title on the band, like always. The band keeps its height for a one-line title and
+          grows when a long one wraps. The title's bottom padding keeps its drop shadow inside the line clamp. */}
+      <div class="relative flex h-full w-full items-center">
+        <div class="relative flex min-h-[14cqw] w-full flex-col items-center justify-center gap-[1.2cqw] px-[4cqw] py-[2cqw]">
+          <div
+            class={`absolute inset-0 origin-left animate-band-in bg-linear-to-r shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] [animation-delay:400ms] ${props.gradient}`}
           />
-        </SlamText>
-        <div class="max-w-240 px-8 text-center">
+          <SlamText trigger={props.song.hash} class="relative text-2xl [animation-delay:500ms]">
+            <TagChip
+              label={t("game.nowSinging")}
+              accent={<span class="block max-w-120 truncate">{props.song.artist}</span>}
+              accentColor={getColorVar(props.accentColor, 700)}
+            />
+          </SlamText>
           <SlamText
             trigger={props.song.hash}
-            class="text-8xl leading-tight text-display text-white [animation-delay:650ms]"
+            class={`relative line-clamp-2 max-w-320 pb-[0.08em] text-center leading-[1.1] text-display text-balance text-white [animation-delay:650ms] ${titleSize(props.song.title)}`}
             style={{ "--display-shadow": getColorVar(props.accentColor, 900) }}
           >
             {props.song.title}

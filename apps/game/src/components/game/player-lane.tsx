@@ -1,6 +1,5 @@
 import { createMemo, Show } from "solid-js";
 
-import { MIN_VISIBLE_COMBO } from "~/lib/game/combo";
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";
@@ -20,7 +19,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
   const playerState = createPlayer(() => ({
     index: props.index,
   }));
-  const { PlayerProvider, player, phrase, combo, micColor } = playerState;
+  const { PlayerProvider, player, phrase } = playerState;
   const game = useGame();
   const isCompact = () => game.playerCount() > 2;
 
@@ -49,30 +48,9 @@ export default function PlayerLane(props: PlayerLaneProps) {
     return hidden;
   }, false);
 
-  // The lane edge heats up as the combo grows.
-  const heat = () => {
-    const value = combo();
-    if (value >= 50) return 0.45;
-    if (value >= 25) return 0.3;
-    if (value >= 10) return 0.18;
-    if (value >= MIN_VISIBLE_COMBO) return 0.08;
-    return 0;
-  };
-
   return (
     <PlayerProvider>
       <div class="relative flex-1">
-        <div
-          class="pointer-events-none absolute right-0 left-0 h-1/3 transition-opacity duration-700"
-          classList={{
-            "bottom-0": props.position === "top",
-            "top-0": props.position === "bottom",
-          }}
-          style={{
-            opacity: heat(),
-            background: `linear-gradient(to ${props.position === "top" ? "top" : "bottom"}, ${micColor(500)}, transparent)`,
-          }}
-        />
         <div
           class="relative flex h-full w-full"
           classList={{
