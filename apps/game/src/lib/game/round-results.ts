@@ -128,6 +128,7 @@ export function useRoundResults() {
       const hash = songHash();
       if (!tracksHighscore() || !hash) return;
 
+      const online: Promise<unknown>[] = [];
       for (const result of players()) {
         if (isGuestUser(result.player) || result.total <= 0) continue;
 
@@ -139,12 +140,19 @@ export function useRoundResults() {
         // API users can only be saved with a lobby connection.
         if (!lobbyStore.lobby()) continue;
 
-        await client.highscore.setHighscore.call({
-          hash,
-          userId: result.player.id.toString(),
-          score: result.total,
-          difficulty: difficulty(),
-        });
+        online.push(
+          client.highscore.setHighscore.call({
+            hash,
+            userId: result.player.id.toString(),
+            score: result.total,
+            difficulty: difficulty(),
+          }),
+        );
+      }
+
+      // One failed upload (someone left the lobby, the API is down) mustn't skip the others.
+      for (const outcome of await Promise.allSettled(online)) {
+        if (outcome.status === "rejected") console.error("Failed to save an online highscore:", outcome.reason);
       }
     },
   }));

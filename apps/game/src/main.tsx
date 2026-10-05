@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 
+import { RouteError } from "./components/route-error";
 import { native } from "./lib/native/client";
 import { initPostHog } from "./lib/posthog";
 import { forwardConsole } from "./lib/utils/console";
@@ -33,6 +34,9 @@ const router = createRouter({
     queryClient,
   },
   scrollRestoration: true,
+  // Every route gets the error screen, so a screen that throws doesn't take the root (lobby
+  // connections, toasts, popups) down with it.
+  defaultErrorComponent: RouteError,
   defaultPreload: false,
   defaultPreloadStaleTime: 0,
   defaultViewTransition: {
