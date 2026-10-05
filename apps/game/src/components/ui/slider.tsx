@@ -1,9 +1,11 @@
-import type { JSX, Ref } from "solid-js";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import { createSignal, type JSX, type Ref, Show } from "solid-js";
+import IconCaretLeft from "~icons/ph/caret-left-fill";
+import IconCaretRight from "~icons/ph/caret-right-fill";
 
 import { useNavigation } from "~/hooks/navigation";
 import { clamp } from "~/lib/utils/math";
+
+import MenuRow from "./menu-row";
 
 interface SliderProps {
   selected?: boolean;
@@ -28,7 +30,22 @@ export default function Slider(props: SliderProps) {
     return decimal === -1 ? 0 : stepStr.length - decimal - 1;
   };
 
-  const percentage = () => ((props.value - props.min) / (props.max - props.min)) * 100;
+  // Arrow-key steps glide; a mouse drag follows the cursor directly, or the handle trails behind it.
+  const [dragging, setDragging] = createSignal(false);
+  const startDrag = () => {
+    setDragging(true);
+    window.addEventListener("pointerup", () => setDragging(false), { once: true });
+  };
+
+  const toPercent = (value: number) => ((value - props.min) / (props.max - props.min)) * 100;
+  const percentage = () => toPercent(props.value);
+  /** Ranges around 0 (e.g. latency) fill out from 0, so 0 reads as empty rather than half full. */
+  const bipolar = () => props.min < 0 && props.max > 0;
+  const fill = () => {
+    if (!bipolar()) return { left: 0, width: percentage() };
+    const zero = toPercent(0);
+    return { left: Math.min(zero, percentage()), width: Math.abs(percentage() - zero) };
+  };
 
   const changeValue = (direction: "right" | "left", amount: number = props.step) => {
     const newValue = Number(
@@ -62,59 +79,61 @@ export default function Slider(props: SliderProps) {
   }));
 
   return (
-    <div
-      ref={props.ref}
-      class="grid h-16 items-center overflow-hidden rounded-lg"
+    <MenuRow
+      ref={props.ref as Ref<HTMLElement>}
+      class={props.class}
+      selected={props.selected}
+      gradient={props.gradient}
+      label={props.label}
       onMouseEnter={() => props.onMouseEnter?.()}
     >
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
-        classList={{
-          [props.gradient || ""]: true,
-          "opacity-0": !props.selected,
-        }}
-      />
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">{props.label}</div>
-        <div class="flex items-center gap-8">
-          <button class="cursor-pointer" type="button" onClick={() => changeValue("left")}>
-            <IconTriangleLeft />
-          </button>
-          <div class="grid h-5 grow items-center">
-            <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
-            <div
-              class="col-start-1 row-start-1 h-full w-full rounded-md bg-white"
-              style={{ width: `${percentage()}%` }}
+      <div class="flex w-full items-center gap-6">
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("left")}>
+          <IconCaretLeft />
+        </button>
+        {/* Inset by about half a value tag, so the tag stays inside the row at either end. */}
+        <div class="mx-[2.8cqw] grid h-[2.2cqw] grow items-center">
+          {/* The visible track; the range input on top of it is only there for the mouse. */}
+          <span class="relative col-start-1 row-start-1 h-[0.45cqw] rounded-full bg-black/25">
+            <span
+              class="absolute inset-y-0 rounded-full bg-white"
+              classList={{ "transition-[left,width] duration-100": !dragging() }}
+              style={{ left: `${fill().left}%`, width: `${fill().width}%` }}
             />
-            <div
-              class="col-start-1 row-start-1 text-center text-sm font-bold text-white"
-              style={{ "clip-path": `inset(0 0 0 ${percentage()}%)` }}
+            <Show when={bipolar()}>
+              <span
+                class="absolute top-1/2 h-[1.1cqw] w-[0.15cqw] -translate-1/2 rounded-full bg-white/70"
+                style={{ left: `${toPercent(0)}%` }}
+              />
+            </Show>
+          </span>
+          {/* The value is the handle and rides along the track. */}
+          <span class="pointer-events-none relative col-start-1 row-start-1 h-0">
+            <span
+              class="absolute top-1/2 -translate-1/2 rounded-[0.4cqw] bg-white px-[0.6cqw] py-[0.45cqw] text-base font-black whitespace-nowrap text-slate-900 tabular-nums shadow-[0_0.15cqw_0_rgb(0_0_0/0.25)] [text-box:trim-both_cap_alphabetic]"
+              classList={{ "transition-[left] duration-100": !dragging() }}
+              style={{ left: `${percentage()}%` }}
             >
               {props.renderValue ? props.renderValue(props.value) : props.value}
-            </div>
-            <div
-              class="col-start-1 row-start-1 text-center text-sm font-bold text-black"
-              style={{ "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
-            >
-              {props.renderValue ? props.renderValue(props.value) : props.value}
-            </div>
-            <input
-              type="range"
-              aria-label={props.label}
-              class="reset-range col-start-1 row-start-1 block h-full w-full opacity-0"
-              min={props.min}
-              max={props.max}
-              step={props.step}
-              value={props.value}
-              onInput={(e) => handleInput(e)}
-              onKeyDown={(e) => e.preventDefault()}
-            />
-          </div>
-          <button class="cursor-pointer" type="button" onClick={() => changeValue("right")}>
-            <IconTriangleRight />
-          </button>
+            </span>
+          </span>
+          <input
+            type="range"
+            aria-label={props.label}
+            class="reset-range col-start-1 row-start-1 block h-full w-full cursor-pointer opacity-0"
+            min={props.min}
+            max={props.max}
+            step={props.step}
+            value={props.value}
+            onPointerDown={startDrag}
+            onInput={(e) => handleInput(e)}
+            onKeyDown={(e) => e.preventDefault()}
+          />
         </div>
+        <button class="cursor-pointer text-2xl" type="button" onClick={() => changeValue("right")}>
+          <IconCaretRight />
+        </button>
       </div>
-    </div>
+    </MenuRow>
   );
 }

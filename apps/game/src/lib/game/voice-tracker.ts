@@ -1,20 +1,25 @@
-import { type Accessor, createEffect, createMemo, createSignal } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, untrack } from "solid-js";
 
 import { roundStore } from "~/stores/round";
 
 import { useGame } from "./game-context";
 
 interface CreateVoiceTrackerOptions {
-  voiceIndex: number;
+  voiceIndex: number | undefined;
 }
 
+/** Follows one voice of the current song: the phrase being sung and the one after it. */
 export function createVoiceTracker(options: Accessor<CreateVoiceTrackerOptions>) {
   const game = useGame();
   const roundSong = () => roundStore.settings()?.songs[0];
 
   const voice = createMemo(() => {
-    const voiceIdx = options().voiceIndex;
-    return roundSong()?.song.voices[voiceIdx];
+    const voiceIndex = options().voiceIndex;
+    if (voiceIndex === undefined) {
+      return undefined;
+    }
+
+    return roundSong()?.song.voices[voiceIndex];
   });
 
   const [phraseIndex, setPhraseIndex] = createSignal(0);
@@ -27,19 +32,28 @@ export function createVoiceTracker(options: Accessor<CreateVoiceTrackerOptions>)
     return voice()?.phrases[phraseIndex() + 1];
   });
 
-  createEffect(() => {
+  // Runs every frame, but only notifies when the phrase is over.
+  const phraseOver = createMemo(() => {
     const p = phrase();
-    if (!p) return;
+    return !!p && game.beat() >= p.disappearBeat;
+  });
 
-    if (game.beat() >= p.disappearBeat) {
-      setPhraseIndex((i) => i + 1);
-    }
+  createEffect(() => {
+    if (!phraseOver()) return;
+
+    // Skip every phrase that is already over (e.g. after a seek), so the flag flips back.
+    untrack(() => {
+      const phrases = voice()?.phrases ?? [];
+      const beat = game.beat();
+      let index = phraseIndex();
+      while ((phrases[index]?.disappearBeat ?? Infinity) <= beat) index++;
+      setPhraseIndex(index);
+    });
   });
 
   return {
     voice,
     phrase,
     nextPhrase,
-    phraseIndex,
   };
 }

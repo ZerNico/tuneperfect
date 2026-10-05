@@ -19,7 +19,6 @@ function createMedleyStore() {
 
   return {
     songs,
-    setSongs,
     add,
     removeAt,
     clear,

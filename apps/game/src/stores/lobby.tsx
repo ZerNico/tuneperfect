@@ -1,8 +1,9 @@
+import { createORPCClient } from "@orpc/client";
+import { RPCLink } from "@orpc/client/fetch";
+import type { Client } from "@tuneperfect/api";
+import { joinURL } from "ufo";
 import * as v from "valibot";
 
-import { t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
-import type { GuestUser } from "~/lib/types";
 import { createPersistentStore } from "~/lib/utils/store";
 
 import { localStore } from "./local";
@@ -36,10 +37,13 @@ const lobbyStoreInstance = createPersistentStore({
   defaults: defaultLobbySettings,
 });
 
-export const guestUser: GuestUser = {
-  id: "guest",
-  username: t("common.players.guest"),
-  type: "guest",
+const deleteLobby = (token: string) => {
+  const link = new RPCLink({
+    url: joinURL(import.meta.env.VITE_API_URL ?? "", "/rpc"),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const api: Client = createORPCClient(link);
+  return api.lobby.deleteLobby();
 };
 
 function createLobbyStore() {
@@ -55,18 +59,17 @@ function createLobbyStore() {
     lobbyStoreInstance.updateSettings("data", newLobby || null);
   };
 
-  const clearLobby = async () => {
-    if (!lobby()) {
+  // Clears the local state synchronously, so a lobby created right afterwards can't be wiped by a late clear,
+  // then deletes the old lobby in the background with its own token (the shared client reads the token lazily).
+  const clearLobby = () => {
+    const current = lobby();
+    if (!current) {
       return;
     }
 
-    try {
-      await client.lobby.deleteLobby.call();
-    } catch (_) {
-    } finally {
-      setLobby(undefined);
-      setLocalPlayerIds([]);
-    }
+    setLobby(undefined);
+    setLocalPlayerIds([]);
+    deleteLobby(current.token).catch(() => {});
   };
 
   const addLocalPlayer = (playerId: string) => {

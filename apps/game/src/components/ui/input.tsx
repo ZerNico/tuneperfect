@@ -1,10 +1,10 @@
 import { mergeRefs } from "@solid-primitives/refs";
 import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
-import { twMerge } from "tailwind-merge";
 
 import { keyMode, useNavigation } from "~/hooks/navigation";
 
+import MenuRow from "./menu-row";
 import { VirtualKeyboard } from "./virtual-keyboard";
 
 interface InputProps {
@@ -93,40 +93,31 @@ export default function Input(props: InputProps) {
 
   return (
     <>
-      <div
-        class={twMerge("grid h-16 items-center overflow-hidden rounded-lg", props.class)}
+      <MenuRow
+        class={props.class}
+        selected={props.selected}
+        gradient={props.gradient}
+        label={props.label}
         onMouseEnter={() => props.onMouseEnter?.()}
       >
-        <div
-          class="col-start-1 row-start-1 h-full w-full bg-gradient-to-r transition-opacity"
-          classList={{
-            [props.gradient || "gradient-settings"]: true,
-            "opacity-0": !props.selected,
-          }}
-        />
-        <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-          <div class="text-center text-xl font-bold">{props.label}</div>
-          <div class="flex items-center justify-center">
-            <div class="w-full">
-              <input
-                ref={mergeRefs(props.ref, (el) => {
-                  inputRef = el;
-                })}
-                type={props.type || "text"}
-                value={props.value || ""}
-                placeholder={props.placeholder}
-                aria-label={props.label || props.placeholder}
-                maxLength={props.maxLength}
-                onInput={(event) => props.onInput?.(event)}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                class="w-full bg-transparent py-2 text-xl text-white focus:outline-none"
-              />
-              <div class="h-0.5 w-full rounded-full bg-white" />
-            </div>
-          </div>
+        <div class="w-full">
+          <input
+            ref={mergeRefs(props.ref, (el) => {
+              inputRef = el;
+            })}
+            type={props.type || "text"}
+            value={props.value || ""}
+            placeholder={props.placeholder}
+            aria-label={props.label || props.placeholder}
+            maxLength={props.maxLength}
+            onInput={(event) => props.onInput?.(event)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            class="w-full bg-transparent py-2 text-xl font-bold text-white placeholder:text-white/40 focus:outline-none"
+          />
+          <div class="h-1 w-full rounded-full bg-white/80" />
         </div>
-      </div>
+      </MenuRow>
 
       <Presence>
         {keyboardPosition() && (

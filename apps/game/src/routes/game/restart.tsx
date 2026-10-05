@@ -1,9 +1,7 @@
-import { createFileRoute, Navigate } from "@tanstack/solid-router";
+import { createFileRoute } from "@tanstack/solid-router";
+
+import RestartScreen from "~/screens/game/restart";
 
 export const Route = createFileRoute("/game/restart")({
-  component: RestartComponent,
+  component: RestartScreen,
 });
-
-function RestartComponent() {
-  return <Navigate to="/game" replace />;
-}

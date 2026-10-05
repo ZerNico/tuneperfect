@@ -1,13 +1,15 @@
-import { createEffect, onCleanup, onMount, Show } from "solid-js";
+import { onMount, Show } from "solid-js";
 import { Motion } from "solid-motionone";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
 import IconF6Key from "~icons/sing/f6-key";
 import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
 import IconGamepadRB from "~icons/sing/gamepad-rb";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
 
+import KeyGlyph from "~/components/ui/key-glyph";
 import { VirtualKeyboard } from "~/components/ui/virtual-keyboard";
+import { createClickOutside } from "~/hooks/click-outside";
 import { keyMode, useNavigation } from "~/hooks/navigation";
 import type { SearchFieldScope } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
@@ -35,18 +37,10 @@ export function SearchPopup(props: SearchPopupProps) {
   let searchRef!: HTMLInputElement;
   let popupRef!: HTMLDivElement;
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
   const onInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
     props.onSearchQuery(e.currentTarget.value);
@@ -95,14 +89,12 @@ export function SearchPopup(props: SearchPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-lg bg-black/30 p-4 text-white shadow-xl backdrop-blur-md"
+        class="w-96 rounded-2xl glass p-4 text-white"
       >
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm" />}>
-                <IconF6Key class="text-sm" />
-              </Show>
+              <KeyGlyph keyboard={IconF6Key} gamepad={IconGamepadLB} class="text-sm" />
               <button
                 type="button"
                 class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
@@ -114,7 +106,7 @@ export function SearchPopup(props: SearchPopupProps) {
 
             <div class="flex justify-center">
               <div class="rounded-md bg-white/10 px-3 py-1">
-                <span class="text-sm font-medium text-white">{currentScopeLabel()}</span>
+                <span class="text-sm font-bold text-white">{currentScopeLabel()}</span>
               </div>
             </div>
 
@@ -126,9 +118,7 @@ export function SearchPopup(props: SearchPopupProps) {
               >
                 <IconTriangleRight class="text-xs" />
               </button>
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm" />}>
-                <IconF7Key class="text-sm" />
-              </Show>
+              <KeyGlyph keyboard={IconF7Key} gamepad={IconGamepadRB} class="text-sm" />
             </div>
           </div>
 
@@ -139,7 +129,7 @@ export function SearchPopup(props: SearchPopupProps) {
             type="text"
             placeholder={t("sing.search")}
             aria-label={t("sing.search")}
-            class="focus:gradient-sing placeholder-gray-400 w-full rounded-md bg-white/10 px-3 py-2 text-white transition-all focus:bg-linear-to-r focus:outline-none"
+            class="focus:gradient-sing w-full rounded-lg bg-white/10 px-3 py-2 font-bold text-white placeholder-white/50 transition-all focus:bg-linear-to-r focus:outline-none"
           />
         </div>
 

@@ -12,7 +12,7 @@ import IconUpArrowKey from "~icons/sing/up-arrow-key";
 import { keyMode } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 
-type HintType = "navigate" | "confirm" | "back" | "add-to-medley";
+type HintType = "navigate" | "confirm" | "back";
 
 interface KeyHintsProps {
   hints: HintType[];
@@ -26,8 +26,6 @@ export default function KeyHints(props: KeyHintsProps) {
       case "back":
         return isGamepad ? <IconGamepadB /> : <IconEscKey />;
       case "confirm":
-        return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
-      case "add-to-medley":
         return isGamepad ? <IconGamepadA /> : <IconEnterKey />;
       case "navigate":
         return isGamepad ? (
@@ -63,8 +61,9 @@ interface KeyHintProps {
 }
 function KeyHint(props: KeyHintProps) {
   return (
-    <div class="flex items-center gap-2">
-      {props.icon} {props.label}
+    <div class="flex items-center gap-2.5 text-white/85">
+      <span class="flex text-2xl">{props.icon}</span>
+      <span class="text-lg font-bold">{props.label}</span>
     </div>
   );
 }

@@ -1,9 +1,9 @@
+import { Key } from "@solid-primitives/keyed";
 import {
   type Accessor,
   createEffect,
   createMemo,
   createSignal,
-  For,
   type JSX,
   on,
   onCleanup,
@@ -12,43 +12,52 @@ import {
 } from "solid-js";
 
 import { useNavigation } from "~/hooks/navigation";
-import { type SearchFieldScope, type SongFilters, type SortOption, useSongFilter } from "~/hooks/use-song-filter";
-import type { LocalSong } from "~/lib/ultrastar/song";
 import { createRefContent } from "~/lib/utils/ref";
 
-export type { SortOption, SearchFieldScope, SongFilters };
-
-export interface SongScrollerRef {
-  goToRandomSong: () => LocalSong | null;
+export interface SongScrollerRef<T> {
+  goToRandomSong: () => T | null;
+  /** Spin forward through the strip for `durationMs` and land on the next `item` (slot-machine style). */
+  spinTo: (item: T, durationMs: number) => Promise<void>;
 }
 
-interface VisibleItem {
-  item: LocalSong;
+interface VisibleItem<T> {
+  item: T;
   position: number;
 }
 
-const ITEM_WIDTH_CQW = 0.12;
+/** Default slot width as a share of the scroller's width. */
+const ITEM_WIDTH = 0.12;
 const MAX_SCALE = 1.3;
+
+export interface ScrollerItemState {
+  scale: number;
+  /** 0 at rest, 1 when centred. */
+  emphasis: number;
+  /** Signed distance from the centre in item widths (negative = left). */
+  offset: number;
+}
 const OVERSCAN = 3;
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-interface SongScrollerProps {
-  ref?: Ref<SongScrollerRef>;
-  items: LocalSong[];
-  sort: SortOption;
-  searchQuery: string;
-  searchFieldScope: SearchFieldScope;
-  filters: SongFilters;
-  initialSong?: LocalSong;
-  children: (item: LocalSong, index: number, scale: Accessor<number>) => JSX.Element;
-  onCenteredItemChange?: (item: LocalSong | null, index: number) => void;
-  onFilteredCountChange?: (count: number) => void;
-  onConfirm?: (item: LocalSong) => void;
+interface SongScrollerProps<T> {
+  ref?: Ref<SongScrollerRef<T>>;
+  /** Already filtered and sorted. */
+  items: T[];
+  getId: (item: T) => string;
+  initialId?: string;
+  children: (item: T, index: number, state: Accessor<ScrollerItemState>) => JSX.Element;
+  onCenteredItemChange?: (item: T | null, index: number) => void;
+  onConfirm?: (item: T) => void;
+  /** Slot width as a share of the scroller's width; items fill their slot. */
+  itemSize?: number;
+  /** When false, the strip ignores keys, wheel, drag and clicks (driven only through the ref). */
+  interactive?: boolean;
   class?: string;
 }
 
-export function SongScroller(props: SongScrollerProps) {
+/** Infinite horizontal coverflow with momentum, snapping and pointer drag. */
+export function SongScroller<T>(props: SongScrollerProps<T>) {
   let containerRef!: HTMLDivElement;
 
   const [offset, setOffset] = createSignal(0);
@@ -56,19 +65,8 @@ export function SongScroller(props: SongScrollerProps) {
   const [currentItemId, setCurrentItemId] = createSignal<string | null>(null);
   const [hasInitialized, setHasInitialized] = createSignal(false);
 
-  const itemWidth = () => containerWidth() * ITEM_WIDTH_CQW;
-
-  const { filteredItems: filteredAndSortedItems } = useSongFilter({
-    items: () => props.items,
-    sortOption: () => props.sort,
-    searchQuery: () => props.searchQuery,
-    searchFieldScope: () => props.searchFieldScope,
-    filters: () => props.filters,
-  });
-
-  createEffect(() => {
-    props.onFilteredCountChange?.(filteredAndSortedItems().length);
-  });
+  const itemSize = () => props.itemSize ?? ITEM_WIDTH;
+  const itemWidth = () => containerWidth() * itemSize();
 
   const continuousPosition = createMemo(() => {
     const width = itemWidth();
@@ -78,26 +76,27 @@ export function SongScroller(props: SongScrollerProps) {
   const currentPosition = createMemo(() => Math.round(continuousPosition()));
 
   const centeredIndex = createMemo(() => {
-    const length = filteredAndSortedItems().length;
+    const length = props.items.length;
     if (length === 0) return 0;
     return mod(currentPosition(), length);
   });
 
   createEffect(
     on(
-      () => [props.initialSong, filteredAndSortedItems(), containerWidth()] as const,
-      ([initialSong, items, width]) => {
+      () => [props.initialId, props.items, containerWidth()] as const,
+      ([initialId, items, width]) => {
         if (hasInitialized() || items.length === 0 || width === 0) return;
 
         // If we have an initial song, find it and scroll to it
-        if (initialSong) {
-          const index = items.findIndex((item) => item.hash === initialSong.hash);
-          if (index !== -1) {
-            const calculatedItemWidth = width * ITEM_WIDTH_CQW;
+        if (initialId) {
+          const index = items.findIndex((item) => props.getId(item) === initialId);
+          const initialItem = items[index];
+          if (initialItem) {
+            const calculatedItemWidth = width * itemSize();
             setOffset(index * calculatedItemWidth);
-            setCurrentItemId(initialSong.hash);
+            setCurrentItemId(initialId);
             setHasInitialized(true);
-            props.onCenteredItemChange?.(initialSong, index);
+            props.onCenteredItemChange?.(initialItem, index);
             return;
           }
         }
@@ -105,7 +104,7 @@ export function SongScroller(props: SongScrollerProps) {
         // No initial song or not found - default to first item
         const firstSong = items[0];
         if (firstSong) {
-          setCurrentItemId(firstSong.hash);
+          setCurrentItemId(props.getId(firstSong));
           setOffset(0);
           setHasInitialized(true);
           props.onCenteredItemChange?.(firstSong, 0);
@@ -115,51 +114,46 @@ export function SongScroller(props: SongScrollerProps) {
   );
 
   createEffect(
-    on(filteredAndSortedItems, (items) => {
-      // Skip if not initialized yet - let the initialization effect handle it
-      if (!hasInitialized()) return;
+    on(
+      () => props.items,
+      (items) => {
+        // Skip if not initialized yet - let the initialization effect handle it
+        if (!hasInitialized()) return;
 
-      const id = currentItemId();
+        const id = currentItemId();
 
-      if (items.length === 0) {
-        if (id) {
-          setCurrentItemId(null);
-          props.onCenteredItemChange?.(null, -1);
+        if (!id) {
+          const firstSong = items[0];
+          if (firstSong) {
+            setCurrentItemId(props.getId(firstSong));
+            setOffset(0);
+            props.onCenteredItemChange?.(firstSong, 0);
+          }
+          return;
         }
-        return;
-      }
 
-      if (!id) {
-        const firstSong = items[0];
-        if (firstSong) {
-          setCurrentItemId(firstSong.hash);
-          setOffset(0);
-          props.onCenteredItemChange?.(firstSong, 0);
+        const newSongIndex = items.findIndex((item) => props.getId(item) === id);
+        if (newSongIndex === -1) {
+          const firstSong = items[0];
+          if (firstSong) {
+            setCurrentItemId(props.getId(firstSong));
+            setOffset(0);
+            props.onCenteredItemChange?.(firstSong, 0);
+          }
+          return;
         }
-        return;
-      }
 
-      const newSongIndex = items.findIndex((item) => item.hash === id);
-      if (newSongIndex === -1) {
-        const firstSong = items[0];
-        if (firstSong) {
-          setCurrentItemId(firstSong.hash);
-          setOffset(0);
-          props.onCenteredItemChange?.(firstSong, 0);
+        // Preserve the current "cycle" in infinite scroll
+        const pos = currentPosition();
+        const length = items.length;
+        const cycle = Math.floor(pos / length);
+        const newPosition = cycle * length + newSongIndex;
+
+        if (newPosition !== pos) {
+          setOffset(newPosition * itemWidth());
         }
-        return;
-      }
-
-      // Preserve the current "cycle" in infinite scroll
-      const pos = currentPosition();
-      const length = items.length;
-      const cycle = Math.floor(pos / length);
-      const newPosition = cycle * length + newSongIndex;
-
-      if (newPosition !== pos) {
-        setOffset(newPosition * itemWidth());
-      }
-    }),
+      },
+    ),
   );
 
   createEffect(
@@ -167,31 +161,36 @@ export function SongScroller(props: SongScrollerProps) {
       // Skip if not initialized yet - let the initialization effect handle first selection
       if (!hasInitialized()) return;
 
-      const items = filteredAndSortedItems();
+      const items = props.items;
       const item = items[index];
       if (item) {
-        setCurrentItemId(item.hash);
+        setCurrentItemId(props.getId(item));
         props.onCenteredItemChange?.(item, index);
       }
     }),
   );
 
-  const visibleRange = createMemo(() => {
-    const width = itemWidth();
-    if (width === 0) return { start: 0, end: 0 };
+  const visibleRange = createMemo(
+    () => {
+      const width = itemWidth();
+      if (width === 0) return { start: 0, end: 0 };
 
-    const centerPos = continuousPosition();
-    const range = Math.ceil(containerWidth() / 2 / width) + OVERSCAN;
-    return { start: Math.floor(centerPos) - range, end: Math.ceil(centerPos) + range };
-  });
+      const centerPos = continuousPosition();
+      const range = Math.ceil(containerWidth() / 2 / width) + OVERSCAN;
+      return { start: Math.floor(centerPos) - range, end: Math.ceil(centerPos) + range };
+      // Only a changed range should rebuild the visible list, not every frame of movement.
+    },
+    undefined,
+    { equals: (a, b) => a.start === b.start && a.end === b.end },
+  );
 
   const visibleItems = createMemo(() => {
-    const items = filteredAndSortedItems();
+    const items = props.items;
     const length = items.length;
     if (length === 0) return [];
 
     const { start, end } = visibleRange();
-    const result: VisibleItem[] = [];
+    const result: VisibleItem<T>[] = [];
     for (let position = start; position <= end; position++) {
       const songIndex = mod(position, length);
       result.push({ item: items[songIndex]!, position });
@@ -205,7 +204,7 @@ export function SongScroller(props: SongScrollerProps) {
     const currentOffset = offset();
     const visible = visibleItems();
 
-    if (width === 0 || visible.length === 0) return new Map<number, { x: number; scale: number }>();
+    if (width === 0 || visible.length === 0) return new Map<number, { x: number; scale: number; offset: number }>();
 
     const itemData: { position: number; distance: number; scale: number }[] = [];
     const scaledItems: { distance: number; extra: number }[] = [];
@@ -221,7 +220,7 @@ export function SongScroller(props: SongScrollerProps) {
       }
     }
 
-    const result = new Map<number, { x: number; scale: number }>();
+    const result = new Map<number, { x: number; scale: number; offset: number }>();
     for (const { position, distance, scale } of itemData) {
       let neighborOffset = 0;
 
@@ -232,7 +231,7 @@ export function SongScroller(props: SongScrollerProps) {
       }
 
       const x = containerW / 2 - width / 2 + distance + neighborOffset;
-      result.set(position, { x, scale });
+      result.set(position, { x, scale, offset: distance / width });
     }
 
     return result;
@@ -323,7 +322,20 @@ export function SongScroller(props: SongScrollerProps) {
     startAnimation();
   };
 
+  /** One item left/right. Steps from a snap in progress, so quick presses aren't lost. */
+  const stepBy = (direction: -1 | 1) => goToPosition((snapTarget ?? currentPosition()) + direction);
+
+  /** Stops momentum, holds and snapping; the caller then owns the offset. */
+  const stopPhysics = () => {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = undefined;
+    snapTarget = null;
+    velocity = 0;
+    holdDirection = 0;
+  };
+
   const handleWheel = (e: WheelEvent) => {
+    if (props.interactive === false) return;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
     if (delta === 0) return;
     e.preventDefault();
@@ -333,7 +345,7 @@ export function SongScroller(props: SongScrollerProps) {
     lastWheelTime = now;
 
     if (timeDelta > 150) {
-      goToPosition(currentPosition() + (delta > 0 ? 1 : -1));
+      stepBy(delta > 0 ? 1 : -1);
       return;
     }
 
@@ -345,29 +357,127 @@ export function SongScroller(props: SongScrollerProps) {
     startAnimation();
   };
 
-  const goToRandomSong = (): LocalSong | null => {
-    const items = filteredAndSortedItems();
+  // Pointer drag: the strip follows the pointer; on release the drag speed
+  // becomes the fling velocity and the regular friction/snap takes over.
+  const DRAG_THRESHOLD_PX = 6;
+  let dragPointerId: number | null = null;
+  let dragStartX = 0;
+  let dragLastX = 0;
+  let dragLastTime = 0;
+  let dragVelocity = 0;
+  let dragMoved = false;
+  let suppressClick = false;
+  const [grabbing, setGrabbing] = createSignal(false);
+
+  const handlePointerDown = (e: PointerEvent) => {
+    if (e.button !== 0 || props.interactive === false) return;
+    dragPointerId = e.pointerId;
+    dragStartX = dragLastX = e.clientX;
+    dragLastTime = performance.now();
+    dragVelocity = 0;
+    dragMoved = false;
+  };
+
+  const handlePointerMove = (e: PointerEvent) => {
+    if (e.pointerId !== dragPointerId) return;
+
+    if (!dragMoved) {
+      if (Math.abs(e.clientX - dragStartX) < DRAG_THRESHOLD_PX) return;
+      // Only capture once it's a real drag, so plain clicks still reach the items.
+      dragMoved = true;
+      setGrabbing(true);
+      containerRef.setPointerCapture(e.pointerId);
+      stopPhysics();
+      dragLastX = e.clientX;
+    }
+
+    const now = performance.now();
+    const dx = e.clientX - dragLastX;
+    const dt = Math.max(1, now - dragLastTime);
+    setOffset((o) => o - dx);
+    // Smoothed, in the same px-per-frame units the physics uses.
+    dragVelocity = 0.7 * ((-dx / dt) * TARGET_FRAME_MS) + 0.3 * dragVelocity;
+    dragLastX = e.clientX;
+    dragLastTime = now;
+  };
+
+  const handlePointerUp = (e: PointerEvent) => {
+    if (e.pointerId !== dragPointerId) return;
+    dragPointerId = null;
+    if (!dragMoved) return;
+
+    setGrabbing(false);
+    suppressClick = true;
+    requestAnimationFrame(() => (suppressClick = false));
+    // A pause before releasing means "place it here", not "fling".
+    const idle = performance.now() - dragLastTime > 80;
+    velocity = idle ? 0 : Math.max(-50, Math.min(50, dragVelocity));
+    snapTarget = null;
+    startAnimation();
+  };
+
+  const goToRandomSong = (): T | null => {
+    const items = props.items;
     if (items.length === 0) return null;
 
     const randomIndex = Math.floor(Math.random() * items.length);
     const randomSong = items[randomIndex];
     if (!randomSong) return null;
 
+    // A jump, not an animation: the centred-item effect reports the song once.
+    stopPhysics();
     setOffset(randomIndex * itemWidth());
-    setCurrentItemId(randomSong.hash);
 
     return randomSong;
   };
 
+  const spinTo = (item: T, durationMs: number): Promise<void> => {
+    const items = props.items;
+    const width = itemWidth();
+    const targetIndex = items.findIndex((candidate) => props.getId(candidate) === props.getId(item));
+    if (targetIndex === -1 || width === 0) return Promise.resolve();
+
+    // Stop the physics loop; this spin owns the offset until it lands.
+    stopPhysics();
+
+    // Forward to the item's next occurrence; the caller decides how far that is.
+    const from = currentPosition();
+    const to = from + (mod(targetIndex - from, items.length) || items.length);
+
+    const initialOffset = offset();
+    const endOffset = to * width;
+    const start = performance.now();
+    const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
+
+    return new Promise((resolve) => {
+      const step = (now: number) => {
+        const progress = Math.min((now - start) / durationMs, 1);
+        setOffset(initialOffset + (endOffset - initialOffset) * easeOutQuart(progress));
+        if (progress < 1) {
+          spinFrame = requestAnimationFrame(step);
+        } else {
+          spinFrame = undefined;
+          resolve();
+        }
+      };
+      spinFrame = requestAnimationFrame(step);
+    });
+  };
+  let spinFrame: number | undefined;
+  onCleanup(() => spinFrame !== undefined && cancelAnimationFrame(spinFrame));
+
   createRefContent(
     () => props.ref,
-    () => ({ goToRandomSong }),
+    () => ({ goToRandomSong, spinTo }),
   );
 
   useNavigation({
+    get enabled() {
+      return props.interactive !== false;
+    },
     onKeydown(event) {
-      if (event.action === "left") goToPosition(currentPosition() - 1);
-      else if (event.action === "right") goToPosition(currentPosition() + 1);
+      if (event.action === "left") stepBy(-1);
+      else if (event.action === "right") stepBy(1);
     },
     onHold(event) {
       if (event.action === "left" || event.action === "right") {
@@ -388,13 +498,13 @@ export function SongScroller(props: SongScrollerProps) {
     const updateSize = () => {
       const prevWidth = containerWidth();
       const newWidth = containerRef.clientWidth;
-      const prevItemWidth = prevWidth * ITEM_WIDTH_CQW;
+      const prevItemWidth = prevWidth * itemSize();
       const pos = prevItemWidth > 0 ? Math.round(offset() / prevItemWidth) : 0;
 
       setContainerWidth(newWidth);
 
       if (prevWidth > 0 && newWidth !== prevWidth) {
-        const newItemWidth = newWidth * ITEM_WIDTH_CQW;
+        const newItemWidth = newWidth * itemSize();
         setOffset(pos * newItemWidth);
       }
     };
@@ -412,8 +522,9 @@ export function SongScroller(props: SongScrollerProps) {
     });
   });
 
-  const handleItemClick = (item: LocalSong, position: number) => {
+  const handleItemClick = (item: T, position: number) => {
     const isCentered = position === currentPosition();
+    if (props.interactive === false && !isCentered) return;
     if (isCentered) {
       props.onConfirm?.(item);
     } else {
@@ -422,29 +533,50 @@ export function SongScroller(props: SongScrollerProps) {
   };
 
   return (
-    <div ref={containerRef} class={`relative overflow-hidden ${props.class ?? ""}`}>
-      <For each={visibleItems()}>
-        {({ item, position }) => {
-          const t = () => itemTransforms().get(position) ?? { x: 0, scale: 1 };
+    <div
+      ref={containerRef}
+      class={`relative touch-pan-y overflow-hidden select-none ${props.class ?? ""}`}
+      classList={{
+        "cursor-grab": props.interactive !== false && !grabbing(),
+        "cursor-grabbing": props.interactive !== false && grabbing(),
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onDragStart={(e) => e.preventDefault()}
+    >
+      {/* Keyed by position + song so a cover keeps its DOM (and loaded image) while visible. */}
+      <Key each={visibleItems()} by={(visible) => `${visible.position}:${props.getId(visible.item)}`}>
+        {(visible) => {
+          const { item, position } = visible();
+          const t = () => itemTransforms().get(position) ?? { x: 0, scale: 1, offset: 0 };
           return (
             <div
-              class="absolute top-0 flex h-full items-center"
+              class="absolute top-0 flex h-full items-center justify-center"
               style={{
+                width: `${itemWidth()}px`,
                 transform: `translateX(${t().x}px) scale(${t().scale})`,
                 "will-change": "transform",
-                contain: "layout style paint",
+                // No paint containment: cards may draw outside their box (e.g. the vinyl).
+                contain: "layout style",
               }}
             >
               <div
-                onClick={() => handleItemClick(item, position)}
+                class="flex w-full justify-center"
+                onClick={() => !suppressClick && handleItemClick(item, position)}
                 onKeyDown={(e) => e.key === "Enter" && handleItemClick(item, position)}
               >
-                {props.children(item, position, () => t().scale)}
+                {props.children(item, position, () => ({
+                  scale: t().scale,
+                  emphasis: (t().scale - 1) / (MAX_SCALE - 1),
+                  offset: t().offset,
+                }))}
               </div>
             </div>
           );
         }}
-      </For>
+      </Key>
     </div>
   );
 }

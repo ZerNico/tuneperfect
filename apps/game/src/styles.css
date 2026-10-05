@@ -1,10 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource/lato/300.css";
 @import "@fontsource/lato/400.css";
 @import "@fontsource/lato/700.css";
+@import "@fontsource/lato/900.css";
 
 @theme {
-  --font-primary: "Lato", "sans-serif";
+  --font-primary: "Lato", sans-serif;
 
   --spacing: 0.25cqw;
 
@@ -14,7 +14,7 @@
   --text-xs: 0.67cqw;
   --text-sm: 0.78cqw;
   --text-base: 1cqw;
-  --text-lg: 1cqw;
+  --text-lg: 1.05cqw;
   --text-xl: 1.11cqw;
   --text-2xl: 1.33cqw;
   --text-3xl: 1.67cqw;
@@ -36,11 +36,42 @@
   --animate-hide: hide 0.1s ease-in;
   --animate-slide-in: slideIn 0.15s ease-out;
   --animate-swipe-out: swipeOut 0.1s ease-in;
-  --animate-scroll: scroll 10s linear infinite;
   --animate-sparkle: sparkle 2s ease-in-out infinite;
   --animate-phrase-rating: phraseRating 1.2s ease-out forwards;
   --animate-score-pop: scorePop 0.2s ease-out;
+  --animate-lyric-fade: lyricFade 0.2s ease-out both;
+  --animate-glow-in: lyricFade 0.25s ease-out both;
+  --animate-value-from-right: valueFromRight 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-value-from-left: valueFromLeft 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-band-in: bandIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  --animate-flash: flash 0.6s ease-out both;
+  --animate-title-in: titleIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-title-out: titleOut 0.1s ease-in forwards;
+  --animate-badge-in: badgeIn 0.18s ease-out 180ms both;
+  --animate-backdrop-in: backdropIn 0.3s ease-out both;
+  --animate-slap: slap 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  --animate-art-drop: artDrop 0.7s ease-in infinite;
+  --animate-art-bubble: artBubble 2.4s ease-in-out infinite;
+  --animate-art-flicker: artFlicker 1.4s linear both;
+  --animate-art-twinkle: artTwinkle 1.8s ease-in-out infinite;
+  --animate-art-shimmer: artShimmer 1.2s ease-in-out infinite alternate;
+  --animate-art-chase: artChase 0.77s steps(1) infinite;
+  --animate-art-flash: artFlash 1.4s ease-out infinite;
+  --animate-art-burst: artBurst 1.6s ease-out infinite;
+  --animate-art-glint: artGlint 1.2s ease-in-out infinite alternate;
+  --animate-lane-in: laneIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  --animate-pop-in: popIn 0.4s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  --animate-stripes-move: stripesMove 1.5s linear infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
+  --animate-float: float 2.4s ease-in-out infinite alternate;
   --animate-shimmer: shimmer 0.8s ease-in-out both;
+  --animate-slam: slam 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-burst: burst 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) both;
+  --animate-stamp: stamp 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  --animate-confetti: confetti 2.4s cubic-bezier(0.3, 0.5, 0.6, 1) both;
+  --animate-eq-bounce: eqBounce 0.9s ease-in-out infinite alternate;
+  --animate-line-draw: lineDraw 0.65s cubic-bezier(0.6, 0, 0.2, 1) both;
+  --animate-pop-scale: popScale 0.45s ease-out both;
 
   @keyframes hide {
     from {
@@ -69,15 +100,6 @@
     }
   }
 
-  @keyframes scroll {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(-50%);
-    }
-  }
-
   @keyframes sparkle {
     0%, 100% {
       opacity: 0;
@@ -86,6 +108,33 @@
     50% {
       opacity: 1;
       transform: scale(1) rotate(180deg);
+    }
+  }
+
+  @keyframes phraseRating {
+    0% {
+      opacity: 0;
+      transform: scale(1.8) translateY(0);
+      filter: blur(0.3cqw);
+    }
+    12% {
+      opacity: 1;
+      transform: scale(0.94) translateY(0);
+      filter: blur(0);
+    }
+    20% {
+      transform: scale(1.04) translateY(0);
+    }
+    30% {
+      transform: scale(1) translateY(0);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-0.5cqh);
     }
   }
 
@@ -101,6 +150,277 @@
     }
   }
 
+  /* A new lyrics line fading in. */
+  @keyframes lyricFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* A menu value arriving from the side its arrow points to. */
+  @keyframes valueFromRight {
+    from {
+      opacity: 0;
+      translate: 0.8em 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes valueFromLeft {
+    from {
+      opacity: 0;
+      translate: -0.8em 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes bandIn {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* A spotlight switching on with a stutter, shining briefly, then fading. */
+  @keyframes flash {
+    0% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Text changes: the new text rises in, the old one drifts up and fades. */
+  @keyframes titleIn {
+    from {
+      opacity: 0;
+      transform: translateY(0.6cqw);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes titleOut {
+    to {
+      opacity: 0;
+      transform: translateY(-0.4cqw);
+    }
+  }
+
+  @keyframes badgeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes backdropIn {
+    from {
+      backdrop-filter: blur(0);
+      background-color: rgb(0 0 0 / 0);
+    }
+    to {
+      backdrop-filter: blur(12px);
+      background-color: rgb(0 0 0 / 0.75);
+    }
+  }
+
+  /* A sticker slapped onto the bar: comes in big and tilted, squashes on impact, settles. */
+  @keyframes slap {
+    0% {
+      opacity: 0;
+      transform: scale(2.4) rotate(-28deg) translateY(-1cqw);
+    }
+    45% {
+      opacity: 1;
+      transform: scale(0.86, 0.78) rotate(-4deg);
+    }
+    68% {
+      transform: scale(1.08) rotate(-10deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(-8deg);
+    }
+  }
+
+  /* Rank art idle animations */
+  @keyframes artDrop {
+    0% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  @keyframes artBubble {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-6px) scale(1.08);
+    }
+  }
+
+  @keyframes artFlicker {
+    0%,
+    10%,
+    22% {
+      opacity: 0;
+    }
+    5%,
+    16% {
+      opacity: 0.18;
+    }
+    30%,
+    100% {
+      opacity: 0.22;
+    }
+  }
+
+  @keyframes artTwinkle {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.1) rotate(6deg);
+    }
+  }
+
+  @keyframes artShimmer {
+    from {
+      opacity: 0.65;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes artChase {
+    0% {
+      fill: #fde047;
+    }
+    50% {
+      fill: #7c2d12;
+    }
+  }
+
+  @keyframes artFlash {
+    0% {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    15% {
+      opacity: 1;
+      transform: scale(1.3);
+    }
+    35%,
+    100% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+
+  @keyframes artBurst {
+    0% {
+      opacity: 1;
+      transform: scale(0.3);
+    }
+    70%,
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+
+  @keyframes artGlint {
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes laneIn {
+    from {
+      opacity: 0;
+      transform: translateX(-4cqw);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0.7) rotate(-10deg);
+    }
+    60% {
+      transform: scale(1.15) rotate(4deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  /* Moves .bg-stripes by exactly one stripe period so the loop is seamless. */
+  @keyframes stripesMove {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: calc(1.2cqw * 1.41421) 0;
+    }
+  }
+
+  /* Background: slow drift of the aurora glows */
+  @keyframes aurora {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(8%, 10%) scale(1.15);
+    }
+  }
+
+  @keyframes float {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-0.5cqw);
+    }
+  }
+
+  /* Background: the stage grid rolls towards the viewer, one cell per loop */
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);
@@ -110,25 +430,122 @@
     }
   }
 
-  @keyframes phraseRating {
+  /* Text lands from "in front of" the screen: big and blurred, then overshoots. */
+  @keyframes slam {
     0% {
       opacity: 0;
-      transform: scale(0.6) translateY(0.5cqh);
+      transform: scale(1.8);
+      filter: blur(0.4cqw);
     }
-    15% {
+    55% {
       opacity: 1;
-      transform: scale(1.1) translateY(0);
+      transform: scale(0.94);
+      filter: blur(0);
     }
-    30% {
-      transform: scale(1) translateY(0);
+    75% {
+      transform: scale(1.03);
     }
-    80% {
+    100% {
       opacity: 1;
-      transform: scale(1) translateY(0);
+      transform: scale(1);
+    }
+  }
+
+  /* Particles fly to (--dx, --dy) set per element. */
+  @keyframes burst {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
     }
     100% {
       opacity: 0;
-      transform: scale(0.95) translateY(-0.5cqh);
+      transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(var(--rot, 0deg));
+    }
+  }
+
+  @keyframes stamp {
+    0% {
+      opacity: 0;
+      transform: scale(2.5) rotate(-15deg);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.9) rotate(2deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(var(--stamp-rotate, 0deg));
+    }
+  }
+
+  @keyframes confetti {
+    0% {
+      opacity: 1;
+      transform: translate(0, -10vh) rotate(0deg);
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), 110vh) rotate(var(--rot, 720deg));
+    }
+  }
+
+  /* Loading equalizer bar. */
+  @keyframes eqBounce {
+    from {
+      scale: 1 0.25;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+
+  /* Draws an SVG stroke; the element needs `pathLength="1"` and `stroke-dasharray: 1`. */
+  @keyframes lineDraw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Individual scale/rotate properties, so it composes with an element's own transform. */
+  @keyframes popScale {
+    0% {
+      scale: 1;
+    }
+    40% {
+      scale: 1.18;
+      rotate: -3deg;
+    }
+    100% {
+      scale: 1.06;
+      rotate: 0deg;
+    }
+  }
+
+  /* No --animate-* for this one: the combo counter combines it with hide in an arbitrary animate-[…]. */
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-0.4cqw) rotate(-2deg);
+    }
+    40% {
+      transform: translateX(0.35cqw) rotate(1.5deg);
+    }
+    60% {
+      transform: translateX(-0.25cqw) rotate(-1deg);
+    }
+    80% {
+      transform: translateX(0.1cqw);
     }
   }
 }
@@ -283,19 +700,70 @@ body {
   background: radial-gradient(at top, #2d3438 0%, #203141 100%);
 }
 
+/* Heavy numbers and headline text: Lato black, upright. Set --display-shadow for a hard
+   drop shadow straight down (e.g. a dark shade of the player colour on score numbers). */
+@utility text-display {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0.06em 0 var(--display-shadow, transparent);
+}
+
+/* Dark frosted surface for popups and panels, with a soft shadow. */
+/* Popups over the video: neutral black like the toolbar chips (no tint of its own, so the blurred
+   video shows through in its own colour), darker for readability, and a short unblurred drop. */
+@utility glass {
+  background-color: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(1.2cqw);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 0.2cqw 0 rgb(0 0 0 / 0.25);
+}
+
+/* SVG parts animate around their own centre. */
+.art-part {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Decorative backgrounds, tinted via --fx-color. */
+@utility bg-halftone {
+  background-image: radial-gradient(circle, var(--fx-color, white) 22%, transparent 24%);
+  background-size: 1cqw 1cqw;
+}
+
+/* Soft glow in the mode colour under a focused item (the gradient-* classes set --mode-glow). */
+@utility focus-glow {
+  box-shadow: 0 0.3cqw 2cqw -0.8cqw color-mix(in oklch, var(--mode-glow, white) 50%, transparent);
+}
+
+@utility bg-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--fx-color, white) 0 0.6cqw,
+    transparent 0.6cqw 1.2cqw
+  );
+  /* One square tile of the 45° pattern (side = stripe period × √2), so it repeats without a seam
+     and animate-stripes-move (which shifts it by one tile) loops invisibly. */
+  background-size: calc(1.2cqw * 1.41421) calc(1.2cqw * 1.41421);
+}
+
 .gradient-sing {
+  --mode-glow: var(--color-green-400);
   @apply from-green-400 to-teal-600;
 }
 
 .gradient-party {
+  --mode-glow: var(--color-pink-500);
   @apply from-pink-500 to-purple-600;
 }
 
 .gradient-lobby {
+  --mode-glow: var(--color-yellow-400);
   @apply from-yellow-400 to-orange-500;
 }
 
 .gradient-settings {
+  --mode-glow: var(--color-cyan-400);
   @apply from-cyan-400 to-blue-500;
 }
 
@@ -321,7 +789,7 @@ body {
 .reset-range {
   -webkit-appearance: none;
 
-  ::-webkit-slider-runnable-track {
+  &::-webkit-slider-runnable-track {
     width: 100%;
     height: 100%;
   }
@@ -330,10 +798,6 @@ body {
     -webkit-appearance: none;
     appearance: none;
     width: 0;
-    height: 100%;
-  }
-
-  ::-webkit-slider-runnable-track {
     height: 100%;
   }
 }
@@ -380,4 +844,26 @@ body {
   opacity: 1;
   z-index: 0;
   pointer-events: auto;
+}
+
+/* Entering a song or its results: the new screen wipes in diagonally over the old one. */
+@keyframes wipe-in {
+  from {
+    clip-path: polygon(0 0, 0 0, -20% 100%, -20% 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 120% 0, 100% 100%, -20% 100%);
+  }
+}
+
+html:active-view-transition-type(wipe) {
+  &::view-transition-old(root) {
+    animation: none;
+    z-index: 0;
+  }
+
+  &::view-transition-new(root) {
+    animation: wipe-in 0.55s cubic-bezier(0.7, 0, 0.3, 1) both;
+    z-index: 1;
+  }
 }

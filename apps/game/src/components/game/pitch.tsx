@@ -1,12 +1,18 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, For, Show } from "solid-js";
 
+import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
-import { usePlayer } from "~/lib/game/player-context";
-import type { Note } from "~/lib/ultrastar/note";
+import { type ProcessedBeat, usePlayer } from "~/lib/game/player-context";
+import { addProcessedBeat, type ProcessedNoteGroup } from "~/lib/game/processed-notes";
+import { isGolden, isRap, type Note } from "~/lib/ultrastar/note";
+import type { Phrase } from "~/lib/ultrastar/phrase";
 import { clamp } from "~/lib/utils/math";
 import { settingsStore } from "~/stores/settings";
+
+/** Clip for a completely filled bar. */
+const FULL_FILL = "none";
 
 export default function Pitch() {
   const game = useGame();
@@ -102,81 +108,45 @@ export default function Pitch() {
       });
   });
 
-  const currentProcessedBeats = createMemo(() => {
+  // Beats are only ever added in order, so the groups are built incrementally: finished groups
+  // keep their objects (their ProcessedNote gets no new props) and only the last one changes.
+  let grouped: { phrase: Phrase; groups: ProcessedNoteGroup[]; nextBeat: number } | undefined;
+
+  const groupedProcessedBeats = createMemo(() => {
     const phrase = player.phrase();
-    if (!phrase) {
-      return [];
-    }
-    const firstNote = phrase.notes[0];
-    const lastNote = phrase.notes.at(-1);
-    if (!firstNote || !lastNote) {
+    const firstNote = phrase?.notes[0];
+    const lastNote = phrase?.notes.at(-1);
+    if (!phrase || !firstNote || !lastNote) {
+      grouped = undefined;
       return [];
     }
 
     const startBeat = firstNote.startBeat;
     const endBeat = lastNote.startBeat + lastNote.length;
 
-    const currentProcessedBeats: ProcessedBeat[] = [];
+    if (grouped?.phrase !== phrase) {
+      grouped = { phrase, groups: [], nextBeat: startBeat };
+    }
 
-    for (let i = startBeat; i < endBeat; i++) {
+    // Reading only the beats not seen yet also subscribes only to those.
+    let groups = grouped.groups;
+    for (let i = grouped.nextBeat; i < endBeat; i++) {
       const beat = player.processedBeats.get(i);
-      if (beat) {
-        currentProcessedBeats.push({
-          beat: i,
-          note: beat.note,
-          midiNote: beat.midiNote,
-          rawMidiNote: beat.rawMidiNote,
-          isFirstInNote: beat.isFirstInNote,
-        });
+      if (!beat) continue;
+
+      if (groups === grouped.groups) {
+        groups = groups.slice();
       }
+      addProcessedBeat(groups, i, beat, startBeat, getProcessedBeatRow);
+      grouped.nextBeat = i + 1;
     }
 
-    return currentProcessedBeats;
+    grouped.groups = groups;
+    return groups;
   });
-
-  const groupedProcessedBeats = createMemo(() => {
-    // group processed beats by note
-
-    const currentBeats = currentProcessedBeats();
-    const phrase = player.phrase();
-
-    const startBeat = phrase?.notes[0]?.startBeat;
-    if (startBeat === undefined) {
-      return [];
-    }
-
-    // oxlint-disable-next-line solid/reactivity
-    return currentBeats.reduce((grouped, beat) => {
-      const lastGroup = grouped[grouped.length - 1];
-
-      // Determine if this beat should start a new group.
-      const shouldStartNewGroup =
-        !lastGroup || // It's the first beat
-        beat.isFirstInNote || // The beat is explicitly the start of a note
-        lastGroup.midiNote !== beat.midiNote || // The note pitch has changed
-        lastGroup.beat + lastGroup.length !== beat.beat; // There's a time gap
-
-      if (shouldStartNewGroup) {
-        grouped.push({
-          ...beat,
-          length: 1,
-          row: getProcessedBeatRow(beat),
-          column: beat.beat - startBeat + 1,
-          rawMidiNotes: [beat.rawMidiNote],
-        });
-      } else {
-        lastGroup.length++;
-        lastGroup.rawMidiNotes.push(beat.rawMidiNote);
-      }
-
-      return grouped;
-    }, [] as DisplayedProcessedBeat[]);
-  });
-
-  const micColor = () => `var(--color-${player.microphone().color}-500)`;
 
   return (
-    <div class="grid grow" classList={{ "px-60 py-[2cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
+    <div class="grid grow" classList={{ "px-48 py-[1cqh]": isCompact(), "px-48 py-[2cqh]": !isCompact() }}>
       <div
         style={{
           "grid-template-rows": `repeat(${ROW_COUNT},1fr)`,
@@ -202,7 +172,7 @@ export default function Pitch() {
               row={groupedBeat().row}
               column={groupedBeat().column}
               delayedBeat={player.delayedBeat()}
-              micColor={micColor()}
+              micColor={player.micColor(500)}
               rawMidiNotes={groupedBeat().rawMidiNotes}
               sungMidiNote={groupedBeat().midiNote}
             />
@@ -257,6 +227,8 @@ function SparkleParticles(props: { length: number }) {
 }
 
 function PitchNote(props: PitchNoteProps) {
+  const golden = () => isGolden(props.note);
+
   return (
     <div
       class="relative"
@@ -265,15 +237,20 @@ function PitchNote(props: PitchNoteProps) {
         "grid-column": `${props.column} / span ${props.note.length}`,
       }}
     >
-      <div
-        class="relative h-2/1 w-full -translate-y-1/4 transform overflow-hidden rounded-full border-[0.15cqw] shadow-md"
-        classList={{
-          "border-yellow-400 bg-yellow-400/20": props.note.type.endsWith("Golden"),
-          "border-white bg-black/20": !props.note.type.endsWith("Golden"),
-          "border-dashed": props.note.type.startsWith("Rap"),
-        }}
-      >
-        {props.note.type === "Golden" && <SparkleParticles length={props.note.length} />}
+      <div class="relative h-2/1 w-full -translate-y-1/4 transform">
+        {/* One outline and a short, unblurred drop shadow (a blurred one turns into a grey haze on light videos). */}
+        <div
+          class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-opacity duration-300"
+          classList={{
+            "border-yellow-300 bg-yellow-300/25": golden(),
+            "border-white bg-black/35": !golden(),
+            "border-dashed": isRap(props.note),
+          }}
+        >
+          <Show when={golden() && effectsEnabled()}>
+            <SparkleParticles length={props.note.length} />
+          </Show>
+        </div>
       </div>
     </div>
   );
@@ -296,23 +273,28 @@ function ProcessedNote(props: ProcessedNoteProps) {
   // oxlint-disable-next-line solid/reactivity
   const firstBeat = props.delayedBeat;
 
-  const fill = createMemo(() => {
-    const delayedBeat = props.delayedBeat;
+  // How much of the bar is filled, as a clip-path so it repaints without layout. The first beat
+  // grows with a flat edge, then the rounded end follows. A full bar stops following the beat
+  // until it grows by another beat.
+  let fillLength = 0;
+  const fillClip = createMemo((previous: string) => {
+    const length = props.length;
+    if (previous === FULL_FILL && length === fillLength) {
+      return previous;
+    }
+    fillLength = length;
 
-    const fillPercentage = clamp(((delayedBeat - firstBeat) / props.length) * 100, 0, 100);
+    const elapsed = props.delayedBeat - firstBeat;
+    const filled = clamp((elapsed / length) * 100, 0, 100);
 
-    if (delayedBeat - firstBeat <= 1) {
-      return {
-        clipPercentage: fillPercentage,
-        widthPercentage: 100 / props.length,
-      };
+    if (elapsed <= 1) {
+      // One beat's width, revealed by the share filled so far.
+      const visible = filled / length;
+      return visible >= 100 ? FULL_FILL : `inset(0 ${100 - visible}% 0 0)`;
     }
 
-    return {
-      clipPercentage: 100,
-      widthPercentage: fillPercentage,
-    };
-  });
+    return filled >= 100 ? FULL_FILL : `inset(0 ${100 - filled}% 0 0 round 9999px)`;
+  }, "");
 
   const calculateAccuracyPosition = (rawMidi: number, targetMidi: number): number => {
     const tolerance = getGapTolerance(settingsStore.general().difficulty);
@@ -334,8 +316,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
   };
 
   const points = createMemo(() => {
-    const isRap = props.note.type.startsWith("Rap");
-    if (!isRap && props.sungMidiNote !== props.note.midiNote) {
+    if (!isRap(props.note) && props.sungMidiNote !== props.note.midiNote) {
       return [];
     }
 
@@ -387,12 +368,12 @@ function ProcessedNote(props: ProcessedNoteProps) {
         "grid-column": `${props.column} / span ${props.length}`,
       }}
     >
-      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.35cqw]">
+      {/* Outline (0.22cqw) + a 0.2cqw gap before the sung fill. */}
+      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.42cqw]">
         <div class="relative h-full w-full">
           <div
             style={{
-              "clip-path": `polygon(0% 0%, ${fill().clipPercentage}% 0%, ${fill().clipPercentage}% 100%, 0% 100%)`,
-              width: `${fill().widthPercentage}%`,
+              "clip-path": fillClip(),
               "background-color": props.micColor,
             }}
             class="relative h-full w-full overflow-hidden rounded-full"
@@ -400,10 +381,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
             <Show when={accuracyLine()}>
               {(accuracyLine) => (
                 <svg
-                  class="absolute top-0 left-0 h-full overflow-visible"
-                  style={{
-                    width: `${clamp((100 / fill().widthPercentage) * 100, 100, 200)}%`,
-                  }}
+                  class="absolute top-0 left-0 h-full w-full overflow-visible"
                   viewBox={`0 0 ${props.length} 100`}
                   preserveAspectRatio="none"
                   aria-hidden="true"
@@ -425,19 +403,4 @@ function ProcessedNote(props: ProcessedNoteProps) {
       </div>
     </div>
   );
-}
-
-interface ProcessedBeat {
-  beat: number;
-  note: Note;
-  midiNote: number;
-  rawMidiNote: number;
-  isFirstInNote: boolean;
-}
-
-interface DisplayedProcessedBeat extends ProcessedBeat {
-  length: number;
-  row: number;
-  column: number;
-  rawMidiNotes: number[];
 }

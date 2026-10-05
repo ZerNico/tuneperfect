@@ -1,4 +1,3 @@
-import { createSignal } from "solid-js";
 import * as v from "valibot";
 
 import { createPersistentStore } from "../lib/utils/store";
@@ -8,19 +7,21 @@ const settingsStoreSchema = v.object({
   general: v.object({
     language: v.string(),
     forceOfflineMode: v.boolean(),
-    showNoteSegments: v.fallback(v.boolean(), true),
+    showNoteSegments: v.fallback(v.boolean(), false),
     difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
     micPlaybackEnabled: v.fallback(v.boolean(), false),
     songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
     outputLatency: v.fallback(v.number(), 0),
+    visualEffects: v.fallback(v.picklist(["full", "reduced"]), "full"),
   }),
   volume: v.object({
     master: v.number(),
     game: v.number(),
     preview: v.number(),
     menu: v.number(),
-    micPlayback: v.fallback(v.number(), 0.5),
+    micPlayback: v.fallback(v.number(), 1),
+    effects: v.fallback(v.number(), 0.5),
   }),
   microphones: v.array(
     v.object({
@@ -53,6 +54,7 @@ const defaultSettings: SettingsStore = {
     micPlaybackEnabled: false,
     songSelectStyle: "coverflow",
     outputLatency: 0,
+    visualEffects: "full",
   },
   volume: {
     master: 1,
@@ -60,6 +62,7 @@ const defaultSettings: SettingsStore = {
     preview: 0.5,
     menu: 0.5,
     micPlayback: 1,
+    effects: 0.5,
   },
   microphones: [],
   songs: {
@@ -83,8 +86,6 @@ export type VolumeSettings = SettingsStore["volume"];
 export type GeneralSettings = SettingsStore["general"];
 
 function createSettingsStore() {
-  const [initialized, setInitialized] = createSignal(false);
-
   const volume = () => settings().volume;
   const microphones = () => settings().microphones;
   const general = () => settings().general;
@@ -118,8 +119,6 @@ function createSettingsStore() {
   };
 
   return {
-    initialized,
-    setInitialized,
     microphones,
     saveMicrophone,
     deleteMicrophone,

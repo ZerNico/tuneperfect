@@ -5,6 +5,8 @@ import { getAudioContext } from "~/lib/audio/context";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 
+import Plate from "./ui/plate";
+
 interface LatencyCalibrationPreviewProps {
   outputLatency: () => number;
   selected: () => boolean;
@@ -16,8 +18,12 @@ const TICK_INTERVAL_SEC = 1;
 const TICK_FREQUENCY_HZ = 1000;
 const TICK_DURATION_SEC = 0.05;
 const PULSE_DECAY_MS = 120;
-const SCHEDULE_LOOKAHEAD_SEC = 0.3;
 const SCHEDULER_TICK_MS = 100;
+// A tick's visual pulse fires `outputLatency` ms after its sound, so with the most negative offset (-750 ms, see the
+// general settings slider) the pulse is due before the sound. Ticks are scheduled at least this far ahead, leaving time
+// for that early pulse; the scheduler interval is added because a tick can be picked up up to one interval late.
+const MIN_TICK_LEAD_SEC = 0.8;
+const SCHEDULE_LOOKAHEAD_SEC = MIN_TICK_LEAD_SEC + SCHEDULER_TICK_MS / 1000;
 
 export default function LatencyCalibrationPreview(props: LatencyCalibrationPreviewProps) {
   const [enabled, setEnabled] = createSignal(false);
@@ -96,7 +102,7 @@ export default function LatencyCalibrationPreview(props: LatencyCalibrationPrevi
 
   const startMetronome = () => {
     const audioCtx = getAudioContext();
-    nextTickTime = audioCtx.currentTime + 0.1;
+    nextTickTime = audioCtx.currentTime + MIN_TICK_LEAD_SEC;
 
     const runScheduler = () => {
       while (nextTickTime < audioCtx.currentTime + SCHEDULE_LOOKAHEAD_SEC) {
@@ -145,42 +151,29 @@ export default function LatencyCalibrationPreview(props: LatencyCalibrationPrevi
   const active = () => pressed() && props.selected();
 
   return (
-    <button
-      type="button"
+    <Plate
+      as="button"
+      selected={props.selected()}
+      gradient={props.gradient()}
+      pressed={active()}
       onClick={toggle}
-      aria-label={
-        enabled()
-          ? t("settings.sections.general.outputLatencyPreviewStop")
-          : t("settings.sections.general.outputLatencyPreviewStart")
-      }
-      class="grid h-16 w-full cursor-pointer items-center overflow-hidden rounded-lg transition-all ease-in-out active:scale-95"
-      classList={{
-        "scale-95": active(),
-      }}
+      class="w-full"
+      contentClass="grid grid-cols-[2fr_3fr] items-center gap-8 px-10"
     >
-      <div
-        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity"
-        classList={{
-          [props.gradient()]: true,
-          "opacity-0": !props.selected(),
-        }}
-      />
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">
-          <Show when={enabled()} fallback={t("settings.sections.general.outputLatencyPreviewStart")}>
-            {t("settings.sections.general.outputLatencyPreviewStop")}
-          </Show>
-        </div>
-        <div class="flex items-center justify-center gap-4">
-          <div
-            class="h-6 w-6 rounded-full bg-white transition-[opacity,transform] duration-100 ease-out"
-            style={{
-              opacity: pulsing() ? 1 : 0.2,
-              transform: pulsing() ? "scale(1.4)" : "scale(1)",
-            }}
-          />
-        </div>
+      <div class="truncate text-xl font-bold">
+        <Show when={enabled()} fallback={t("settings.sections.general.outputLatencyPreviewStart")}>
+          {t("settings.sections.general.outputLatencyPreviewStop")}
+        </Show>
       </div>
-    </button>
+      <div class="flex items-center justify-center">
+        <div
+          class="h-6 w-6 rounded-full bg-white transition-[opacity,transform] duration-100 ease-out"
+          style={{
+            opacity: pulsing() ? 1 : 0.2,
+            transform: pulsing() ? "scale(1.4)" : "scale(1)",
+          }}
+        />
+      </div>
+    </Plate>
   );
 }

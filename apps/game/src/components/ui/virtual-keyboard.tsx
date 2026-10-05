@@ -1,11 +1,11 @@
 import { createMemo, createSignal, For, type JSX } from "solid-js";
-import IconArrowBigDown from "~icons/lucide/arrow-big-down";
-import IconArrowBigLeft from "~icons/lucide/arrow-big-left";
-import IconArrowBigUp from "~icons/lucide/arrow-big-up";
+import IconArrowBigDown from "~icons/ph/arrow-fat-down-fill";
+import IconArrowBigLeft from "~icons/ph/arrow-fat-left-fill";
+import IconArrowBigUp from "~icons/ph/arrow-fat-up-fill";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
 import IconGamepadB from "~icons/sing/gamepad-b";
 import IconGamepadX from "~icons/sing/gamepad-x";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
 
 import { useNavigation } from "~/hooks/navigation";
 import { useTextInput } from "~/hooks/use-text-input";
@@ -178,34 +178,39 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
   });
 
   return (
-    <div class="grid grid-cols-[repeat(10,2cqw)] gap-1 rounded-lg bg-black/30 p-2 text-white backdrop-blur-md">
+    <div class="grid grid-cols-[repeat(10,2.4cqw)] gap-1.5 rounded-[1.4cqw] glass p-3 text-white">
       <For each={activeKeys()}>
         {(row, rowIndex) => (
           <For each={row}>
-            {(key, colIndex) => (
-              <button
-                type="button"
-                class="relative flex h-8 cursor-pointer items-center justify-center rounded-md transition-transform ease-in-out active:scale-95"
-                classList={{
-                  "gradient-sing bg-linear-to-r": rowIndex() === position().row && colIndex() === position().col,
-                  "scale-95": rowIndex() === position().row && colIndex() === position().col && pressed(),
-                  "bg-white/10": key.highlight,
-                }}
-                style={{ "grid-column": `span ${key.colSpan || 1}` }}
-                onMouseEnter={() => setPosition({ row: rowIndex(), col: colIndex() })}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  if (key.action) {
-                    key.action();
-                  } else if (typeof key.content === "string") {
-                    writeCharacter(key.content);
-                  }
-                }}
-              >
-                {key.content}
-                {key.hint && <div class="absolute top-1 left-1 text-xs">{key.hint}</div>}
-              </button>
-            )}
+            {(key, colIndex) => {
+              const selected = () => rowIndex() === position().row && colIndex() === position().col;
+              return (
+                <button
+                  type="button"
+                  class="relative flex h-[2.4cqw] cursor-pointer items-center justify-center rounded-[0.5cqw] text-base font-bold transition-[scale,background-color] duration-100"
+                  classList={{
+                    "gradient-settings bg-linear-to-r focus-glow": selected(),
+                    "scale-110": selected() && !pressed(),
+                    "scale-95": selected() && pressed(),
+                    "bg-white/15": !selected() && !!key.highlight,
+                    "bg-white/6": !selected() && !key.highlight,
+                  }}
+                  style={{ "grid-column": `span ${key.colSpan || 1}` }}
+                  onMouseEnter={() => setPosition({ row: rowIndex(), col: colIndex() })}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    if (key.action) {
+                      key.action();
+                    } else if (typeof key.content === "string") {
+                      writeCharacter(key.content);
+                    }
+                  }}
+                >
+                  {key.content}
+                  {key.hint && <div class="absolute top-0.5 left-1 text-[0.55cqw] opacity-70">{key.hint}</div>}
+                </button>
+              );
+            }}
           </For>
         )}
       </For>

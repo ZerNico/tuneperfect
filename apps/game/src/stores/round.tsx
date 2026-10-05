@@ -35,8 +35,31 @@ export interface Score {
   bonus: number;
 }
 
+export interface PlayerStats {
+  maxCombo: number;
+  notesHit: number;
+  notesTotal: number;
+  goldenNotesHit: number;
+  goldenNotesTotal: number;
+  perfectPhrases: number;
+  phrasesTotal: number;
+}
+
+export function createEmptyStats(): PlayerStats {
+  return {
+    maxCombo: 0,
+    notesHit: 0,
+    notesTotal: 0,
+    goldenNotesHit: 0,
+    goldenNotesTotal: 0,
+    perfectPhrases: 0,
+    phrasesTotal: 0,
+  };
+}
+
 interface Result {
   scores: Score[];
+  stats: PlayerStats[];
   song: QueuedSong;
 }
 
@@ -85,11 +108,11 @@ export function useRoundActions() {
     navigate({ to: "/game" });
   };
 
-  const endRound = (scores: Score[]) => {
+  const endRound = (scores: Score[], stats: PlayerStats[]) => {
     const song = roundStore.settings()?.songs[0];
     if (!song) return;
 
-    roundStore.setResults((prev) => [...prev, { scores, song }]);
+    roundStore.setResults((prev) => [...prev, { scores, stats, song }]);
 
     const nextSong = roundStore.settings()?.songs[1];
 
@@ -102,11 +125,11 @@ export function useRoundActions() {
     navigate({ to: "/game/score" });
   };
 
-  const endMedley = (scores: Score[]) => {
+  const endMedley = (scores: Score[], stats: PlayerStats[]) => {
     const song = roundStore.settings()?.songs[0];
     if (!song) return;
 
-    roundStore.setResults((prev) => [...prev, { scores, song }]);
+    roundStore.setResults((prev) => [...prev, { scores, stats, song }]);
     roundStore.setSettings((prev) => (prev ? { ...prev, songs: prev.songs.slice(0, 1) } : prev));
 
     navigate({ to: "/game/score" });
@@ -122,7 +145,7 @@ export function useRoundActions() {
   const failRound = () => {
     const song = roundStore.settings()?.songs[0];
     if (song) {
-      roundStore.setResults((prev) => [...prev, { scores: [], song }]);
+      roundStore.setResults((prev) => [...prev, { scores: [], stats: [], song }]);
     }
     navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
   };

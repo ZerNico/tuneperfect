@@ -1,9 +1,9 @@
-import { createMemo, For } from "solid-js";
-import IconX from "~icons/lucide/x";
+import { createMemo, For, Show } from "solid-js";
+import IconX from "~icons/ph/x-bold";
 
-import type { SongFilters, SongTypeFilter } from "~/hooks/use-song-filter";
+import type { SongFilters } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
-import { formatDecade } from "~/lib/utils/song-facets";
+import { formatDecade, typeLabel } from "~/lib/utils/song-facets";
 
 interface FilterChipsProps {
   filters: SongFilters;
@@ -11,12 +11,6 @@ interface FilterChipsProps {
   /** Whether to show the solo/duet type chip. Defaults to true (local library). */
   showTypeFilter?: boolean;
 }
-
-const typeLabel = (value: SongTypeFilter): string => {
-  if (value === "duet") return t("sing.filter.duet");
-  if (value === "solo") return t("sing.filter.solo");
-  return t("sing.filter.any");
-};
 
 interface ChipDef {
   isActive: (f: SongFilters) => boolean;
@@ -62,21 +56,24 @@ export function FilterChips(props: FilterChipsProps) {
     }),
   );
 
+  // Render nothing without active filters, so the toolbar doesn't get an extra gap.
   return (
-    <div class="flex items-center gap-1.5">
-      <For each={activeChips()}>
-        {(def) => (
-          <button
-            type="button"
-            aria-label={`${def.label(props.filters)} (${t("sing.filter.clearAll")})`}
-            class="flex max-w-40 items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-white/25 active:scale-95"
-            onClick={() => props.onChange(def.reset(props.filters))}
-          >
-            <span class="truncate">{def.label(props.filters)}</span>
-            <IconX class="shrink-0 text-[0.7rem] opacity-70" />
-          </button>
-        )}
-      </For>
-    </div>
+    <Show when={activeChips().length > 0}>
+      <div class="flex items-center gap-[0.5cqw]">
+        <For each={activeChips()}>
+          {(def) => (
+            <button
+              type="button"
+              aria-label={`${def.label(props.filters)} (${t("sing.filter.clearAll")})`}
+              class="gradient-sing flex h-[2.2cqw] max-w-[12cqw] cursor-pointer items-center gap-[0.4cqw] rounded-[0.6cqw] bg-linear-to-r px-[0.8cqw] text-[0.9cqw] font-bold text-white transition-[scale,filter] hover:brightness-110 active:scale-95"
+              onClick={() => props.onChange(def.reset(props.filters))}
+            >
+              <span class="truncate">{def.label(props.filters)}</span>
+              <IconX class="shrink-0 opacity-80" />
+            </button>
+          )}
+        </For>
+      </div>
+    </Show>
   );
 }

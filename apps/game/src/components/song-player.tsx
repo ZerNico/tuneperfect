@@ -96,6 +96,11 @@ export default function SongPlayer(props: SongPlayerProps) {
   let videoElementRef!: HTMLVideoElement;
 
   const videoActive = () => !!currentVideoUrl() && !videoError();
+  // Both elements always exist; the audio drives the time, a video only when there's no audio.
+  const timeSource = () => (currentAudioUrl() ? audioElementRef : videoActive() ? videoElementRef : undefined);
+
+  // Only the first play of a song fades in, not resuming after a pause.
+  let hasFadedIn = false;
 
   // Fallback visual: background image or cover art when video is not active
   const fallbackVisual = createMemo(() => {
@@ -287,7 +292,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     const song = props.song;
     if (!props.useFades || !song?.end) return;
 
-    const mediaElement = currentAudioUrl() ? audioElementRef : videoActive() ? videoElementRef : undefined;
+    const mediaElement = timeSource();
     if (!mediaElement) return;
 
     const currentTime = mediaElement.currentTime * 1000;
@@ -337,7 +342,10 @@ export default function SongPlayer(props: SongPlayerProps) {
         }
       }
 
-      applyFadeIn();
+      if (!hasFadedIn) {
+        hasFadedIn = true;
+        applyFadeIn();
+      }
 
       if (audio && video) {
         await syncVideoToAudio(audio, video);
@@ -366,7 +374,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     if (!song?.end) return;
 
     const preserved = preservedTime();
-    const rawCurrentTime = preserved ?? audioElementRef?.currentTime ?? videoElementRef?.currentTime ?? 0;
+    const rawCurrentTime = preserved ?? timeSource()?.currentTime ?? 0;
     const endTimeInSeconds = song.end / 1000;
 
     if (rawCurrentTime >= endTimeInSeconds) {
@@ -419,6 +427,7 @@ export default function SongPlayer(props: SongPlayerProps) {
         setHasInitialized(false);
         setIsCurrentlyPlaying(false);
         setPreservedTime(undefined);
+        hasFadedIn = false;
 
         if (audioElementRef) {
           if (!audioElementRef.paused) audioElementRef.pause();
@@ -557,10 +566,10 @@ export default function SongPlayer(props: SongPlayerProps) {
         const preserved = preservedTime();
         if (preserved !== undefined) return preserved;
 
-        return audioElementRef?.currentTime ?? videoElementRef?.currentTime ?? 0;
+        return timeSource()?.currentTime ?? 0;
       },
       getDuration: () => {
-        return audioElementRef?.duration ?? videoElementRef?.duration ?? 0;
+        return timeSource()?.duration ?? 0;
       },
       setCurrentTime: (time: number) => {
         const song = props.song;

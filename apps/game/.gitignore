@@ -8,3 +8,9 @@ dist-ssr
 dist-electron
 release
 .electron-app
+
+# Local design sandbox (dev server: /fx-sandbox.html) and its mockups
+fx-sandbox.html
+src/fx-sandbox.tsx
+src/*-variants.tsx
+src/fx-sandbox.css

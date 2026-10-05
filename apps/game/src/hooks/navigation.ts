@@ -19,7 +19,7 @@ interface UseNavigationOptions {
   onRepeat?: (event: NavigationEvent) => void;
 }
 
-type NavigationEvent = {
+export type NavigationEvent = {
   origin: "gamepad" | "keyboard";
   originalKey: string;
   modifiers?: string[];
@@ -111,284 +111,171 @@ const getAxisAction = (button: GamepadButton, direction: number): NavigationEven
   }
 };
 
-const getKeyInfo = (event: KeyboardEvent): { keyString: string; originalKey: string; modifiers: string[] } => {
+const getKeyInfo = (event: KeyboardEvent): { keyString: string; modifiers: string[] } => {
   const modifiers: string[] = [];
   if (event.ctrlKey) modifiers.push("Ctrl");
   if (event.shiftKey) modifiers.push("Shift");
   if (event.altKey) modifiers.push("Alt");
   if (event.metaKey) modifiers.push("Meta");
 
-  const originalKey = event.key;
-
-  let normalizedKey = originalKey;
-  if (originalKey.length === 1 && originalKey >= "A" && originalKey <= "Z") {
-    normalizedKey = originalKey.toLowerCase();
+  let normalizedKey = event.key;
+  if (normalizedKey.length === 1 && normalizedKey >= "A" && normalizedKey <= "Z") {
+    normalizedKey = normalizedKey.toLowerCase();
   }
 
   const keyString = modifiers.length > 0 ? `${modifiers.join("+")}+${normalizedKey}` : normalizedKey;
 
-  return { keyString, originalKey, modifiers };
+  return { keyString, modifiers };
 };
+
+/** Keys that text fields handle themselves while focused. */
+const isInputPassthrough = (event: KeyboardEvent) =>
+  (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) &&
+  (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key));
+
+/** An event plus the physical press it belongs to, so listeners can pair keyups with their keydowns. */
+type Emitted = { serial: number; event: NavigationEvent };
 
 type Events = {
-  keydown: NavigationEvent;
-  keyup: NavigationEvent;
-  hold: NavigationEvent;
-  repeat: NavigationEvent;
+  keydown: Emitted;
+  keyup: Emitted;
+  hold: Emitted;
+  repeat: Emitted;
 };
 
+/** A key, button or stick direction that is held down, with the actions it had when it went down. */
+interface Press {
+  serial: number;
+  origin: NavigationEvent["origin"];
+  originalKey: string;
+  modifiers?: string[];
+  actions: NavigationEvent["action"][];
+  holdTimeout: number;
+  repeatInterval?: number;
+}
+
 const emitter = mitt<Events>();
-const pressedKeys = new Map<string, { holdTimeout: number; repeatInterval?: number }>();
-const pressedGamepadButtons = new Map<string, { holdTimeout: number; repeatInterval?: number }>();
+/** Held inputs by source: `key:<code>`, `pad:<gamepad>:<button>` or `axis:<gamepad>:<axis>`. */
+const presses = new Map<string, Press>();
+const liveSerials = new Set<number>();
+let nextSerial = 0;
 const HOLD_DELAY = 400;
 const REPEAT_DELAY = 50;
 
+const emit = (type: keyof Events, press: Press) => {
+  for (const action of press.actions) {
+    emitter.emit(type, {
+      serial: press.serial,
+      event: { origin: press.origin, originalKey: press.originalKey, modifiers: press.modifiers, action },
+    });
+  }
+};
+
+/** Forgets a press without a keyup, e.g. when the window loses focus mid-press. */
+const drop = (id: string) => {
+  const press = presses.get(id);
+  if (!press) return;
+  clearTimeout(press.holdTimeout);
+  clearInterval(press.repeatInterval);
+  presses.delete(id);
+  liveSerials.delete(press.serial);
+};
+
+const press = (id: string, input: Pick<Press, "origin" | "originalKey" | "modifiers" | "actions">) => {
+  drop(id);
+
+  const state: Press = {
+    ...input,
+    serial: nextSerial++,
+    holdTimeout: window.setTimeout(() => {
+      emit("hold", state);
+      state.repeatInterval = window.setInterval(() => emit("repeat", state), REPEAT_DELAY);
+    }, HOLD_DELAY),
+  };
+  presses.set(id, state);
+  liveSerials.add(state.serial);
+  emit("keydown", state);
+};
+
+/** Ends a press, emitting keyup for the actions it went down with. */
+const release = (id: string) => {
+  const state = presses.get(id);
+  if (!state) return;
+  drop(id);
+  emit("keyup", state);
+};
+
+const dropWhere = (predicate: (id: string, press: Press) => boolean) => {
+  for (const [id, state] of presses) {
+    if (predicate(id, state)) drop(id);
+  }
+};
+
 createRoot(() => {
   createEventListener(document, "keydown", (event) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-      if (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        return;
-      }
-    }
+    if (isInputPassthrough(event)) return;
 
     event.preventDefault();
-
     if (event.repeat) return;
-
-    const { keyString, originalKey, modifiers } = getKeyInfo(event);
-    const actionsArray = KEY_MAPPINGS.get(keyString);
 
     setKeyMode("keyboard");
 
-    if (actionsArray && actionsArray.length > 0) {
-      const existingTimers = pressedKeys.get(keyString);
-      if (existingTimers) {
-        clearTimeout(existingTimers.holdTimeout);
-        if (existingTimers.repeatInterval) {
-          clearInterval(existingTimers.repeatInterval);
-        }
-      }
-
-      const holdTimeout = window.setTimeout(() => {
-        for (const action of actionsArray) {
-          emitter.emit("hold", {
-            origin: "keyboard",
-            originalKey,
-            modifiers: modifiers.length > 0 ? modifiers : undefined,
-            action,
-          });
-        }
-
-        const repeatInterval = window.setInterval(() => {
-          for (const action of actionsArray) {
-            emitter.emit("repeat", {
-              origin: "keyboard",
-              originalKey,
-              modifiers: modifiers.length > 0 ? modifiers : undefined,
-              action,
-            });
-          }
-        }, REPEAT_DELAY);
-
-        pressedKeys.set(keyString, { holdTimeout, repeatInterval });
-      }, HOLD_DELAY);
-
-      pressedKeys.set(keyString, { holdTimeout });
-
-      for (const action of actionsArray) {
-        emitter.emit("keydown", {
-          origin: "keyboard",
-          originalKey,
-          modifiers: modifiers.length > 0 ? modifiers : undefined,
-          action,
-        });
-      }
-    } else {
-      emitter.emit("keydown", {
-        origin: "keyboard",
-        originalKey,
-        modifiers: modifiers.length > 0 ? modifiers : undefined,
-        action: "unknown",
-      });
-
-      const holdTimeout = window.setTimeout(() => {
-        emitter.emit("hold", {
-          origin: "keyboard",
-          originalKey,
-          modifiers: modifiers.length > 0 ? modifiers : undefined,
-          action: "unknown",
-        });
-
-        const repeatInterval = window.setInterval(() => {
-          emitter.emit("repeat", {
-            origin: "keyboard",
-            originalKey,
-            modifiers: modifiers.length > 0 ? modifiers : undefined,
-            action: "unknown",
-          });
-        }, REPEAT_DELAY);
-
-        pressedKeys.set(keyString, { holdTimeout, repeatInterval });
-      }, HOLD_DELAY);
-
-      pressedKeys.set(keyString, { holdTimeout });
-    }
+    const { keyString, modifiers } = getKeyInfo(event);
+    // By physical key: the key string depends on modifiers, which may change before the keyup.
+    press(`key:${event.code || keyString}`, {
+      origin: "keyboard",
+      originalKey: event.key,
+      modifiers: modifiers.length > 0 ? modifiers : undefined,
+      actions: KEY_MAPPINGS.get(keyString) ?? ["unknown"],
+    });
   });
 
   createEventListener(document, "keyup", (event) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-      if (isPrintableKey(event.key) || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        return;
-      }
-    }
+    const id = `key:${event.code || getKeyInfo(event).keyString}`;
+    // A key that went down outside a text field is released even if a field has focus now.
+    if (!presses.has(id) && isInputPassthrough(event)) return;
 
     event.preventDefault();
-    if (event.repeat) return;
+    release(id);
 
-    const { keyString, originalKey, modifiers } = getKeyInfo(event);
-
-    const timeouts = pressedKeys.get(keyString);
-    if (timeouts) {
-      clearTimeout(timeouts.holdTimeout);
-      if (timeouts.repeatInterval) {
-        clearInterval(timeouts.repeatInterval);
+    // macOS sends no keyup for keys released while Cmd is down, so end those with Cmd.
+    if (event.key === "Meta") {
+      for (const [otherId, state] of presses) {
+        if (state.origin === "keyboard" && state.modifiers?.includes("Meta")) release(otherId);
       }
-      pressedKeys.delete(keyString);
-    }
-
-    const actionsArray = KEY_MAPPINGS.get(keyString);
-    if (actionsArray && actionsArray.length > 0) {
-      for (const action of actionsArray) {
-        emitter.emit("keyup", {
-          origin: "keyboard",
-          originalKey,
-          modifiers: modifiers.length > 0 ? modifiers : undefined,
-          action,
-        });
-      }
-    } else {
-      // Handle unknown key
-      emitter.emit("keyup", {
-        origin: "keyboard",
-        originalKey,
-        modifiers: modifiers.length > 0 ? modifiers : undefined,
-        action: "unknown",
-      });
     }
   });
+
+  // Keyups are lost while the window is in the background.
+  createEventListener(window, "blur", () => dropWhere((id) => id.startsWith("key:")));
 
   createGamepad({
     onButtonDown: (event) => {
       setKeyMode("gamepad");
-      const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
 
-      if (actionsArray && actionsArray.length > 0 && actionsArray[0] !== "unknown") {
-        const existingTimers = pressedGamepadButtons.get(event.button);
-        if (existingTimers) {
-          clearTimeout(existingTimers.holdTimeout);
-          if (existingTimers.repeatInterval) {
-            clearInterval(existingTimers.repeatInterval);
-          }
-        }
-
-        const holdTimeout = window.setTimeout(() => {
-          for (const action of actionsArray) {
-            if (action === "unknown") continue;
-            emitter.emit("hold", {
-              origin: "gamepad",
-              originalKey: event.button,
-              action,
-            });
-          }
-
-          const repeatInterval = window.setInterval(() => {
-            for (const action of actionsArray) {
-              if (action === "unknown") continue;
-              emitter.emit("repeat", {
-                origin: "gamepad",
-                originalKey: event.button,
-                action,
-              });
-            }
-          }, REPEAT_DELAY);
-          pressedGamepadButtons.set(event.button, { holdTimeout, repeatInterval });
-        }, HOLD_DELAY);
-
-        pressedGamepadButtons.set(event.button, { holdTimeout });
-
-        for (const action of actionsArray) {
-          if (action === "unknown") continue;
-          emitter.emit("keydown", {
-            origin: "gamepad",
-            originalKey: event.button,
-            action,
-          });
-        }
+      const actions = GAMEPAD_MAPPINGS.get(event.button);
+      if (actions) {
+        press(`pad:${event.gamepadId}:${event.button}`, {
+          origin: "gamepad",
+          originalKey: event.button,
+          actions,
+        });
         return;
       }
 
-      if (!event.direction) return;
-
-      const axisAction = getAxisAction(event.button, event.direction);
-      if (axisAction) {
-        emitter.emit("keydown", {
-          origin: "gamepad",
-          originalKey: event.button,
-          action: axisAction,
-        });
-
-        const holdTimeout = window.setTimeout(() => {
-          emitter.emit("hold", {
-            origin: "gamepad",
-            originalKey: event.button,
-            action: axisAction,
-          });
-
-          const repeatInterval = window.setInterval(() => {
-            emitter.emit("repeat", {
-              origin: "gamepad",
-              originalKey: event.button,
-              action: axisAction,
-            });
-          }, REPEAT_DELAY);
-
-          pressedGamepadButtons.set(event.button, { holdTimeout, repeatInterval });
-        }, HOLD_DELAY);
-
-        pressedGamepadButtons.set(event.button, { holdTimeout });
-      }
+      const axisAction = event.direction ? getAxisAction(event.button, event.direction) : undefined;
+      if (!axisAction) return;
+      const id = `axis:${event.gamepadId}:${event.button}`;
+      // The stick flipped to the other side without passing the centre: end the old direction first.
+      release(id);
+      press(id, { origin: "gamepad", originalKey: event.button, actions: [axisAction] });
     },
     onButtonUp: (event) => {
-      const timeouts = pressedGamepadButtons.get(event.button);
-      if (timeouts) {
-        clearTimeout(timeouts.holdTimeout);
-        if (timeouts.repeatInterval) {
-          clearInterval(timeouts.repeatInterval);
-        }
-        pressedGamepadButtons.delete(event.button);
-      }
-
-      const actionsArray = GAMEPAD_MAPPINGS.get(event.button);
-      if (actionsArray) {
-        for (const action of actionsArray) {
-          if (action === "unknown") continue;
-          emitter.emit("keyup", {
-            origin: "gamepad",
-            originalKey: event.button,
-            action,
-          });
-        }
-        return;
-      }
-
-      const axisAction = getAxisAction(event.button, event.direction ?? 0);
-      if (axisAction) {
-        emitter.emit("keyup", {
-          origin: "gamepad",
-          originalKey: event.button,
-          action: axisAction,
-        });
-      }
+      release(`pad:${event.gamepadId}:${event.button}`);
+      release(`axis:${event.gamepadId}:${event.button}`);
+    },
+    onDisconnect: (gamepadId) => {
+      dropWhere((id) => id.startsWith(`pad:${gamepadId}:`) || id.startsWith(`axis:${gamepadId}:`));
     },
   });
 });
@@ -428,16 +315,29 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     return layer === highestLayer;
   });
 
+  // Press/action pairs this instance got the keydown for. A keyup is only passed on if its keydown
+  // was, so e.g. releasing the key that closed a popup doesn't also trigger the screen below it.
+  const received = new Set<string>();
+
   createEffect(() => {
     if (!isActive()) return;
 
     const opts = access(options);
     if (opts?.enabled === false) return;
 
-    const handleKeydown = (e: NavigationEvent) => opts?.onKeydown?.(e);
-    const handleKeyup = (e: NavigationEvent) => opts?.onKeyup?.(e);
-    const handleHold = (e: NavigationEvent) => opts?.onHold?.(e);
-    const handleRepeat = (e: NavigationEvent) => opts?.onRepeat?.(e);
+    const handleKeydown = ({ serial, event }: Emitted) => {
+      // Forget keydowns whose keyup this instance missed while it was inactive.
+      for (const key of received) {
+        if (!liveSerials.has(Number.parseInt(key, 10))) received.delete(key);
+      }
+      received.add(`${serial}:${event.action}`);
+      opts?.onKeydown?.(event);
+    };
+    const handleKeyup = ({ serial, event }: Emitted) => {
+      if (received.delete(`${serial}:${event.action}`)) opts?.onKeyup?.(event);
+    };
+    const handleHold = ({ event }: Emitted) => opts?.onHold?.(event);
+    const handleRepeat = ({ event }: Emitted) => opts?.onRepeat?.(event);
 
     emitter.on("keydown", handleKeydown);
     emitter.on("keyup", handleKeyup);
@@ -451,6 +351,4 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
       emitter.off("repeat", handleRepeat);
     });
   });
-
-  return { isActive };
 }

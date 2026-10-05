@@ -19,14 +19,22 @@ interface NoteSegment {
   end: number;
 }
 
+/**
+ * The part of the media that is played, in seconds: `#START`/`#END` (milliseconds) shorten it,
+ * e.g. for medleys and short rounds. `duration` is the media's, NaN until its metadata loaded.
+ */
+const getPlayedRange = (song: Song, duration: number) => {
+  const start = song.start ? song.start / 1000 : 0;
+  const end = song.end ? song.end / 1000 : duration;
+  return { start, duration: Math.max(0, end - start) || 0 };
+};
+
 const calculateNoteSegments = (song: Song | undefined, duration: number): NoteSegment[] => {
-  if (!song || !song.voices || song.voices.length === 0 || duration === 0) {
+  if (!song || !song.voices || song.voices.length === 0 || !(duration > 0)) {
     return [];
   }
 
-  const startOffset = song.start ?? 0;
-  const endOffset = song.end ? song.end / 1000 : duration;
-  const effectiveDuration = Math.max(0, endOffset - startOffset);
+  const { start: startOffset, duration: effectiveDuration } = getPlayedRange(song, duration);
 
   if (effectiveDuration === 0) {
     return [];
@@ -94,7 +102,7 @@ export default function Progress() {
     const rawCurrentTime = game.currentTime();
     const rawDuration = game.duration();
 
-    if (!song || rawDuration === 0) {
+    if (!song || !(rawDuration > 0)) {
       return {
         progress: 0,
         elapsed: 0,
@@ -102,11 +110,8 @@ export default function Progress() {
       };
     }
 
-    const startOffset = song.start ? song.start / 1000 : 0;
-    const endOffset = song.end ? song.end / 1000 : rawDuration;
-
+    const { start: startOffset, duration: effectiveDuration } = getPlayedRange(song, rawDuration);
     const effectiveCurrentTime = Math.max(0, rawCurrentTime - startOffset);
-    const effectiveDuration = Math.max(0, endOffset - startOffset);
 
     if (effectiveDuration === 0) {
       return {
@@ -159,32 +164,30 @@ export default function Progress() {
   };
 
   return (
-    <div class="grid h-full w-full grid-cols-[5cqw_1fr_5cqw] items-center justify-center gap-2">
-      <div class="ml-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
-        {formatTime(timingInfo().elapsed)}
-      </div>
-      <div class="relative h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+    // Full width like the name plates and scores; the bar fills between the times.
+    <div class="grid h-full w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-[3cqw]">
+      <span class="text-sm font-black tabular-nums">{formatTime(timingInfo().elapsed)}</span>
+      <div class="relative h-[0.5cqw] overflow-hidden rounded-full bg-white/20">
         <Show when={settingsStore.general().showNoteSegments}>
           <For each={noteSegments()}>
             {(segment) => (
-              <div
-                class="absolute top-0 h-full rounded-full bg-white/30 shadow-sm"
-                style={{
-                  left: `${segment.start * 100}%`,
-                  width: `${(segment.end - segment.start) * 100}%`,
-                }}
+              <span
+                class="absolute inset-y-0 bg-white/30"
+                style={{ left: `${segment.start * 100}%`, width: `${(segment.end - segment.start) * 100}%` }}
               />
             )}
           </For>
         </Show>
-        <div
-          class="relative z-10 h-full rounded-full transition-colors duration-500"
-          style={{ width: `${timingInfo().progress * 100}%`, "background-color": progressColor() }}
+        {/* Slid in instead of resized: no layout per frame, and the leading end stays round. */}
+        <span
+          class="absolute inset-0 rounded-full transition-colors duration-500"
+          style={{
+            transform: `translateX(${(timingInfo().progress - 1) * 100}%)`,
+            "background-color": progressColor(),
+          }}
         />
       </div>
-      <div class="mr-auto rounded-full bg-white/20 px-1.5 py-0.5 text-sm text-white">
-        {formatTime(timingInfo().remaining)}
-      </div>
+      <span class="text-sm font-black text-white/60 tabular-nums">{formatTime(timingInfo().remaining)}</span>
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { createEffect, createSignal, on, onMount, Show } from "solid-js";
-import IconMinus from "~icons/lucide/minus";
-import IconPlus from "~icons/lucide/plus";
+import { createEffect, createSignal, on, onMount } from "solid-js";
+import IconMinus from "~icons/ph/minus-bold";
+import IconPlus from "~icons/ph/plus-bold";
 import IconF6Key from "~icons/sing/f6-key";
 import IconF7Key from "~icons/sing/f7-key";
 import IconGamepadLB from "~icons/sing/gamepad-lb";
@@ -9,11 +9,12 @@ import IconGamepadRB from "~icons/sing/gamepad-rb";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
-import { keyMode, useNavigation } from "~/hooks/navigation";
+import { type NavigationEvent, useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 
 import Button from "./button";
+import KeyGlyph from "./key-glyph";
 
 interface ImageCropProps {
   imageUrl: string;
@@ -22,6 +23,11 @@ interface ImageCropProps {
   onCancel: () => void;
   layer?: number;
 }
+
+/** Width and height of the exported avatar. */
+const EXPORT_SIZE = 256;
+const PAN_SPEED = 20;
+const ZOOM_SPEED = 0.1;
 
 interface CropState {
   scale: number;
@@ -34,15 +40,11 @@ export default function ImageCrop(props: ImageCropProps) {
   let canvasRef: HTMLCanvasElement | undefined;
   let imageRef: HTMLImageElement | undefined;
 
-  const [selected, setSelected] = createSignal(true);
   const [cropState, setCropState] = createSignal<CropState>({
     scale: 1,
     offsetX: 0,
     offsetY: 0,
   });
-
-  const PAN_SPEED = 20;
-  const ZOOM_SPEED = 0.1;
 
   const getMinimumScale = () => {
     if (!imageRef) return 0.1;
@@ -86,7 +88,6 @@ export default function ImageCrop(props: ImageCropProps) {
       const constrained = constrainMovement(newOffsetX, newOffsetY, newScale);
       return { scale: newScale, ...constrained };
     });
-    drawImage();
   };
 
   const applyPan = (deltaX: number, deltaY: number) => {
@@ -96,7 +97,6 @@ export default function ImageCrop(props: ImageCropProps) {
       const constrained = constrainMovement(newOffsetX, newOffsetY, prev.scale);
       return { ...prev, ...constrained };
     });
-    drawImage();
   };
 
   const drawImage = () => {
@@ -131,7 +131,6 @@ export default function ImageCrop(props: ImageCropProps) {
         offsetX: (canvasSize() - imageRef.naturalWidth * initialScale) / 2,
         offsetY: (canvasSize() - imageRef.naturalHeight * initialScale) / 2,
       });
-      drawImage();
     };
     imageRef.src = props.imageUrl;
   };
@@ -140,7 +139,7 @@ export default function ImageCrop(props: ImageCropProps) {
     if (!canvasRef || !imageRef) return;
 
     const cropCanvas = document.createElement("canvas");
-    cropCanvas.width = cropCanvas.height = 256;
+    cropCanvas.width = cropCanvas.height = EXPORT_SIZE;
     const cropCtx = cropCanvas.getContext("2d");
     if (!cropCtx) return;
 
@@ -150,68 +149,45 @@ export default function ImageCrop(props: ImageCropProps) {
     const sourceY = -state.offsetY * scaleRatio;
     const sourceSize = canvasSize() * scaleRatio;
 
-    cropCtx.drawImage(imageRef, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 256, 256);
+    cropCtx.drawImage(imageRef, sourceX, sourceY, sourceSize, sourceSize, 0, 0, EXPORT_SIZE, EXPORT_SIZE);
 
     const dataUrl = cropCanvas.toDataURL("image/webp", 0.9);
     props.onCrop(dataUrl);
   };
 
+  /** Arrows pan and the shoulder keys zoom, also while held; back and confirm only on the first press. */
+  const handle = (action: NavigationEvent["action"], repeat: boolean) => {
+    switch (action) {
+      case "left":
+        return applyPan(PAN_SPEED, 0);
+      case "right":
+        return applyPan(-PAN_SPEED, 0);
+      case "up":
+        return applyPan(0, PAN_SPEED);
+      case "down":
+        return applyPan(0, -PAN_SPEED);
+      case "zoom-out":
+      case "zoom-in":
+        applyZoom(action === "zoom-in" ? "in" : "out");
+        if (!repeat) playSound("select");
+        return;
+      case "back":
+        if (repeat) return;
+        props.onCancel();
+        playSound("confirm");
+        return;
+      case "confirm":
+        if (repeat) return;
+        exportCroppedImage();
+        playSound("confirm");
+        return;
+    }
+  };
+
   useNavigation(() => ({
     layer: props.layer ?? 1,
-    onKeydown(event) {
-      switch (event.action) {
-        case "left":
-          applyPan(PAN_SPEED, 0);
-          break;
-        case "right":
-          applyPan(-PAN_SPEED, 0);
-          break;
-        case "up":
-          applyPan(0, PAN_SPEED);
-          break;
-        case "down":
-          applyPan(0, -PAN_SPEED);
-          break;
-        case "zoom-out":
-          applyZoom("out");
-          playSound("select");
-          break;
-        case "zoom-in":
-          applyZoom("in");
-          playSound("select");
-          break;
-        case "back":
-          props.onCancel();
-          playSound("confirm");
-          break;
-        case "confirm":
-          exportCroppedImage();
-          playSound("confirm");
-          break;
-      }
-    },
-    onRepeat(event) {
-      switch (event.action) {
-        case "left":
-          applyPan(PAN_SPEED, 0);
-          break;
-        case "right":
-          applyPan(-PAN_SPEED, 0);
-          break;
-        case "up":
-          applyPan(0, PAN_SPEED);
-          break;
-        case "down":
-          applyPan(0, -PAN_SPEED);
-          break;
-        case "zoom-out":
-          applyZoom("out");
-          break;
-        case "zoom-in":
-          applyZoom("in");
-          break;
-      }
-    },
+    onKeydown: (event) => handle(event.action, false),
+    onRepeat: (event) => handle(event.action, true),
   }));
 
   onMount(() => {
@@ -280,32 +256,28 @@ export default function ImageCrop(props: ImageCropProps) {
             onWheel={handleWheel}
           />
 
-          <div class="pointer-events-none absolute inset-0 rounded-full border-3 border-white shadow-lg" />
+          <div class="pointer-events-none absolute inset-0 rounded-full border-3 border-white" />
 
           <div class="absolute top-1/2 -right-24 flex -translate-y-1/2 flex-col gap-2">
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 shadow-lg backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("in")}
               >
                 <IconPlus class="h-5 w-5 text-white" />
               </button>
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRB class="text-sm text-white/70" />}>
-                <IconF7Key class="text-sm text-white/70" />
-              </Show>
+              <KeyGlyph keyboard={IconF7Key} gamepad={IconGamepadRB} class="text-sm text-white/70" />
             </div>
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 shadow-lg backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("out")}
               >
                 <IconMinus class="h-5 w-5 text-white" />
               </button>
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadLB class="text-sm text-white/70" />}>
-                <IconF6Key class="text-sm text-white/70" />
-              </Show>
+              <KeyGlyph keyboard={IconF6Key} gamepad={IconGamepadLB} class="text-sm text-white/70" />
             </div>
           </div>
         </div>
@@ -313,12 +285,11 @@ export default function ImageCrop(props: ImageCropProps) {
         <Button
           class="w-full"
           gradient="gradient-settings"
-          selected={selected()}
+          selected
           onClick={() => {
             exportCroppedImage();
             playSound("confirm");
           }}
-          onMouseEnter={() => setSelected(true)}
           layer={props.layer ?? 1}
         >
           {t("settings.save")}

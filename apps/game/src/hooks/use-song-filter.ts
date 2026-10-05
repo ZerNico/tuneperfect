@@ -1,6 +1,8 @@
 import { debounce } from "@solid-primitives/scheduled";
 import MiniSearch from "minisearch";
-import { type Accessor, createEffect, createMemo, createSignal } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, on, untrack } from "solid-js";
+
+import { facetKeys, normalizeText } from "~/lib/utils/song-facets";
 
 export type SortOption = "artist" | "title" | "year" | "date" | "views";
 export type SearchFieldScope = "all" | "artist" | "title" | "year" | "genre" | "language" | "edition" | "creator";
@@ -33,25 +35,6 @@ export const countActiveFilters = (filters: SongFilters): number => {
   return count;
 };
 
-const ALL_SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
-
-const collator = new Intl.Collator(undefined, { sensitivity: "base" });
-const compare = (a: string, b: string) => collator.compare(a, b);
-
-// Remove diacritics for accent-insensitive search (é -> e, ö -> o)
-const normalizeText = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-const includesIgnoreCase = (haystack: string | string[] | null | undefined, needle: string): boolean => {
-  if (!haystack) return false;
-  const values = Array.isArray(haystack) ? haystack : [haystack];
-  const normalized = normalizeText(needle);
-  return values.some((value) => normalizeText(value) === normalized);
-};
-
 /** Common shape for any song-like object that can be filtered/sorted. */
 export interface SongLike {
   artist: string;
@@ -64,148 +47,172 @@ export interface SongLike {
   language?: string | string[] | null;
   edition?: string | string[] | null;
   creator?: string | string[] | null;
-  /** Second player (duet). Present on LocalSong; absent on online entries. */
-  p2?: unknown;
+  /** Sung parts; more than one is a duet. Present on LocalSong; absent on online entries (never duets here). */
+  voices?: readonly unknown[] | null;
 }
+
+export const isDuet = (song: SongLike) => (song.voices?.length ?? 0) > 1;
+
+const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
+
+/** Accent-insensitive full-text index over the searchable song fields. Build it once per library. */
+export function createSongSearchIndex<T extends SongLike>(items: T[], idField: keyof T & string): MiniSearch<T> {
+  const index = new MiniSearch<T>({
+    fields: [...SEARCH_FIELDS],
+    idField,
+    storeFields: [],
+    extractField: (document, fieldName) => {
+      const value = document[fieldName as keyof T];
+      return Array.isArray(value) ? value.join(" ") : (value as string | undefined);
+    },
+    processTerm: normalizeText,
+  });
+  index.addAll(items);
+  return index;
+}
+
+const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+
+/** Collation rank of each item's key (equal keys share a rank), so sorting compares integers. */
+function collationRanks<T>(items: T[], key: (item: T) => string): Int32Array {
+  const keys = items.map(key);
+  const order = keys.map((_, index) => index).toSorted((a, b) => collator.compare(keys[a]!, keys[b]!));
+  const ranks = new Int32Array(items.length);
+  let rank = 0;
+  for (let i = 0; i < order.length; i++) {
+    if (i > 0 && collator.compare(keys[order[i - 1]!]!, keys[order[i]!]!) !== 0) rank++;
+    ranks[order[i]!] = rank;
+  }
+  return ranks;
+}
+
+/** Everything the sort options compare, computed once per library. */
+interface SortKeys {
+  artist: Int32Array;
+  title: Int32Array;
+  year: Float64Array;
+  createdAt: Float64Array;
+  views: Float64Array;
+}
+
+function computeSortKeys(items: SongLike[]): SortKeys {
+  return {
+    artist: collationRanks(items, (item) => item.artist),
+    title: collationRanks(items, (item) => item.title),
+    year: Float64Array.from(items, (item) => item.year ?? 0),
+    createdAt: Float64Array.from(items, (item) => item.createdAt ?? 0),
+    views: Float64Array.from(items, (item) => item.views ?? 0),
+  };
+}
+
+/** Item indices in the order of `sortOption`; name ties fall back to artist, then title. */
+function sortedIndices(keys: SortKeys, sortOption: SortOption): number[] {
+  const { artist, title, year, createdAt, views } = keys;
+  const byName = (a: number, b: number) => artist[a]! - artist[b]! || title[a]! - title[b]!;
+  const compare: (a: number, b: number) => number =
+    sortOption === "title"
+      ? (a, b) => title[a]! - title[b]! || artist[a]! - artist[b]!
+      : sortOption === "year"
+        ? (a, b) => year[a]! - year[b]! || byName(a, b)
+        : sortOption === "date"
+          ? (a, b) => createdAt[b]! - createdAt[a]! || byName(a, b)
+          : sortOption === "views"
+            ? (a, b) => views[b]! - views[a]! || byName(a, b)
+            : byName;
+  return Array.from(artist, (_, index) => index).toSorted(compare);
+}
+
+/** Search queries are only debounced for libraries this large. */
+const DEBOUNCE_THRESHOLD = 1000;
 
 interface UseSongFilterOptions<T extends SongLike> {
   items: Accessor<T[]>;
+  getId: (item: T) => string;
+  /** Prebuilt index over `items` (see `createSongSearchIndex`). */
+  searchIndex: Accessor<MiniSearch<T>>;
   sortOption: Accessor<SortOption>;
   searchQuery: Accessor<string>;
   searchFieldScope: Accessor<SearchFieldScope>;
   filters: Accessor<SongFilters>;
-  /** The unique ID field on T. Defaults to "hash" (for LocalSong). Use "songId" for UsdbSearchEntry. */
-  idField?: keyof T & string;
-  /** Optional prebuilt MiniSearch index. If provided, skips building a new index from items. */
-  searchIndex?: Accessor<MiniSearch<T>>;
 }
 
-interface UseSongFilterResult<T> {
-  filteredItems: Accessor<T[]>;
-  debouncedSearchQuery: Accessor<string>;
-}
-
-export function useSongFilter<T extends SongLike>(options: UseSongFilterOptions<T>): UseSongFilterResult<T> {
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal("");
-
-  const shouldDebounce = () => options.items().length > 1000;
+/**
+ * Sorts the library once per sort option, then filters the sorted list, so
+ * typing and changing filters never re-sort. Results keep the sort order.
+ */
+export function useSongFilter<T extends SongLike>(options: UseSongFilterOptions<T>): Accessor<T[]> {
+  // Starts from the current query: a browser that keeps its search must not flash unfiltered.
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = createSignal(untrack(options.searchQuery));
 
   // oxlint-disable-next-line solid/reactivity
-  const debouncedSetQuery = debounce((query: string) => {
-    setDebouncedSearchQuery(query);
-  }, 500);
+  const debouncedSetQuery = debounce(setDebouncedSearchQuery, 500);
 
-  createEffect(() => {
-    if (shouldDebounce()) {
-      debouncedSetQuery(options.searchQuery());
-    } else {
-      setDebouncedSearchQuery(options.searchQuery());
-    }
+  createEffect(
+    on(
+      options.searchQuery,
+      (query) => {
+        // Clearing applies at once; only typing into large libraries waits.
+        if (query.trim() && options.items().length > DEBOUNCE_THRESHOLD) {
+          debouncedSetQuery(query);
+        } else {
+          debouncedSetQuery.clear();
+          setDebouncedSearchQuery(query);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
+  const sortKeys = createMemo(() => computeSortKeys(options.items()));
+
+  const sortedItems = createMemo(() => {
+    const items = options.items();
+    return sortedIndices(sortKeys(), options.sortOption()).map((index) => items[index]!);
   });
 
-  const idField = options.idField ?? ("hash" as keyof T & string);
-
-  const ownIndex = options.searchIndex
-    ? undefined
-    : // oxlint-disable-next-line solid/reactivity
-      createMemo(() => {
-        const miniSearch = new MiniSearch<T>({
-          fields: [...ALL_SEARCH_FIELDS],
-          idField,
-          storeFields: [],
-          extractField: (document, fieldName) => {
-            const value = document[fieldName as keyof T];
-            if (Array.isArray(value)) {
-              return value.join(" ");
-            }
-            return value as string | undefined;
-          },
-          processTerm: (term) => normalizeText(term),
-        });
-
-        miniSearch.addAll(options.items());
-        return miniSearch;
-      });
-
-  const getIndex = () => (options.searchIndex ? options.searchIndex() : ownIndex!());
-
-  const filteredItems = createMemo(() => {
-    let songs = options.items();
+  return createMemo(() => {
+    const songs = sortedItems();
     const filters = options.filters();
     const query = debouncedSearchQuery().trim();
     const scope = options.searchFieldScope();
 
-    // Library filters apply independently of and before the text search
-    if (filters.type === "duet") {
-      songs = songs.filter((song) => song.p2 !== null);
-    } else if (filters.type === "solo") {
-      songs = songs.filter((song) => song.p2 === null);
+    // Library filters apply independently of the text search.
+    const predicates: ((song: T) => boolean)[] = [];
+
+    if (filters.type !== "all") {
+      const duet = filters.type === "duet";
+      predicates.push((song) => isDuet(song) === duet);
     }
 
     if (filters.decade !== null) {
       const decade = filters.decade;
-      songs = songs.filter((song) => song.year != null && Math.floor(song.year / 10) * 10 === decade);
+      predicates.push((song) => song.year != null && Math.floor(song.year / 10) * 10 === decade);
     }
 
-    if (filters.genre !== null) {
-      songs = songs.filter((song) => includesIgnoreCase(song.genre, filters.genre as string));
-    }
-
-    if (filters.language !== null) {
-      songs = songs.filter((song) => includesIgnoreCase(song.language, filters.language as string));
-    }
-
-    if (filters.edition !== null) {
-      songs = songs.filter((song) => includesIgnoreCase(song.edition, filters.edition as string));
+    for (const facet of ["genre", "language", "edition"] as const) {
+      const value = filters[facet];
+      if (value === null) continue;
+      const needle = normalizeText(value);
+      predicates.push((song) => facetKeys(song)[facet].includes(needle));
     }
 
     if (query) {
       if (scope === "year") {
-        const yearQuery = Number.parseInt(query, 10);
-        if (!Number.isNaN(yearQuery)) {
-          songs = songs.filter((song) => song.year === yearQuery);
-        } else {
-          songs = [];
-        }
+        const year = Number.parseInt(query, 10);
+        if (Number.isNaN(year)) return [];
+        predicates.push((song) => song.year === year);
       } else {
-        const fields = scope === "all" ? undefined : [scope];
-        const searchResults = getIndex().search(query, {
-          fields,
+        const results = options.searchIndex().search(query, {
+          fields: scope === "all" ? undefined : [scope],
           fuzzy: 0.1,
           prefix: true,
         });
-        const idSet = new Set(searchResults.map((r) => r.id));
-        songs = songs.filter((song) => idSet.has(song[idField] as string | number));
+        const ids = new Set(results.map((result) => String(result.id)));
+        predicates.push((song) => ids.has(options.getId(song)));
       }
     }
 
-    if (songs.length === 0) {
-      return [];
-    }
-
-    return [...songs].toSorted((a, b) => {
-      const sortKey = options.sortOption();
-      if (sortKey === "artist") {
-        return compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      if (sortKey === "title") {
-        return compare(a.title, b.title);
-      }
-      if (sortKey === "year") {
-        return (a.year ?? 0) - (b.year ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      if (sortKey === "date") {
-        return (b.createdAt ?? 0) - (a.createdAt ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      if (sortKey === "views") {
-        return (b.views ?? 0) - (a.views ?? 0) || compare(a.artist, b.artist) || compare(a.title, b.title);
-      }
-      return 0;
-    });
+    if (predicates.length === 0) return songs;
+    return songs.filter((song) => predicates.every((predicate) => predicate(song)));
   });
-
-  return {
-    filteredItems,
-    debouncedSearchQuery,
-  };
 }

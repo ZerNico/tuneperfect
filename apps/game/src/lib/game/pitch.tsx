@@ -1,4 +1,4 @@
-import type { Note } from "../ultrastar/note";
+import { isRap, type Note } from "../ultrastar/note";
 import { frequencyToMidi } from "../utils/midi";
 
 export type Difficulty = "easy" | "medium" | "hard";
@@ -40,7 +40,7 @@ export class PitchProcessor {
     }
 
     // Skip pitch correction for rap notes since exact pitch doesn't matter
-    if (targetNote.type === "Rap" || targetNote.type === "RapGolden") {
+    if (isRap(targetNote)) {
       return Math.round(detectedMidiNote);
     }
 
@@ -51,8 +51,7 @@ export class PitchProcessor {
   }
 
   private applyJoker(detectedMidiNote: number, targetNote: Note) {
-    const isRap = targetNote.type === "Rap" || targetNote.type === "RapGolden";
-    const isCorrect = isRap ? detectedMidiNote > 0 : detectedMidiNote === targetNote.midiNote;
+    const isCorrect = isRap(targetNote) ? detectedMidiNote > 0 : detectedMidiNote === targetNote.midiNote;
     const isDropout = detectedMidiNote <= 0;
 
     if (isCorrect) {

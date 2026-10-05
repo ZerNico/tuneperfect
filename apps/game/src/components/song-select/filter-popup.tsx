@@ -1,15 +1,17 @@
-import { createEffect, createMemo, For, onCleanup, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconTrash from "~icons/lucide/trash-2";
-import IconTriangleLeft from "~icons/sing/triangle-left";
-import IconTriangleRight from "~icons/sing/triangle-right";
+import IconTriangleLeft from "~icons/ph/caret-left-fill";
+import IconTriangleRight from "~icons/ph/caret-right-fill";
+import IconTrash from "~icons/ph/trash-bold";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createClickOutside } from "~/hooks/click-outside";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import { formatDecade, getDecades, getEditions, getGenres, getLanguages } from "~/lib/utils/song-facets";
+import { formatDecade, getDecades, getEditions, getGenres, getLanguages, typeLabel } from "~/lib/utils/song-facets";
+
+import Plate from "../ui/plate";
 
 interface FilterPopupProps {
   songs: SongLike[];
@@ -75,12 +77,6 @@ export function FilterPopup(props: FilterPopupProps) {
     const list = key === "genre" ? facets().genres : key === "language" ? facets().languages : facets().editions;
     const options: (string | null)[] = [null, ...list];
     update({ [key]: cycle(options, props.filters[key], direction) } as Partial<SongFilters>);
-  };
-
-  const typeLabel = (value: SongTypeFilter): string => {
-    if (value === "duet") return t("sing.filter.duet");
-    if (value === "solo") return t("sing.filter.solo");
-    return t("sing.filter.any");
   };
 
   const facetLabel = (value: string | null): string => value ?? t("sing.filter.any");
@@ -154,42 +150,27 @@ export function FilterPopup(props: FilterPopupProps) {
     return list;
   });
 
-  const { position, increment, decrement, set } = createLoop(() => rows().length);
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
-
-  useNavigation({
+  const list = createListNavigation({
+    get count() {
+      return rows().length;
+    },
     layer: 1,
     onKeydown(event) {
+      const row = rows()[list.position()];
       if (event.action === "back" || event.action === "filter") {
         props.onClose();
-      } else if (event.action === "up") {
-        decrement();
-        playSound("select");
-      } else if (event.action === "down") {
-        increment();
-        playSound("select");
       } else if (event.action === "left") {
-        const row = rows()[position()];
         row?.onLeft?.();
         if (row?.onLeft) playSound("select");
       } else if (event.action === "right") {
-        const row = rows()[position()];
         row?.onRight?.();
         if (row?.onRight) playSound("select");
       } else if (event.action === "confirm") {
-        const row = rows()[position()];
         if (row?.kind === "clear") {
           row.onConfirm?.();
           playSound("confirm");
@@ -207,54 +188,42 @@ export function FilterPopup(props: FilterPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-96 rounded-lg bg-black/30 p-3 text-white shadow-xl backdrop-blur-md"
+        class="w-96 rounded-2xl glass p-3 text-white"
       >
         <div class="flex flex-col gap-1">
           <For each={rows()}>
             {(row, index) => {
-              const selected = () => position() === index();
+              const selected = () => list.isSelected(index());
               return (
                 <Show
                   when={row.kind !== "clear"}
                   fallback={
-                    <button
-                      type="button"
-                      class="group relative mt-1 grid w-full overflow-hidden rounded-md text-left transition-all duration-200 active:scale-95"
-                      classList={{
-                        "bg-white/10": !selected(),
-                        "shadow-lg": selected(),
-                      }}
+                    <Plate
+                      as="button"
+                      size="sm"
+                      class="mt-2 w-full"
+                      gradient="gradient-sing"
+                      selected={selected()}
+                      contentClass="flex items-center justify-center gap-2 font-bold"
                       onClick={() => {
-                        set(index());
+                        list.set(index());
                         row.onConfirm?.();
                         playSound("confirm");
                       }}
-                      onMouseEnter={() => set(index())}
+                      onMouseEnter={() => list.set(index())}
                     >
-                      <div
-                        class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-200"
-                        classList={{
-                          "gradient-sing": true,
-                          "opacity-0": !selected(),
-                          "opacity-90": selected(),
-                        }}
-                      />
-                      <div class="z-2 col-start-1 row-start-1 flex items-center justify-center gap-2 p-2 text-sm font-medium">
-                        <IconTrash class="text-xs" />
-                        <span>{row.label}</span>
-                      </div>
-                    </button>
+                      <IconTrash />
+                      <span>{row.label}</span>
+                    </Plate>
                   }
                 >
                   <div
-                    class="flex items-center gap-3 rounded-md px-2 py-1.5 transition-all"
-                    classList={{
-                      "bg-white/10": selected(),
-                    }}
-                    onMouseEnter={() => set(index())}
+                    class="flex items-center gap-3 rounded-lg px-3 py-1.5 transition-colors"
+                    classList={{ "bg-white/12": selected() }}
+                    onMouseEnter={() => list.set(index())}
                   >
                     <span
-                      class="min-w-0 flex-1 truncate text-sm font-medium"
+                      class="min-w-0 flex-1 truncate text-sm font-bold"
                       classList={{
                         "text-white": row.active || selected(),
                         "text-white/70": !row.active && !selected(),
@@ -267,28 +236,28 @@ export function FilterPopup(props: FilterPopupProps) {
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                         onClick={() => {
-                          set(index());
+                          list.set(index());
                           row.onLeft?.();
                           playSound("select");
                         }}
                       >
                         <IconTriangleLeft class="text-xs" />
                       </button>
-                      <div
+                      <span
                         class="w-40 truncate rounded-md px-3 py-0.5 text-center text-sm"
                         classList={{
-                          "gradient-sing bg-linear-to-r font-semibold text-white": !!row.active,
+                          "gradient-sing bg-linear-to-r font-bold text-white": !!row.active,
                           "bg-white/10 text-white/70": !row.active,
                         }}
                         title={row.valueLabel}
                       >
                         {row.valueLabel}
-                      </div>
+                      </span>
                       <button
                         type="button"
                         class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/10 transition-transform hover:opacity-75 active:scale-95"
                         onClick={() => {
-                          set(index());
+                          list.set(index());
                           row.onRight?.();
                           playSound("select");
                         }}

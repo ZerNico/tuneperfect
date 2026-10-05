@@ -19,9 +19,17 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   const [active, setActive] = createSignal(false);
 
   let restarting = false;
+  // A device/channel/gain change while a start is in flight: run start once more afterwards so it isn't dropped.
+  let pendingRestart = false;
+  // Set on unmount: an in-flight start must not leave the microphone recording.
+  let disposed = false;
 
   const startPreview = async () => {
-    if (restarting) return;
+    if (disposed) return;
+    if (restarting) {
+      pendingRestart = true;
+      return;
+    }
     restarting = true;
 
     try {
@@ -33,6 +41,7 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
       const deviceId = props.deviceId();
 
       await native.recording.stop().catch(() => {});
+      if (disposed) return;
 
       const started = await native.recording
         .start({
@@ -45,11 +54,20 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
           () => false,
         );
 
+      if (disposed) {
+        if (started) await native.recording.stop().catch(() => {});
+        return;
+      }
+
       if (started) {
         setActive(true);
       }
     } finally {
       restarting = false;
+      if (pendingRestart && !disposed) {
+        pendingRestart = false;
+        void startPreview();
+      }
     }
   };
 
@@ -112,6 +130,8 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   });
 
   onCleanup(() => {
+    disposed = true;
+    pendingRestart = false;
     stopPreview();
   });
 
@@ -121,12 +141,12 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
   const thresholdPercentage = () => ampToMeter(props.threshold() / 100) * 100;
 
   return (
-    <div class="grid h-16 items-center overflow-hidden rounded-lg">
-      <div class="z-2 col-start-1 row-start-1 mx-auto grid w-full max-w-320 grid-cols-[1fr_3fr] items-center">
-        <div class="text-center text-xl font-bold">{t("settings.sections.microphones.level")}</div>
+    <div class="grid h-16 items-center overflow-hidden rounded-[0.8cqw]">
+      <div class="z-2 col-start-1 row-start-1 grid w-full grid-cols-[2fr_3fr] items-center gap-8 px-10">
+        <div class="truncate text-xl font-bold">{t("settings.sections.microphones.level")}</div>
         <div class="flex items-center gap-8">
-          <div class="relative grid h-5 grow items-center overflow-hidden rounded-md">
-            <div class="col-start-1 row-start-1 h-full w-full rounded-md bg-black/20" />
+          <div class="relative grid h-3 grow items-center overflow-hidden rounded-full">
+            <div class="col-start-1 row-start-1 h-full w-full rounded-full bg-black/20" />
             <div
               class="col-start-1 row-start-1 h-full w-full transition-[clip-path] duration-75"
               style={{

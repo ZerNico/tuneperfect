@@ -28,7 +28,6 @@ export type GamepadButton =
 
 interface GamepadButtonEvent {
   button: GamepadButton;
-  repeat: boolean;
   gamepadId: number;
   direction?: number;
 }
@@ -36,6 +35,7 @@ interface GamepadButtonEvent {
 interface CreateGamepadOptions {
   onButtonDown?: (event: GamepadButtonEvent) => void;
   onButtonUp?: (event: GamepadButtonEvent) => void;
+  onDisconnect?: (gamepadId: number) => void;
 }
 
 const AXIS_THRESHOLD = 0.5;
@@ -88,6 +88,7 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
     const gamepad = e.gamepad;
     buttonStates.delete(gamepad.index);
     axisStates.delete(gamepad.index);
+    access(options).onDisconnect?.(gamepad.index);
   };
 
   const updateGamepadState = () => {
@@ -110,7 +111,6 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
           const buttonName = BUTTON_MAPPINGS.get(index) || "UNKNOWN";
           const event: GamepadButtonEvent = {
             button: buttonName,
-            repeat: false,
             gamepadId: gamepad.index,
           };
 
@@ -139,7 +139,6 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
 
           const event: GamepadButtonEvent = {
             button: axisName,
-            repeat: false,
             gamepadId: gamepad.index,
             direction: currentCrossesThreshold ? value : 0,
           };

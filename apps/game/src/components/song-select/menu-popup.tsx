@@ -1,107 +1,46 @@
-import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { For, type JSX, Show } from "solid-js";
 import { Motion } from "solid-motionone";
-import IconF1Key from "~icons/sing/f1-key";
-import IconGamepadRT from "~icons/sing/gamepad-rt";
-import IconShiftKey from "~icons/sing/shift-key";
 
-import { createLoop } from "~/hooks/loop";
-import { keyMode, useNavigation } from "~/hooks/navigation";
-import { t } from "~/lib/i18n";
+import { createClickOutside } from "~/hooks/click-outside";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { playSound } from "~/lib/sound";
-import { usdbStore } from "~/stores/usdb";
 
-interface MenuPopupProps {
-  onClose: () => void;
-  onStartRandomMedley: () => void;
-  onAddToMedley: () => void;
-  onSearchUsdb: () => void;
+import Plate from "../ui/plate";
+
+export interface MenuPopupItem {
+  label: JSX.Element;
+  /** Key glyph(s) for the item's direct shortcut, if it has one. */
+  hint?: JSX.Element;
+  action: () => void;
 }
 
+interface MenuPopupProps {
+  items: MenuPopupItem[];
+  onClose: () => void;
+}
+
+/** Dropdown menu anchored below its trigger, driven by keyboard, gamepad or mouse. */
 export function MenuPopup(props: MenuPopupProps) {
-  const options = createMemo(() => {
-    const items = [
-      {
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.addToMedley")}</span>
-            <div class="flex items-center gap-1">
-              <Show when={keyMode() === "keyboard"} fallback={<IconGamepadRT class="text-sm" />}>
-                <IconF1Key class="text-sm" />
-              </Show>
-            </div>
-          </div>
-        ),
-        action: () => props.onAddToMedley(),
-      },
-      {
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.startRandomMedley")}</span>
-            <div class="flex items-center gap-1">
-              <Show when={keyMode() === "keyboard"}>
-                <IconShiftKey class="text-sm" />
-                <span class="text-xs font-bold">+</span>
-                <span class="text-sm font-bold">D</span>
-              </Show>
-            </div>
-          </div>
-        ),
-        action: () => props.onStartRandomMedley(),
-      },
-    ];
-
-    if (usdbStore.loggedIn()) {
-      items.push({
-        label: (
-          <div class="flex w-full items-center justify-between">
-            <span>{t("sing.menu.searchUsdb")}</span>
-          </div>
-        ),
-        action: () => props.onSearchUsdb(),
-      });
-    }
-
-    return items;
-  });
-
-  const { position, increment, decrement, set } = createLoop(() => options().length);
   let popupRef!: HTMLDivElement;
+  createClickOutside(
+    () => popupRef,
+    () => props.onClose(),
+  );
 
-  createEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef && !popupRef.contains(event.target as Node)) {
-        props.onClose();
-      }
-    };
+  const activate = (index: number) => {
+    props.items[index]?.action();
+    props.onClose();
+    playSound("confirm");
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    onCleanup(() => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    });
-  });
-
-  const [pressed, setPressed] = createSignal(false);
-
-  useNavigation({
+  const list = createListNavigation({
+    get count() {
+      return props.items.length;
+    },
     layer: 2,
+    onActivate: activate,
     onKeydown(event) {
       if (event.action === "back" || event.action === "menu") {
-        props.onClose();
-        playSound("confirm");
-      } else if (event.action === "up") {
-        decrement();
-        playSound("select");
-      } else if (event.action === "down") {
-        increment();
-        playSound("select");
-      } else if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        options()[position()]?.action();
         props.onClose();
         playSound("confirm");
       }
@@ -114,42 +53,30 @@ export function MenuPopup(props: MenuPopupProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        class="w-70 rounded-lg bg-black/30 p-2 shadow-xl backdrop-blur-md"
+        class="w-70 rounded-2xl glass p-2"
       >
         <div class="flex flex-col gap-1">
-          <For each={options()}>
-            {(option, index) => {
-              const isSelected = () => position() === index();
-              const isActive = () => isSelected() && pressed();
-              return (
-                <button
-                  type="button"
-                  class="group relative grid w-full overflow-hidden rounded-lg text-left transition-all duration-250 active:scale-95"
-                  classList={{
-                    "bg-white/10": !isSelected(),
-                    "shadow-lg": isSelected(),
-                    "scale-95": isActive(),
-                  }}
-                  onClick={() => {
-                    set(index());
-                    option.action();
-                    props.onClose();
-                    playSound("confirm");
-                  }}
-                  onMouseEnter={() => set(index())}
-                >
-                  <div
-                    class="col-start-1 row-start-1 h-full w-full bg-linear-to-r transition-opacity duration-250"
-                    classList={{
-                      "gradient-sing": true,
-                      "opacity-0": !isSelected(),
-                      "opacity-90": isSelected(),
-                    }}
-                  />
-                  <div class="z-2 col-start-1 row-start-1 p-3 font-medium">{option.label}</div>
-                </button>
-              );
-            }}
+          <For each={props.items}>
+            {(option, index) => (
+              <Plate
+                as="button"
+                size="sm"
+                class="w-full"
+                gradient="gradient-sing"
+                selected={list.isSelected(index())}
+                pressed={list.isSelected(index()) && list.pressed()}
+                contentClass="flex items-center px-4 font-bold"
+                onClick={() => activate(index())}
+                onMouseEnter={() => list.set(index())}
+              >
+                <span class="flex w-full items-center justify-between gap-4">
+                  <span>{option.label}</span>
+                  <Show when={option.hint}>
+                    <span class="flex items-center gap-1 text-sm opacity-80">{option.hint}</span>
+                  </Show>
+                </span>
+              </Plate>
+            )}
           </For>
         </div>
       </Motion.div>

@@ -10,6 +10,7 @@ import {
   getPhraseRating,
   getRelativeScore,
   getRoundTotalScore,
+  getTier,
   getRoundTotalScores,
   MAX_POSSIBLE_SCORE,
 } from "./score";
@@ -154,5 +155,34 @@ describe("getRoundTotalScore", () => {
     const totals = getRoundTotalScores(scores, voice);
     expect(getRoundTotalScore(scores[0]!, voice)).toBe(totals[0]);
     expect(getRoundTotalScore(scores[1]!, voice)).toBe(totals[1]);
+  });
+});
+
+describe("getTier", () => {
+  it("maps scores to tiers at the thresholds", () => {
+    expect(getTier(100_000).id).toBe("splus");
+    expect(getTier(95_000).id).toBe("splus");
+    expect(getTier(94_999).id).toBe("s");
+    expect(getTier(88_000).id).toBe("s");
+    expect(getTier(75_000).id).toBe("a");
+    expect(getTier(60_000).id).toBe("b");
+    expect(getTier(40_000).id).toBe("c");
+    expect(getTier(39_999).id).toBe("d");
+    expect(getTier(0).id).toBe("d");
+  });
+
+  it("normalizes medley totals by the maximum score", () => {
+    expect(getTier(190_000, 200_000).id).toBe("splus");
+    expect(getTier(100_000, 200_000).id).toBe("c");
+  });
+
+  it("returns the lowest tier when there is no maximum", () => {
+    expect(getTier(0, 0).id).toBe("d");
+  });
+
+  it("gives more stars to better tiers", () => {
+    expect(getTier(96_000).stars).toBe(5);
+    expect(getTier(80_000).stars).toBe(4);
+    expect(getTier(10_000).stars).toBe(1);
   });
 });

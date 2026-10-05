@@ -7,7 +7,7 @@ import { client } from "./orpc";
 
 export const lobbyQueryOptions = () =>
   queryOptions({
-    queryKey: ["lobby"],
+    queryKey: ["lobby", lobbyStore.lobby()?.lobby.id ?? null],
     refetchInterval: 5000,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -43,7 +43,7 @@ export const highscoreQueryOptions = (
 
 export const availableClubsQueryOptions = () =>
   queryOptions({
-    queryKey: ["availableClubs"],
+    queryKey: ["availableClubs", lobbyStore.lobby()?.lobby.id ?? null],
     refetchInterval: 10000,
     queryFn: async () => {
       if (!lobbyStore.lobby()) return [];

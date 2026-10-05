@@ -1,10 +1,21 @@
-import { createMemo, For, onCleanup, onMount } from "solid-js";
+import { createMemo, For, onCleanup, onMount, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
-import IconHash from "~icons/lucide/hash";
+import IconCrown from "~icons/ph/crown-fill";
 
+import { effectsEnabled } from "~/lib/fx";
 import type { User } from "~/lib/types";
 
 import Avatar from "./ui/avatar";
+
+/** Gold, silver and bronze for the podium; white for everyone else. */
+function rankText(rank: number) {
+  if (rank === 1) return "var(--color-yellow-300)";
+  if (rank === 2) return "var(--color-slate-300)";
+  if (rank === 3) return "var(--color-orange-400)";
+  return "rgb(255 255 255 / 0.6)";
+}
+
+const fmt = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export interface Highscore {
   score: number;
@@ -23,7 +34,6 @@ interface HighscoreListProps {
 
 export default function HighscoreList(props: HighscoreListProps) {
   let containerRef: HTMLDivElement | undefined;
-  let scrollTimeout: ReturnType<typeof setTimeout>;
 
   const rankedScores = createMemo((): RankedHighscore[] => {
     // First, deduplicate by user ID, keeping only the highest score for each user
@@ -66,75 +76,66 @@ export default function HighscoreList(props: HighscoreListProps) {
     return ranked;
   });
 
-  const startScrolling = () => {
-    if (!containerRef) return;
-
-    const scroll = () => {
-      if (!containerRef) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = containerRef;
-
-      if (scrollTop >= scrollHeight - clientHeight) {
-        setTimeout(() => {
-          if (!containerRef) return;
-          containerRef.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          });
-          setTimeout(() => {
-            scrollTimeout = setTimeout(scroll, 50);
-          }, 1500);
-        }, 1000);
-      } else {
-        containerRef.scrollTop += 1;
-        scrollTimeout = setTimeout(scroll, 50);
-      }
-    };
-
-    setTimeout(scroll, 3000);
+  // Auto-scroll: after a pause, creep down to the end, wait, jump back to the top, wait, repeat.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let alive = true;
+  const after = (ms: number, step: () => void) => {
+    if (alive) timer = setTimeout(step, ms);
   };
 
-  onMount(() => {
-    if (containerRef) {
-      startScrolling();
+  const scroll = () => {
+    if (!containerRef) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef;
+
+    // Nothing to scroll (yet): check again later, e.g. once more scores have loaded.
+    if (scrollHeight <= clientHeight) return after(3000, scroll);
+
+    if (scrollTop < scrollHeight - clientHeight - 1) {
+      containerRef.scrollTop += 1;
+      return after(50, scroll);
     }
-  });
+
+    after(1000, () => {
+      containerRef?.scrollTo({ top: 0, behavior: "smooth" });
+      after(1500, scroll);
+    });
+  };
+
+  onMount(() => after(3000, scroll));
 
   onCleanup(() => {
-    clearTimeout(scrollTimeout);
+    alive = false;
+    clearTimeout(timer);
   });
 
   return (
     <div class={twMerge("relative h-full w-100", props.class)}>
       <div ref={containerRef} class="styled-scrollbars absolute flex h-full w-full flex-col overflow-y-auto">
-        <div class="flex min-h-full flex-col justify-center-safe gap-2">
-          <For each={rankedScores()}>
-            {(score) => (
-              <div class="flex h-7 w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg bg-black/20 pr-4 backdrop-blur-md">
+        <div class="flex min-h-full flex-col justify-center-safe gap-2 px-2">
+          <div class="flex flex-col gap-1">
+            <For each={rankedScores()}>
+              {(score, index) => (
                 <div
-                  class="flex h-full w-10 shrink-0 items-center justify-center text-center text-base"
+                  class="flex h-9 w-full shrink-0 items-center gap-2.5 rounded-[0.7cqw] bg-black/30 px-3 text-base font-bold"
                   classList={{
-                    "bg-yellow-500": score.rank === 1,
-                    "bg-white text-black": score.rank !== 1,
+                    "animate-title-in": effectsEnabled(),
+                    "ring-[0.12cqw] ring-yellow-300/70 ring-inset": score.rank === 1,
                   }}
+                  style={{ "animation-delay": `${Math.min(index(), 8) * 40}ms` }}
                 >
-                  {score.rank}.
-                </div>
-
-                <div class="flex grow items-center gap-2 overflow-hidden">
-                  <Avatar user={score.user} class="h-6 w-6 shrink-0" />
-                  <span class="truncate text-base">{score.user.username || "?"}</span>
-                </div>
-
-                <div class="flex shrink-0 flex-row items-center gap-4">
-                  <span class="flex shrink-0 flex-row items-center gap-1 text-sm tabular-nums">
-                    <IconHash />
-                    {score.score.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                  <span class="w-5 shrink-0 text-center font-black" style={{ color: rankText(score.rank) }}>
+                    {score.rank}
                   </span>
+                  <Avatar user={score.user} class="h-6 w-6 shrink-0" />
+                  <span class="min-w-0 truncate">{score.user.username || "?"}</span>
+                  <Show when={score.rank === 1}>
+                    <IconCrown class="shrink-0 text-yellow-300" />
+                  </Show>
+                  <span class="ml-auto shrink-0 pl-3 font-black tabular-nums">{fmt(score.score)}</span>
                 </div>
-              </div>
-            )}
-          </For>
+              )}
+            </For>
+          </div>
         </div>
       </div>
     </div>

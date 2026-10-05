@@ -1,14 +1,43 @@
-import { createEffect, For, type JSX, Match, on, Switch } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSelector,
+  createSignal,
+  Index,
+  type JSX,
+  Match,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+  Switch,
+  untrack,
+} from "solid-js";
 import { twMerge } from "tailwind-merge";
 
-import { createLoop } from "~/hooks/loop";
-import { useNavigation } from "~/hooks/navigation";
+import { createListNavigation } from "~/hooks/list-navigation";
 import { playSound } from "~/lib/sound";
 
 import Button from "./ui/button";
 import Input from "./ui/input";
 import Select from "./ui/select";
 import Slider from "./ui/slider";
+
+/** A value picked with left/right from a fixed list of options. */
+interface SelectItem<T extends string | number> {
+  type: "select";
+  label: string;
+  value: () => T | null;
+  onChange: (value: T) => void;
+  options: T[];
+  renderValue?: (value: T | null) => JSX.Element;
+}
+
+/** Builds a select item; keeps the value type for `value`, `onChange` and `renderValue`. */
+export function select<T extends string | number>(item: Omit<SelectItem<T>, "type">): MenuItem {
+  // Widening T is safe here: the Select only ever hands back values taken from `options`.
+  return { type: "select", ...item } as unknown as MenuItem;
+}
 
 export type MenuItem =
   | {
@@ -26,30 +55,7 @@ export type MenuItem =
       label: string | JSX.Element;
       action?: () => void;
     }
-  | {
-      type: "select-string";
-      label: string;
-      value: () => string | null;
-      onChange: (value: string) => void;
-      options: string[];
-      renderValue?: (value: string | null) => JSX.Element;
-    }
-  | {
-      type: "select-number";
-      label: string;
-      value: () => number | null;
-      onChange: (value: number) => void;
-      options: number[];
-      renderValue?: (value: number | null) => JSX.Element;
-    }
-  | {
-      type: "select-string-number";
-      label: string;
-      value: () => string | number | null;
-      onChange: (value: string | number) => void;
-      options: (string | number)[];
-      renderValue?: (value: string | number | null) => JSX.Element;
-    }
+  | SelectItem<string | number>
   | {
       type: "input";
       label: string;
@@ -71,91 +77,103 @@ export interface MenuProps {
   gradient?: "gradient-settings" | "gradient-lobby" | "gradient-sing" | "gradient-party";
   layer?: number;
   class?: string;
+  /** Item to start on (e.g. the current choice). Applied once it exists, since items may load later. */
+  initialIndex?: number;
 }
 
+/** The item as its specific type if it has that type (narrows for `<Match>`). */
+const ofType = <K extends MenuItem["type"]>(item: MenuItem, type: K) =>
+  item.type === type ? (item as Extract<MenuItem, { type: K }>) : undefined;
+
 export default function Menu(props: MenuProps) {
-  // Filter to only interactive items for navigation
-  const interactiveIndices = () =>
-    props.items
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => item.type !== "custom" || item.interactive !== false)
-      .map(({ index }) => index);
+  // Only interactive items take part in navigation; positions count those.
+  const interactiveIndices = createMemo(() =>
+    props.items.flatMap((item, index) => (item.type !== "custom" || item.interactive !== false ? [index] : [])),
+  );
+  const positions = createMemo(() => new Map(interactiveIndices().map((index, position) => [index, position])));
+  /** The item's position among the interactive items, -1 if it isn't one. */
+  const positionOf = (index: number) => positions().get(index) ?? -1;
 
-  const { position, increment, decrement, set } = createLoop(() => interactiveIndices().length);
-  let scrollContainer: HTMLDivElement | undefined;
-  const itemRefs: (HTMLElement | undefined)[] = [];
-
-  // Convert interactive position to actual item index
-  const actualIndex = () => interactiveIndices()[position()] ?? 0;
-
-  // Convert actual item index to interactive position
-  const toInteractivePosition = (index: number) => {
-    const pos = interactiveIndices().indexOf(index);
-    return pos >= 0 ? pos : 0;
-  };
-
-  const setItemRef = (index: number) => (el: HTMLElement) => {
-    itemRefs[index] = el;
-  };
-
-  useNavigation(() => ({
-    layer: props.layer,
+  const list = createListNavigation({
+    get count() {
+      return interactiveIndices().length;
+    },
+    get layer() {
+      return props.layer;
+    },
     onKeydown(event) {
       if (event.action === "back") {
         props.onBack?.();
         playSound("confirm");
-      } else if (event.action === "up") {
-        decrement();
-        scrollToSelected();
-      } else if (event.action === "down") {
-        increment();
-        scrollToSelected();
       }
     },
-  }));
+  });
 
-  createEffect(on(position, () => playSound("select"), { defer: true }));
+  const selectedIndex = () => interactiveIndices()[list.position()] ?? 0;
+  const isSelected = createSelector(selectedIndex);
 
-  const scrollToSelected = () => {
-    const selectedItem = itemRefs[actualIndex()];
-    if (selectedItem && scrollContainer) {
-      selectedItem.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "nearest",
-      });
-    }
+  // One glow behind all rows that follows the selection, so it lights up from behind the
+  // neighbouring rows instead of lying on top of some of them (the plates' own glow is hidden).
+  let rows: HTMLDivElement | undefined;
+  const [glowBox, setGlowBox] = createSignal<{ top: number; left: number; width: number; height: number }>();
+  const placeGlow = () => {
+    const item = props.items[selectedIndex()];
+    const row = rows?.children[selectedIndex()] as HTMLElement | undefined;
+    if (!item || item.type === "custom" || !row) return setGlowBox(undefined);
+    setGlowBox({ top: row.offsetTop, left: row.offsetLeft, width: row.offsetWidth, height: row.offsetHeight });
   };
+  createEffect(on([selectedIndex, () => props.items], () => queueMicrotask(placeGlow)));
+  onMount(() => {
+    const observer = new ResizeObserver(placeGlow);
+    if (rows) observer.observe(rows);
+    onCleanup(() => observer.disconnect());
+  });
+  const select = (index: number) => list.set(Math.max(0, positionOf(index)));
+
+  // Jump to the initial item once, as soon as it's there (items may arrive after a query).
+  let startApplied = false;
+  createEffect(() => {
+    const start = props.initialIndex;
+    if (startApplied || start === undefined || start >= props.items.length) return;
+    startApplied = true;
+    untrack(() => select(start));
+  });
 
   return (
     <div class={twMerge("flex h-full max-h-full w-full grow flex-col", props.class)}>
-      <div ref={scrollContainer} class="styled-scrollbars flex min-h-0 grow flex-col overflow-y-auto">
-        <div class="m-auto flex w-full shrink-0 flex-col">
-          <For each={props.items}>
+      <div class="styled-scrollbars flex min-h-0 grow flex-col overflow-y-auto">
+        {/* Side padding leaves room for the selection marker. */}
+        <div
+          ref={rows}
+          class="relative isolate m-auto flex w-full max-w-280 shrink-0 flex-col gap-2.5 px-12 py-[2cqw] [&_.plate-glow]:hidden"
+        >
+          {/* By position, not identity: menus that rebuild their items on every change keep their rows
+              (and their state and animations) instead of recreating them. */}
+          <Index each={props.items}>
             {(item, index) => (
               <Switch>
-                <Match when={item.type === "button" && item}>
+                <Match when={ofType(item(), "button")}>
                   {(item) => (
                     <Button
-                      ref={setItemRef(index())}
+                      ref={list.itemRef(() => positionOf(index))}
                       class="shrink-0"
                       layer={props.layer}
                       gradient={props.gradient || "gradient-settings"}
-                      selected={actualIndex() === index()}
+                      selected={isSelected(index)}
                       onClick={() => {
                         item().action?.();
                         playSound("confirm");
                       }}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
+                      onMouseEnter={() => select(index)}
                     >
                       {item().label}
                     </Button>
                   )}
                 </Match>
-                <Match when={item.type === "input" && item}>
+                <Match when={ofType(item(), "input")}>
                   {(item) => (
                     <Input
-                      ref={setItemRef(index())}
+                      ref={list.itemRef(() => positionOf(index))}
                       class="shrink-0"
                       layer={props.layer}
                       gradient={props.gradient || "gradient-settings"}
@@ -163,17 +181,17 @@ export default function Menu(props: MenuProps) {
                       value={item().value()}
                       placeholder={item().placeholder}
                       onInput={(e) => item().onInput(e.currentTarget.value)}
-                      selected={actualIndex() === index()}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
+                      selected={isSelected(index)}
+                      onMouseEnter={() => select(index)}
                       maxLength={item().maxLength}
                       type={item().inputType}
                     />
                   )}
                 </Match>
-                <Match when={item.type === "select-string" && item}>
+                <Match when={ofType(item(), "select")}>
                   {(item) => (
                     <Select
-                      ref={setItemRef(index())}
+                      ref={list.itemRef(() => positionOf(index))}
                       class="shrink-0"
                       layer={props.layer}
                       gradient={props.gradient || "gradient-settings"}
@@ -184,56 +202,16 @@ export default function Menu(props: MenuProps) {
                         playSound("select");
                       }}
                       options={item().options}
-                      selected={actualIndex() === index()}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
+                      selected={isSelected(index)}
+                      onMouseEnter={() => select(index)}
                       renderValue={item().renderValue}
                     />
                   )}
                 </Match>
-                <Match when={item.type === "select-number" && item}>
-                  {(item) => (
-                    <Select
-                      ref={setItemRef(index())}
-                      class="shrink-0"
-                      layer={props.layer}
-                      gradient={props.gradient || "gradient-settings"}
-                      label={item().label}
-                      value={item().value()}
-                      onChange={(value) => {
-                        item().onChange(value);
-                        playSound("select");
-                      }}
-                      options={item().options}
-                      selected={actualIndex() === index()}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
-                      renderValue={item().renderValue}
-                    />
-                  )}
-                </Match>
-                <Match when={item.type === "select-string-number" && item}>
-                  {(item) => (
-                    <Select
-                      ref={setItemRef(index())}
-                      class="shrink-0"
-                      layer={props.layer}
-                      gradient={props.gradient || "gradient-settings"}
-                      label={item().label}
-                      value={item().value()}
-                      onChange={(value) => {
-                        item().onChange(value);
-                        playSound("select");
-                      }}
-                      options={item().options}
-                      selected={actualIndex() === index()}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
-                      renderValue={item().renderValue}
-                    />
-                  )}
-                </Match>
-                <Match when={item.type === "slider" && item}>
+                <Match when={ofType(item(), "slider")}>
                   {(item) => (
                     <Slider
-                      ref={setItemRef(index())}
+                      ref={list.itemRef(() => positionOf(index))}
                       class="shrink-0"
                       layer={props.layer}
                       gradient={props.gradient || "gradient-settings"}
@@ -245,23 +223,21 @@ export default function Menu(props: MenuProps) {
                       onInput={(value) => {
                         item().onInput(value);
                       }}
-                      selected={actualIndex() === index()}
-                      onMouseEnter={() => set(toInteractivePosition(index()))}
+                      selected={isSelected(index)}
+                      onMouseEnter={() => select(index)}
                       renderValue={item().renderValue}
                     />
                   )}
                 </Match>
-                <Match when={item.type === "custom" && item}>
+                <Match when={ofType(item(), "custom")}>
                   {(item) => (
                     <div
-                      ref={setItemRef(index())}
+                      ref={list.itemRef(() => positionOf(index))}
                       class="shrink-0"
-                      onMouseEnter={() =>
-                        item().interactive !== false ? set(toInteractivePosition(index())) : undefined
-                      }
+                      onMouseEnter={() => (item().interactive !== false ? select(index) : undefined)}
                     >
                       {item().render({
-                        selected: () => actualIndex() === index(),
+                        selected: () => isSelected(index),
                         gradient: () => props.gradient || "gradient-settings",
                       })}
                     </div>
@@ -269,7 +245,26 @@ export default function Menu(props: MenuProps) {
                 </Match>
               </Switch>
             )}
-          </For>
+          </Index>
+          <Show when={glowBox()}>
+            {(box) => (
+              <div
+                aria-hidden="true"
+                class="pointer-events-none absolute -z-10 opacity-30 blur-[1cqw]"
+                style={{
+                  top: `${box().top + box().height * 0.15}px`,
+                  left: `${box().left + box().width * 0.06}px`,
+                  width: `${box().width * 0.88}px`,
+                  height: `${box().height * 0.8}px`,
+                }}
+              >
+                {/* Jumps with the selection and fades in there; sliding made it trail behind fast moves. */}
+                <Show when={selectedIndex() + 1} keyed>
+                  <div class={`size-full animate-glow-in bg-linear-to-r ${props.gradient || "gradient-settings"}`} />
+                </Show>
+              </div>
+            )}
+          </Show>
         </div>
       </div>
     </div>

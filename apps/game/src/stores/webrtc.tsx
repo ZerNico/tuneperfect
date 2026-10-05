@@ -134,9 +134,12 @@ function createWebRTCStore() {
         console.error("[WebRTC] Signaling subscription error:", error);
       }
     } finally {
-      setIsSubscribed(false);
-      setAbortController(null);
-      isStartingSignaling = false;
+      // A stop + restart may already have replaced this subscription; only reset state that is still ours.
+      if (abortController() === controller) {
+        setIsSubscribed(false);
+        setAbortController(null);
+        isStartingSignaling = false;
+      }
     }
   };
 
@@ -165,18 +168,10 @@ function createWebRTCStore() {
     pendingIceCandidates.delete(userId);
   };
 
-  const getAppClient = (userId: string) => {
-    const connection = connections.get(userId);
-    return connection?.getAppClient() ?? null;
-  };
-
   return {
-    connections,
-    isSubscribed,
     startSignaling,
     stopSignaling,
     closeConnection,
-    getAppClient,
   };
 }
 
