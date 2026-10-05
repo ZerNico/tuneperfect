@@ -15,7 +15,7 @@ export default function RootScreen() {
   useWebRTCAutoConnect();
 
   const toggleFullscreen = async () => {
-    await native.window.toggleFullscreen();
+    await native.window.toggleFullscreen().catch((error) => console.error("Failed to toggle fullscreen:", error));
   };
 
   useNavigation({

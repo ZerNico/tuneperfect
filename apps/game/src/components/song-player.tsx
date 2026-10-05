@@ -637,6 +637,14 @@ export default function SongPlayer(props: SongPlayerProps) {
     } catch {
       // Ignore disconnection errors
     }
+
+    // Let go of the media now instead of whenever the elements are collected: song select keeps
+    // swapping players, and each holds decoders and buffered audio/video.
+    for (const element of [audioElementRef, videoElementRef]) {
+      if (!element) continue;
+      element.removeAttribute("src");
+      element.load();
+    }
   });
 
   return (

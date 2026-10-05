@@ -12,6 +12,8 @@ import "./styles.css";
 
 forwardConsole("warn", (message) => native.app.log({ level: "warn", message }));
 forwardConsole("error", (message) => native.app.log({ level: "error", message }));
+// A promise that fails with nobody waiting on it would otherwise never reach the log file.
+window.addEventListener("unhandledrejection", (event) => console.error("Unhandled rejection:", event.reason));
 
 const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
 if (posthogToken) void initPostHog(posthogToken);

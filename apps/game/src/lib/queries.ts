@@ -16,7 +16,9 @@ export const lobbyQueryOptions = () =>
 
       const [error, data] = await safe(client.lobby.currentLobby.call());
 
-      if (error) return null;
+      // Throw instead of returning null: a failed refetch keeps the last known lobby, so a short
+      // API hiccup doesn't empty the player list (and block party games with "not enough players").
+      if (error) throw error;
 
       return data;
     },

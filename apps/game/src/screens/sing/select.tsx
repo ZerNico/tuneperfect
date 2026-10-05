@@ -20,8 +20,9 @@ import type { GuestUser, User } from "~/lib/types";
 import { type Song, voiceCount } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
-import { isGuestUser } from "~/lib/utils/user";
+import { isGuestUser, isLocalUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
+import { localStore } from "~/stores/local";
 import { medleyStore } from "~/stores/medley";
 import { type PlayerSelection, type RoundLength, useRoundActions } from "~/stores/round";
 import { selectionStore } from "~/stores/selection";
@@ -80,10 +81,14 @@ export default function PlayerSelectionScreen() {
     const song = songs().length === 1 ? songs()[0] : null;
     const maxVoice = song ? voiceCount(song) - 1 : 0;
 
+    // Remembered across visits; a local player deleted since then can't sing (or keep scores).
+    const localIds = new Set(localStore.players().map((player) => player.id));
+
     setSlotSelections((prev) => {
       const next: (Selection | undefined)[] = Array.from({ length: micCount }, (_, i) => {
         const existing = prev[i];
         if (!existing) return undefined;
+        if (isLocalUser(existing.player) && !localIds.has(existing.player.id)) return undefined;
 
         const validVoice = Math.min(existing.voice, maxVoice);
         return { ...existing, voice: validVoice };

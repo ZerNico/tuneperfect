@@ -45,8 +45,12 @@ export default function UsdbSettingsScreen() {
   };
 
   const handleLogout = async () => {
-    await usdbStore.logout();
-    playSound("confirm");
+    try {
+      await usdbStore.logout();
+      playSound("confirm");
+    } catch (error) {
+      console.error("Failed to log out of USDB:", error);
+    }
   };
 
   const menuItems = createMemo((): MenuItem[] => {

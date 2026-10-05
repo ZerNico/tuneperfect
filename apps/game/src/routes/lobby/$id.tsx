@@ -8,7 +8,7 @@ export const Route = createFileRoute("/lobby/$id")({
   beforeLoad: async ({ context, params }) => {
     const userId = params.id;
 
-    const lobby = await context.queryClient.ensureQueryData(lobbyQueryOptions());
+    const lobby = await context.queryClient.ensureQueryData(lobbyQueryOptions()).catch(() => null);
 
     if (!lobby) {
       throw redirect({ to: "/lobby" });

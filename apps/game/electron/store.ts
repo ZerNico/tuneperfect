@@ -17,6 +17,9 @@ export class JsonStores {
   readonly #dir: string;
   readonly #cache = new Map<string, StoreData | null>();
   readonly #pendingWrites = new Map<string, NodeJS.Timeout>();
+  /** The last write per file; the next one waits for it, so two writes never overlap. */
+  readonly #writing = new Map<string, Promise<void>>();
+  #tmpCounter = 0;
 
   constructor(dir: string) {
     this.#dir = dir;
@@ -49,7 +52,11 @@ export class JsonStores {
       file,
       setTimeout(() => {
         this.#pendingWrites.delete(file);
-        this.#writeFile(file, data).catch((error: unknown) => console.error(`Failed to write store ${file}:`, error));
+        const previous = this.#writing.get(file) ?? Promise.resolve();
+        const writing = previous
+          .then(() => this.#writeFile(file, data))
+          .catch((error: unknown) => console.error(`Failed to write store ${file}:`, error));
+        this.#writing.set(file, writing);
       }, WRITE_DELAY_MS),
     );
   }
@@ -62,8 +69,9 @@ export class JsonStores {
       if (!data) continue;
       const filePath = this.#path(file);
       fs.mkdirSync(this.#dir, { recursive: true });
-      fs.writeFileSync(`${filePath}.tmp`, JSON.stringify(data, null, 2));
-      fs.renameSync(`${filePath}.tmp`, filePath);
+      const tmp = this.#tmpPath(filePath);
+      fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+      fs.renameSync(tmp, filePath);
     }
     this.#pendingWrites.clear();
   }
@@ -76,7 +84,13 @@ export class JsonStores {
   async #writeFile(file: string, data: StoreData): Promise<void> {
     const filePath = this.#path(file);
     await fsp.mkdir(this.#dir, { recursive: true });
-    await fsp.writeFile(`${filePath}.tmp`, JSON.stringify(data, null, 2));
-    await fsp.rename(`${filePath}.tmp`, filePath);
+    const tmp = this.#tmpPath(filePath);
+    await fsp.writeFile(tmp, JSON.stringify(data, null, 2));
+    await fsp.rename(tmp, filePath);
+  }
+
+  /** A temp file of its own per write, so an async write and the quit flush can't clash. */
+  #tmpPath(filePath: string): string {
+    return `${filePath}.${process.pid}-${this.#tmpCounter++}.tmp`;
   }
 }
