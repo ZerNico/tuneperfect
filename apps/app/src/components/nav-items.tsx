@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/solid-query";
-import { Link, type LinkProps } from "@tanstack/solid-router";
-import { Show, type Component, type JSX } from "solid-js";
+import { Link, type LinkProps, useLocation } from "@tanstack/solid-router";
+import { type Component, For, type JSX } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import IconUser from "~icons/lucide/user";
-import IconUserPlus from "~icons/lucide/user-plus";
-import IconUsers from "~icons/lucide/users";
-import IconUsersRound from "~icons/lucide/users-round";
+import IconMicrophone from "~icons/ph/microphone-stage-fill";
+import IconUserCircle from "~icons/ph/user-circle-fill";
+import IconUsersThree from "~icons/ph/users-three-fill";
 
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
@@ -14,36 +13,49 @@ interface NavItemsProps {
   class?: string;
 }
 
+interface Tab {
+  to: LinkProps["to"];
+  label: () => string;
+  icon: Component<{ class?: string }>;
+  /** Also active on these sub-pages, so the tab stays marked deeper in the section. */
+  matches: (pathname: string) => boolean;
+}
+
 export default function NavItems(props: NavItemsProps) {
   const sessionQuery = useQuery(() => sessionQueryOptions());
+  const location = useLocation();
+
+  const tabs = (): Tab[] => [
+    {
+      // The lobby tab leads to joining while you're not in one.
+      to: sessionQuery.data?.lobbyId ? "/" : "/join",
+      label: () => t("nav.lobby"),
+      icon: IconMicrophone,
+      matches: (path) => path === "/" || path === "/songs" || path.startsWith("/join"),
+    },
+    {
+      to: "/clubs",
+      label: () => t("nav.clubs"),
+      icon: IconUsersThree,
+      matches: (path) => path.startsWith("/clubs"),
+    },
+    {
+      to: "/edit-profile",
+      label: () => t("nav.profile"),
+      icon: IconUserCircle,
+      matches: (path) => path === "/edit-profile" || path === "/change-password",
+    },
+  ];
 
   return (
-    <nav
-      class="grid place-items-center"
-      style={{ "grid-auto-flow": "column", "grid-auto-columns": "1fr" }}
-      classList={{
-        [props.class || ""]: true,
-      }}
-    >
-      <NavItem to="/clubs" icon={IconUsersRound}>
-        {t("nav.clubs")}
-      </NavItem>
-      <Show
-        when={sessionQuery.data?.lobbyId !== null}
-        fallback={
-          <NavItem to="/join" icon={IconUserPlus}>
-            {t("nav.join")}
+    <nav class={`grid auto-cols-fr grid-flow-col ${props.class ?? ""}`}>
+      <For each={tabs()}>
+        {(tab) => (
+          <NavItem to={tab.to} icon={tab.icon} active={tab.matches(location().pathname)}>
+            {tab.label()}
           </NavItem>
-        }
-      >
-        <NavItem to="/" icon={IconUsers}>
-          {t("nav.lobby")}
-        </NavItem>
-      </Show>
-
-      <NavItem to="/edit-profile" icon={IconUser}>
-        {t("nav.profile")}
-      </NavItem>
+        )}
+      </For>
     </nav>
   );
 }
@@ -51,28 +63,34 @@ export default function NavItems(props: NavItemsProps) {
 interface NavItemProps {
   to: LinkProps["to"];
   icon: Component<{ class?: string }>;
+  active: boolean;
   children: JSX.Element;
 }
 
 function NavItem(props: NavItemProps) {
   return (
-    <Link draggable={false} to={props.to} class="relative w-full rounded-md px-3 select-none hover:bg-white/10">
-      {({ isActive }) => (
-        <>
-          <div class="flex flex-col items-center py-2 break-keep whitespace-nowrap md:flex-row md:gap-2">
-            <Dynamic component={props.icon} />
-            {props.children}
-          </div>
-          <div
-            class="absolute right-0 bottom-0 left-0 px-3 transition-opacity"
-            classList={{
-              "opacity-0": !isActive,
-            }}
-          >
-            <div class="h-1 w-full rounded-full bg-white" />
-          </div>
-        </>
-      )}
+    <Link
+      draggable={false}
+      to={props.to}
+      aria-current={props.active ? "page" : undefined}
+      class="group flex flex-col items-center gap-1 px-2 py-1 select-none md:flex-row md:gap-2"
+    >
+      <span
+        class="flex h-8 w-14 items-center justify-center rounded-[10px] text-[22px] transition-colors md:h-9 md:w-auto md:gap-2 md:px-3 md:text-xl"
+        classList={{
+          "gradient-accent text-white": props.active,
+          "text-white/45 group-hover:text-white/80": !props.active,
+        }}
+      >
+        <Dynamic component={props.icon} />
+        <span class="hidden text-base font-bold md:inline">{props.children}</span>
+      </span>
+      <span
+        class="text-[11px] font-bold whitespace-nowrap md:hidden"
+        classList={{ "text-white": props.active, "text-white/45": !props.active }}
+      >
+        {props.children}
+      </span>
     </Link>
   );
 }

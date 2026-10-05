@@ -1,106 +1,69 @@
-import { safe } from "@orpc/client";
 import { createQuery } from "@tanstack/solid-query";
-import { useNavigate } from "@tanstack/solid-router";
+import { Link } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
 import IconEnUs from "~icons/circle-flags/en-us";
-import IconBan from "~icons/lucide/ban";
-import IconEarth from "~icons/lucide/earth";
-import IconLogOut from "~icons/lucide/log-out";
-import IconUser from "~icons/lucide/user";
+import IconEarth from "~icons/ph/globe-bold";
 
+import { useScrolled } from "~/hooks/use-scrolled";
 import { sessionQueryOptions } from "~/lib/auth";
 import { setLocale, t } from "~/lib/i18n";
-import { client } from "~/lib/orpc";
-import { notify } from "~/lib/toast";
-import { tryCatch } from "~/lib/utils/try-catch";
-import { queryClient } from "~/main";
+import { HEADER_HEIGHT, stuckBarHeight } from "~/lib/top-bar";
 
 import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
 export default function Header() {
   const sessionQuery = createQuery(() => sessionQueryOptions());
-
-  const navigate = useNavigate();
-
-  const logout = async () => {
-    const [error, _data, _isDefined] = await safe(client.auth.signOut.call());
-
-    if (error) {
-      notify({
-        message: t("error.unknown"),
-        intent: "error",
-      });
-
-      return;
-    }
-
-    await queryClient.resetQueries();
-    await navigate({ to: "/sign-in" });
-  };
-
-  const leaveLobby = async () => {
-    const [error, _data] = await tryCatch(client.lobby.leaveLobby.call());
-
-    if (error) {
-      notify({
-        message: t("error.unknown"),
-        intent: "error",
-      });
-      return;
-    }
-
-    await queryClient.invalidateQueries(sessionQueryOptions());
-    await queryClient.invalidateQueries(client.lobby.currentLobby.queryOptions());
-    await navigate({ to: "/join" });
-  };
+  // Transparent at the top (the aurora shows through), a solid bar once content scrolls under it.
+  const scrolled = useScrolled();
 
   return (
     <>
       <div class="h-16" />
-      <header
-        class="fixed top-0 right-0 left-0 z-10 border-b border-white/10 bg-[#203141]/60 backdrop-blur-lg"
-        style={{ "margin-right": "var(--scrollbar-width, 0px)" }}
-      >
+      {/*
+        One backdrop for the header and a bar stuck under it (see top-bar.ts), between the page (below) and
+        the stuck bar and header (above). It fades as a whole; when going back to the top it shrinks only
+        once faded out, so it never splits.
+      */}
+      <div
+        aria-hidden="true"
+        class="pointer-events-none fixed top-0 right-0 left-0 z-5 bar-backdrop"
+        style={{
+          height: `${HEADER_HEIGHT + stuckBarHeight()}px`,
+          opacity: scrolled() ? 1 : 0,
+          transition: scrolled() ? "opacity 300ms" : "opacity 300ms, height 0s 300ms",
+          "margin-right": "var(--scrollbar-width, 0px)",
+        }}
+      />
+      <header class="fixed top-0 right-0 left-0 z-10" style={{ "margin-right": "var(--scrollbar-width, 0px)" }}>
         <div class="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center justify-between gap-2 px-4">
           <div>
-            <span class="text-lg font-bold">{t("header.appName")}</span>
+            <span class="text-xl font-black tracking-tight">{t("header.appName")}</span>
           </div>
           <div class="flex grow justify-center">
-            <Show when={sessionQuery.data}>
+            <Show when={sessionQuery.data?.username}>
               <NavItems class="hidden md:flex" />
             </Show>
           </div>
           <div class="flex justify-end gap-2">
-            <Show when={sessionQuery.data}>
+            {/* Only once the profile is set up: before that there's no profile to go to. */}
+            <Show when={sessionQuery.data?.username ? sessionQuery.data : undefined}>
               {(session) => (
-                <DropdownMenu
-                  trigger={
-                    <DropdownMenu.Trigger class="cursor-pointer rounded-full transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-white">
-                      <Avatar class="rounded-full" user={session()} />
-                    </DropdownMenu.Trigger>
-                  }
+                <Link
+                  to="/edit-profile"
+                  aria-label={t("nav.profile")}
+                  class="rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  <DropdownMenu.Item onSelect={() => navigate({ to: "/edit-profile" })}>
-                    <IconUser /> {t("header.editProfile")}
-                  </DropdownMenu.Item>
-                  <Show when={session().lobbyId !== null}>
-                    <DropdownMenu.Item onSelect={leaveLobby}>
-                      <IconBan /> {t("header.leaveLobby")}
-                    </DropdownMenu.Item>
-                  </Show>
-                  <DropdownMenu.Item onSelect={logout}>
-                    <IconLogOut /> {t("header.signOut")}
-                  </DropdownMenu.Item>
-                </DropdownMenu>
+                  <Avatar user={session()} />
+                </Link>
               )}
             </Show>
 
             <DropdownMenu
               trigger={
-                <DropdownMenu.Trigger class="cursor-pointer rounded-full p-2 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">
-                  <IconEarth class="text-lg" />
+                <DropdownMenu.Trigger class="flex size-10 cursor-pointer items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+                  <IconEarth class="text-xl" />
                 </DropdownMenu.Trigger>
               }
             >

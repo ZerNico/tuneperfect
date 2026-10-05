@@ -1,18 +1,13 @@
-import type { ClientContext } from "@orpc/client";
-import { createORPCClient } from "@orpc/client";
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/solid-router";
-import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
-import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
-import { RPCHandler } from "@tuneperfect/webrtc/orpc/server";
-import { createHeartbeat, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { createEffect, createMemo, createRoot, onCleanup, Show } from "solid-js";
-import IconLoaderCircle from "~icons/lucide/loader-circle";
-import IconWifiOff from "~icons/lucide/wifi-off";
+import { WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
+import { type Component, createEffect, createMemo, createRoot, type JSX, Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
+import IconCircleNotch from "~icons/ph/circle-notch-bold";
+import IconWifiSlash from "~icons/ph/wifi-slash-bold";
 
 import Button from "~/components/ui/button";
-import { GameClientProvider } from "~/contexts/game-client";
+import { GameClientProvider, useGameConnection } from "~/contexts/game-client";
 import { t } from "~/lib/i18n";
-import { appRouter } from "~/lib/webrtc/router";
 import { connectionStore } from "~/stores/connection";
 
 async function waitForChannelsReady() {
@@ -59,64 +54,7 @@ export const Route = createFileRoute("/_auth/_lobby/_connected")({
 
 function ConnectedLayout() {
   const navigate = useNavigate();
-
-  let currentGameRpcLink: RPCLink<ClientContext> | null = null;
-
-  const gameClient = createMemo(() => {
-    const conn = connectionStore.connection();
-    if (!conn || !connectionStore.channelsReady()) {
-      if (currentGameRpcLink) {
-        currentGameRpcLink.close();
-        currentGameRpcLink = null;
-      }
-      return null;
-    }
-
-    if (currentGameRpcLink !== null) {
-      return createORPCClient(currentGameRpcLink) as GameClient;
-    }
-
-    currentGameRpcLink = new RPCLink({ channel: conn.gameRpcChannel });
-    return createORPCClient(currentGameRpcLink) as GameClient;
-  });
-
-  createEffect(() => {
-    const conn = connectionStore.connection();
-    if (!conn || !connectionStore.channelsReady()) return;
-
-    const handler = new RPCHandler(appRouter);
-    const cleanup = handler.upgrade(conn.appRpcChannel);
-
-    onCleanup(cleanup);
-  });
-
-  createEffect(() => {
-    const client = gameClient();
-    if (!client) return;
-
-    const heartbeat = createHeartbeat(
-      async () => {
-        await client.ping();
-      },
-      {
-        interval: WEBRTC_CONFIG.heartbeat.interval,
-        timeout: WEBRTC_CONFIG.heartbeat.timeout,
-        onFailure: () => {
-          console.warn("[WebRTC] Heartbeat failed, connection lost");
-        },
-      },
-    );
-
-    heartbeat.start();
-    onCleanup(() => heartbeat.stop());
-  });
-
-  onCleanup(() => {
-    if (currentGameRpcLink) {
-      currentGameRpcLink.close();
-      currentGameRpcLink = null;
-    }
-  });
+  const gameClient = useGameConnection();
 
   const isConnected = createMemo(() => connectionStore.connectionState() === "connected");
   const isDisconnected = createMemo(() => {
@@ -137,28 +75,28 @@ function ConnectedLayout() {
           <Outlet />
 
           <Show when={isDisconnected() && isReconnecting()}>
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8 shadow-xl">
-                <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
-                <p class="text-white">{t("songs.connecting")}</p>
-                <p class="text-sm text-white/60">{t("songs.connectionTrouble")}</p>
-              </div>
-            </div>
+            <ConnectionOverlay>
+              <ConnectionState icon={IconCircleNotch} spinning title={t("songs.connecting")}>
+                {t("songs.connectionTrouble")}
+              </ConnectionState>
+            </ConnectionOverlay>
           </Show>
 
           <Show when={hasFailed()}>
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div class="flex flex-col items-center gap-4 rounded-xl bg-slate-800 p-8 shadow-xl">
-                <IconWifiOff class="h-12 w-12 text-red-400" />
-                <p class="text-white">{t("songs.connectionFailed")}</p>
-                <Show when={connectionStore.error()}>
-                  <p class="text-sm text-red-400">{connectionStore.error()}</p>
-                </Show>
-                <Button intent="gradient" onClick={handleReturnToLobby}>
-                  {t("lobby.title")}
-                </Button>
-              </div>
-            </div>
+            <ConnectionOverlay>
+              <ConnectionState
+                icon={IconWifiSlash}
+                failed
+                title={t("songs.connectionFailed")}
+                action={
+                  <Button intent="gradient" class="w-full" onClick={handleReturnToLobby}>
+                    {t("lobby.backToLobby")}
+                  </Button>
+                }
+              >
+                {connectionStore.error()}
+              </ConnectionState>
+            </ConnectionOverlay>
           </Show>
         </GameClientProvider>
       )}
@@ -168,31 +106,64 @@ function ConnectedLayout() {
 
 function ConnectionPendingUI() {
   return (
-    <div class="container mx-auto flex w-full grow flex-col items-center justify-center p-4 sm:max-w-4xl">
-      <div class="flex flex-col items-center gap-4">
-        <IconLoaderCircle class="h-12 w-12 animate-spin text-blue-400" />
-        <p class="text-white/70">{t("songs.connecting")}</p>
-      </div>
-    </div>
+    <main class="flex grow items-center justify-center px-6">
+      <ConnectionState icon={IconCircleNotch} spinning title={t("songs.connecting")} />
+    </main>
   );
 }
 
 function ConnectionErrorUI() {
   const navigate = useNavigate();
 
-  const handleReturnToLobby = () => {
-    navigate({ to: "/" });
-  };
-
   return (
-    <div class="container mx-auto flex w-full grow flex-col items-center justify-center p-4 sm:max-w-4xl">
-      <div class="flex flex-col items-center gap-4">
-        <IconWifiOff class="h-12 w-12 text-red-400" />
-        <p class="text-white/70">{t("songs.connectionFailed")}</p>
-        <Button intent="gradient" onClick={handleReturnToLobby}>
-          {t("lobby.title")}
-        </Button>
-      </div>
+    <main class="flex grow items-center justify-center px-6">
+      <ConnectionState
+        icon={IconWifiSlash}
+        failed
+        title={t("songs.connectionFailed")}
+        action={
+          <Button intent="gradient" class="w-full" onClick={() => navigate({ to: "/" })}>
+            {t("lobby.backToLobby")}
+          </Button>
+        }
+      />
+    </main>
+  );
+}
+
+/** Dims the page and shows a state card over it, like a dialog. */
+function ConnectionOverlay(props: { children: JSX.Element }) {
+  return (
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+      <div class="w-full max-w-sm rounded-[20px] surface-raised p-6">{props.children}</div>
+    </div>
+  );
+}
+
+/** Connecting / connection lost: an icon badge, a title, an optional explanation and action. */
+function ConnectionState(props: {
+  icon: Component<{ class?: string }>;
+  title: JSX.Element;
+  children?: JSX.Element;
+  action?: JSX.Element;
+  spinning?: boolean;
+  failed?: boolean;
+}) {
+  return (
+    <div class="flex w-full max-w-sm flex-col items-center gap-3 text-center">
+      <span
+        class="mb-1 flex size-14 items-center justify-center rounded-[16px] text-3xl"
+        classList={{ "gradient-accent shadow-crisp": !props.failed, "bg-red-500/20 text-red-300": props.failed }}
+      >
+        <Dynamic component={props.icon} class={props.spinning ? "animate-spin" : undefined} />
+      </span>
+      <h2 class="text-xl font-bold">{props.title}</h2>
+      <Show when={props.children}>
+        <p class="text-white/60">{props.children}</p>
+      </Show>
+      <Show when={props.action}>
+        <div class="mt-2 w-full">{props.action}</div>
+      </Show>
     </div>
   );
 }

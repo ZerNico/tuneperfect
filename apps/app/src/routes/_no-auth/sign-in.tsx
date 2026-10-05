@@ -1,14 +1,17 @@
 import { safe } from "@orpc/client";
 import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
-import { onMount } from "solid-js";
+import { onMount, Show } from "solid-js";
 import { joinURL } from "ufo";
 import * as v from "valibot";
+import IconCheckCircle from "~icons/ph/check-circle-fill";
+import IconMicrophone from "~icons/ph/microphone-stage-fill";
 
+import AuthScreen from "~/components/auth-screen";
 import DiscordLogin from "~/components/discord-login";
 import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
-import Card from "~/components/ui/card";
+import Divider from "~/components/ui/divider";
 import Input from "~/components/ui/input";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
@@ -20,6 +23,9 @@ export const Route = createFileRoute("/_no-auth/sign-in")({
   validateSearch: v.object({
     redirect: v.optional(v.string()),
     error: v.optional(v.string()),
+    /** Set by the email verification link, together with the address. The router parses `1` as a number. */
+    verified: v.optional(v.pipe(v.unknown(), v.transform(Boolean))),
+    email: v.optional(v.string()),
   }),
 });
 
@@ -48,7 +54,7 @@ function SignInComponent() {
 
   const form = createForm(() => ({
     defaultValues: {
-      email: "",
+      email: search().email ?? "",
       password: "",
     },
     onSubmit: async ({ value }) => {
@@ -71,6 +77,7 @@ function SignInComponent() {
           if (error.code === "EMAIL_NOT_VERIFIED") {
             navigate({
               to: "/verify-email",
+              search: { email: value.email, redirect: search().redirect },
             });
             return;
           }
@@ -96,87 +103,89 @@ function SignInComponent() {
   }));
 
   return (
-    <div class="flex grow flex-col items-center justify-center p-2">
-      <Card class="flex w-100 max-w-full flex-col gap-4">
-        <h1 class="text-xl font-semibold">{t("signIn.title")}</h1>
-        <form
-          class="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-        >
-          <form.Field name="email">
-            {(field) => (
-              <Input
-                label={t("signIn.email")}
-                name={field().name}
-                value={field().state.value}
-                onBlur={field().handleBlur}
-                onInput={(e) => field().handleChange(e.currentTarget.value)}
-                errorMessage={field().state.meta.errors?.[0]?.message}
-              />
-            )}
-          </form.Field>
-          <form.Field name="password">
-            {(field) => (
-              <Input
-                label={t("signIn.password")}
-                name={field().name}
-                value={field().state.value}
-                onBlur={field().handleBlur}
-                onInput={(e) => field().handleChange(e.currentTarget.value)}
-                type="password"
-                errorMessage={field().state.meta.errors?.[0]?.message}
-              />
-            )}
-          </form.Field>
+    <AuthScreen title={t("signIn.title")} icon={IconMicrophone}>
+      <Show when={search().verified}>
+        <output class="flex items-center gap-2 rounded-[12px] bg-green-400/15 px-3 py-2.5 font-semibold text-green-200">
+          <IconCheckCircle class="shrink-0 text-lg text-green-400" />
+          {t("signIn.emailVerified")}
+        </output>
+      </Show>
+      <form
+        class="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <form.Field name="email">
+          {(field) => (
+            <Input
+              label={t("signIn.email")}
+              type="email"
+              autocomplete="email"
+              name={field().name}
+              value={field().state.value}
+              onBlur={field().handleBlur}
+              onInput={(e) => field().handleChange(e.currentTarget.value)}
+              errorMessage={field().state.meta.errors?.[0]?.message}
+            />
+          )}
+        </form.Field>
+        <form.Field name="password">
+          {(field) => (
+            <Input
+              label={t("signIn.password")}
+              autocomplete="current-password"
+              name={field().name}
+              value={field().state.value}
+              onBlur={field().handleBlur}
+              onInput={(e) => field().handleChange(e.currentTarget.value)}
+              type="password"
+              errorMessage={field().state.meta.errors?.[0]?.message}
+            />
+          )}
+        </form.Field>
 
-          <div class="flex items-center justify-between">
-            <Link to="/forgot-password" class="text-sm text-slate-600 hover:text-slate-800">
-              {t("signIn.forgotPassword")}
-            </Link>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <form.Subscribe
-              selector={(state) => ({
-                canSubmit: state.canSubmit,
-                isSubmitting: state.isSubmitting,
-              })}
-            >
-              {(state) => (
-                <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
-                  {t("signIn.signIn")}
-                </Button>
-              )}
-            </form.Subscribe>
-          </div>
-        </form>
-        <div class="flex items-center gap-2 text-slate-400">
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
-          {t("signIn.or")}
-          <div class="h-0.5 flex-1 rounded-full bg-slate-400" />
-        </div>
-        <div class="flex flex-wrap gap-4">
-          <DiscordLogin redirect={absoluteRedirect()} />
-          <GoogleLogin redirect={absoluteRedirect()} />
-        </div>
-
-        <p class="text-sm text-slate-500">
-          {t("signIn.noAccount")}{" "}
-          <Link
-            to="/sign-up"
-            search={{
-              redirect: search().redirect,
-            }}
-            class="text-slate-800"
-          >
-            {t("signIn.signUp")}
+        <div class="flex items-center justify-between">
+          <Link to="/forgot-password" class="text-sm text-white/60 hover:text-white">
+            {t("signIn.forgotPassword")}
           </Link>
-        </p>
-      </Card>
-    </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <form.Subscribe
+            selector={(state) => ({
+              canSubmit: state.canSubmit,
+              isSubmitting: state.isSubmitting,
+            })}
+          >
+            {(state) => (
+              <Button type="submit" class="mt-4" intent="gradient" loading={state().isSubmitting}>
+                {t("signIn.signIn")}
+              </Button>
+            )}
+          </form.Subscribe>
+        </div>
+      </form>
+      <Divider>{t("signIn.or")}</Divider>
+      <div class="flex flex-wrap gap-4">
+        <DiscordLogin redirect={absoluteRedirect()} />
+        <GoogleLogin redirect={absoluteRedirect()} />
+      </div>
+
+      <p class="text-sm text-white/60">
+        {t("signIn.noAccount")}{" "}
+        <Link
+          to="/sign-up"
+          search={{
+            redirect: search().redirect,
+          }}
+          class="text-white"
+        >
+          {t("signIn.signUp")}
+        </Link>
+      </p>
+    </AuthScreen>
   );
 }
