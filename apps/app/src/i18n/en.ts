@@ -65,6 +65,8 @@ const en = {
     save: "Save",
     cancel: "Cancel",
     confirm: "Confirm",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     back: "Back",
   },
   verifyEmail: {
@@ -229,6 +231,7 @@ const en = {
     title: "Songs",
     connecting: "Connecting to the game…",
     connectionFailed: "Couldn't connect to the game",
+    connectionFailedHint: "Make sure the game is still open, then join the lobby again.",
     connectionTrouble: "Having trouble connecting to the game. Will keep trying…",
     retry: "Retry",
     refresh: "Reload songs",

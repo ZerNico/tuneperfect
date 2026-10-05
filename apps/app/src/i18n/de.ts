@@ -67,6 +67,8 @@ const de: Dict = {
     save: "Speichern",
     cancel: "Abbrechen",
     confirm: "Bestätigen",
+    showPassword: "Passwort anzeigen",
+    hidePassword: "Passwort verbergen",
     back: "Zurück",
   },
   verifyEmail: {
@@ -232,6 +234,7 @@ const de: Dict = {
     title: "Songs",
     connecting: "Verbinde mit dem Spiel…",
     connectionFailed: "Verbindung zum Spiel fehlgeschlagen",
+    connectionFailedHint: "Prüfe, ob das Spiel noch offen ist, und tritt der Lobby dann erneut bei.",
     connectionTrouble: "Verbindungsprobleme zum Spiel. Versuche weiter…",
     retry: "Erneut versuchen",
     refresh: "Songs neu laden",

@@ -2,6 +2,8 @@ import { createSignal, type JSX, Show } from "solid-js";
 import Eye from "~icons/ph/eye-bold";
 import EyeOff from "~icons/ph/eye-slash-bold";
 
+import { t } from "~/lib/i18n";
+
 interface InputProps {
   class?: string;
   inputClass?: string;
@@ -64,7 +66,7 @@ export default function Input(props: InputProps) {
             class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             type="button"
             onClick={() => setShowPassword(!showPassword())}
-            aria-label={showPassword() ? "Hide password" : "Show password"}
+            aria-label={showPassword() ? t("common.hidePassword") : t("common.showPassword")}
           >
             <Show when={showPassword()} fallback={<Eye />}>
               <EyeOff />
