@@ -18,10 +18,19 @@ export const listSongsContract = oc.output(v.array(SongSummarySchema));
 
 /** A small JPEG thumbnail of a song's cover as a data URL, or null if it has none. */
 export const songCoverContract = oc
-  .input(v.object({ hash: v.string() }))
+  .input(v.object({ hash: v.pipe(v.string(), v.maxLength(64)) }))
   .output(v.object({ dataUrl: v.nullable(v.string()) }));
 
-export const pingContract = oc.output(v.object({ timestamp: v.number() }));
+export const pingContract = oc.output(
+  v.object({
+    timestamp: v.number(),
+    /**
+     * Changes whenever the game's song library does, so phones only fetch the song list again when
+     * it changed. Optional: older games don't send it.
+     */
+    libraryVersion: v.optional(v.string()),
+  }),
+);
 
 export const gameContract = {
   ping: pingContract,

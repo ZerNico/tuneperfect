@@ -24,7 +24,7 @@ import { songsQueryOptions } from "~/lib/game-query";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
-import { connectionStore, startConnection, stopConnection } from "~/stores/connection";
+import { connectionStore } from "~/stores/connection";
 
 export const Route = createFileRoute("/_auth/_lobby/")({
   component: LobbyComponent,
@@ -89,16 +89,7 @@ function LobbyComponent() {
 }
 
 function ConnectionStatus() {
-  const session = useQuery(() => sessionQueryOptions());
-  const state = () => connectionStore.connectionState();
-  const connected = () => state() === "connected" && connectionStore.channelsReady();
-
-  const retry = () => {
-    const userId = session.data?.id;
-    if (!userId) return;
-    stopConnection();
-    startConnection(userId);
-  };
+  const status = () => connectionStore.status();
 
   return (
     <Switch
@@ -109,20 +100,20 @@ function ConnectionStatus() {
         </span>
       }
     >
-      <Match when={connected()}>
+      <Match when={status() === "connected"}>
         <span class="flex items-center gap-1.5">
           <IconCheckCircle class="text-green-400" />
           {t("lobby.connected")}
         </span>
       </Match>
-      <Match when={state() === "failed"}>
+      <Match when={status() === "failed"}>
         <span class="flex items-center gap-1.5 text-red-300">
           <IconWarningCircle />
           {t("songs.connectionFailed")}
           <button
             type="button"
             class="ml-1 flex cursor-pointer items-center gap-1 rounded-[8px] bg-white/10 px-2 py-1 text-sm font-bold text-white hover:bg-white/15"
-            onClick={retry}
+            onClick={() => connectionStore.retryConnection()}
           >
             <IconArrowClockwise />
             {t("songs.retry")}

@@ -1,7 +1,7 @@
 import { createEventListener } from "@solid-primitives/event-listener";
 import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/solid-router";
-import { createEffect, onCleanup } from "solid-js";
+import { createEffect, createMemo, on, onCleanup } from "solid-js";
 import * as v from "valibot";
 
 import { sessionQueryOptions } from "~/lib/auth";
@@ -42,16 +42,23 @@ function AuthLayout() {
     navigate({ to: "/sign-in", search: { redirect: location.pathname } });
   });
 
-  createEffect(() => {
+  // Only a different user or lobby changes the connection, not every session refetch.
+  const lobbyMember = createMemo(() => {
     const userId = session.data?.id;
-    const lobbyId = session.data?.lobbyId;
-
-    if (userId && lobbyId) {
-      startConnection(userId);
-    } else {
-      stopConnection();
-    }
+    return userId && session.data?.lobbyId ? `${userId}\n${session.data.lobbyId}` : null;
   });
+  createEffect(
+    on(lobbyMember, (member, previous) => {
+      const userId = session.data?.id;
+      // A different lobby is a different game: start over (the first run continues `beforeLoad`'s start).
+      if (previous && previous !== member) stopConnection();
+      if (member && userId) {
+        startConnection(userId);
+      } else {
+        stopConnection();
+      }
+    }),
+  );
 
   onCleanup(() => {
     stopConnection();

@@ -15,7 +15,6 @@ import { ... } from "@tuneperfect/webrtc/orpc/server";    // RPC handler for ser
 import { ... } from "@tuneperfect/webrtc/utils";          // Config, helpers, types
 import { ... } from "@tuneperfect/webrtc/contracts";       // All contracts
 import { ... } from "@tuneperfect/webrtc/contracts/game";  // Game-specific contracts
-import { ... } from "@tuneperfect/webrtc/contracts/app";   // App-specific contracts
 ```
 
 ## Patterns & Conventions
@@ -26,8 +25,7 @@ import { ... } from "@tuneperfect/webrtc/contracts/app";   // App-specific contr
 src/
 ├── contracts/            # oRPC contract definitions (type-only, no implementation)
 │   ├── index.ts          # Re-exports
-│   ├── game.ts           # Contracts for game → app communication
-│   └── app.ts            # Contracts for app → game communication
+│   └── game.ts           # What the game serves to phones (songs, covers, ping)
 ├── orpc/                 # oRPC-over-WebRTC DataChannel transport
 │   ├── index.ts          # Re-exports
 │   ├── rpc-link.ts       # Client-side oRPC link (sends via DataChannel)
@@ -40,6 +38,7 @@ src/
     ├── config.ts         # WebRTC config constants (ICE, reconnect, heartbeat)
     ├── types.ts          # Shared types
     ├── ice-buffer.ts     # ICE candidate buffering
+    ├── ice-servers.ts    # Loads STUN/TURN servers once, with a fallback
     ├── heartbeat.ts      # Connection heartbeat
     └── channel-helpers.ts # DataChannel helper functions
 ```
@@ -53,16 +52,16 @@ src/
 
 ### How it connects
 
-1. **Game** (host) creates `RTCPeerConnection`, opens DataChannels, attaches `rpc-handler`
-2. **App** (guest) connects as peer, uses `rpc-link` to call procedures over DataChannel
-3. Signaling (offer/answer/ICE) goes through the API's signaling endpoints
+1. **App** (guest, a phone) creates the `RTCPeerConnection` and the `game-rpc` DataChannel, sends the offer and calls the game with `rpc-link`
+2. **Game** (host) answers and serves `gameContract` on that channel with `rpc-handler`
+3. Signaling (offer/answer/ICE) goes through the API's signaling endpoints. Every signal of a phone's connection attempt carries the same `session` id, which the game echoes: signals of an older attempt are ignored, and a second offer with the same session is an ICE restart on the existing connection
+4. The phone reconnects by itself (`apps/app/src/stores/connection.ts`): an ICE restart first when the connection is `disconnected`, a new connection when it failed, the heartbeat stopped answering or an offer got no answer within `connectionTimeout`
 
 ## Key Files
 
 | File                      | Purpose                                       |
 | ------------------------- | --------------------------------------------- |
 | `src/contracts/game.ts`   | Game contracts (songs list, ping)             |
-| `src/contracts/app.ts`    | App contracts                                 |
 | `src/orpc/rpc-link.ts`    | oRPC client link over DataChannel             |
 | `src/orpc/rpc-handler.ts` | oRPC server handler over DataChannel          |
 | `src/utils/config.ts`     | WebRTC constants (timeouts, reconnect policy) |
@@ -76,6 +75,9 @@ rg -n "WEBRTC_CONFIG" src/utils/config.ts                               # find c
 ```
 
 ## Common Gotchas
+
+- Released games and the deployed app talk to each other across versions: keep contract and signal changes backwards compatible (new fields optional, old channels ignored rather than required)
+- `bun test` here covers chunking (`src/orpc/data-channel.test.ts`)
 
 - This package has **no build step** — consumers import `.ts` files directly via workspace exports
 - Contracts must stay framework-agnostic (no SolidJS/React imports)

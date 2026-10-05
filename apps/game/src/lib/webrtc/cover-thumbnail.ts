@@ -9,16 +9,36 @@ const cache = new Map<string, Promise<string | null>>();
 
 let worker: Worker | undefined;
 let nextId = 0;
-const pending = new Map<number, (dataUrl: string | null) => void>();
+const pending = new Map<number, { coverUrl: string; resolve: (dataUrl: string | null) => void }>();
+
+/**
+ * The worker failed to load or crashed (e.g. out of memory on a huge image): its requests would never
+ * be answered. They resolve without a cover and leave the cache, so asking again retries, and the next
+ * request starts a new worker.
+ */
+function resetWorker() {
+  worker?.terminate();
+  worker = undefined;
+  for (const { coverUrl, resolve } of pending.values()) {
+    cache.delete(coverUrl);
+    resolve(null);
+  }
+  pending.clear();
+}
 
 /** Started on the first request, so the game pays nothing until a phone browses songs. */
 function getWorker() {
   if (!worker) {
     worker = new Worker(new URL("./cover-thumbnail.worker.ts", import.meta.url), { type: "module" });
     worker.addEventListener("message", (event: MessageEvent<CoverThumbnailResponse>) => {
-      pending.get(event.data.id)?.(event.data.dataUrl);
+      pending.get(event.data.id)?.resolve(event.data.dataUrl);
       pending.delete(event.data.id);
     });
+    worker.addEventListener("error", (event) => {
+      console.error("[WebRTC] Cover thumbnail worker failed:", event.message);
+      resetWorker();
+    });
+    worker.addEventListener("messageerror", resetWorker);
   }
   return worker;
 }
@@ -36,7 +56,7 @@ export function coverThumbnail(coverUrl: string): Promise<string | null> {
   } else {
     thumbnail = new Promise((resolve) => {
       const id = nextId++;
-      pending.set(id, resolve);
+      pending.set(id, { coverUrl, resolve });
       // oxlint-disable-next-line unicorn/require-post-message-target-origin -- worker messages have no target origin
       getWorker().postMessage({ id, coverUrl } satisfies CoverThumbnailRequest);
     });

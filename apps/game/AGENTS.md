@@ -111,6 +111,8 @@ resources/icons/          # App icons for electron-builder
 - Connection logic: `src/lib/webrtc/host-connection.ts`
 - oRPC-over-WebRTC router: `src/lib/webrtc/router.ts`
 - Contracts defined in `@tuneperfect/webrtc` package
+- Signaling and per-phone connections: `src/stores/webrtc.tsx`. Phones send the offer; each attempt has a `session` id that the game echoes, and a second offer with the same session is an ICE restart on the existing connection (see `packages/webrtc/AGENTS.md`)
+- Released games must keep working with the deployed phone app and API: new signal or contract fields stay optional
 
 ## Key Files
 

@@ -87,6 +87,37 @@ describe("sendSignal as guest (access token)", () => {
     expect(channel).toBe(`lobby:${LOBBY_ID}:host`);
     expect((published as { from: string }).from).toBe(user.id);
   });
+
+  it("passes the connection attempt's session through", async () => {
+    const user = makeUser({ lobbyId: LOBBY_ID });
+    spyOn(userService, "getUserById").mockResolvedValue(user);
+    const publishSpy = spyOn(signalingPublisher, "publish").mockReturnValue(undefined);
+
+    await call(
+      signalingRouter.sendSignal,
+      { signal: { type: "ice-candidate", candidate: "{}", from: user.id, session: "attempt-1" } },
+      { context: await authedContext(user) },
+    );
+
+    const [, published] = publishSpy.mock.calls[0] ?? [];
+    expect((published as { session?: string }).session).toBe("attempt-1");
+  });
+
+  it("rejects an oversized SDP", async () => {
+    const user = makeUser({ lobbyId: LOBBY_ID });
+    spyOn(userService, "getUserById").mockResolvedValue(user);
+    const publishSpy = spyOn(signalingPublisher, "publish");
+
+    await expectORPCError(
+      call(
+        signalingRouter.sendSignal,
+        { signal: { type: "offer", sdp: "x".repeat(70_000), from: user.id } },
+        { context: await authedContext(user) },
+      ),
+      "BAD_REQUEST",
+    );
+    expect(publishSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe("sendSignal authentication", () => {

@@ -1,9 +1,6 @@
 import {
-  type ChannelTracker,
-  createChannelTracker,
   createIceCandidateBuffer,
   createOrderedDataChannel,
-  type IceCandidateBuffer,
   parseIceCandidate,
   processBufferedCandidates,
   serializeIceCandidate,
@@ -14,68 +11,36 @@ import {
 export interface GuestConnectionCallbacks {
   onIceCandidate: (candidate: string) => void;
   onConnectionStateChange: (state: RTCPeerConnectionState) => void;
-  onChannelsReady: () => void;
-  onChannelsClosed: () => void;
+  onChannelOpen: () => void;
+  onChannelClose: () => void;
 }
 
 export interface GuestConnection {
   pc: RTCPeerConnection;
   gameRpcChannel: RTCDataChannel;
-  appRpcChannel: RTCDataChannel;
-  channelsReady: () => boolean;
-  createOffer: () => Promise<string>;
+  /** An offer for the game; with `iceRestart`, one that finds a new network path for this same connection. */
+  createOffer: (options?: { iceRestart?: boolean }) => Promise<string>;
   setAnswer: (answerSdp: string) => Promise<void>;
   addIceCandidate: (candidate: string) => Promise<void>;
   close: () => void;
 }
 
+/** The phone's side of the connection to the game: it opens the data channel the game serves its calls on. */
 export function createGuestConnection(
   iceServers: RTCIceServer[],
   callbacks: GuestConnectionCallbacks,
 ): GuestConnection {
   const pc = new RTCPeerConnection({ iceServers });
-
-  const iceBuffer: IceCandidateBuffer = createIceCandidateBuffer();
-
-  let gameRpcChannelCleanup: (() => void) | null = null;
-  let appRpcChannelCleanup: (() => void) | null = null;
-
-  const channelTracker: ChannelTracker = createChannelTracker(
-    [WEBRTC_CONFIG.channels.gameRpc, WEBRTC_CONFIG.channels.appRpc],
-    () => callbacks.onChannelsReady(),
-  );
+  const iceBuffer = createIceCandidateBuffer();
 
   const gameRpcChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.gameRpc);
-
-  const gameRpcSetup = setupDataChannelHandlers(gameRpcChannel, {
-    onOpen: () => {
-      channelTracker.markOpen(WEBRTC_CONFIG.channels.gameRpc);
-    },
-    onClose: () => {
-      channelTracker.markClosed(WEBRTC_CONFIG.channels.gameRpc);
-      callbacks.onChannelsClosed();
-    },
+  const channelSetup = setupDataChannelHandlers(gameRpcChannel, {
+    onOpen: () => callbacks.onChannelOpen(),
+    onClose: () => callbacks.onChannelClose(),
     onError: (event) => {
       console.error("[WebRTC] game-rpc channel error:", event);
     },
   });
-  gameRpcChannelCleanup = gameRpcSetup.cleanup;
-
-  const appRpcChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.appRpc);
-
-  const appRpcSetup = setupDataChannelHandlers(appRpcChannel, {
-    onOpen: () => {
-      channelTracker.markOpen(WEBRTC_CONFIG.channels.appRpc);
-    },
-    onClose: () => {
-      channelTracker.markClosed(WEBRTC_CONFIG.channels.appRpc);
-      callbacks.onChannelsClosed();
-    },
-    onError: (event) => {
-      console.error("[WebRTC] app-rpc channel error:", event);
-    },
-  });
-  appRpcChannelCleanup = appRpcSetup.cleanup;
 
   const handleIceCandidate = (event: RTCPeerConnectionIceEvent) => {
     if (event.candidate) {
@@ -90,8 +55,8 @@ export function createGuestConnection(
   pc.addEventListener("icecandidate", handleIceCandidate);
   pc.addEventListener("connectionstatechange", handleConnectionStateChange);
 
-  const createOffer = async (): Promise<string> => {
-    const offer = await pc.createOffer();
+  const createOffer = async (options?: { iceRestart?: boolean }): Promise<string> => {
+    const offer = await pc.createOffer({ iceRestart: options?.iceRestart ?? false });
     await pc.setLocalDescription(offer);
     if (!offer.sdp) {
       throw new Error("Failed to create offer SDP");
@@ -113,40 +78,21 @@ export function createGuestConnection(
     if (immediateCandidate === null) return;
 
     try {
-      const iceCandidate = parseIceCandidate(immediateCandidate);
-      await pc.addIceCandidate(iceCandidate);
+      await pc.addIceCandidate(parseIceCandidate(immediateCandidate));
     } catch (error) {
       console.error("[WebRTC] Failed to add ICE candidate:", error);
     }
   };
 
   const close = (): void => {
-    gameRpcChannelCleanup?.();
-    gameRpcChannelCleanup = null;
-    appRpcChannelCleanup?.();
-    appRpcChannelCleanup = null;
-
+    channelSetup.cleanup();
     pc.removeEventListener("icecandidate", handleIceCandidate);
     pc.removeEventListener("connectionstatechange", handleConnectionStateChange);
 
     gameRpcChannel.close();
-    appRpcChannel.close();
     pc.close();
-
     iceBuffer.clear();
-    channelTracker.reset();
   };
 
-  const channelsReady = () => channelTracker.allOpen;
-
-  return {
-    pc,
-    gameRpcChannel,
-    appRpcChannel,
-    channelsReady,
-    createOffer,
-    setAnswer,
-    addIceCandidate,
-    close,
-  };
+  return { pc, gameRpcChannel, createOffer, setAnswer, addIceCandidate, close };
 }
