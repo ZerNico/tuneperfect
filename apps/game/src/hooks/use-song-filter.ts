@@ -55,6 +55,9 @@ export const isDuet = (song: SongLike) => (song.voiceCount ?? 0) > 1;
 
 const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
+const defaultTokenize = MiniSearch.getDefault("tokenize") as (text: string, fieldName?: string) => string[];
+const APOSTROPHES = /['’`ʼ]/g;
+
 /** Accent-insensitive full-text index over the searchable song fields. Build it once per library. */
 export function createSongSearchIndex<T extends SongLike>(items: T[], idField: keyof T & string): MiniSearch<T> {
   const index = new MiniSearch<T>({
@@ -65,10 +68,26 @@ export function createSongSearchIndex<T extends SongLike>(items: T[], idField: k
       const value = document[fieldName as keyof T];
       return Array.isArray(value) ? value.join(" ") : (value as string | undefined);
     },
+    // "Don't" is one word ("dont"), not "don" and "t": every word of a query has to match, so a
+    // split word would make "dont stop" find nothing. Queries go through the same tokenizer.
+    tokenize: (text) => defaultTokenize(text.replace(APOSTROPHES, ""), undefined),
     processTerm: normalizeText,
   });
   index.addAll(items);
   return index;
+}
+
+/** Ids of the songs matching `query`, in `scope` (any search field but the year). */
+export function searchSongIds<T>(index: MiniSearch<T>, query: string, scope: Exclude<SearchFieldScope, "year">) {
+  const results = index.search(query, {
+    fields: scope === "all" ? undefined : [scope],
+    // Every word has to match (in any field), so "queen bohemian" narrows down instead of listing
+    // every Queen song and everything "bohemian".
+    combineWith: "AND",
+    fuzzy: 0.1,
+    prefix: true,
+  });
+  return new Set(results.map((result) => String(result.id)));
 }
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
@@ -216,12 +235,7 @@ export function useSongFilter<T extends SongLike>(options: UseSongFilterOptions<
         if (Number.isNaN(year)) return [];
         predicates.push((song) => song.year === year);
       } else {
-        const results = options.searchIndex().search(query, {
-          fields: scope === "all" ? undefined : [scope],
-          fuzzy: 0.1,
-          prefix: true,
-        });
-        const ids = new Set(results.map((result) => String(result.id)));
+        const ids = searchSongIds(options.searchIndex(), query, scope);
         predicates.push((song) => ids.has(options.getId(song)));
       }
     }
