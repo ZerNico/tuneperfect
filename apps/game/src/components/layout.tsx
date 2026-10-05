@@ -12,6 +12,8 @@ interface LayoutProps {
   background?: JSX.Element;
   /** Tints the background. Derived from the route when omitted. */
   mode?: LayoutMode;
+  /** The aurora glows; off when an opaque background covers them anyway. */
+  decoration?: boolean;
 }
 
 export type LayoutMode = "sing" | "party" | "lobby" | "settings" | "neutral";
@@ -53,7 +55,7 @@ export default function Layout(props: LayoutProps) {
         <div class="layout flex">
           <div class="@container relative flex grow overflow-hidden">
             <Suspense fallback={<div />}>
-              <Show when={props.intent !== "popup"}>
+              <Show when={props.intent !== "popup" && props.decoration !== false}>
                 <LayoutDecoration mode={mode()} />
               </Show>
               <div class="absolute inset-0 h-full w-full">{props.background}</div>
@@ -70,21 +72,26 @@ export default function Layout(props: LayoutProps) {
   );
 }
 
-/** Two aurora glows in the mode colours, drifting slowly. */
+/**
+ * Two aurora glows in the mode colours, drifting slowly. The gradient eases out on its own: a blur
+ * filter on top would cost a large GPU pass on every frame of the drift, on every menu.
+ */
 function LayoutDecoration(props: { mode: LayoutMode }) {
   const animated = () => effectsEnabled();
-  const glow = (index: 0 | 1, alpha: number) =>
-    `radial-gradient(circle, color-mix(in oklch, var(--color-${MODE_COLORS[props.mode][index]}) ${alpha}%, transparent), transparent 65%)`;
+  const glow = (index: 0 | 1, alpha: number) => {
+    const color = `var(--color-${MODE_COLORS[props.mode][index]})`;
+    return `radial-gradient(circle, color-mix(in oklch, ${color} ${alpha}%, transparent), color-mix(in oklch, ${color} ${alpha * 0.55}%, transparent) 30%, color-mix(in oklch, ${color} ${alpha * 0.18}%, transparent) 50%, transparent 70%)`;
+  };
 
   return (
     <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <div
-        class="absolute -top-[25%] -left-[10%] h-[70%] w-[55%] blur-[4cqw]"
+        class="absolute -top-[25%] -left-[10%] h-[70%] w-[55%]"
         classList={{ "animate-aurora": animated() }}
         style={{ background: glow(0, 40) }}
       />
       <div
-        class="absolute -top-[10%] -right-[15%] h-[75%] w-[60%] blur-[4cqw]"
+        class="absolute -top-[10%] -right-[15%] h-[75%] w-[60%]"
         classList={{ "animate-aurora": animated() }}
         style={{
           background: glow(1, 40),

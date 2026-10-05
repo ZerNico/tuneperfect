@@ -82,6 +82,7 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
     const gamepad = e.gamepad;
     buttonStates.set(gamepad.index, new Map());
     axisStates.set(gamepad.index, new Map());
+    syncPolling();
   };
 
   const handleGamepadDisconnected = (e: GamepadEvent) => {
@@ -89,6 +90,7 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
     buttonStates.delete(gamepad.index);
     axisStates.delete(gamepad.index);
     access(options).onDisconnect?.(gamepad.index);
+    syncPolling();
   };
 
   const updateGamepadState = () => {
@@ -157,6 +159,12 @@ export function createGamepad(options: MaybeAccessor<CreateGamepadOptions>) {
 
   makeEventListener(window, "gamepadconnected", handleGamepadConnected);
   makeEventListener(window, "gamepaddisconnected", handleGamepadDisconnected);
-  const [_running, start] = createRAF(updateGamepadState);
-  start();
+  // Only poll while a gamepad is known: Chromium reports one after its first button press
+  // (`gamepadconnected`), and a frame loop without one would keep the renderer from ever idling.
+  const [running, start, stop] = createRAF(updateGamepadState);
+  function syncPolling() {
+    if (buttonStates.size > 0 && !running()) start();
+    else if (buttonStates.size === 0 && running()) stop();
+  }
+  syncPolling();
 }

@@ -262,7 +262,7 @@ export default function ImageCrop(props: ImageCropProps) {
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-[background-color,scale] hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("in")}
               >
                 <IconPlus class="h-5 w-5 text-white" />
@@ -272,7 +272,7 @@ export default function ImageCrop(props: ImageCropProps) {
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all hover:bg-white/30 active:scale-95"
+                class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-[background-color,scale] hover:bg-white/30 active:scale-95"
                 onClick={() => handleZoomClick("out")}
               >
                 <IconMinus class="h-5 w-5 text-white" />

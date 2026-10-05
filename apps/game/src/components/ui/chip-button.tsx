@@ -25,7 +25,7 @@ export default function ChipButton(props: ChipButtonProps) {
       aria-label={props.label}
       onClick={() => props.onClick?.()}
       class={twMerge(
-        "group inline-flex h-[2.6cqw] shrink-0 items-center rounded-[0.9cqw] bg-black/25 ring-1 ring-white/10 backdrop-blur-md ring-inset",
+        "group inline-flex h-[2.6cqw] shrink-0 items-center rounded-[0.9cqw] bg-black/40 ring-1 ring-white/10 ring-inset",
         !props.static && "cursor-pointer transition-[scale,background-color] hover:bg-black/40 active:scale-95",
         props.class,
       )}

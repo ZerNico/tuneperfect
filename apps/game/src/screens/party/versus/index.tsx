@@ -420,7 +420,7 @@ function Jokers(props: { count: number; max: number; hint: JSX.Element; mirrored
           <For each={Array.from({ length: props.max }, (_, i) => i)}>
             {(i) => (
               <IconDice
-                class="text-2xl transition-all duration-300"
+                class="text-2xl transition-[color,scale,filter] duration-300"
                 classList={{ "text-white drop-shadow": i < props.count, "scale-75 text-white/20": i >= props.count }}
               />
             )}
@@ -560,26 +560,35 @@ function ReelCover(props: { song: LocalSong; emphasis: number; clickable: boolea
         "cursor-default": !props.clickable,
       }}
     >
-      <div
-        class="relative h-full w-full overflow-hidden rounded-[0.8cqw] bg-black outline-white"
-        style={{
-          transform: `translateY(${-props.emphasis * 0.6}cqw)`,
-          filter: `brightness(${0.6 + 0.4 * props.emphasis})`,
-          // Fades in as the cover reaches the centre.
-          "outline-width": `${(props.emphasis * 0.22).toFixed(3)}cqw`,
-          "outline-style": props.emphasis > 0.05 ? "solid" : "none",
-        }}
-      >
-        <Show
-          when={props.song.coverUrl}
-          fallback={
-            <div class="flex h-full w-full items-center justify-center bg-white/8">
-              <IconMusic class="text-4xl opacity-25" />
-            </div>
-          }
-        >
-          {(url) => <img class="h-full w-full object-cover" src={url()} alt={props.song.title} draggable={false} />}
-        </Show>
+      {/* Emphasis changes every frame of the spin: move and fade layers only (dark overlay instead of
+          a brightness filter, a separate outline instead of a growing one). */}
+      <div class="relative h-full w-full" style={{ transform: `translateY(${-props.emphasis * 0.6}cqw)` }}>
+        <div class="relative h-full w-full overflow-hidden rounded-[0.8cqw] bg-black">
+          <Show
+            when={props.song.coverUrl}
+            fallback={
+              <div class="flex h-full w-full items-center justify-center bg-white/8">
+                <IconMusic class="text-4xl opacity-25" />
+              </div>
+            }
+          >
+            {(url) => (
+              <img
+                class="h-full w-full object-cover"
+                src={url()}
+                alt={props.song.title}
+                draggable={false}
+                decoding="async"
+              />
+            )}
+          </Show>
+          <div class="absolute inset-0 bg-black" style={{ opacity: 0.4 * (1 - props.emphasis) }} />
+        </div>
+        {/* Fades in as the cover reaches the centre. */}
+        <div
+          class="pointer-events-none absolute inset-0 rounded-[0.8cqw] outline-[0.22cqw] outline-white outline-solid"
+          style={{ opacity: props.emphasis }}
+        />
       </div>
     </button>
   );

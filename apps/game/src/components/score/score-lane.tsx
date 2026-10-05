@@ -163,10 +163,12 @@ export default function ScoreLane(props: ScoreLaneProps) {
             class="absolute inset-0 overflow-hidden rounded-[0.8cqw] bg-black/35 transition-shadow duration-700"
             classList={{ "shadow-[0_0_2cqw_-0.6cqw_rgb(253_224_71/0.6)]": props.winner }}
           >
+            {/* Full width and slid in, like the song progress bar: the race moves it every frame,
+                and a transform doesn't re-lay out and repaint the bar each time. */}
             <div
               class="relative h-full overflow-hidden rounded-[0.8cqw]"
               style={{
-                width: `${Math.max(fill(), 3)}%`,
+                transform: `translateX(${Math.max(fill(), 3) - 100}%)`,
                 background: `linear-gradient(90deg, ${color(700)}, ${color(400)})`,
               }}
             >

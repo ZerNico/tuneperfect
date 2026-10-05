@@ -170,14 +170,19 @@ export default function PlayerSelectionScreen() {
   return (
     <Layout
       intent="secondary"
+      decoration={false}
       header={<TitleBar title={t("select.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
       background={
         <Show when={!isMedley() && songs()[0]} fallback={<div />}>
           {(song) => (
             <div class="h-full w-full bg-black">
-              <img class="h-full w-full object-cover opacity-50" src={song().coverUrl ?? ""} alt={song().title} />
-              <div class="absolute inset-0 z-1 backdrop-blur-2xl will-change-[backdrop-filter]" />
+              {/* Blurred once as an image, not re-blurred every frame by a backdrop filter on top. */}
+              <img
+                class="h-full w-full scale-110 object-cover opacity-50 blur-2xl"
+                src={song().coverUrl ?? ""}
+                alt={song().title}
+              />
             </div>
           )}
         </Show>
@@ -380,7 +385,7 @@ function PlayerSlot(props: PlayerSlotProps) {
       type="button"
       onClick={openSelectPlayerPopup}
       onMouseEnter={() => props.onMouseEnter?.()}
-      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-[1.4cqw] p-5 transition-all duration-200 ease-out"
+      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-[1.4cqw] p-5 transition-[translate,scale,opacity,filter,outline-color] duration-200 ease-out"
       classList={{
         "-translate-y-2 outline-[0.22cqw] outline-white": props.selected && !pressed(),
         "scale-95 outline-[0.22cqw] outline-white": props.selected && pressed(),

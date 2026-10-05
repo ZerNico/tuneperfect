@@ -19,7 +19,7 @@ export interface SongInfo {
 
 /** Info chip under the title: year, genre, duet, new. */
 export const CHIP =
-  "inline-flex items-center gap-[0.4cqw] rounded-[0.5cqw] px-[0.9cqw] py-[0.2cqw] text-[0.85cqw] font-bold backdrop-blur-sm";
+  "inline-flex items-center gap-[0.4cqw] rounded-[0.5cqw] px-[0.9cqw] py-[0.2cqw] text-[0.85cqw] font-bold";
 
 // "Fade through": the old text leaves first, then the new one enters. Overlapping
 // them reads as ghosting, especially when consecutive titles are similar.
@@ -116,9 +116,9 @@ export function SongTitle(props: SongTitleProps) {
               <Show when={layer.song.isNew}>
                 <span class={`gradient-sing bg-linear-to-r ${CHIP}`}>{t("sing.badge.new")}</span>
               </Show>
-              <For each={layer.song.meta}>{(value) => <span class={`bg-white/15 ${CHIP}`}>{value}</span>}</For>
+              <For each={layer.song.meta}>{(value) => <span class={`bg-white/20 ${CHIP}`}>{value}</span>}</For>
               <Show when={layer.song.duet}>
-                <span class={`bg-white/15 ${CHIP}`}>
+                <span class={`bg-white/20 ${CHIP}`}>
                   <IconDuet />
                   {t("sing.badge.duet")}
                 </span>
