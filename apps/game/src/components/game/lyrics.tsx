@@ -8,6 +8,9 @@ import type { Note } from "~/lib/ultrastar/note";
 import { getColorVar } from "~/lib/utils/color";
 import { clamp } from "~/lib/utils/math";
 
+/** Length of the lead-in bar's fading tail, in % of the space left of the words. */
+const LEAD_IN_TAIL = 30;
+
 interface LyricsProps {
   voiceIndex: number;
   /** Mic colour of the player singing this voice; white without one. */
@@ -19,24 +22,22 @@ export default function Lyrics(props: LyricsProps) {
   const game = useGame();
   const voiceTracker = createVoiceTracker(() => ({ voiceIndex: props.voiceIndex }));
 
-  const leadInPercentage = createMemo(() => {
+  // How far (in % of the bar's width) the lead-in's head is from the words: 100 three seconds before
+  // the line, 0 when it starts. Only while it can be seen, so the line doesn't restyle all song long.
+  const leadIn = createMemo(() => {
     const phrase = voiceTracker.phrase();
     const song = game.song();
     if (!phrase || !song || !game.started()) {
       return;
     }
 
-    const beat = game.beat();
     const startBeat = phrase.notes[0]?.startBeat;
     if (startBeat === undefined) {
       return;
     }
 
-    const percentage = ((beat - startBeat) * -100) / msToBeatWithoutGap(song, 3000);
-    return {
-      end: percentage,
-      start: percentage + 30,
-    };
+    const distance = ((startBeat - game.beat()) * 100) / msToBeatWithoutGap(song, 3000);
+    return distance > -LEAD_IN_TAIL && distance < 100 ? distance : undefined;
   });
 
   const lyricsColor = () => (props.color ? getColorVar(props.color, 500) : "var(--color-white)");
@@ -45,7 +46,7 @@ export default function Lyrics(props: LyricsProps) {
 
   return (
     <div
-      class="w-full overflow-hidden bg-black/65 backdrop-blur-md transition-opacity duration-500"
+      class="w-full overflow-hidden bg-black/70 transition-opacity duration-500"
       classList={{
         "opacity-0": !voiceTracker.phrase(),
         "rounded-b-2xl pt-[1.2cqh] pb-[0.8cqh]": props.position === "top" && !isCompact(),
@@ -74,17 +75,18 @@ export default function Lyrics(props: LyricsProps) {
               class="flex items-center pr-[0.4em] leading-snug"
               classList={{ "text-[2.4cqw]": !isCompact(), "text-[1.9cqw]": isCompact() }}
             >
-              <Show when={leadInPercentage()}>
-                {(percentage) => (
+              <Show when={leadIn() !== undefined}>
+                {/* A fixed gradient tail that slides in with a transform, so each frame only composites. */}
+                <div class="relative h-[0.8em] w-full overflow-hidden">
                   <div
+                    class="absolute inset-y-0 right-0"
                     style={{
-                      "background-image": `linear-gradient(270deg, transparent ${percentage().end}%, ${lyricsColor()} ${
-                        percentage().end
-                      }%, transparent ${percentage().start}%`,
+                      width: `${LEAD_IN_TAIL}%`,
+                      "background-image": `linear-gradient(to left, ${lyricsColor()}, transparent)`,
+                      transform: `translateX(${(-(leadIn() ?? 0) * 100) / LEAD_IN_TAIL}%)`,
                     }}
-                    class="h-[0.8em] w-full"
                   />
-                )}
+                </div>
               </Show>
             </div>
             <div>
@@ -132,12 +134,11 @@ function LyricsNote(props: LyricsNoteProps) {
     return clamp(((beat - props.note.startBeat) * 100) / props.note.length, 0, 100);
   });
 
+  // White words with a coloured copy on top, revealed by a clip: a gradient behind clipped text
+  // would have to be rebuilt and repainted on every frame of the sung note.
   return (
     <span
-      style={{
-        "background-image": `linear-gradient(to right, ${props.color} ${percentage()}%, white ${percentage()}%)`,
-      }}
-      class="inline-block bg-clip-text leading-snug font-bold whitespace-pre text-transparent"
+      class="relative inline-block leading-snug font-bold whitespace-pre"
       classList={{
         "m-[-0.15cqw] p-[0.15cqw] italic": props.note.type === "Freestyle",
         "text-[2.4cqw]": !props.compact,
@@ -145,6 +146,16 @@ function LyricsNote(props: LyricsNoteProps) {
       }}
     >
       {props.note.text}
+      <Show when={percentage() > 0}>
+        <span
+          aria-hidden="true"
+          class="absolute inset-0"
+          classList={{ "p-[0.15cqw]": props.note.type === "Freestyle" }}
+          style={{ color: props.color, "clip-path": `inset(0 ${100 - percentage()}% 0 0)` }}
+        >
+          {props.note.text}
+        </span>
+      </Show>
     </span>
   );
 }

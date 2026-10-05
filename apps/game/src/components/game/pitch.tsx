@@ -190,8 +190,9 @@ interface PitchNoteProps {
 }
 
 function SparkleParticles(props: { length: number }) {
-  // Scale particles based on note length: base 4 particles + 2 per beat, capped at 16
-  const particleCount = createMemo(() => Math.min(4 + Math.floor(props.length * 2), 16));
+  // Scale particles with the note's length: 3, plus one per beat, at most 8 (four lanes of golden
+  // notes add up to a lot of always-running layers).
+  const particleCount = createMemo(() => Math.min(3 + props.length, 8));
 
   // Generate random particles with different delays and positions
   // oxlint-disable-next-line solid/reactivity
@@ -209,15 +210,17 @@ function SparkleParticles(props: { length: number }) {
       <For each={particles}>
         {(particle) => (
           <div
-            class="absolute animate-sparkle rounded-full bg-yellow-300 opacity-0"
+            class="absolute animate-sparkle rounded-full opacity-0"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
-              width: `${particle.size}cqw`,
-              height: `${particle.size}cqw`,
+              width: `${particle.size * 1.6}cqw`,
+              height: `${particle.size * 1.6}cqw`,
               "animation-delay": `${particle.delay}s`,
               "animation-duration": `${particle.duration}s`,
-              "box-shadow": "0 0 0.2cqw rgba(251, 191, 36, 0.8)",
+              // The glow is part of the dot, not a box-shadow drawn around each one.
+              background:
+                "radial-gradient(circle, var(--color-yellow-200) 30%, rgb(251 191 36 / 0.6) 55%, transparent 72%)",
             }}
           />
         )}

@@ -177,6 +177,8 @@ const de = {
     },
     combo: "Combo",
     nowSinging: "Jetzt singen",
+    songFailed: "Der Song konnte nicht abgespielt werden",
+    microphonesFailed: "Die Mikrofone konnten nicht gestartet werden",
     phraseRating: {
       perfect: "Perfekt",
       great: "Super",

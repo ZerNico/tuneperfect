@@ -54,7 +54,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
         <div
           class="relative flex h-full w-full"
           classList={{
-            "opacity-0": shouldHide(),
+            "opacity-0 fx-paused": shouldHide(),
             "transition-opacity duration-2000": !shouldHide(),
           }}
         >

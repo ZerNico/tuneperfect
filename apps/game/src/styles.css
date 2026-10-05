@@ -702,6 +702,16 @@ body {
 
 /* Heavy numbers and headline text: Lato black, upright. Set --display-shadow for a hard
    drop shadow straight down (e.g. a dark shade of the player colour on score numbers). */
+/* Pauses every animation inside, for things nobody can see right now (a hidden lane, the game
+   under the pause menu). Paused animations stop costing frames and resume where they were. */
+@utility fx-paused {
+  & *,
+  & *::before,
+  & *::after {
+    animation-play-state: paused !important;
+  }
+}
+
 @utility text-display {
   font-weight: 900;
   letter-spacing: -0.01em;

@@ -12,6 +12,7 @@ import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
+import { t } from "~/lib/i18n";
 import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
 import { roundStore, useRoundActions } from "~/stores/round";
@@ -86,7 +87,11 @@ export default function GameScreen() {
 
   createEffect(() => {
     if (ready() && canPlayThrough() && !untrack(started)) {
-      untrack(() => start());
+      untrack(start).catch((error: unknown) => {
+        console.error("Failed to start the game:", error);
+        notify({ message: t("game.microphonesFailed"), intent: "error" });
+        roundActions.failRound();
+      });
     }
   });
 
@@ -99,9 +104,8 @@ export default function GameScreen() {
     onCleanup(() => clearTimeout(timer));
   });
 
-  onCleanup(async () => {
-    await stop();
-  });
+  // Solid doesn't wait for cleanups; `stop` handles its own errors and an in-flight start.
+  onCleanup(() => void stop());
 
   const handleEnded = () => {
     queueMicrotask(() => {
@@ -137,7 +141,7 @@ export default function GameScreen() {
   };
 
   const handleError = () => {
-    notify({ message: "Failed to play song", intent: "error" });
+    notify({ message: t("game.songFailed"), intent: "error" });
     roundActions.failRound();
   };
 
@@ -170,7 +174,7 @@ export default function GameScreen() {
               <div
                 class="relative z-1 h-full w-full"
                 classList={{
-                  "pointer-events-none opacity-0": paused(),
+                  "pointer-events-none opacity-0 fx-paused": paused(),
                 }}
               >
                 <div class="absolute inset-0">

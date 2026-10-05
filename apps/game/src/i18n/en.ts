@@ -175,6 +175,8 @@ const en = {
     },
     combo: "Combo",
     nowSinging: "Now Singing",
+    songFailed: "Couldn't play the song",
+    microphonesFailed: "Couldn't start the microphones",
     phraseRating: {
       perfect: "Perfect",
       great: "Great",

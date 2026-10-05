@@ -77,7 +77,7 @@ export default function ComboCounter() {
 /** Quiet stat chip: "Combo" and the count on a dark translucent box. */
 function ComboChip(props: { children: JSX.Element }) {
   return (
-    <div class="flex items-center gap-[0.4em] rounded-[0.5cqw] bg-black/55 px-[0.6em] py-[0.2em] leading-tight backdrop-blur-sm">
+    <div class="flex items-center gap-[0.4em] rounded-[0.5cqw] bg-black/65 px-[0.6em] py-[0.2em] leading-tight">
       <span class="font-semibold text-white/70">{t("game.combo")}</span>
       {props.children}
     </div>
