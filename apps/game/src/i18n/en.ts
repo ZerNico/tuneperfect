@@ -240,6 +240,8 @@ const en = {
         gain: "Gain",
         threshold: "Threshold",
         level: "Level",
+        noDevice: "Choose a microphone first.",
+        alreadyUsed: "Microphone {{number}} already uses this channel of this device.",
       },
       localPlayers: {
         title: "Local Players",

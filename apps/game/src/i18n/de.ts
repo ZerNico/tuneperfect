@@ -242,6 +242,8 @@ const de = {
         gain: "Verstärkung",
         threshold: "Schwellenwert",
         level: "Pegel",
+        noDevice: "Wähle zuerst ein Mikrofon aus.",
+        alreadyUsed: "Mikrofon {{number}} nutzt diesen Kanal dieses Geräts schon.",
       },
       localPlayers: {
         title: "Lokale Spieler",

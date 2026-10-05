@@ -29,9 +29,12 @@ interface SelectItem<T extends string | number> {
   label: string;
   value: () => T | null;
   onChange: (value: T) => void;
-  options: T[];
+  /** A function when the options depend on other state (e.g. a device's channels). */
+  options: T[] | (() => T[]);
   renderValue?: (value: T | null) => JSX.Element;
 }
+
+const resolveOptions = <T,>(options: T[] | (() => T[])) => (typeof options === "function" ? options() : options);
 
 /** Builds a select item; keeps the value type for `value`, `onChange` and `renderValue`. */
 export function select<T extends string | number>(item: Omit<SelectItem<T>, "type">): MenuItem {
@@ -201,7 +204,7 @@ export default function Menu(props: MenuProps) {
                         item().onChange(value);
                         playSound("select");
                       }}
-                      options={item().options}
+                      options={resolveOptions(item().options)}
                       selected={isSelected(index)}
                       onMouseEnter={() => select(index)}
                       renderValue={item().renderValue}
