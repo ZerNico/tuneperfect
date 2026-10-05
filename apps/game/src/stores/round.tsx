@@ -1,9 +1,13 @@
 import { type LinkProps, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
 
+import { t } from "~/lib/i18n";
+import { notify } from "~/lib/toast";
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
 import { type Song, isLocalSong } from "~/lib/ultrastar/song";
+import { withVoices } from "~/lib/ultrastar/song-voices";
+import { tryCatch } from "~/lib/utils/try-catch";
 
 import type { Microphone } from "./settings";
 
@@ -91,8 +95,22 @@ export const roundStore = createRoundStore();
 export function useRoundActions() {
   const navigate = useNavigate();
 
-  const startRound = (settings: RoundSettings) => {
-    const songs = settings.songs.map((queued) => {
+  const startRound = async (settings: RoundSettings) => {
+    // Local songs come from the library without their notes; load them for the songs being played.
+    const [error, loaded] = await tryCatch(
+      Promise.all(
+        settings.songs.map(async (queued) =>
+          isLocalSong(queued.song) ? { ...queued, song: await withVoices(queued.song) } : queued,
+        ),
+      ),
+    );
+    if (error) {
+      console.error("Failed to load the songs' notes:", error);
+      notify({ message: t("game.songFailed"), intent: "error" });
+      return;
+    }
+
+    const songs = loaded.map((queued) => {
       const targetDurationMs = TARGET_DURATION_MS[queued.length];
       // Only local songs can be trimmed to a medley; online songs play full.
       if (targetDurationMs === null || !isLocalSong(queued.song)) {

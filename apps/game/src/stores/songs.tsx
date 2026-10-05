@@ -63,6 +63,9 @@ function createSongsStore() {
     return Array.from(songs.values()).toSorted((a, b) => collator.compare(a.artist, b.artist));
   });
 
+  /** Songs by hash, for lookups that would otherwise scan the whole library (e.g. phones asking for covers). */
+  const songsByHash = createMemo(() => new Map(songs().map((song) => [song.hash, song])));
+
   // Built on first use and then once per library change, not on every visit of the song select.
   let cachedIndex: { songs: LocalSong[]; index: MiniSearch<LocalSong> } | undefined;
   const searchIndex = () => {
@@ -81,6 +84,7 @@ function createSongsStore() {
     updateLocalSongs,
     needsUpdate,
     songs,
+    songsByHash,
     searchIndex,
   };
 }

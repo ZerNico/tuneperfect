@@ -155,6 +155,7 @@ rg -n "export const use" src/hooks/                                # find hooks
 - Terminals inside Electron-based editors may export `ELECTRON_RUN_AS_NODE=1`; `scripts/dev.ts` strips it, but clear it when launching a packaged build by hand
 - In-app updates only work in packaged builds with `TUNEPERFECT_UPDATE_ENDPOINT`/`TUNEPERFECT_UPDATE_PUBKEY` set at build time (CI does this)
 - Audio processing happens in Rust — TS only handles UI rendering of pitch/score data
+- The scanned library (`songsStore.songs()`) carries song **metadata only**: `voices` is empty and `voiceCount` says how many there are. Load notes with `withVoices(song)` (`src/lib/ultrastar/song-voices.ts`) where they are needed; `startRound` does it for every round. Shipping every note of a big library across IPC was gigabytes
 - The `~/` import alias resolves to `src/` — always prefer it over relative paths
 
 ## Pre-PR Checks

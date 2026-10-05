@@ -26,7 +26,7 @@ export const gameRouter = os.router({
       })),
     ),
     cover: os.songs.cover.handler(async ({ input }) => {
-      const coverUrl = songsStore.songs().find((song) => song.hash === input.hash)?.coverUrl;
+      const coverUrl = songsStore.songsByHash().get(input.hash)?.coverUrl;
       return { dataUrl: coverUrl ? await coverThumbnail(coverUrl) : null };
     }),
   },

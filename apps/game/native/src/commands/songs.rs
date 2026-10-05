@@ -5,16 +5,23 @@ use crate::ultrastar::parser::parse_local_txt_file;
 use crate::ultrastar::song::LocalSong;
 use log;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use tokio::task;
 
-/// Reported while parsing, in order: one `Start`, then one `Progress` per song file.
+/// Reported while parsing, in order: one `Start`, then `Progress` with the number of files done
+/// so far. Progress is throttled (see `PROGRESS_INTERVAL`); the last file is always reported.
 #[derive(Serialize, Debug, Clone, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ParseEvent {
     Start { total: u32 },
-    Progress { song: String },
+    Progress { song: String, done: u32 },
 }
+
+/// One progress event per file would be tens of thousands of IPC messages and renders for a big
+/// library; a loading bar needs a few per second.
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(50);
 
 pub type ParseEventSink = Arc<dyn Fn(ParseEvent) + Send + Sync>;
 
@@ -57,9 +64,11 @@ pub async fn parse_songs_from_paths(
 
     let mut song_groups = Vec::new();
 
-    on_event(ParseEvent::Start {
-        total: txt_files_map.len() as u32,
-    });
+    let total = txt_files_map.len() as u32;
+    on_event(ParseEvent::Start { total });
+
+    let done = Arc::new(AtomicU32::new(0));
+    let last_report = Arc::new(Mutex::new(Instant::now()));
 
     let num_workers = num_cpus::get();
 
@@ -91,13 +100,18 @@ pub async fn parse_songs_from_paths(
         for batch in batches {
             let media_base_url = media_base_url.clone();
             let on_event = on_event.clone();
+            let done = done.clone();
+            let last_report = last_report.clone();
 
             let batch_task = task::spawn_blocking(move || {
                 let mut batch_results = Vec::new();
 
                 for (txt_path, files_in_dir) in batch {
                     match parse_local_txt_file(&txt_path, &files_in_dir, &media_base_url) {
-                        Ok(song) => {
+                        Ok(mut song) => {
+                            // The library keeps metadata only: every note of every song would
+                            // be gigabytes across IPC. Voices are loaded per song when needed.
+                            song.song.voices = Vec::new();
                             batch_results.push((txt_path.clone(), Ok(song)));
                         }
                         Err(e) => {
@@ -106,7 +120,21 @@ pub async fn parse_songs_from_paths(
                         }
                     }
 
-                    on_event(ParseEvent::Progress { song: txt_path });
+                    let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
+                    let due = {
+                        let mut last = last_report.lock().unwrap_or_else(|e| e.into_inner());
+                        let due = finished == total || last.elapsed() >= PROGRESS_INTERVAL;
+                        if due {
+                            *last = Instant::now();
+                        }
+                        due
+                    };
+                    if due {
+                        on_event(ParseEvent::Progress {
+                            song: txt_path,
+                            done: finished,
+                        });
+                    }
                 }
 
                 batch_results
@@ -138,4 +166,12 @@ pub async fn parse_songs_from_paths(
     }
 
     Ok(song_groups)
+}
+
+/// The voices of one song file below an allowed folder.
+pub fn load_song_voices(txt_path: &str) -> Result<Vec<crate::ultrastar::song::Voice>, AppError> {
+    if !state().allowlist.is_allowed(txt_path) {
+        return Err(AppError::IoError(format!("Path is not allowed: {txt_path}")));
+    }
+    crate::ultrastar::parser::parse_txt_voices(txt_path)
 }

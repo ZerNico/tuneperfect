@@ -11,6 +11,13 @@ export type LocalSong = {
 	replayGainTrackGain: number | null,
 	replayGainTrackPeak: number | null,
 	createdAt: number | null,
+	/**
+	 *  Number of voices (2+ for duets). A scanned library leaves `voices` empty and loads them
+	 *  per song through `load_song_voices`, so this is what lists and filters read.
+	 */
+	voiceCount: number,
+	/**  The song's `.txt`, for loading its voices later. */
+	txtPath: string,
 } & Song;
 
 export type Microphone = {
@@ -57,8 +64,11 @@ export type Note = {
 
 export type NoteType = "Normal" | "Golden" | "Freestyle" | "Rap" | "RapGolden";
 
-/**  Reported while parsing, in order: one `Start`, then one `Progress` per song file. */
-export type ParseEvent = { type: "start"; total: number } | { type: "progress"; song: string };
+/**
+ *  Reported while parsing, in order: one `Start`, then `Progress` with the number of files done
+ *  so far. Progress is throttled (see `PROGRESS_INTERVAL`); the last file is always reported.
+ */
+export type ParseEvent = { type: "start"; total: number } | { type: "progress"; song: string; done: number };
 
 export type Phrase = {
 	disappearBeat: number,

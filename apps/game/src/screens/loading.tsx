@@ -22,7 +22,8 @@ export default function LoadingScreen() {
     if (event.type === "start") {
       setTotalSongs(event.total);
     } else if (event.type === "progress") {
-      setCurrentSongs((currentSongs) => currentSongs + 1);
+      // Progress is throttled on the native side and carries the count done so far.
+      setCurrentSongs(event.done);
       // Just the file name: the folders are the same for every song and push it out of view.
       setCurrentSong(
         event.song

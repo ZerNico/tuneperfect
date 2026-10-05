@@ -47,11 +47,11 @@ export interface SongLike {
   language?: string | string[] | null;
   edition?: string | string[] | null;
   creator?: string | string[] | null;
-  /** Sung parts; more than one is a duet. Present on LocalSong; absent on online entries (never duets here). */
-  voices?: readonly unknown[] | null;
+  /** Number of sung parts; more than one is a duet. Present on LocalSong; absent on online entries (never duets here). */
+  voiceCount?: number | null;
 }
 
-export const isDuet = (song: SongLike) => (song.voices?.length ?? 0) > 1;
+export const isDuet = (song: SongLike) => (song.voiceCount ?? 0) > 1;
 
 const SEARCH_FIELDS = ["title", "artist", "genre", "language", "edition", "creator"] as const;
 
@@ -106,6 +106,25 @@ function computeSortKeys(items: SongLike[]): SortKeys {
 }
 
 /** Item indices in the order of `sortOption`; name ties fall back to artist, then title. */
+// The library array only changes when songs are (re)loaded, but the browser is rebuilt on every
+// visit: keep its sort keys and sorted orders per array, so entering the song select doesn't
+// re-collate tens of thousands of titles each time.
+const sortCache = new WeakMap<readonly SongLike[], { keys: SortKeys; sorted: Map<SortOption, readonly SongLike[]> }>();
+
+function cachedSort<T extends SongLike>(items: T[], sortOption: SortOption): T[] {
+  let entry = sortCache.get(items);
+  if (!entry) {
+    entry = { keys: computeSortKeys(items), sorted: new Map() };
+    sortCache.set(items, entry);
+  }
+  let sorted = entry.sorted.get(sortOption);
+  if (!sorted) {
+    sorted = sortedIndices(entry.keys, sortOption).map((index) => items[index]!);
+    entry.sorted.set(sortOption, sorted);
+  }
+  return sorted as T[];
+}
+
 function sortedIndices(keys: SortKeys, sortOption: SortOption): number[] {
   const { artist, title, year, createdAt, views } = keys;
   const byName = (a: number, b: number) => artist[a]! - artist[b]! || title[a]! - title[b]!;
@@ -163,12 +182,7 @@ export function useSongFilter<T extends SongLike>(options: UseSongFilterOptions<
     ),
   );
 
-  const sortKeys = createMemo(() => computeSortKeys(options.items()));
-
-  const sortedItems = createMemo(() => {
-    const items = options.items();
-    return sortedIndices(sortKeys(), options.sortOption()).map((index) => items[index]!);
-  });
+  const sortedItems = createMemo(() => cachedSort(options.items(), options.sortOption()));
 
   return createMemo(() => {
     const songs = sortedItems();

@@ -336,18 +336,27 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     Ok(song)
 }
 
-pub fn parse_local_txt_file(
-    txt: &str,
-    files: &Vec<FileEntry>,
-    media_base_url: &str,
-) -> Result<LocalSong, AppError> {
+/// Reads a song file in whatever encoding it was saved in.
+fn read_txt(txt: &str) -> Result<String, AppError> {
     let bytes = fs::read(txt)?;
     let mut detector = EncodingDetector::new(Iso2022JpDetection::Deny);
     detector.feed(&bytes, true);
     let encoding = detector.guess(None, Utf8Detection::Allow);
     let (content, _, _) = encoding.decode(&bytes);
+    Ok(content.into_owned())
+}
 
-    let song = parse_ultrastar_txt(&content)?;
+/// Just the notes of a song file, for a song whose metadata was scanned earlier.
+pub fn parse_txt_voices(txt: &str) -> Result<Vec<Voice>, AppError> {
+    Ok(parse_ultrastar_txt(&read_txt(txt)?)?.voices)
+}
+
+pub fn parse_local_txt_file(
+    txt: &str,
+    files: &Vec<FileEntry>,
+    media_base_url: &str,
+) -> Result<LocalSong, AppError> {
+    let song = parse_ultrastar_txt(&read_txt(txt)?)?;
 
     let find_file = |filename: &Option<String>| -> Option<&FileEntry> {
         if let Some(filename) = filename {
@@ -435,6 +444,8 @@ pub fn parse_local_txt_file(
     });
 
     Ok(LocalSong {
+        voice_count: song.voices.len() as u32,
+        txt_path: txt.to_string(),
         song,
         audio_url,
         instrumental_url,

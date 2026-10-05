@@ -41,6 +41,7 @@ export const nativeProcedures = {
         (groups) => ({ type: "done", groups }),
       ),
     ),
+    voices: os.songs.voices.handler(({ input }) => native.loadSongVoices(input.txtPath)),
   },
   localServer: {
     baseUrl: os.localServer.baseUrl.handler(() => native.getLocalServerBaseUrl()),

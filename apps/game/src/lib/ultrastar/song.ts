@@ -11,3 +11,8 @@ export function isUsdbSong(song: Song): song is UsdbSong {
 export function isLocalSong(song: Song): song is LocalSong {
   return "audioUrl" in song;
 }
+
+/** How many voices a song has (2+ is a duet). Scanned songs don't carry their voices until loaded. */
+export function voiceCount(song: Song): number {
+  return isLocalSong(song) ? song.voiceCount : song.voices.length;
+}

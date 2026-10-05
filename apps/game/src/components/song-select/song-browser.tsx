@@ -135,10 +135,11 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
 
   // Falls back to the first result like the grid and coverflow do, so a selected song
   // dropping out of the results switches straight to the new one (no null in between).
+  // Built once per result list, so moving through the songs is a lookup instead of a search.
+  const itemsById = createMemo(() => new Map(filteredItems().map((item) => [props.getId(item), item])));
   const selected = createMemo(() => {
-    const items = filteredItems();
     const id = state.selectedId();
-    return (id === null ? undefined : items.find((item) => props.getId(item) === id)) ?? items[0] ?? null;
+    return (id === null ? undefined : itemsById().get(id)) ?? filteredItems()[0] ?? null;
   });
   const selectedInfo = createMemo(() => {
     const item = selected();

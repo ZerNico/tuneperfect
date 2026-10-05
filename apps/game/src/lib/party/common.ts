@@ -15,7 +15,7 @@ export type DuelSlot = 0 | 1;
 
 /** Songs party modes play: a single voice, so both players sing the same part. */
 export function partySongs(): LocalSong[] {
-  return songsStore.songs().filter((song) => song.voices.length === 1);
+  return songsStore.songs().filter((song) => song.voiceCount === 1);
 }
 
 /** Everyone who can join a party game: the lobby's online users and the local players added to it. */

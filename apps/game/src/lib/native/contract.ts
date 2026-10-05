@@ -2,6 +2,7 @@ import { eventIterator, oc, type } from "@orpc/contract";
 import * as v from "valibot";
 
 import type {
+  LocalSong,
   Microphone,
   ParseEvent,
   SongGroup,
@@ -62,6 +63,8 @@ export const contract = {
   songs: {
     /** Parses the given (granted) folders, streaming progress before the result. */
     parse: base.input(v.object({ paths: v.array(v.string()) })).output(eventIterator(type<ParseSongsEvent>())),
+    /** The voices (notes) of one parsed song: the library itself only carries metadata. */
+    voices: base.input(v.object({ txtPath: v.string() })).output(type<LocalSong["voices"]>()),
   },
   localServer: {
     baseUrl: base.output(type<string | null>()),

@@ -7,6 +7,8 @@ import { getIceServers } from "~/lib/webrtc/ice-servers";
 
 import { lobbyStore } from "./lobby";
 
+const DISCONNECT_GRACE_MS = 10_000;
+
 function createWebRTCStore() {
   const connections = new ReactiveMap<string, HostConnection>();
   const pendingIceCandidates = new Map<string, string[]>();
@@ -22,6 +24,19 @@ function createWebRTCStore() {
     }
 
     const iceServers = await getIceServers();
+
+    // `disconnected` often recovers by itself (a phone switching networks); only give up on it after a while.
+    let disconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    const dispose = () => {
+      clearTimeout(disconnectTimer);
+      // A newer connection from the same user may have replaced this one already.
+      if (connections.get(userId) === connection) {
+        connections.delete(userId);
+        pendingIceCandidates.delete(userId);
+      }
+      // Closes the data channels and the peer connection, so nothing keeps them alive.
+      connection.close();
+    };
 
     const connection = createHostConnection(userId, iceServers, {
       onIceCandidate: async (candidate) => {
@@ -39,10 +54,13 @@ function createWebRTCStore() {
         }
       },
       onConnectionStateChange: (state) => {
-        if (state === "disconnected" || state === "failed" || state === "closed") {
-          connections.delete(userId);
-          // Clean up any pending ICE candidates for this user
-          pendingIceCandidates.delete(userId);
+        if (state === "failed" || state === "closed") {
+          dispose();
+        } else if (state === "disconnected") {
+          clearTimeout(disconnectTimer);
+          disconnectTimer = setTimeout(dispose, DISCONNECT_GRACE_MS);
+        } else if (state === "connected") {
+          clearTimeout(disconnectTimer);
         }
       },
       onDataChannelOpen: () => {

@@ -146,7 +146,7 @@ pub async fn get_audio_levels() -> Result<Vec<f64>> {
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
     #[napi(
-        ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string }) => void"
+        ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string; done: number }) => void"
     )]
     on_event: JsonCallback,
 ) -> Result<Value> {
@@ -159,6 +159,12 @@ pub async fn parse_songs_from_paths(
 
     let groups = songs::parse_songs_from_paths(paths, sink).await?;
     to_json(groups)
+}
+
+/// The voices (notes) of one scanned song, by its `txtPath`.
+#[napi]
+pub async fn load_song_voices(txt_path: String) -> Result<Value> {
+    to_json(blocking(move || songs::load_song_voices(&txt_path)).await?)
 }
 
 #[napi]

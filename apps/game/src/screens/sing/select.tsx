@@ -17,7 +17,7 @@ import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import type { GuestUser, User } from "~/lib/types";
-import type { Song } from "~/lib/ultrastar/song";
+import { type Song, voiceCount } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
 import { isGuestUser } from "~/lib/utils/user";
@@ -78,7 +78,7 @@ export default function PlayerSelectionScreen() {
   const initializeSlotSelections = () => {
     const micCount = settingsStore.microphones().length;
     const song = songs().length === 1 ? songs()[0] : null;
-    const maxVoice = song ? song.voices.length - 1 : 0;
+    const maxVoice = song ? voiceCount(song) - 1 : 0;
 
     setSlotSelections((prev) => {
       const next: (Selection | undefined)[] = Array.from({ length: micCount }, (_, i) => {
@@ -151,10 +151,10 @@ export default function PlayerSelectionScreen() {
 
     if (isMedley()) {
       const queuedSongs = songs().map((song) => {
-        const voiceCount = song.voices.length;
+        const voices = voiceCount(song);
         const medleyPlayers = players.map((p, i) => ({
           ...p,
-          voice: i % voiceCount,
+          voice: i % voices,
         }));
         return { song, players: medleyPlayers, mode: "medley" as const, length };
       });
@@ -488,7 +488,7 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
           label: t("sing.voice"),
           value: () => selectedVoice(),
           onChange: (voice: number) => setSelectedVoice(voice),
-          options: props.song?.voices.map((_, index) => index) ?? [],
+          options: props.song ? Array.from({ length: voiceCount(props.song) }, (_, index) => index) : [],
           renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>,
         }),
       );
