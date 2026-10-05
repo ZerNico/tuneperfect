@@ -136,7 +136,7 @@ export function MedleyList(props: MedleyListProps) {
                           </Show>
                           <button
                             type="button"
-                            aria-label="Remove"
+                            aria-label={t("common.remove")}
                             class="flex size-6 cursor-pointer items-center justify-center rounded-md bg-black/40 transition-[background-color,scale] hover:bg-black/60 active:scale-95"
                             onClick={(e) => {
                               e.stopPropagation();

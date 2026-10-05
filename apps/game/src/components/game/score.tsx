@@ -3,10 +3,9 @@ import { createEffect, createMemo, createSignal, on, onCleanup, untrack } from "
 import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { usePlayer } from "~/lib/game/player-context";
+import { formatNumber } from "~/lib/i18n";
 
 const TWEEN_DURATION_MS = 250;
-// `toLocaleString` with options builds a formatter on every call; this runs every frame of a count-up.
-const SCORE_FORMAT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const POP_THRESHOLD = 500;
 
 // Bigger score jumps: a quick swell and smear, like the digits are rushing in. Only transform and
@@ -104,7 +103,7 @@ export default function Score(props: ScoreProps) {
         // Digits in the singer's colour; a short, unblurred shadow (no haze on light videos).
         style={{ color: player.micColor(500) }}
       >
-        {SCORE_FORMAT.format(displayScore())}
+        {formatNumber(displayScore())}
       </p>
     </div>
   );

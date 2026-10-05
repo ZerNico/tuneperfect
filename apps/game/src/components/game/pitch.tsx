@@ -6,6 +6,7 @@ import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { type ProcessedBeat, usePlayer } from "~/lib/game/player-context";
 import { addProcessedBeat, type ProcessedNoteGroup } from "~/lib/game/processed-notes";
+import { t } from "~/lib/i18n";
 import { isGolden, isRap, type Note } from "~/lib/ultrastar/note";
 import type { Phrase } from "~/lib/ultrastar/phrase";
 import { clamp } from "~/lib/utils/math";
@@ -386,7 +387,7 @@ function ProcessedNote(props: ProcessedNoteProps) {
                   preserveAspectRatio="none"
                   aria-hidden="true"
                 >
-                  <title>Pitch accuracy indicator</title>
+                  <title>{t("game.pitchAccuracy")}</title>
                   <path
                     d={accuracyLine()}
                     stroke="white"

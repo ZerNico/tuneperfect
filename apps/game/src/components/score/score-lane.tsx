@@ -4,7 +4,7 @@ import IconSparkle from "~icons/ph/sparkle-fill";
 
 import { effectsEnabled } from "~/lib/fx";
 import type { PlayerResult } from "~/lib/game/round-results";
-import { t } from "~/lib/i18n";
+import { formatNumber, t } from "~/lib/i18n";
 import { getColorVar } from "~/lib/utils/color";
 import type { TierId } from "~/lib/utils/score";
 
@@ -60,7 +60,7 @@ export default function ScoreLane(props: ScoreLaneProps) {
       class={`inline-block leading-none text-display tabular-nums ${SCORE_TEXT[props.size]}`}
       style={{ "--display-shadow": color(900) }}
     >
-      {Math.floor(props.shownScore).toLocaleString("en-US")}
+      {formatNumber(Math.floor(props.shownScore))}
     </span>
   );
 

@@ -14,6 +14,10 @@ const en = {
     players: {
       guest: "Guest",
     },
+    unknown: "Unknown",
+    remove: "Remove",
+    songVideo: "Song video",
+    songAudio: "Song audio",
     yes: "Yes",
     no: "No",
     routeError: {
@@ -175,6 +179,7 @@ const en = {
     },
     combo: "Combo",
     nowSinging: "Now Singing",
+    pitchAccuracy: "Pitch accuracy",
     songFailed: "Couldn't play the song",
     microphonesFailed: "Couldn't start the microphones",
     phraseRating: {
@@ -270,6 +275,8 @@ const en = {
       },
       credits: {
         title: "Credits",
+        soundsKenney: "Sound effects by Kenney",
+        soundsFreesound: "Sound effects from Freesound (CC0)",
       },
     },
   },
@@ -288,7 +295,12 @@ const en = {
       continue: "Continue",
       restart: "Restart",
       draw: "It's a draw",
-      wins: "wins",
+      winner: "{{name}} wins!",
+      form: {
+        win: "W",
+        draw: "D",
+        loss: "L",
+      },
       standings: "Standings",
       winsColumn: "Wins",
       score: "Score",

@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import IconCrown from "~icons/ph/crown-fill";
 
 import { effectsEnabled } from "~/lib/fx";
+import { formatNumber } from "~/lib/i18n";
 import type { User } from "~/lib/types";
 
 import Avatar from "./ui/avatar";
@@ -15,7 +16,7 @@ function rankText(rank: number) {
   return "rgb(255 255 255 / 0.6)";
 }
 
-const fmt = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 0 });
+const fmt = formatNumber;
 
 export interface Highscore {
   score: number;

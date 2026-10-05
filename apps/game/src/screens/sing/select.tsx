@@ -194,7 +194,7 @@ export default function PlayerSelectionScreen() {
           fallback={
             <Show when={isMedley()}>
               <SongHero
-                title="Medley"
+                title={t("sing.medley.title")}
                 subtitle={
                   songs().length === 1
                     ? t("sing.songCount.one", { count: 1 })

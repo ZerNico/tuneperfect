@@ -3,6 +3,7 @@ import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMoun
 
 import { getAudioContext } from "~/lib/audio/context";
 import { platform } from "~/lib/desktop";
+import { t } from "~/lib/i18n";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -647,7 +648,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     >
       <video
         ref={videoElementRef}
-        aria-label="Song video"
+        aria-label={t("common.songVideo")}
         class="h-full w-full object-cover"
         classList={{ hidden: !videoActive() }}
         preload="auto"
@@ -679,7 +680,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       <audio
         ref={audioElementRef}
-        aria-label="Song audio"
+        aria-label={t("common.songAudio")}
         preload="auto"
         crossorigin="anonymous"
         onCanPlayThrough={handleAudioCanPlayThrough}

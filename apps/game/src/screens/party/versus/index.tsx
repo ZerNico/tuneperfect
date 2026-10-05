@@ -20,7 +20,7 @@ import KeyGlyph from "~/components/ui/key-glyph";
 import Panel from "~/components/ui/panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
-import { t } from "~/lib/i18n";
+import { formatNumber, t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
@@ -474,7 +474,7 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
                       <span
                         class={`flex h-5 w-4 items-center justify-center rounded-[0.3cqw] text-[0.6cqw] font-black ${PIP_COLORS[result]}`}
                       >
-                        {result === "win" ? "W" : result === "draw" ? "D" : "L"}
+                        {t(`party.versus.form.${result === "win" ? "win" : result === "draw" ? "draw" : "loss"}`)}
                       </span>
                     )}
                   </For>
@@ -484,7 +484,7 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
                 {standing.wins}/{standing.played}
               </span>
               <span class="w-[5cqw] shrink-0 text-right font-black tabular-nums">
-                {standing.totalScore.toLocaleString("en-US")}
+                {formatNumber(standing.totalScore)}
               </span>
             </div>
           )}
@@ -510,7 +510,7 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
     <div class="flex h-full flex-col items-center justify-center gap-6">
       <span class="text-6xl text-display text-yellow-300" classList={{ "animate-slam": effectsEnabled() }}>
         <Show when={winners().length === 1} fallback={t("party.versus.draw")}>
-          {winners()[0]?.user.username} {t("party.versus.wins")}!
+          {t("party.versus.winner", { name: winners()[0]?.user.username ?? "" })}
         </Show>
       </span>
       <div class="flex items-end gap-4">
