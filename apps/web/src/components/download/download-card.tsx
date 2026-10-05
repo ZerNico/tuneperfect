@@ -1,87 +1,61 @@
-import type { JSX } from "solid-js";
-import { For } from "solid-js";
+import { For, type JSX, Show } from "solid-js";
+import IconDownload from "~icons/ph/download-simple-bold";
 
 import Button from "~/components/ui/button";
-import { cn } from "~/lib/utils/cn";
-
-interface Tag {
-  text: string;
-  color?: "blue" | "green" | "red" | "orange" | "purple" | "slate";
-}
+import Tag from "~/components/ui/tag";
 
 interface DownloadCardProps {
   class?: string;
   icon: JSX.Element;
-  gradientFrom: string;
-  gradientTo: string;
   title: string;
   subtitle: string;
   description: string;
-  tags: Tag[];
+  /** Small chips, e.g. the architecture. */
+  tags: string[];
+  recommended?: boolean;
   extension: string;
   url: string;
-  platform?: "macos" | "windows" | "linux";
   onDownload?: () => void;
 }
 
 export default function DownloadCard(props: DownloadCardProps) {
-  const getTagColor = (color: Tag["color"] = "slate") => {
-    switch (color) {
-      case "blue":
-        return "bg-blue-500/20 text-blue-300";
-      case "green":
-        return "bg-green-500/20 text-green-300";
-      case "red":
-        return "bg-red-500/20 text-red-300";
-      case "orange":
-        return "bg-orange-500/20 text-orange-300";
-      case "purple":
-        return "bg-purple-500/20 text-purple-300";
-      default:
-        return "bg-slate-600 text-slate-300";
-    }
-  };
-
-  const handleDownload = () => {
-    props.onDownload?.();
-  };
-
   return (
     <div
-      class={cn(
-        "group hover:bg-slate-750 flex flex-col gap-6 rounded-xl border border-slate-700 bg-slate-800 p-8 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-2xl",
-        props.class,
-      )}
+      class={`relative flex flex-col gap-6 overflow-hidden rounded-[16px] p-6 shadow-crisp ${props.class ?? ""}`}
+      classList={{ "bg-white/10 ring-2 ring-white/70": props.recommended, "bg-white/5": !props.recommended }}
     >
-      <div class="flex items-center gap-4">
-        <div
-          class="rounded-full p-3"
-          style={{
-            background: `linear-gradient(to right, ${props.gradientFrom}, ${props.gradientTo})`,
-          }}
+      <div class="flex items-start gap-4">
+        <span
+          class="flex size-12 shrink-0 items-center justify-center rounded-[12px] text-2xl"
+          classList={{ "gradient-settings shadow-crisp": props.recommended, "bg-white/10": !props.recommended }}
         >
           {props.icon}
-        </div>
-        <div>
-          <h3 class="text-xl font-bold text-slate-100">{props.title}</h3>
-          <p class="text-sm text-slate-400">{props.subtitle}</p>
-        </div>
-      </div>
-
-      <div class="space-y-3">
-        <p class="text-sm text-slate-300">{props.description}</p>
-        <div class="flex flex-wrap gap-2">
-          <For each={props.tags}>
-            {(tag) => <span class={`rounded-full px-3 py-1 text-xs ${getTagColor(tag.color)}`}>{tag.text}</span>}
-          </For>
+        </span>
+        <div class="min-w-0 grow">
+          <h2 class="text-xl font-bold">{props.title}</h2>
+          <p class="text-sm text-white/55">{props.subtitle}</p>
         </div>
       </div>
 
-      <div class="mt-auto">
-        <Button href={props.url} intent="gradient-settings" onClick={handleDownload}>
-          Download (.{props.extension})
-        </Button>
+      <p class="text-white/70">{props.description}</p>
+      <div class="flex flex-wrap items-center gap-2">
+        <Show when={props.recommended}>
+          <Tag>Recommended</Tag>
+        </Show>
+        <For each={props.tags}>
+          {(tag) => <span class="rounded-[6px] bg-black/30 px-2 py-1 font-mono text-xs text-white/70">{tag}</span>}
+        </For>
       </div>
+
+      <Button
+        href={props.url}
+        intent={props.recommended ? "gradient-settings" : "primary"}
+        class="mt-auto self-start"
+        onClick={() => props.onDownload?.()}
+      >
+        <IconDownload />
+        Download .{props.extension}
+      </Button>
     </div>
   );
 }

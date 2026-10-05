@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/solid-router";
 
+import NotFound from "./components/not-found";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
@@ -7,7 +8,7 @@ export function getRouter() {
     routeTree,
     defaultPreload: "intent",
     defaultErrorComponent: (err) => <p>{err.error.stack}</p>,
-    defaultNotFoundComponent: () => <p>not found</p>,
+    defaultNotFoundComponent: NotFound,
     scrollRestoration: true,
   });
 

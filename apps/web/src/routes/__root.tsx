@@ -4,7 +4,8 @@ import { HydrationScript, isServer } from "solid-js/web";
 
 import Footer from "~/components/footer";
 import Header from "~/components/header";
-import { config } from "~/lib/config";
+import NotFound from "~/components/not-found";
+import { config, githubUrl } from "~/lib/config";
 import { initPostHog } from "~/lib/posthog";
 
 import styles from "../styles.css?url";
@@ -21,7 +22,16 @@ export const Route = createRootRoute({
           content: "width=device-width, initial-scale=1",
         },
         {
-          title: "Tune Perfect",
+          title: "Tune Perfect · The karaoke game",
+        },
+        {
+          name: "description",
+          content:
+            "A karaoke game for macOS, Windows and Linux. Sing your own UltraStar songs with up to four microphones, play party modes and let friends join from their phone.",
+        },
+        {
+          name: "theme-color",
+          content: "#101024",
         },
       ],
       links: [
@@ -43,7 +53,7 @@ export const Route = createRootRoute({
     };
   },
   component: RootComponent,
-  notFoundComponent: () => <div>Not found</div>,
+  notFoundComponent: NotFound,
   beforeLoad: async () => {
     return {
       config: await config(),
@@ -53,6 +63,9 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const context = Route.useRouteContext();
+
+  const appUrl = () => context().config.VITE_APP_URL ?? "";
+  const github = () => githubUrl(context().config.GITHUB_REPO);
 
   onMount(() => {
     const token = context().config.VITE_POSTHOG_TOKEN;
@@ -65,18 +78,19 @@ function RootComponent() {
   });
 
   return (
-    <html>
+    <html lang="en">
       <head>
         <HydrationScript />
       </head>
       <body>
         <HeadContent />
-        <div class="min-h-screen bg-[#101024] font-primary text-white">
-          <Header appUrl={context().config.VITE_APP_URL ?? ""} />
-          <main>
+        {/* overflow-x-clip (not hidden): sections' glows spill sideways without making the page scroll */}
+        <div class="relative isolate flex min-h-screen flex-col overflow-x-clip">
+          <Header appUrl={appUrl()} githubUrl={github()} />
+          <main class="grow">
             <Outlet />
           </main>
-          <Footer />
+          <Footer appUrl={appUrl()} githubUrl={github()} />
           <Scripts />
         </div>
       </body>

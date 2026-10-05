@@ -4,40 +4,9 @@
 @import "@fontsource/lato/700.css";
 
 @theme {
-  --font-primary: "Lato", "sans-serif";
+  --font-primary: "Lato", sans-serif;
 
   --color-*: initial;
-
-  --animate-hide: hide 0.1s ease-in;
-  --animate-slide-in: slideIn 0.15s ease-out;
-  --animate-swipe-out: swipeOut 0.1s ease-in;
-
-  @keyframes hide {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes swipeOut {
-    from {
-      transform: translateX(var(--kb-toast-swipe-end-x));
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
 }
 
 @theme static {
@@ -181,42 +150,120 @@
   @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }
 
+/* Short unblurred drop, as on the game's buttons and cards. */
+@utility shadow-crisp {
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.3);
+}
+
+/* Trims the line box to cap height and baseline, so letters centre in tags and buttons. */
+@utility text-box-cap {
+  text-box: trim-both cap alphabetic;
+}
+
+/* The game's moving diagonal stripes (selected mode cards, filling bars). */
+@utility stripes {
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.12) 0 14px, transparent 14px 28px);
+  background-size: 40px 40px;
+  animation: stripes 1.2s linear infinite;
+}
+
 .gradient-sing {
-  @apply from-green-400 to-teal-600;
+  @apply bg-linear-to-r from-green-400 to-teal-600;
 }
 
 .gradient-party {
-  @apply from-pink-500 to-purple-600;
+  @apply bg-linear-to-r from-pink-500 to-purple-600;
 }
 
 .gradient-lobby {
-  @apply from-yellow-400 to-orange-500;
+  @apply bg-linear-to-r from-yellow-400 to-orange-500;
 }
 
 .gradient-settings {
-  @apply from-cyan-400 to-blue-500;
+  @apply bg-linear-to-r from-cyan-400 to-blue-500;
 }
 
-.gradient-bg-primary {
-  background: radial-gradient(at 60% top, rgba(30, 36, 75, 1) 0%, rgba(16, 16, 36, 1) 100%);
-}
-
-.gradient-bg-secondary {
-  background: radial-gradient(at top, #2d3438 0%, #203141 100%);
-}
-
-@keyframes fadeInUp {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(14px);
   }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+@keyframes fade-out-up {
   to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes stripes {
+  to {
+    background-position: 40px 0;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
     opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 400;
+  }
+}
+
+@keyframes scroll-wheel {
+  0% {
     transform: translateY(0);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
   }
 }
 
 html,
 body {
   overscroll-behavior: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  color: var(--color-white);
+  background-color: rgb(16 16 36);
+  -webkit-font-smoothing: antialiased;
 }

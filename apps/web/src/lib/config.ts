@@ -11,3 +11,5 @@ export const config = createServerFn({ method: "GET" }).handler(async () => {
     VITE_POSTHOG_TOKEN: process.env.VITE_POSTHOG_TOKEN,
   };
 });
+
+export const githubUrl = (repo: string | undefined) => `https://github.com/${repo || "ZerNico/tuneperfect"}`;
