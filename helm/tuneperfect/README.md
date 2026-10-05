@@ -11,13 +11,16 @@ strict NATs), they relay through coturn.
 
 **How it's secured**
 
-- The API only hands out ICE servers to a game (lobby token) or a signed-in phone.
+- The API only hands out ICE servers to a game (lobby token) or a signed-in phone, and TURN
+  credentials only once they're in a lobby together: a game once a signed-in phone joined its lobby
+  (creating a lobby needs no account), a phone while it's in a lobby.
 - TURN credentials are time-limited ("TURN REST API"): the username is
   `<expiry unix time>:<random id>`, the password an HMAC of it with a shared secret. coturn
   recomputes it from its copy of the secret, so nothing is stored per user and a credential can't
   be extended or forged. They can open new relays for `coturn.credentialTtl` (24 h).
 - coturn only relays to the public internet (`coturn.deniedPeerIps`), never into the node's or the
-  cluster's networks, with per-credential and total quotas and a bandwidth cap per relay.
+  cluster's networks, with quotas per lobby or account (`coturn.userQuota`; credentials carry a
+  stable, opaque id for each) and in total, and a bandwidth cap per relay.
 
 **DNS and firewall**
 
@@ -40,8 +43,9 @@ kubectl -n tuneperfect delete secret coturn-credentials
 # then run the "Deploy to Kubernetes" workflow with the current tag
 ```
 
-Running relays keep working. New relays need the new credentials, which phones and games fetch
-within an hour or on their next connection.
+This restarts coturn, so connections relayed through it drop and reconnect: rotate when nobody is
+playing. Clients fetch new credentials after a failed connection (and otherwise within an hour), so
+reconnecting picks up the new secret.
 
 `lookup` finds nothing under `helm template` and a client-side `--dry-run`, so those render a
 random throwaway secret (use `--dry-run=server` to preview against the cluster, or pin

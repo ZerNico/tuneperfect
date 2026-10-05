@@ -214,7 +214,8 @@ coturn:
   # Optional - coturn auto-detects if not set
   externalIp: ""
 
-  # Concurrent relays per credential (the game shares one across all its phones) and in total,
+  # Concurrent relays per lobby or account (credentials carry a stable id per lobby or account,
+  # and the game relays for all its phones) and in total,
   # bytes per second per relay (data channels carry song lists and covers), and the server's
   # total (0 = unlimited; set it to about half the node's uplink).
   userQuota: 64

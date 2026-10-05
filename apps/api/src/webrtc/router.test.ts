@@ -1,10 +1,12 @@
-import { afterEach, describe, expect, it, setSystemTime } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock, setSystemTime, spyOn } from "bun:test";
 import { createHmac } from "node:crypto";
 
 import { call } from "@orpc/server";
 
 import { authedContext, expectORPCError, lobbyContext, makeUser } from "../../test/helpers";
 import { env } from "../config/env";
+import { lobbyService } from "../lobby/service";
+import { userService } from "../user/service";
 import { webrtcRouter } from "./router";
 
 const anonymous = { cookies: new Bun.CookieMap(), headers: new Headers(), resHeaders: new Headers() };
@@ -14,7 +16,22 @@ const original = {
   TURN_CREDENTIAL_TTL: env.TURN_CREDENTIAL_TTL,
 };
 
+const member = makeUser({ lobbyId: "LOBBY123" });
+
+/** By default: lobby LOBBY123 exists with one signed-in phone in it, and every user is in it. */
+function stubLobby(users: { id: string }[] = [{ id: member.id }]) {
+  return spyOn(lobbyService, "getLobbyById").mockImplementation(async (id) =>
+    id === "LOBBY123" ? ({ id, users } as unknown as Awaited<ReturnType<typeof lobbyService.getLobbyById>>) : undefined,
+  );
+}
+
+beforeEach(() => {
+  stubLobby();
+  spyOn(userService, "getUserById").mockImplementation(async (id) => makeUser({ id, lobbyId: "LOBBY123" }));
+});
+
 afterEach(() => {
+  mock.restore();
   setSystemTime();
   Object.assign(env, original);
 });
@@ -31,7 +48,7 @@ describe("getIceServers", () => {
   });
 
   it("serves games and signed-in phones STUN and TURN over UDP and TCP", async () => {
-    for (const context of [await lobbyContext("LOBBY123"), await authedContext(makeUser())]) {
+    for (const context of [await lobbyContext("LOBBY123"), await authedContext(member)]) {
       const servers = await call(webrtcRouter.getIceServers, undefined, { context });
       expect(servers).toEqual([
         { urls: env.STUN_URL },
@@ -54,11 +71,34 @@ describe("getIceServers", () => {
     expect(turn?.credential).toBe(createHmac("sha1", "test-turn-secret").update(username).digest("base64"));
   });
 
-  it("gives every call its own credentials", async () => {
-    const context = await lobbyContext("LOBBY123");
-    const [, first] = await call(webrtcRouter.getIceServers, undefined, { context });
-    const [, second] = await call(webrtcRouter.getIceServers, undefined, { context });
-    expect(first?.username).not.toBe(second?.username);
+  it("keeps one opaque id per lobby or account, so coturn's quotas count across refetches", async () => {
+    const id = (username: unknown) => String(username).split(":")[1];
+    const game = await lobbyContext("LOBBY123");
+    const [, first] = await call(webrtcRouter.getIceServers, undefined, { context: game });
+    const [, second] = await call(webrtcRouter.getIceServers, undefined, { context: game });
+    const [, phone] = await call(webrtcRouter.getIceServers, undefined, { context: await authedContext(member) });
+    expect(id(first?.username)).toBe(id(second?.username));
+    expect(id(phone?.username)).not.toBe(id(first?.username));
+    expect(id(first?.username)).toMatch(/^[0-9a-f]{16}$/);
+    expect(String(first?.username)).not.toContain("LOBBY123");
+  });
+
+  it("only gives a game TURN once a signed-in phone joined its lobby", async () => {
+    const stun = [{ urls: env.STUN_URL }];
+    stubLobby([]);
+    expect(await call(webrtcRouter.getIceServers, undefined, { context: await lobbyContext("LOBBY123") })).toEqual(
+      stun,
+    );
+    // A token for a lobby that's gone.
+    expect(await call(webrtcRouter.getIceServers, undefined, { context: await lobbyContext("GONE") })).toEqual(stun);
+  });
+
+  it("only gives a phone TURN while it's in a lobby", async () => {
+    const outsider = makeUser({ lobbyId: null });
+    spyOn(userService, "getUserById").mockResolvedValue(outsider);
+    expect(await call(webrtcRouter.getIceServers, undefined, { context: await authedContext(outsider) })).toEqual([
+      { urls: env.STUN_URL },
+    ]);
   });
 
   it("only offers STUN while TURN isn't configured", async () => {

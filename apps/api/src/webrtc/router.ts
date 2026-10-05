@@ -12,13 +12,13 @@ const IceServerSchema = v.object({
 });
 
 export const webrtcRouter = os.prefix("/webrtc").router({
-  // Only a game (lobby token) or a signed-in phone gets TURN credentials: they let the holder
-  // relay traffic through our server. Clients keep them for an hour, so a few calls per
-  // household are plenty.
+  // Only a game (lobby token) or a signed-in phone gets ICE servers, and TURN credentials only
+  // once they're in a lobby together (see the service): those let the holder relay traffic
+  // through our server. Clients keep them for an hour, so a few calls per household are plenty.
   getIceServers: base
     .use(requireLobbyOrUser)
     .meta({ rateLimit: { limit: 30, windowMs: 1000 * 60 * 5 } })
     // Released games read this as an array and keep the first answer for their whole session.
     .output(v.array(IceServerSchema))
-    .handler(() => webrtcService.getIceServers()),
+    .handler(({ context }) => webrtcService.getIceServers({ type: context.type, id: context.payload.sub })),
 });

@@ -73,6 +73,8 @@ function createConnectionStore() {
     if (attempt !== current) return;
     console.warn(`[WebRTC] Connection attempt failed: ${reason}`);
     endAttempt();
+    // The next attempt fetches TURN credentials again: these may be why it failed (a rotated secret).
+    getIceServers.invalidate();
     setError(reason);
 
     const userId = currentUserId();

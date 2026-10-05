@@ -110,6 +110,8 @@ function createWebRTCStore() {
       },
       onConnectionStateChange: (state) => {
         if (state === "failed" || state === "closed") {
+          // The next phone's offer fetches TURN credentials again: these may be why it failed.
+          if (state === "failed") getIceServers.invalidate();
           dispose();
         } else if (state === "disconnected") {
           clearTimeout(disconnectTimer);
