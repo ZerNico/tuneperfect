@@ -11,18 +11,20 @@ const CACHE_SIZE = 32;
 const cache = new Map<string, Promise<LocalSong["voices"]>>();
 
 const loadVoices = (song: LocalSong) => {
-  const cached = cache.get(song.txtPath);
+  // The hash changes with the file's contents, so an edited song isn't served its old notes.
+  const key = `${song.hash}\n${song.txtPath}`;
+  const cached = cache.get(key);
   if (cached) {
     // Most recently used goes last.
-    cache.delete(song.txtPath);
-    cache.set(song.txtPath, cached);
+    cache.delete(key);
+    cache.set(key, cached);
     return cached;
   }
 
   const loading = native.songs.voices({ txtPath: song.txtPath });
-  cache.set(song.txtPath, loading);
+  cache.set(key, loading);
   // A failed load shouldn't stay cached.
-  loading.catch(() => cache.delete(song.txtPath));
+  loading.catch(() => cache.delete(key));
   if (cache.size > CACHE_SIZE) {
     cache.delete(cache.keys().next().value!);
   }

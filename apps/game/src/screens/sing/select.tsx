@@ -158,12 +158,12 @@ export default function PlayerSelectionScreen() {
         }));
         return { song, players: medleyPlayers, mode: "medley" as const, length };
       });
-      roundActions.startRound({ songs: queuedSongs });
-      medleyStore.clear();
+      // The queue is only cleared once the round really starts (loading the notes can fail).
+      void roundActions.startRound({ songs: queuedSongs }, () => medleyStore.clear());
     } else {
       const song = songs()[0];
       if (!song) return;
-      roundActions.startRound({ songs: [{ song, players, mode: "single", length }] });
+      void roundActions.startRound({ songs: [{ song, players, mode: "single", length }] });
     }
   };
 

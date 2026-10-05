@@ -6,6 +6,7 @@ import { native } from "~/lib/native/client";
 import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat, msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
+import { tryCatch } from "~/lib/utils/try-catch";
 import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -17,6 +18,9 @@ export interface CreateGameOptions {
 }
 
 export { useGame } from "./game-context";
+
+/** The previous game's recorder teardown; a new game's recording waits for it. */
+let teardown: Promise<void> = Promise.resolve();
 
 export function createGame(options: Accessor<CreateGameOptions>) {
   const [ms, setMs] = createSignal(0);
@@ -32,13 +36,14 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   );
   const [pitches, setPitches] = createSignal<(number | null)[]>([]);
 
+  const [finishing, setFinishing] = createSignal(false);
+
   // Recording is started and stopped across the Electron boundary, so the screen can leave while
-  // `start` is still in flight. `stop` waits for it and only stops a recorder that actually came up.
+  // `start` is still in flight. Only `stop` tears down: it waits for the start and stops the
+  // recorder if that came up. The recorder is global, so a start first waits for the previous
+  // screen's teardown, or that teardown could stop the new round's recorder.
   let recording: Promise<boolean> | undefined;
   let disposed = false;
-
-  const stopRecording = () =>
-    native.recording.stop().catch((error) => console.error("Failed to stop recording:", error));
 
   const start = async () => {
     const opts = options();
@@ -46,21 +51,19 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     if (!opts.song) {
       throw new Error("No song provided");
     }
-    if (disposed) return false;
 
-    recording = native.recording
-      .start({
+    recording = (async () => {
+      await teardown;
+      if (disposed) return false;
+      await native.recording.start({
         microphones: roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
         playbackEnabled: settingsStore.general().micPlaybackEnabled,
         playbackVolume: settingsStore.volume().micPlayback,
-      })
-      .then(() => true);
-    await recording;
+      });
+      return true;
+    })();
 
-    if (disposed) {
-      await stopRecording();
-      return false;
-    }
+    if (!(await recording) || disposed) return false;
 
     setStarted(true);
     setPlaying(true);
@@ -70,9 +73,32 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const stop = async () => {
     disposed = true;
-    const started = await recording?.catch(() => false);
-    if (started) await stopRecording();
+    const current = recording;
+    teardown = (async () => {
+      if (await current?.catch(() => false)) {
+        await native.recording.stop().catch((error) => console.error("Failed to stop recording:", error));
+      }
+    })();
+    await teardown;
     logPerfReport();
+  };
+
+  /**
+   * After the song ends, a beat is only scored once it has finished in each mic's delayed time,
+   * so the last notes would be cut off. Waits out the longest delay plus a beat, takes one last
+   * sample and lets the players score the rest, before the results are taken.
+   */
+  const finish = async () => {
+    const current = untrack(song);
+    if (!current || !untrack(started) || untrack(finishing)) return;
+
+    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + 50;
+    await new Promise((resolve) => setTimeout(resolve, tailMs));
+    const [error, result] = await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }));
+    batch(() => {
+      setFinishing(true);
+      if (!error) setPitches(result);
+    });
   };
 
   const pause = () => {
@@ -282,6 +308,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     setPreferInstrumental,
     pitches,
     playerCount,
+    finishing,
   };
 
   const Provider = (props: { children: JSX.Element }) => (
@@ -290,6 +317,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   return {
     GameProvider: Provider,
+    finish,
     ...values,
   };
 }

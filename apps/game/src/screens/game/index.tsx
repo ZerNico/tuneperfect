@@ -52,6 +52,7 @@ export default function GameScreen() {
     GameProvider,
     start,
     stop,
+    finish,
     pause,
     resume,
     playing,
@@ -90,7 +91,8 @@ export default function GameScreen() {
       untrack(start).catch((error: unknown) => {
         console.error("Failed to start the game:", error);
         notify({ message: t("game.microphonesFailed"), intent: "error" });
-        roundActions.failRound();
+        // Not the song's fault: no result, so party modes don't drop it as unplayable.
+        roundActions.abortRound();
       });
     }
   });
@@ -107,26 +109,34 @@ export default function GameScreen() {
   // Solid doesn't wait for cleanups; `stop` handles its own errors and an in-flight start.
   onCleanup(() => void stop());
 
+  // The round ends once, however it ends: the song finishing waits a moment for its last notes,
+  // and exiting or skipping during that moment must not record it a second time.
+  let roundOver = false;
+  const endOnce = (end: () => void) => {
+    if (roundOver) return;
+    roundOver = true;
+    end();
+  };
+
   const handleEnded = () => {
-    queueMicrotask(() => {
-      roundActions.endRound(scores(), stats());
-    });
+    // The last notes are scored once the mics' delay has passed; then the results are final.
+    void finish().then(() => endOnce(() => roundActions.endRound(scores(), stats())));
   };
 
   const handleNext = () => {
-    queueMicrotask(() => {
-      roundActions.endRound(scores(), stats());
-    });
+    queueMicrotask(() => endOnce(() => roundActions.endRound(scores(), stats())));
   };
 
   const handleExit = () => {
-    queueMicrotask(() => {
-      if (roundSong()?.mode === "medley") {
-        roundActions.endMedley(scores(), stats());
-      } else {
-        roundActions.endRound(scores(), stats());
-      }
-    });
+    queueMicrotask(() =>
+      endOnce(() => {
+        if (roundSong()?.mode === "medley") {
+          roundActions.endMedley(scores(), stats());
+        } else {
+          roundActions.endRound(scores(), stats());
+        }
+      }),
+    );
   };
 
   const gradient = () => {

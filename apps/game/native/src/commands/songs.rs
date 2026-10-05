@@ -1,11 +1,10 @@
 use crate::error::AppError;
 use crate::state::state;
-use crate::ultrastar::filesystem::traverse_and_find_txt_files;
+use crate::ultrastar::filesystem::find_txt_files_by_root;
 use crate::ultrastar::parser::parse_local_txt_file;
 use crate::ultrastar::song::LocalSong;
 use log;
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::task;
@@ -60,107 +59,78 @@ pub async fn parse_songs_from_paths(
         })
         .collect();
 
-    let txt_files_map = traverse_and_find_txt_files(allowed_paths.clone())?;
+    let roots = task::spawn_blocking(move || find_txt_files_by_root(&allowed_paths))
+        .await
+        .map_err(|e| AppError::IoError(e.to_string()))?;
 
-    let mut song_groups = Vec::new();
-
-    let total = txt_files_map.len() as u32;
+    let total = roots.iter().map(|(_, files)| files.len()).sum::<usize>() as u32;
     on_event(ParseEvent::Start { total });
 
-    let done = Arc::new(AtomicU32::new(0));
-    let last_report = Arc::new(Mutex::new(Instant::now()));
-
+    // Counted and reported under one lock, so reports from parallel workers never go backwards.
+    let progress = Arc::new(Mutex::new(Progress {
+        done: 0,
+        last_report: Instant::now(),
+    }));
     let num_workers = num_cpus::get();
+    let mut song_groups = Vec::with_capacity(roots.len());
 
-    for start_path in allowed_paths {
-        let mut songs_for_path = Vec::new();
+    for (root, txt_files) in roots {
+        let mut songs_for_path = Vec::with_capacity(txt_files.len());
 
-        let txt_files_for_path: Vec<_> = txt_files_map
-            .iter()
-            .filter(|(txt_path, _)| txt_path.starts_with(&start_path))
-            .map(|(txt_path, files_in_dir)| (txt_path.clone(), files_in_dir.clone()))
-            .collect();
-
-        if txt_files_for_path.is_empty() {
+        if txt_files.is_empty() {
             song_groups.push(SongGroup {
-                path: start_path,
+                path: root,
                 songs: songs_for_path,
             });
             continue;
         }
 
-        // Split songs into batches
-        let batch_size = (txt_files_for_path.len() + num_workers - 1) / num_workers; // Ceiling division
-        let batches: Vec<_> = txt_files_for_path
-            .chunks(batch_size)
-            .map(|chunk| chunk.to_vec())
-            .collect();
-
+        let batch_size = txt_files.len().div_ceil(num_workers);
         let mut batch_tasks = Vec::new();
-        for batch in batches {
+        for batch in txt_files.chunks(batch_size).map(<[_]>::to_vec) {
             let media_base_url = media_base_url.clone();
             let on_event = on_event.clone();
-            let done = done.clone();
-            let last_report = last_report.clone();
+            let progress = progress.clone();
 
-            let batch_task = task::spawn_blocking(move || {
-                let mut batch_results = Vec::new();
+            batch_tasks.push(task::spawn_blocking(move || {
+                let mut parsed = Vec::with_capacity(batch.len());
 
-                for (txt_path, files_in_dir) in batch {
-                    match parse_local_txt_file(&txt_path, &files_in_dir, &media_base_url) {
+                for txt in batch {
+                    match parse_local_txt_file(&txt.path, &txt.files, &media_base_url) {
                         Ok(mut song) => {
                             // The library keeps metadata only: every note of every song would
                             // be gigabytes across IPC. Voices are loaded per song when needed.
                             song.song.voices = Vec::new();
-                            batch_results.push((txt_path.clone(), Ok(song)));
+                            parsed.push(song);
                         }
-                        Err(e) => {
-                            log::error!("Failed to parse song at '{}': {}", txt_path, e);
-                            batch_results.push((txt_path.clone(), Err(e)));
-                        }
+                        Err(e) => log::error!("Failed to parse song at '{}': {}", txt.path, e),
                     }
 
-                    let finished = done.fetch_add(1, Ordering::Relaxed) + 1;
-                    let due = {
-                        let mut last = last_report.lock().unwrap_or_else(|e| e.into_inner());
-                        let due = finished == total || last.elapsed() >= PROGRESS_INTERVAL;
-                        if due {
-                            *last = Instant::now();
-                        }
-                        due
-                    };
-                    if due {
+                    let mut progress = progress.lock().unwrap_or_else(|e| e.into_inner());
+                    progress.done += 1;
+                    if progress.done == total || progress.last_report.elapsed() >= PROGRESS_INTERVAL
+                    {
+                        progress.last_report = Instant::now();
                         on_event(ParseEvent::Progress {
-                            song: txt_path,
-                            done: finished,
+                            song: txt.path,
+                            done: progress.done,
                         });
                     }
                 }
 
-                batch_results
-            });
-
-            batch_tasks.push(batch_task);
+                parsed
+            }));
         }
 
         for batch_task in batch_tasks {
             match batch_task.await {
-                Ok(batch_results) => {
-                    for (txt_path, result) in batch_results {
-                        match result {
-                            Ok(song) => songs_for_path.push(song),
-                            Err(e) => log::error!("Failed to parse song at '{}': {}", txt_path, e),
-                        }
-                    }
-                }
-                Err(e) => {
-                    log::error!("Batch task join error: {}", e);
-                }
+                Ok(parsed) => songs_for_path.extend(parsed),
+                Err(e) => log::error!("Batch task join error: {}", e),
             }
         }
 
         song_groups.push(SongGroup {
-            path: start_path,
+            path: root,
             songs: songs_for_path,
         });
     }
@@ -168,10 +138,17 @@ pub async fn parse_songs_from_paths(
     Ok(song_groups)
 }
 
+struct Progress {
+    done: u32,
+    last_report: Instant,
+}
+
 /// The voices of one song file below an allowed folder.
 pub fn load_song_voices(txt_path: &str) -> Result<Vec<crate::ultrastar::song::Voice>, AppError> {
     if !state().allowlist.is_allowed(txt_path) {
-        return Err(AppError::IoError(format!("Path is not allowed: {txt_path}")));
+        return Err(AppError::IoError(format!(
+            "Path is not allowed: {txt_path}"
+        )));
     }
     crate::ultrastar::parser::parse_txt_voices(txt_path)
 }

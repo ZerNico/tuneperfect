@@ -211,7 +211,10 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
       (allPitches) => {
         // The sample describes the audio just before it was taken, shifted by this mic's delay:
         // score the beats that have finished in delayed time.
-        const lastFinished = finishedBeat();
+        // Once the song is over and its delay tail has been waited out, the beat in progress at
+        // the end counts too.
+        const ending = game.finishing?.() ?? false;
+        const lastFinished = ending ? Math.floor(game.beat()) : finishedBeat();
 
         // First update: start at the current beat instead of back-filling from
         // the song start (e.g. when a player joins mid-song).
@@ -223,7 +226,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         const pitch = allPitches[options().index] ?? -1;
 
         for (const beatNumber of beatsToProcess(from, lastFinished)) {
-          processBeat(beatNumber, isMeasuredBeat(beatNumber, lastFinished) ? pitch : -1);
+          processBeat(beatNumber, ending || isMeasuredBeat(beatNumber, lastFinished) ? pitch : -1);
         }
 
         lastProcessedBeat = lastFinished;

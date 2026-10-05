@@ -202,7 +202,10 @@ export default function VersusScreen() {
     if (!players) return;
 
     playSound("confirm");
-    roundActions.startRound({ songs: [{ song, players, mode: "single", length: "full" }], returnTo: "/party/versus" });
+    void roundActions.startRound({
+      songs: [{ song, players, mode: "single", length: "full" }],
+      returnTo: "/party/versus",
+    });
   };
 
   useNavigation({

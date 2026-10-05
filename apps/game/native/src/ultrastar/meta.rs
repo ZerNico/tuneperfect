@@ -1,4 +1,5 @@
 use lofty::{
+    config::ParseOptions,
     file::FileType,
     file::TaggedFileExt,
     probe::Probe,
@@ -32,7 +33,15 @@ fn parse_opus_r128_gain(value: Option<&str>) -> Option<f32> {
 }
 
 pub fn get_replay_gain(path: &str) -> Result<ReplayGainInfo, AppError> {
-    let file = Probe::open(path)?.read()?;
+    // Only the tags: reading the audio properties (which can mean seeking through the file) and
+    // copying embedded cover art would be most of the scan's time for a value from the tags.
+    let file = Probe::open(path)?
+        .options(
+            ParseOptions::new()
+                .read_properties(false)
+                .read_cover_art(false),
+        )
+        .read()?;
 
     let tag = match file.primary_tag().or_else(|| file.first_tag()) {
         Some(tag) => tag,
