@@ -11,6 +11,16 @@ export const WEBRTC_CONFIG = {
     disconnectedGrace: 4_000,
   },
 
+  iceServers: {
+    /**
+     * TURN credentials from the API can open relays for 24 h; refetching after an hour gives every
+     * new connection (and ICE restart) at least 23 h of them.
+     */
+    maxAge: 60 * 60_000,
+    /** When a refetch fails, servers this old still carry working credentials: better than STUN only. */
+    staleMaxAge: 12 * 60 * 60_000,
+  },
+
   heartbeat: {
     interval: 15_000,
     timeout: 5_000,

@@ -5,6 +5,7 @@ metadata:
   name: {{ include "tuneperfect.fullname" . }}-coturn-config
   namespace: {{ .Release.Namespace }}
 data:
-  STUN_URL: "{{ .Values.coturn.stunUrl }}"
-  TURN_URL: "{{ .Values.coturn.turnUrl }}"
+  STUN_URL: {{ .Values.coturn.stunUrl | quote }}
+  TURN_URLS: {{ include "tuneperfect.coturn.turnUrls" . | quote }}
+  TURN_CREDENTIAL_TTL: {{ .Values.coturn.credentialTtl | int | toString | quote }}
 {{- end }}

@@ -71,3 +71,39 @@ Return the appropriate apiVersion for deployment.
 {{- print "extensions/v1beta1" -}}
 {{- end -}}
 {{- end -}} 
+{{/*
+Name of the Secret holding coturn's static-auth-secret, shared with the API.
+*/}}
+{{- define "tuneperfect.coturn.secretName" -}}
+coturn-credentials
+{{- end -}}
+
+{{/*
+coturn's static-auth-secret: TURN credentials are signed with it (see apps/api/src/webrtc/service.ts).
+Generated on first install and read back from the cluster on upgrades, so it only changes when the
+Secret is deleted (rotation) or coturn.authSecret is set. Memoized in .Values because every include
+would otherwise roll a different random value within one render. `lookup` finds nothing under
+`helm template` and client-side `--dry-run`, so those render a throwaway value.
+*/}}
+{{- define "tuneperfect.coturn.authSecret" -}}
+{{- if not (hasKey .Values.coturn "_authSecret") -}}
+{{- $existing := "" -}}
+{{- $found := lookup "v1" "Secret" .Release.Namespace (include "tuneperfect.coturn.secretName" .) -}}
+{{- if $found -}}
+{{- $existing = index ($found.data | default dict) "TURN_SECRET" | default "" | b64dec -}}
+{{- end -}}
+{{- $_ := set .Values.coturn "_authSecret" (.Values.coturn.authSecret | default $existing | default (randAlphaNum 64)) -}}
+{{- end -}}
+{{- index .Values.coturn "_authSecret" -}}
+{{- end -}}
+
+{{/*
+The TURN server once per transport (e.g. UDP and TCP), comma-separated for the API's TURN_URLS.
+*/}}
+{{- define "tuneperfect.coturn.turnUrls" -}}
+{{- $urls := list -}}
+{{- range .Values.coturn.transports -}}
+{{- $urls = append $urls (printf "turn:%s:%d?transport=%s" $.Values.coturn.host (int $.Values.coturn.listeningPort) .) -}}
+{{- end -}}
+{{- join "," $urls -}}
+{{- end -}}

@@ -74,6 +74,12 @@ export const myRouter = os.prefix("/things").router({
 - All env vars validated with Valibot in `src/config/env.ts`
 - Add new vars to both `src/config/env.ts` schema AND `.env.example`
 
+### WebRTC / TURN
+
+- `webrtc.getIceServers` (`src/webrtc/`) needs a lobby token (game) or a session (phone). Its output must stay an array: released games read it that way
+- TURN credentials are time-limited and signed with `TURN_SECRET` (coturn's `--use-auth-secret`, see `src/webrtc/service.ts`): nothing is stored per user, coturn recomputes the signature. Never hand out a static TURN password
+- Env: `TURN_URLS` (comma-separated, e.g. UDP and TCP), `TURN_SECRET`, `TURN_CREDENTIAL_TTL`. In production Helm generates the secret (`helm/tuneperfect/README.md`); locally it matches `docker-compose.dev.yml`
+
 ### Testing
 
 - **Runner**: `bun:test` (Vitest-compatible API) — run with `bun test`

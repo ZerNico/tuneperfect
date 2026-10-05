@@ -8,6 +8,9 @@ metadata:
     app.kubernetes.io/component: coturn
 spec:
   replicas: 1
+  # With host networking a second pod can't bind 3478 next to the old one.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "tuneperfect.selectorLabels" . | nindent 6 }}
@@ -17,37 +20,89 @@ spec:
       labels:
         {{- include "tuneperfect.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: coturn
+      annotations:
+        # Restarts coturn when the secret is rotated (the pod spec wouldn't change otherwise).
+        checksum/auth-secret: {{ include "tuneperfect.coturn.authSecret" . | sha256sum }}
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.coturn.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
       containers:
         - name: coturn
           image: "{{ .Values.coturn.image.repository }}:{{ .Values.coturn.image.tag }}"
-          command: ["/bin/sh", "-c"]
+          # turnserver directly: no shell to expand anything, and it gets SIGTERM itself.
+          command: ["/usr/bin/turnserver"]
           args:
-            - |
-              /usr/bin/turnserver \
-                --listening-port={{ .Values.coturn.listeningPort }} \
-                --tls-listening-port={{ .Values.coturn.tlsListeningPort }} \
-                --realm={{ .Values.coturn.realm }} \
-                --server-name={{ .Values.coturn.realm }} \
-                --user=${TURN_USERNAME}:${TURN_CREDENTIAL} \
-                --min-port={{ .Values.coturn.minPort }} \
-                --max-port={{ .Values.coturn.maxPort }} \
-                {{- if .Values.coturn.externalIp }}
-                --external-ip={{ .Values.coturn.externalIp }} \
-                {{- end }}
-                --no-cli \
-                --no-multicast-peers \
-                --verbose \
-                --log-file=stdout
-          env:
-            - name: TURN_USERNAME
-              value: "{{ .Values.coturn.username }}"
-            - name: TURN_CREDENTIAL
-              value: "{{ .Values.coturn.credential }}"
+            # Holds only static-auth-secret, so the secret isn't in the arguments.
+            - -c
+            - /etc/coturn-secret/turnserver.conf
+            - --listening-port={{ .Values.coturn.listeningPort | int }}
+            - --realm={{ .Values.coturn.realm }}
+            - --server-name={{ .Values.coturn.realm }}
+            # Time-limited credentials signed by the API (TURN REST API), no static users.
+            - --use-auth-secret
+            - --min-port={{ .Values.coturn.minPort | int }}
+            - --max-port={{ .Values.coturn.maxPort | int }}
+            {{- if .Values.coturn.externalIp }}
+            - --external-ip={{ .Values.coturn.externalIp }}
+            {{- end }}
+            # No certificate yet, so no turns:/DTLS listener (DTLS is off by default since 4.17).
+            - --no-tls
+            # Browsers only relay UDP; TCP relays would let clients open TCP connections anywhere.
+            - --no-tcp-relay
+            - --no-multicast-peers
+            - --fingerprint
+            - --stale-nonce=600
+            - --user-quota={{ .Values.coturn.userQuota | int }}
+            - --total-quota={{ .Values.coturn.totalQuota | int }}
+            - --max-bps={{ .Values.coturn.maxBps | int }}
+            {{- if .Values.coturn.bpsCapacity }}
+            - --bps-capacity={{ .Values.coturn.bpsCapacity | int }}
+            {{- end }}
+            - --log-file=stdout
+            - --log-min-level=info
+            {{- range .Values.coturn.allowedPeerIps }}
+            - --allowed-peer-ip={{ . }}
+            {{- end }}
+            # Relays only reach the public internet, never this node's or the cluster's networks.
+            {{- range .Values.coturn.deniedPeerIps }}
+            - --denied-peer-ip={{ . }}
+            {{- end }}
+          ports:
+            - name: turn-udp
+              containerPort: {{ .Values.coturn.listeningPort | int }}
+              hostPort: {{ .Values.coturn.listeningPort | int }}
+              protocol: UDP
+            - name: turn-tcp
+              containerPort: {{ .Values.coturn.listeningPort | int }}
+              hostPort: {{ .Values.coturn.listeningPort | int }}
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: auth-secret
+              mountPath: /etc/coturn-secret
+              readOnly: true
           {{- if .Values.coturn.resources }}
           resources:
             {{- toYaml .Values.coturn.resources | nindent 12 }}
           {{- end }}
+      volumes:
+        - name: auth-secret
+          secret:
+            secretName: {{ include "tuneperfect.coturn.secretName" . }}
+            items:
+              - key: turnserver.conf
+                path: turnserver.conf
+            defaultMode: 0440
 {{- end }}

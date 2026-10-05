@@ -19,6 +19,12 @@ spec:
       labels:
         {{- include "tuneperfect.selectorLabels" $ | nindent 8 }}
         app.kubernetes.io/component: {{ $appName }}
+      {{- if and (eq $appName "api") $.Values.coturn.enabled }}
+      annotations:
+        # A new TURN secret or TURN settings restart the API too, even when its image didn't change.
+        checksum/auth-secret: {{ include "tuneperfect.coturn.authSecret" $ | sha256sum }}
+        checksum/coturn-config: {{ printf "%s|%s|%v" $.Values.coturn.stunUrl (include "tuneperfect.coturn.turnUrls" $) $.Values.coturn.credentialTtl | sha256sum }}
+      {{- end }}
     spec:
       {{- with $.Values.global.imagePullSecrets }}
       imagePullSecrets:
@@ -46,6 +52,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
+            {{- if and (eq $appName "api") $.Values.coturn.enabled }}
+            - name: TURN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "tuneperfect.coturn.secretName" $ }}
+                  key: TURN_SECRET
+            {{- end }}
           {{- if or $appConfig.secrets $appConfig.envFrom (and (eq $appName "api") $.Values.coturn.enabled) }}
           envFrom:
             {{- if $appConfig.envFrom }}
@@ -60,8 +73,6 @@ spec:
             {{- if and (eq $appName "api") $.Values.coturn.enabled }}
             - configMapRef:
                 name: {{ include "tuneperfect.fullname" $ }}-coturn-config
-            - secretRef:
-                name: coturn-credentials
             {{- end }}
           {{- end }}
           {{- if $appConfig.resources }}

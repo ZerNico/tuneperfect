@@ -104,6 +104,10 @@ function createConnectionStore() {
     }
     try {
       startTimeout(current, "ICE restart timed out");
+      // The connection's TURN credentials may have expired since it was set up.
+      const iceServers = await getIceServers();
+      if (attempt !== current || !current.connection) return;
+      current.connection.setIceServers(iceServers);
       const sdp = await current.connection.createOffer({ iceRestart: true });
       await send({ type: "offer", sdp, from: current.userId, session: current.session });
     } catch (err) {

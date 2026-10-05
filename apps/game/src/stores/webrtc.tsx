@@ -72,6 +72,10 @@ function createWebRTCStore() {
 
     // The same attempt offering again restarts ICE on its connection, keeping the data channel.
     if (existing && session !== undefined && existing.session === session) {
+      // The answering side gathers again too; its TURN credentials may have expired by now.
+      const iceServers = await getIceServers();
+      if (generation.signal.aborted || connections.get(userId) !== existing) return;
+      existing.setIceServers(iceServers);
       const answerSdp = await existing.createAnswer(offerSdp);
       if (generation.signal.aborted) return;
       await sendToPhone(userId, { type: "answer", sdp: answerSdp, from, to: userId, session });
