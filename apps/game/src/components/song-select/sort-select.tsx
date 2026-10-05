@@ -58,7 +58,7 @@ export function SortSelect(props: SortSelectProps) {
   return (
     <div class="flex items-center gap-[0.6cqw]">
       <KeyGlyph keyboard={IconF6Key} gamepad={IconGamepadLB} class="text-[1.2cqw] opacity-70" />
-      <div class="flex h-[2.6cqw] items-center gap-[0.2cqw] rounded-[0.9cqw] bg-black/45 p-[0.3cqw] ring-1 ring-white/10 ring-inset">
+      <div class="flex h-[2.6cqw] items-center gap-[0.2cqw] rounded-[0.9cqw] bg-black/30 p-[0.3cqw] ring-1 ring-white/10 backdrop-blur-md ring-inset">
         <button
           type="button"
           class="flex h-full cursor-pointer items-center px-[0.3cqw] text-[1cqw] text-white/60 hover:text-white active:scale-95"
