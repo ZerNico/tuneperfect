@@ -213,7 +213,7 @@ export default function VersusScreen() {
   // champion, the menu handles input.
   useNavigation(() => ({
     actions: champion()
-      ? {}
+      ? { back: null, "joker-1": null, "joker-2": null }
       : {
           back: onBack,
           "joker-1": () => void reroll(0),

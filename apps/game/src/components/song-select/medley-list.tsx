@@ -36,7 +36,7 @@ export function MedleyList(props: MedleyListProps) {
     },
     sound: false,
     get actions() {
-      return props.songs.length > 0 ? { "remove-from-medley": () => props.onRemove(list.position()) } : {};
+      return { "remove-from-medley": props.songs.length > 0 ? () => props.onRemove(list.position()) : null };
     },
   });
 

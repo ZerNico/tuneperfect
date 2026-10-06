@@ -101,10 +101,9 @@ export function createListNavigation(options: ListNavigationOptions) {
   useNavigation(() => {
     const actions: NavigationActions = { ...options.actions };
     // With one item (or none) there's nowhere to move.
-    if (options.count > 1) {
-      for (const [action, step] of steps()) {
-        actions[action] = { down: () => move(step), repeat: () => repeatMove(step) };
-      }
+    const movable = options.count > 1;
+    for (const [action, step] of steps()) {
+      actions[action] = movable ? { down: () => move(step), repeat: () => repeatMove(step) } : null;
     }
     const onActivate = options.onActivate;
     if (onActivate) {

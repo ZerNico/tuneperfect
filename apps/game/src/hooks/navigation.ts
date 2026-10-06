@@ -25,7 +25,8 @@ export type ActionHandler =
       repeat?: NavigationHandler;
     };
 
-export type NavigationActions = Partial<Record<Action, ActionHandler>>;
+/** Null: the screen has this action, but it does nothing right now (e.g. removing from an empty medley). */
+export type NavigationActions = Partial<Record<Action, ActionHandler | null>>;
 
 interface UseNavigationOptions {
   layer?: number | false;
@@ -33,7 +34,8 @@ interface UseNavigationOptions {
   /**
    * What this listener does per action. Only the actions listed count as handled: they're what the
    * screen offers right now (see `activeActions`), so build the map from the current state rather
-   * than ignoring actions inside a handler.
+   * than ignoring actions inside a handler. List one that only works at times as null meanwhile, so
+   * phones show it disabled instead of rearranging their buttons.
    */
   actions: NavigationActions;
 }
@@ -316,14 +318,27 @@ export function pressRemote(userId: string, action: Action) {
 }
 
 const layerInstances = new ReactiveMap<number, number>();
-/** The actions of every listener that currently gets input, by listener. */
-const activeActionLists = new ReactiveMap<object, Action[]>();
+/** The actions of every listener that currently gets input, by listener: whether each does something now. */
+const activeActionLists = new ReactiveMap<object, [Action, boolean][]>();
 
-/** What the game reacts to right now: the actions of the top layer's listeners (and layer-less ones). */
+/**
+ * What the current screen offers: the actions of the top layer's listeners (and layer-less ones),
+ * true for those that do something right now.
+ */
 export const activeActions = createRoot(() =>
-  createMemo(() => new Set([...activeActionLists.values()].flat()), undefined, {
-    equals: (a, b) => a.size === b.size && [...a].every((action) => b.has(action)),
-  }),
+  createMemo(
+    () => {
+      const actions = new Map<Action, boolean>();
+      for (const list of activeActionLists.values()) {
+        for (const [action, enabled] of list) actions.set(action, enabled || (actions.get(action) ?? false));
+      }
+      return actions;
+    },
+    undefined,
+    {
+      equals: (a, b) => a.size === b.size && [...a].every(([action, enabled]) => b.get(action) === enabled),
+    },
+  ),
 );
 
 export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
@@ -371,7 +386,10 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     const actions = opts.actions;
 
     const registration = {};
-    activeActionLists.set(registration, Object.keys(actions) as Action[]);
+    activeActionLists.set(
+      registration,
+      (Object.keys(actions) as Action[]).map((action) => [action, actions[action] != null]),
+    );
     onCleanup(() => activeActionLists.delete(registration));
 
     const phase = (action: Action, name: "down" | "up" | "hold" | "repeat") => {
@@ -381,7 +399,7 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     };
 
     const handleKeydown = ({ serial, event }: Emitted) => {
-      if (!(event.action in actions)) return;
+      if (actions[event.action] == null) return;
       // Forget keydowns whose keyup this instance missed while it was inactive.
       for (const key of received) {
         if (!liveSerials.has(Number.parseInt(key, 10))) received.delete(key);

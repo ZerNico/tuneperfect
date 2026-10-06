@@ -117,10 +117,13 @@ export const RemoteStateSchema = v.object({
   /** `full`: the phone may drive the whole game with navigation actions. */
   control: v.picklist(["full", "none"]),
   /**
-   * With full control: what the game's current screen reacts to, so the phone only offers those.
-   * A phone skips actions it doesn't know (a newer game may have more).
+   * With full control: what the game's current screen offers, so the phone only shows those.
+   * `enabled: false` means the screen has it but it does nothing right now (the phone shows it
+   * disabled rather than moving its other buttons). A phone skips actions it doesn't know.
    */
-  actions: v.array(NavActionSchema),
+  actions: v.array(v.object({ action: NavActionSchema, enabled: v.boolean() })),
+  /** Which screen the game is on, so a phone keeps a screen's buttons in place while it stays there. */
+  screen: v.string(),
   panel: v.nullable(PanelSchema),
   /** It's this user's move: the phone brings the panel up and vibrates. */
   attention: v.boolean(),

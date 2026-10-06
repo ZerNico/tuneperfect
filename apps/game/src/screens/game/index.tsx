@@ -77,7 +77,7 @@ export default function GameScreen() {
           skip,
           instrumental: () => setPreferInstrumental((value) => !value),
         }
-      : {},
+      : { back: null, skip: null, instrumental: null },
   }));
 
   createEffect(() => {

@@ -48,21 +48,35 @@ const EXTRAS: { action: NavAction; icon: Icon; label: () => string }[] = [
 ];
 
 /**
- * The game's own buttons, for players with full control: exactly the ones the game's current
- * screen reacts to, so it changes as the game moves on.
+ * The game's own buttons, for players with full control: the ones the game's current screen
+ * offers. A button stays in place while the game is on that screen, disabled while it does
+ * nothing (e.g. a popup is open), so the others don't move around.
  */
 export default function NavPad() {
   const remote = useRemote();
-  const available = createMemo(() => new Set(remote.state()?.actions ?? []));
-  const has = (action: NavAction) => available().has(action);
+
+  /** Every action seen on the game's current screen; starts over on another screen. */
+  const shown = createMemo<{ screen: string; actions: Set<NavAction> }>((previous) => {
+    const state = remote.state();
+    const screen = state?.screen ?? "";
+    const actions = new Set(previous?.screen === screen ? previous.actions : []);
+    for (const { action } of state?.actions ?? []) actions.add(action);
+    return { screen, actions };
+  });
+  const enabled = createMemo(
+    () => new Set((remote.state()?.actions ?? []).filter((entry) => entry.enabled).map((entry) => entry.action)),
+  );
+
+  const shows = (action: NavAction) => shown().actions.has(action);
+  const has = (action: NavAction) => enabled().has(action);
   const press = (action: NavAction) => remote.act({ type: "nav", action });
 
-  const hasPad = () => (["up", "down", "left", "right", "confirm"] as const).some(has);
-  const extras = () => EXTRAS.filter((extra) => has(extra.action));
+  const hasPad = () => (["up", "down", "left", "right", "confirm"] as const).some(shows);
+  const extras = () => EXTRAS.filter((extra) => shows(extra.action));
 
   return (
     <Show
-      when={hasPad() || has("back") || extras().length > 0}
+      when={hasPad() || shows("back") || extras().length > 0}
       fallback={<p class="text-center text-white/50">{t("remote.pad.nothing")}</p>}
     >
       <div class="flex flex-col items-center gap-5">
@@ -81,7 +95,7 @@ export default function NavPad() {
             />
             <button
               type="button"
-              class="gradient-accent flex size-20 cursor-pointer items-center justify-center rounded-full text-lg font-black shadow-crisp transition-[scale,opacity] select-none active:scale-95 disabled:cursor-default disabled:opacity-0"
+              class="gradient-accent flex size-20 cursor-pointer items-center justify-center rounded-full text-lg font-black shadow-crisp transition-[scale,opacity] select-none active:scale-95 disabled:cursor-default disabled:opacity-25"
               disabled={!has("confirm")}
               onClick={() => press("confirm")}
             >
@@ -107,10 +121,11 @@ export default function NavPad() {
         </Show>
 
         <div class="grid w-full grid-cols-2 gap-2">
-          <Show when={has("back")}>
+          <Show when={shows("back")}>
             <button
               type="button"
-              class="col-span-2 flex h-12 cursor-pointer items-center justify-center rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color] select-none hover:bg-white/15 active:scale-[0.97]"
+              class="col-span-2 flex h-12 cursor-pointer items-center justify-center rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+              disabled={!has("back")}
               onClick={() => press("back")}
             >
               {t("remote.pad.back")}
@@ -120,7 +135,8 @@ export default function NavPad() {
             {(extra) => (
               <button
                 type="button"
-                class="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color] select-none hover:bg-white/12 active:scale-[0.97]"
+                class="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none hover:bg-white/12 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+                disabled={!has(extra.action)}
                 onClick={() => press(extra.action)}
               >
                 <Dynamic component={extra.icon} class="shrink-0" />

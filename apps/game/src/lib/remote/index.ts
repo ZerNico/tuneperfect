@@ -1,7 +1,6 @@
 import {
   type ActResult,
   NAV_ACTIONS,
-  type NavAction,
   type Panel,
   type RemoteAction,
   type RemoteState,
@@ -42,8 +41,19 @@ export function useRemoteSurface(surface: RemoteSurface) {
 
 const hasFullControl = (userId: string) => lobbyStore.remoteControlIds().includes(userId);
 
-/** What a phone with full control can press right now: what the screen reacts to, minus game-only keys (fullscreen). */
-const remoteActions = (): NavAction[] => NAV_ACTIONS.filter((action) => activeActions().has(action));
+/** What a phone with full control can press on this screen: what it offers, minus game-only keys (fullscreen). */
+const remoteActions = () =>
+  NAV_ACTIONS.flatMap((action) => {
+    const enabled = activeActions().get(action);
+    return enabled === undefined ? [] : [{ action, enabled }];
+  });
+
+const [screen, setScreen] = createSignal("");
+
+/** Tells phones which screen the game is on; the root screen calls this with the route's path. */
+export function useRemoteScreen(path: () => string) {
+  createEffect(() => setScreen(path()));
+}
 
 /** What `userId`'s phone shows; reactive. */
 function stateFor(userId: string): RemoteState {
@@ -52,6 +62,7 @@ function stateFor(userId: string): RemoteState {
   return {
     control: full ? "full" : "none",
     actions: full ? remoteActions() : [],
+    screen: screen(),
     panel: current?.panel ?? null,
     attention: current?.attention ?? false,
   };
@@ -62,7 +73,7 @@ export function dispatchRemote(userId: string, action: RemoteAction): ActResult 
   if (action.type === "nav") {
     if (!hasFullControl(userId)) return NOT_ALLOWED;
     // The screen changed since the phone got its buttons.
-    if (!activeActions().has(action.action)) return STALE;
+    if (!activeActions().get(action.action)) return STALE;
     pressRemote(userId, action.action);
     return OK;
   }

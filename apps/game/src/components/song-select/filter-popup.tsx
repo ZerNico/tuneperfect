@@ -175,9 +175,9 @@ export function FilterPopup(props: FilterPopupProps) {
       return {
         back: () => props.onClose(),
         filter: () => props.onClose(),
-        ...(left && { left: step(left) }),
-        ...(right && { right: step(right) }),
-        ...(confirm && { confirm }),
+        left: left ? step(left) : null,
+        right: right ? step(right) : null,
+        confirm: confirm || null,
       };
     },
   });
