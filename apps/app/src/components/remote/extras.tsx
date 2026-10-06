@@ -1,4 +1,3 @@
-import { Dialog as KDialog } from "@kobalte/core/dialog";
 import type { Extras } from "@tuneperfect/webrtc/contracts/game";
 import { createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -6,6 +5,7 @@ import IconSliders from "~icons/ph/sliders-horizontal-bold";
 import IconX from "~icons/ph/x-bold";
 
 import SongCover from "~/components/song-cover";
+import Sheet from "~/components/ui/sheet";
 import { useGameConnection } from "~/contexts/game-client";
 import { t } from "~/lib/i18n";
 import { useRemote } from "~/lib/remote";
@@ -158,70 +158,49 @@ function SortFilterSheet(props: {
   const anyActive = () => props.songs.filters.some((item) => item.value !== null);
 
   return (
-    <KDialog open onOpenChange={(open) => !open && props.onClose()}>
-      <KDialog.Portal>
-        <KDialog.Overlay class="fixed inset-0 z-15 bg-black/60 backdrop-blur-sm" />
-        <div class="fixed inset-x-0 bottom-0 z-16 flex justify-center">
-          <KDialog.Content class="flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-[24px] surface-raised text-white outline-none">
-            <div class="flex items-center justify-between px-6 pt-4 pb-2">
-              <KDialog.Title class="text-xl font-bold">{t("remote.songs.title")}</KDialog.Title>
-              <KDialog.CloseButton
-                aria-label={t("remote.close")}
-                class="flex size-9 cursor-pointer items-center justify-center rounded-[10px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+    <Sheet open onOpenChange={(open) => !open && props.onClose()} title={t("remote.songs.title")}>
+      <div class="flex flex-col gap-5">
+        <Section label={t("remote.songs.sort")}>
+          <For each={props.songs.sorts}>
+            {(sort) => (
+              <Chip
+                active={props.songs.sort === sort.value}
+                onClick={() => void remote.act({ type: "songs.sort", surface: props.songs.surface, sort: sort.value })}
               >
-                <IconX />
-              </KDialog.CloseButton>
-            </div>
-            <div class="flex min-h-0 flex-col gap-5 overflow-y-auto overscroll-contain px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-              <Section label={t("remote.songs.sort")}>
-                <For each={props.songs.sorts}>
-                  {(sort) => (
-                    <Chip
-                      active={props.songs.sort === sort.value}
-                      onClick={() =>
-                        void remote.act({ type: "songs.sort", surface: props.songs.surface, sort: sort.value })
-                      }
-                    >
-                      {sort.label}
-                    </Chip>
-                  )}
-                </For>
-              </Section>
-              <For each={props.songs.filters}>
-                {(item) => (
-                  <Section label={item.label}>
-                    <Chip active={item.value === null} onClick={() => props.onFilter(item.id, null)}>
-                      {t("remote.songs.any")}
-                    </Chip>
-                    <For each={item.options}>
-                      {(option) => (
-                        <Chip
-                          active={item.value === option.value}
-                          onClick={() => props.onFilter(item.id, option.value)}
-                        >
-                          {option.label}
-                        </Chip>
-                      )}
-                    </For>
-                  </Section>
+                {sort.label}
+              </Chip>
+            )}
+          </For>
+        </Section>
+        <For each={props.songs.filters}>
+          {(item) => (
+            <Section label={item.label}>
+              <Chip active={item.value === null} onClick={() => props.onFilter(item.id, null)}>
+                {t("remote.songs.any")}
+              </Chip>
+              <For each={item.options}>
+                {(option) => (
+                  <Chip active={item.value === option.value} onClick={() => props.onFilter(item.id, option.value)}>
+                    {option.label}
+                  </Chip>
                 )}
               </For>
-              <Show when={anyActive()}>
-                <button
-                  type="button"
-                  class="flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-[12px] bg-white/8 font-bold text-red-300 transition-colors hover:bg-white/12"
-                  onClick={() => {
-                    for (const item of props.songs.filters) if (item.value !== null) props.onFilter(item.id, null);
-                  }}
-                >
-                  {t("remote.songs.clearFilters")}
-                </button>
-              </Show>
-            </div>
-          </KDialog.Content>
-        </div>
-      </KDialog.Portal>
-    </KDialog>
+            </Section>
+          )}
+        </For>
+        <Show when={anyActive()}>
+          <button
+            type="button"
+            class="flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-[12px] bg-white/8 font-bold text-red-300 transition-colors hover:bg-white/12"
+            onClick={() => {
+              for (const item of props.songs.filters) if (item.value !== null) props.onFilter(item.id, null);
+            }}
+          >
+            {t("remote.songs.clearFilters")}
+          </button>
+        </Show>
+      </div>
+    </Sheet>
   );
 }
 
@@ -230,7 +209,10 @@ function Section(props: { label: string; children: JSX.Element }) {
   return (
     <section class="flex flex-col gap-2">
       <h3 class="text-xs font-bold tracking-[0.12em] text-white/50 uppercase">{props.label}</h3>
-      <div class="-mx-6 flex [scrollbar-width:none] gap-2 overflow-x-auto px-6">{props.children}</div>
+      {/* One row to swipe on phones; wrapped where a mouse can't scroll sideways. */}
+      <div class="-mx-6 flex [scrollbar-width:none] gap-2 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        {props.children}
+      </div>
     </section>
   );
 }
