@@ -22,6 +22,7 @@ import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { formatNumber, t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
+import { NOT_ALLOWED, STALE, UNAVAILABLE, useRemoteSurface } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
@@ -215,6 +216,44 @@ export default function VersusScreen() {
       else if (event.action === "joker-1") void reroll(0);
       else if (event.action === "joker-2") void reroll(1);
       // Confirm goes through the footer button (it fires on key up, with press feedback).
+    },
+  });
+
+  // The two singers spend their own jokers from their phones; everyone else sees who's up.
+  useRemoteSurface({
+    panel: (userId) => {
+      const pair = matchup();
+      if (!pair) return null;
+      const song = spinning() ? null : currentSong();
+      const songInfo = song ? { hash: song.hash, title: song.title, artist: song.artist } : null;
+      const name = (user: User) => user.username ?? "?";
+
+      const slot = pair.findIndex((user) => user.id === userId);
+      if (slot !== 0 && slot !== 1) {
+        return { panel: { kind: "versus.watch", players: [name(pair[0]), name(pair[1])], song: songInfo } };
+      }
+      const other = slot === 0 ? 1 : 0;
+      return {
+        panel: {
+          kind: "versus",
+          slot,
+          color: slotColor(slot),
+          jokers: jokers()[slot],
+          maxJokers,
+          opponent: { name: name(pair[other]), jokers: jokers()[other] },
+          canReroll: jokers()[slot] > 0 && !spinning() && availableSongs().length > 1,
+          song: songInfo,
+        },
+        attention: true,
+      };
+    },
+    act: (userId, action) => {
+      if (action.type !== "versus.reroll") return UNAVAILABLE;
+      const slot = matchup()?.findIndex((user) => user.id === userId);
+      if (slot !== 0 && slot !== 1) return NOT_ALLOWED;
+      if (jokers()[slot] <= 0 || !nextSong()) return STALE;
+      void reroll(slot);
+      return { ok: true };
     },
   });
 

@@ -31,7 +31,7 @@ export default function NavItems(props: NavItemsProps) {
       to: sessionQuery.data?.lobbyId ? "/" : "/join",
       label: () => t("nav.lobby"),
       icon: IconMicrophone,
-      matches: (path) => path === "/" || path === "/songs" || path.startsWith("/join"),
+      matches: (path) => path === "/" || path === "/songs" || path === "/controller" || path.startsWith("/join"),
     },
     {
       to: "/clubs",

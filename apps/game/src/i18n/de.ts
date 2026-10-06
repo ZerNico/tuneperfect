@@ -76,6 +76,7 @@ const de = {
     selectClub: "Club auswählen",
     noClub: "Kein Club",
     recreateLobby: "Lobby neu erstellen",
+    remoteControl: "Fernsteuerung",
   },
   select: {
     title: "Auswahl",

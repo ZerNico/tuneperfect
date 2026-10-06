@@ -74,6 +74,7 @@ const en = {
     selectClub: "Select Club",
     noClub: "No Club",
     recreateLobby: "Recreate Lobby",
+    remoteControl: "Remote Control",
   },
   select: {
     title: "Select",

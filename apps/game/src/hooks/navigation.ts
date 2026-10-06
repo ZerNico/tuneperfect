@@ -20,7 +20,7 @@ interface UseNavigationOptions {
 }
 
 export type NavigationEvent = {
-  origin: "gamepad" | "keyboard";
+  origin: "gamepad" | "keyboard" | "remote";
   originalKey: string;
   modifiers?: string[];
   action:
@@ -98,6 +98,9 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["RT", ["add-to-medley"]],
 ]);
 
+/** How long a phone's button counts as held: long enough for press feedback, short of a hold. */
+const REMOTE_PRESS_MS = 80;
+
 const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
   switch (button) {
     case "L_AXIS_X":
@@ -155,7 +158,7 @@ interface Press {
 }
 
 const emitter = mitt<Events>();
-/** Held inputs by source: `key:<code>`, `pad:<gamepad>:<button>` or `axis:<gamepad>:<axis>`. */
+/** Held inputs by source: `key:<code>`, `pad:<gamepad>:<button>`, `axis:<gamepad>:<axis>` or `remote:<user>:<action>`. */
 const presses = new Map<string, Press>();
 const liveSerials = new Set<number>();
 let nextSerial = 0;
@@ -279,6 +282,17 @@ createRoot(() => {
     },
   });
 });
+
+/**
+ * A button pressed on a phone with full control (see `lib/remote`). It goes down and comes back up
+ * like a key, so everything that reacts on key up (buttons, menus) works the same. Doesn't change
+ * `keyMode`: the key hints stay on what's used at the game itself.
+ */
+export function pressRemote(userId: string, action: NavigationEvent["action"]) {
+  const id = `remote:${userId}:${action}`;
+  press(id, { origin: "remote", originalKey: action, actions: [action] });
+  window.setTimeout(() => release(id), REMOTE_PRESS_MS);
+}
 
 const layerInstances = new ReactiveMap<number, number>();
 

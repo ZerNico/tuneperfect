@@ -20,6 +20,8 @@ const lobbyStoreSchema = v.object({
   version: v.literal("1.0.0"),
   data: v.nullable(lobbyDataSchema),
   localPlayerIds: v.optional(v.array(v.string()), []),
+  /** Online players allowed to control the whole game from their phone. */
+  remoteControlIds: v.optional(v.array(v.string()), []),
 });
 
 type LobbyStore = v.InferOutput<typeof lobbyStoreSchema>;
@@ -29,6 +31,7 @@ const defaultLobbySettings: LobbyStore = {
   version: "1.0.0",
   data: null,
   localPlayerIds: [],
+  remoteControlIds: [],
 };
 
 const lobbyStoreInstance = createPersistentStore({
@@ -51,6 +54,13 @@ function createLobbyStore() {
   const localPlayerIds = () => lobbyStoreInstance.settings().localPlayerIds;
   const setLocalPlayerIds = (ids: string[]) => lobbyStoreInstance.updateSettings("localPlayerIds", ids);
 
+  const remoteControlIds = () => lobbyStoreInstance.settings().remoteControlIds;
+  const setRemoteControlIds = (ids: string[]) => lobbyStoreInstance.updateSettings("remoteControlIds", ids);
+  const setRemoteControl = (userId: string, allowed: boolean) => {
+    const others = remoteControlIds().filter((id) => id !== userId);
+    setRemoteControlIds(allowed ? [...others, userId] : others);
+  };
+
   const lobby = () => {
     return lobbyStoreInstance.settings().data;
   };
@@ -69,6 +79,7 @@ function createLobbyStore() {
 
     setLobby(undefined);
     setLocalPlayerIds([]);
+    setRemoteControlIds([]);
     deleteLobby(current.token).catch(() => {});
   };
 
@@ -99,6 +110,8 @@ function createLobbyStore() {
     addLocalPlayer,
     removeLocalPlayer,
     localPlayersInLobby,
+    remoteControlIds,
+    setRemoteControl,
   };
 }
 

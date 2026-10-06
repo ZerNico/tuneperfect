@@ -4,7 +4,8 @@
 @import "@fontsource/lato/700.css";
 @import "@fontsource/lato/900.css";
 
-@theme {
+/* Static: mic colours come from the game at runtime (see components/remote), so every colour must exist. */
+@theme static {
   --font-primary: "Lato", sans-serif;
 
   --color-*: initial;

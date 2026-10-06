@@ -4,11 +4,12 @@ import { Match, Switch } from "solid-js";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
-import Menu, { type MenuItem } from "~/components/menu";
+import Menu, { select, type MenuItem } from "~/components/menu";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { lobbyQueryOptions } from "~/lib/queries";
+import { lobbyStore } from "~/stores/lobby";
 import { webrtcStore } from "~/stores/webrtc";
 
 const route = getRouteApi("/lobby/$id");
@@ -27,6 +28,7 @@ export default function RouteScreen() {
       onSuccess: async (_data, variables) => {
         // Close WebRTC connection when user is kicked
         webrtcStore.closeConnection(variables.userId);
+        lobbyStore.setRemoteControl(variables.userId, false);
         await queryClient.invalidateQueries(lobbyQueryOptions());
         navigate({ to: "/lobby" });
       },
@@ -34,6 +36,14 @@ export default function RouteScreen() {
   );
 
   const menuItems: MenuItem[] = [
+    // Lets them drive the whole game from their phone, menus included.
+    select({
+      label: t("lobby.remoteControl"),
+      value: () => (lobbyStore.remoteControlIds().includes(params().id) ? "yes" : "no"),
+      options: ["no", "yes"],
+      onChange: (value) => lobbyStore.setRemoteControl(params().id, value === "yes"),
+      renderValue: (value) => t(`common.${value as "yes" | "no"}`),
+    }),
     {
       type: "button",
       label: t("lobby.kick"),

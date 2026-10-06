@@ -17,6 +17,7 @@ import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
+import { NOT_ALLOWED, STALE, UNAVAILABLE, useRemoteSurface } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
@@ -225,6 +226,83 @@ export default function TicTacToeScreen() {
       // Confirm on the board goes through the footer button (it fires on key up, with press feedback).
     },
   }));
+
+  // Phones of the team on turn pick the cell (the cursor on screen follows them), and choose their
+  // singer in manual mode. The other team watches.
+  const songInfo = (song: LocalSong | null) =>
+    song ? { hash: song.hash, title: song.title, artist: song.artist } : null;
+  const teamOf = (userId: string) =>
+    (["x", "o"] as const).find((mark) => getTeam(state(), mark).players.some((player) => player.id === userId));
+  /** Whether `userId` may move on the board now. */
+  const onTurn = (userId: string) => !winner() && pickingCell() === null && teamOf(userId) === turn();
+  const freeCell = (index: number) => {
+    const cell = board()[index];
+    return !!cell && cell.owner === null && !!cell.song;
+  };
+
+  useRemoteSurface({
+    panel: (userId) => {
+      const mark = teamOf(userId);
+      if (!mark || winner()) return null;
+
+      const cellIndex = pickingCell();
+      if (cellIndex !== null) {
+        if (pickingMark() !== mark) return { panel: { kind: "ticTacToe.wait", mark, choosing: pickingMark() } };
+        return {
+          panel: {
+            kind: "ticTacToe.singer",
+            mark,
+            color: teamColor(mark),
+            song: songInfo(board()[cellIndex]?.song ?? null),
+            players: getTeam(state(), mark).players.map((player) => ({ id: player.id, name: player.username ?? "?" })),
+            cursor: pickCursor(),
+          },
+          attention: true,
+        };
+      }
+
+      return {
+        panel: {
+          kind: "ticTacToe.board",
+          mark,
+          turn: turn(),
+          colors: { x: teamColor("x"), o: teamColor("o") },
+          size: gridSize(),
+          cursor: cursor(),
+          cells: board().map((cell) => ({ song: songInfo(cell.song), owner: cell.owner })),
+        },
+        attention: turn() === mark,
+      };
+    },
+    act: (userId, action) => {
+      switch (action.type) {
+        case "ticTacToe.cursor":
+        case "ticTacToe.pick": {
+          if (!onTurn(userId)) return NOT_ALLOWED;
+          if (!freeCell(action.cell)) return STALE;
+          if (cursor() !== action.cell) {
+            setCursor(action.cell);
+            playSound("select");
+          }
+          if (action.type === "ticTacToe.pick") startSingOff(action.cell);
+          return { ok: true };
+        }
+        case "ticTacToe.singerCursor":
+        case "ticTacToe.singerPick": {
+          if (winner() || pickingCell() === null || teamOf(userId) !== pickingMark()) return NOT_ALLOWED;
+          if (!pickingTeam()?.players[action.index]) return STALE;
+          if (pickCursor() !== action.index) {
+            setPickCursor(action.index);
+            playSound("select");
+          }
+          if (action.type === "ticTacToe.singerPick") confirmPick();
+          return { ok: true };
+        }
+        default:
+          return UNAVAILABLE;
+      }
+    },
+  });
 
   const menuItems: MenuItem[] = [
     {
