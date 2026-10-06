@@ -32,7 +32,7 @@ secrets:
     discordClientSecret: ""
     posthogToken: ""
 
-# PostgreSQL: the cluster's shared CloudNativePG cluster (tuneperfect-infra). The chart declares its
+# PostgreSQL: the cluster's shared CloudNativePG cluster (k8s-infra). The chart declares its
 # own database and user there through postgresql-access-operator.
 database:
   host: postgres-rw.postgresql.svc.cluster.local

@@ -6,7 +6,7 @@ Deploys the web site, the phone app, the API (with Redis) and coturn. The produc
 ## PostgreSQL
 
 The database lives on the cluster's shared PostgreSQL (CloudNativePG, set up by the
-`tuneperfect-infra` Ansible repo, which also runs its backups). The chart only declares the
+`k8s-infra` Ansible repo, which also runs its backups). The chart only declares the
 `tuneperfect` database, user and grant (`templates/database.yaml`), which postgresql-access-operator
 creates there with the password from `database.password`. The API connects to `database.host`.
 
