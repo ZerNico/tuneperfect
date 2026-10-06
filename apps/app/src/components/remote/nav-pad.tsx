@@ -2,6 +2,7 @@ import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
 import { type Component, createMemo, For, type JSX, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
+import IconArrowLeft from "~icons/ph/arrow-left-bold";
 import IconCaretDown from "~icons/ph/caret-down-bold";
 import IconCaretDownFill from "~icons/ph/caret-down-fill";
 import IconCaretLeft from "~icons/ph/caret-left-bold";
@@ -55,7 +56,9 @@ const EXTRAS: { action: NavAction; icon: Icon; label: () => string }[] = [
  * offers. A button stays in place while the game is on that screen, disabled while it does
  * nothing (e.g. a popup is open), so the others don't move around.
  */
-export default function NavPad() {
+export default function NavPad(props: {
+  /** Actions offered elsewhere on the page (e.g. the song strip). */ hidden?: ReadonlySet<NavAction>;
+}) {
   const remote = useRemote();
 
   /** Every action seen on the game's current screen; starts over on another screen. */
@@ -70,7 +73,7 @@ export default function NavPad() {
     () => new Set((remote.state()?.actions ?? []).filter((entry) => entry.enabled).map((entry) => entry.action)),
   );
 
-  const shows = (action: NavAction) => shown().actions.has(action);
+  const shows = (action: NavAction) => shown().actions.has(action) && !props.hidden?.has(action);
   const has = (action: NavAction) => enabled().has(action);
   /**
    * Holds the game's button while the finger is on it (lists keep scrolling, like a held key).
@@ -142,10 +145,11 @@ export default function NavPad() {
           <Show when={shows("back")}>
             <button
               type="button"
-              class="col-span-2 flex h-12 cursor-pointer touch-none items-center justify-center rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+              class="col-span-2 flex h-12 cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
               disabled={!has("back")}
               {...hold("back")}
             >
+              <IconArrowLeft />
               {t("remote.pad.back")}
             </button>
           </Show>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/solid-router";
+import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
 import { Show } from "solid-js";
 
 import PageHeader from "~/components/page-header";
@@ -7,6 +8,16 @@ import NavPad from "~/components/remote/nav-pad";
 import RemotePanel, { Notice } from "~/components/remote/remote-panel";
 import { t } from "~/lib/i18n";
 import { useRemote } from "~/lib/remote";
+
+/** What the song strip does directly, so the pad leaves them out. */
+const SONG_STRIP_ACTIONS: ReadonlySet<NavAction> = new Set([
+  "search",
+  "filter",
+  "sort-left",
+  "sort-right",
+  "filter-left",
+  "filter-right",
+]);
 
 export const Route = createFileRoute("/_auth/_lobby/_connected/controller")({
   component: ControllerComponent,
@@ -41,7 +52,7 @@ function ControllerComponent() {
           >
             {(songs) => <SongsStrip songs={songs()} text={remote.state()?.extras?.text} />}
           </Show>
-          <NavPad />
+          <NavPad hidden={remote.state()?.extras?.songs ? SONG_STRIP_ACTIONS : undefined} />
         </Show>
       </Show>
     </main>

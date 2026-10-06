@@ -22,13 +22,13 @@ import KeyGlyph from "../ui/key-glyph";
 interface MedleyListProps {
   songs: LocalSong[];
   onRemove: (index: number) => void;
+  /** The selected entry, for removing it by key (the screen owns that key, so it's there with an empty medley too). */
+  onSelectedChange?: (index: number) => void;
   onStart?: () => void;
   useAlternativeNavigation?: boolean;
 }
 
 export function MedleyList(props: MedleyListProps) {
-  const removeSelected = () => props.onRemove(list.position());
-
   const list = createListNavigation({
     get count() {
       return props.songs.length;
@@ -37,10 +37,8 @@ export function MedleyList(props: MedleyListProps) {
       return props.useAlternativeNavigation ? (["medley-up", "medley-down"] as const) : (["up", "down"] as const);
     },
     sound: false,
-    get actions() {
-      return { "remove-from-medley": props.songs.length > 0 ? removeSelected : null };
-    },
   });
+  createEffect(() => props.onSelectedChange?.(list.position()));
 
   // Select a newly added song; keep the selection on the list when songs are removed.
   createEffect(

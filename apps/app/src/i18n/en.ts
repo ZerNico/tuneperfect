@@ -263,7 +263,7 @@ const en = {
       sort: "Sort",
       searchIn: "Search in",
       addToMedley: "Add to medley",
-      removeFromMedley: "Remove",
+      removeFromMedley: "Remove from medley",
       medleyUp: "Medley up",
       medleyDown: "Medley down",
       randomMedley: "Random medley",

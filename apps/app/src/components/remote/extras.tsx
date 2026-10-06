@@ -1,8 +1,10 @@
 import type { Extras } from "@tuneperfect/webrtc/contracts/game";
 import { createSignal, For, type JSX, onCleanup, Show } from "solid-js";
+import IconCheck from "~icons/ph/check-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
 import IconSliders from "~icons/ph/sliders-horizontal-bold";
+import IconSortAscending from "~icons/ph/sort-ascending-bold";
 import IconX from "~icons/ph/x-bold";
 
 import SongCover from "~/components/song-cover";
@@ -23,7 +25,10 @@ const TEXT_DEBOUNCE_MS = 200;
  */
 export function TextExtraField(props: {
   text: TextExtra;
-  /** A search field: label as placeholder, with an icon. */ search?: boolean;
+  /** A search field: label as placeholder, with an icon. */
+  search?: boolean;
+  /** At the end of the field, e.g. what the search looks in. */
+  trailing?: JSX.Element;
 }) {
   const remote = useRemote();
   const [focused, setFocused] = createSignal(false);
@@ -42,7 +47,7 @@ export function TextExtraField(props: {
       <Show when={!props.search}>
         <span class="text-sm font-bold text-white/60">{props.text.label}</span>
       </Show>
-      <span class="flex h-12 items-center gap-2 rounded-[12px] bg-white/8 px-3 focus-within:ring-2 focus-within:ring-white/40">
+      <span class="flex h-12 items-center gap-2 rounded-[12px] bg-white/8 pr-1.5 pl-3 focus-within:ring-2 focus-within:ring-white/40">
         <Show when={props.search}>
           <IconMagnifyingGlass class="shrink-0 text-white/45" />
         </Show>
@@ -89,28 +94,30 @@ export function TextExtraField(props: {
             <IconX />
           </button>
         </Show>
+        {props.trailing}
       </span>
     </label>
   );
 }
 
 /**
- * The song select: the song on the TV, its search (typed here, in a chosen field), its sort and a
- * sheet with its filters. Active filters stay visible and come off with a tap.
+ * The song select: the song on the TV, its search (typed here, in a chosen field) and its sort and
+ * filters, each picked in a sheet. Active filters stay visible and come off with a tap.
  */
 export function SongsStrip(props: { songs: SongsExtra; text?: TextExtra }) {
   const remote = useRemote();
   const client = useGameConnection();
-  const [open, setOpen] = createSignal(false);
+  const [sheet, setSheet] = createSignal<"scope" | "sort" | "filters" | null>(null);
   const surface = () => props.songs.surface;
   const active = () => props.songs.filters.filter((candidate) => candidate.value !== null);
   const setFilter = (id: string, value: string | null) =>
     void remote.act({ type: "songs.filter", surface: surface(), filter: id, value });
-  const optionLabel = (item: SongsExtra["filters"][number]) =>
-    item.options.find((option) => option.value === item.value)?.label ?? item.value;
+  const labelOf = (options: { value: string; label: string }[], value: string | null | undefined) =>
+    options.find((option) => option.value === value)?.label ?? value ?? "";
+  const close = () => setSheet(null);
 
   return (
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-3">
       {/* Same size with or without a song, so nothing below moves while searching. */}
       <div class="flex h-15 items-center gap-3 rounded-[14px] bg-white/7 p-2">
         <Show
@@ -144,58 +151,56 @@ export function SongsStrip(props: { songs: SongsExtra; text?: TextExtra }) {
 
       <Show when={props.text}>
         {(text) => (
-          <div class="flex flex-col gap-2">
-            <TextExtraField text={text()} search />
-            {/* Older games don't say which field the search looks in. */}
-            <Show when={props.songs.scopes?.length}>
-              <Row>
-                <span class="flex h-9 shrink-0 items-center text-sm font-bold text-white/50">
-                  {t("remote.songs.searchIn")}
-                </span>
-                <For each={props.songs.scopes}>
-                  {(scope) => (
-                    <Chip
-                      active={props.songs.scope === scope.value}
-                      onClick={() => void remote.act({ type: "songs.scope", surface: surface(), scope: scope.value })}
-                    >
-                      {scope.label}
-                    </Chip>
-                  )}
-                </For>
-              </Row>
-            </Show>
-          </div>
+          <TextExtraField
+            text={text()}
+            search
+            trailing={
+              // Older games don't say which field the search looks in.
+              <Show when={props.songs.scopes?.length}>
+                <button
+                  type="button"
+                  aria-label={t("remote.songs.searchIn")}
+                  class="flex h-9 max-w-[45%] shrink-0 cursor-pointer items-center gap-1 rounded-[9px] bg-white/10 px-2.5 text-sm font-bold transition-colors hover:bg-white/15"
+                  onClick={() => setSheet("scope")}
+                >
+                  <span class="truncate">{labelOf(props.songs.scopes ?? [], props.songs.scope)}</span>
+                </button>
+              </Show>
+            }
+          />
         )}
       </Show>
 
-      <Section label={t("remote.songs.sort")}>
-        <For each={props.songs.sorts}>
-          {(sort) => (
-            <Chip
-              active={props.songs.sort === sort.value}
-              onClick={() => void remote.act({ type: "songs.sort", surface: surface(), sort: sort.value })}
-            >
-              {sort.label}
-            </Chip>
-          )}
-        </For>
-      </Section>
+      <div class="grid grid-cols-2 gap-2">
+        <Dropdown
+          icon={<IconSortAscending />}
+          label={t("remote.songs.sort")}
+          value={labelOf(props.songs.sorts, props.songs.sort)}
+          onClick={() => setSheet("sort")}
+        />
+        <Show when={props.songs.filters.length > 0}>
+          <Dropdown
+            icon={<IconSliders />}
+            label={t("remote.songs.filters")}
+            value={
+              active().length > 0
+                ? active()
+                    .map((item) => labelOf(item.options, item.value))
+                    .join(", ")
+                : t("remote.songs.any")
+            }
+            badge={active().length}
+            onClick={() => setSheet("filters")}
+          />
+        </Show>
+      </div>
 
-      <Show when={props.songs.filters.length > 0}>
+      <Show when={active().length > 0}>
         <div class="flex flex-wrap gap-2">
-          <Chip onClick={() => setOpen(true)}>
-            <IconSliders />
-            {t("remote.songs.filters")}
-            <Show when={active().length > 0}>
-              <span class="flex size-5 items-center justify-center rounded-full bg-white text-xs text-slate-900">
-                {active().length}
-              </span>
-            </Show>
-          </Chip>
           <For each={active()}>
             {(item) => (
               <Chip active onClick={() => setFilter(item.id, null)}>
-                {optionLabel(item)}
+                {labelOf(item.options, item.value)}
                 <IconX class="text-sm opacity-70" />
               </Chip>
             )}
@@ -203,10 +208,84 @@ export function SongsStrip(props: { songs: SongsExtra; text?: TextExtra }) {
         </div>
       </Show>
 
-      <Show when={open()}>
-        <FilterSheet songs={props.songs} onClose={() => setOpen(false)} onFilter={setFilter} />
+      <Show when={sheet() === "scope"}>
+        <OptionSheet
+          title={t("remote.songs.searchIn")}
+          options={props.songs.scopes ?? []}
+          value={props.songs.scope}
+          onPick={(scope) => void remote.act({ type: "songs.scope", surface: surface(), scope })}
+          onClose={close}
+        />
+      </Show>
+      <Show when={sheet() === "sort"}>
+        <OptionSheet
+          title={t("remote.songs.sort")}
+          options={props.songs.sorts}
+          value={props.songs.sort}
+          onPick={(sort) => void remote.act({ type: "songs.sort", surface: surface(), sort })}
+          onClose={close}
+        />
+      </Show>
+      <Show when={sheet() === "filters"}>
+        <FilterSheet songs={props.songs} onClose={close} onFilter={setFilter} />
       </Show>
     </div>
+  );
+}
+
+/** A setting with its current value; tapping opens a sheet to change it (no chevron: it's not an inline list). */
+function Dropdown(props: { icon: JSX.Element; label: string; value: string; badge?: number; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      class="flex h-14 min-w-0 cursor-pointer items-center gap-2.5 rounded-[12px] bg-white/8 px-3 text-start transition-colors hover:bg-white/12"
+      onClick={() => props.onClick()}
+    >
+      <span class="shrink-0 text-lg text-white/60">{props.icon}</span>
+      <span class="flex min-w-0 grow flex-col leading-tight">
+        <span class="text-[11px] font-bold tracking-[0.1em] text-white/45 uppercase">{props.label}</span>
+        <span class="truncate font-bold">{props.value}</span>
+      </span>
+      <Show when={props.badge}>
+        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-white text-xs text-slate-900">
+          {props.badge}
+        </span>
+      </Show>
+    </button>
+  );
+}
+
+/** Pick one option; the sheet closes on picking. */
+function OptionSheet(props: {
+  title: string;
+  options: { value: string; label: string }[];
+  value: string | undefined;
+  onPick: (value: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open onOpenChange={(open) => !open && props.onClose()} title={props.title}>
+      <div class="-mx-2 flex flex-col gap-1">
+        <For each={props.options}>
+          {(option) => (
+            <button
+              type="button"
+              class="flex min-h-12 shrink-0 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-start font-bold transition-colors hover:bg-white/8"
+              classList={{ "bg-white/10": option.value === props.value }}
+              onClick={() => {
+                props.onPick(option.value);
+                props.onClose();
+              }}
+            >
+              <span class="min-w-0 grow truncate">{option.label}</span>
+              <Show when={option.value === props.value}>
+                <IconCheck class="shrink-0" />
+              </Show>
+            </button>
+          )}
+        </For>
+      </div>
+    </Sheet>
   );
 }
 
