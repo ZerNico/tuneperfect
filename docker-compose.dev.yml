@@ -28,21 +28,24 @@ services:
       - .tmp/redis:/data
 
   coturn:
-    image: coturn/coturn:4
+    image: coturn/coturn:4.18.0-r0
     ports:
       - "3478:3478/udp"
       - "3478:3478/tcp"
-      - "5349:5349/tcp"
       - "40000-40048:40000-40048/udp"
     command:
       - --listening-port=3478
-      - --tls-listening-port=5349
       - --realm=tuneperfect.localhost
       - --server-name=tuneperfect.localhost
-      - --user=tuneperfect:tuneperfect
+      # Time-limited credentials signed by the API: must match TURN_SECRET in apps/api/.env.
+      - --use-auth-secret
+      - --static-auth-secret=tuneperfect-dev-turn-secret
       - --min-port=40000
       - --max-port=40048
-      - --no-cli
+      - --no-tls
+      - --no-tcp-relay
       - --no-multicast-peers
+      - --fingerprint
+      # Unlike production, private ranges stay reachable: peers are on the LAN or Docker's network.
       - --verbose
       - --log-file=stdout

@@ -22,6 +22,8 @@ export interface GuestConnection {
   createOffer: (options?: { iceRestart?: boolean }) => Promise<string>;
   setAnswer: (answerSdp: string) => Promise<void>;
   addIceCandidate: (candidate: string) => Promise<void>;
+  /** Fresh STUN/TURN servers (TURN credentials expire) for the next ICE restart. */
+  setIceServers: (iceServers: RTCIceServer[]) => void;
   close: () => void;
 }
 
@@ -84,6 +86,15 @@ export function createGuestConnection(
     }
   };
 
+  // Only affects the next gathering (an ICE restart); the current path keeps its candidates.
+  const setIceServers = (iceServers: RTCIceServer[]): void => {
+    try {
+      pc.setConfiguration({ ...pc.getConfiguration(), iceServers });
+    } catch (error) {
+      console.warn("[WebRTC] Kept the old ICE servers:", error);
+    }
+  };
+
   const close = (): void => {
     channelSetup.cleanup();
     pc.removeEventListener("icecandidate", handleIceCandidate);
@@ -94,5 +105,5 @@ export function createGuestConnection(
     iceBuffer.clear();
   };
 
-  return { pc, gameRpcChannel, createOffer, setAnswer, addIceCandidate, close };
+  return { pc, gameRpcChannel, createOffer, setAnswer, addIceCandidate, setIceServers, close };
 }

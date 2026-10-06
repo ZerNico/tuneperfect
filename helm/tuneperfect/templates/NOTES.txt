@@ -38,3 +38,9 @@
 {{- end }}
 {{- end }}
 {{ template "tuneperfect.notes" . }}
+{{- if .Values.coturn.enabled }}
+
+### TURN ###
+      coturn signs TURN credentials with the generated coturn-credentials Secret.
+      DNS, firewall and rotating the secret: helm/tuneperfect/README.md
+{{- end }}

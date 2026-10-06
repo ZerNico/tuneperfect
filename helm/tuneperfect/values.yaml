@@ -190,16 +190,22 @@ coturn:
   enabled: true
   image:
     repository: coturn/coturn
-    tag: "4"
+    # Pinned: read coturn's release notes before bumping (4.17 and 4.18 removed and renamed flags).
+    tag: "4.18.0-r0"
 
   realm: "tuneperfect.localhost"
   stunUrl: "stun:stun.tuneperfect.localhost:3478"
-  turnUrl: "turn:turn.tuneperfect.localhost:3478"
-  username: "tuneperfect"
-  credential: "tuneperfect"
+  # TURN is offered once per transport, e.g. turn:<host>:3478?transport=udp and ?transport=tcp.
+  host: "turn.tuneperfect.localhost"
+  transports: [udp, tcp]
+
+  # The secret TURN credentials are signed with is generated on first install and kept in the
+  # coturn-credentials Secret. Set this only to pin it (e.g. for `helm template`).
+  authSecret: ""
+  # Seconds a TURN credential can open new relays. Clients refetch hourly.
+  credentialTtl: 86400
 
   listeningPort: 3478
-  tlsListeningPort: 5349
 
   # Larger range supports more concurrent connections
   minPort: 49152
@@ -207,6 +213,45 @@ coturn:
 
   # Optional - coturn auto-detects if not set
   externalIp: ""
+
+  # Concurrent relays per lobby or account (credentials carry a stable id per lobby or account,
+  # and the game relays for all its phones) and in total,
+  # bytes per second per relay (data channels carry song lists and covers), and the server's
+  # total (0 = unlimited; set it to about half the node's uplink).
+  userQuota: 64
+  totalQuota: 2000
+  maxBps: 1000000
+  bpsCapacity: 0
+
+  # Relayed traffic may only reach the public internet: private, loopback, link-local (cloud
+  # metadata), shared (CGNAT), documentation and multicast ranges are denied. coturn takes
+  # "ip" or "ip-ip", not CIDR, and refuses to start on an invalid entry.
+  deniedPeerIps:
+    - 0.0.0.0-0.255.255.255
+    - 10.0.0.0-10.255.255.255
+    - 100.64.0.0-100.127.255.255
+    - 127.0.0.0-127.255.255.255
+    - 169.254.0.0-169.254.255.255
+    - 172.16.0.0-172.31.255.255
+    - 192.0.0.0-192.0.0.255
+    - 192.0.2.0-192.0.2.255
+    - 192.88.99.0-192.88.99.255
+    - 192.168.0.0-192.168.255.255
+    - 198.18.0.0-198.19.255.255
+    - 198.51.100.0-198.51.100.255
+    - 203.0.113.0-203.0.113.255
+    - 224.0.0.0-255.255.255.255
+    - "::1"
+    - "64:ff9b:1::-64:ff9b:1:ffff:ffff:ffff:ffff:ffff"
+    - "100::-100::ffff:ffff:ffff:ffff"
+    - "2001:db8::-2001:db8:ffff:ffff:ffff:ffff:ffff:ffff"
+    - "fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+    - "fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
+  # Exceptions to the list above (an allowed address wins over a denied one).
+  allowedPeerIps: []
+
+  # Pin coturn to the node its DNS name points at, when the cluster has several.
+  nodeSelector: {}
 
   # resources:
   #   limits:

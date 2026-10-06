@@ -2,7 +2,8 @@ import { os } from "@orpc/server";
 import * as v from "valibot";
 
 import { base } from "../base";
-import { env } from "../config/env";
+import { requireLobbyOrUser } from "../lobby/middleware";
+import { webrtcService } from "./service";
 
 const IceServerSchema = v.object({
   urls: v.union([v.string(), v.array(v.string())]),
@@ -11,21 +12,13 @@ const IceServerSchema = v.object({
 });
 
 export const webrtcRouter = os.prefix("/webrtc").router({
-  getIceServers: base.output(v.array(IceServerSchema)).handler(async () => {
-    const iceServers: RTCIceServer[] = [];
-
-    if (env.STUN_URL) {
-      iceServers.push({ urls: env.STUN_URL });
-    }
-
-    if (env.TURN_URL && env.TURN_USERNAME && env.TURN_CREDENTIAL) {
-      iceServers.push({
-        urls: env.TURN_URL,
-        username: env.TURN_USERNAME,
-        credential: env.TURN_CREDENTIAL,
-      });
-    }
-
-    return iceServers;
-  }),
+  // Only a game (lobby token) or a signed-in phone gets ICE servers, and TURN credentials only
+  // once they're in a lobby together (see the service): those let the holder relay traffic
+  // through our server. Clients keep them for an hour, so a few calls per household are plenty.
+  getIceServers: base
+    .use(requireLobbyOrUser)
+    .meta({ rateLimit: { limit: 30, windowMs: 1000 * 60 * 5 } })
+    // Released games read this as an array and keep the first answer for their whole session.
+    .output(v.array(IceServerSchema))
+    .handler(({ context }) => webrtcService.getIceServers({ type: context.type, id: context.payload.sub })),
 });

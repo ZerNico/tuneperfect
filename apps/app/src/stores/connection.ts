@@ -73,6 +73,8 @@ function createConnectionStore() {
     if (attempt !== current) return;
     console.warn(`[WebRTC] Connection attempt failed: ${reason}`);
     endAttempt();
+    // The next attempt fetches TURN credentials again: these may be why it failed (a rotated secret).
+    getIceServers.invalidate();
     setError(reason);
 
     const userId = currentUserId();
@@ -104,6 +106,10 @@ function createConnectionStore() {
     }
     try {
       startTimeout(current, "ICE restart timed out");
+      // The connection's TURN credentials may have expired since it was set up.
+      const iceServers = await getIceServers();
+      if (attempt !== current || !current.connection) return;
+      current.connection.setIceServers(iceServers);
       const sdp = await current.connection.createOffer({ iceRestart: true });
       await send({ type: "offer", sdp, from: current.userId, session: current.session });
     } catch (err) {

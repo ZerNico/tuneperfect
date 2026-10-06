@@ -38,7 +38,7 @@ src/
     ├── config.ts         # WebRTC config constants (ICE, reconnect, heartbeat)
     ├── types.ts          # Shared types
     ├── ice-buffer.ts     # ICE candidate buffering
-    ├── ice-servers.ts    # Loads STUN/TURN servers once, with a fallback
+    ├── ice-servers.ts    # STUN/TURN servers, refetched hourly (TURN credentials expire)
     ├── heartbeat.ts      # Connection heartbeat
     └── channel-helpers.ts # DataChannel helper functions
 ```
@@ -55,7 +55,8 @@ src/
 1. **App** (guest, a phone) creates the `RTCPeerConnection` and the `game-rpc` DataChannel, sends the offer and calls the game with `rpc-link`
 2. **Game** (host) answers and serves `gameContract` on that channel with `rpc-handler`
 3. Signaling (offer/answer/ICE) goes through the API's signaling endpoints. Every signal of a phone's connection attempt carries the same `session` id, which the game echoes: signals of an older attempt are ignored, and a second offer with the same session is an ICE restart on the existing connection
-4. The phone reconnects by itself (`apps/app/src/stores/connection.ts`): an ICE restart first when the connection is `disconnected`, a new connection when it failed, the heartbeat stopped answering or an offer got no answer within `connectionTimeout`
+4. TURN credentials from the API expire after 24 h (for opening new relays). `createIceServerSource` refetches them after an hour, and both sides call `setIceServers` with fresh ones before an ICE restart
+5. The phone reconnects by itself (`apps/app/src/stores/connection.ts`): an ICE restart first when the connection is `disconnected`, a new connection when it failed, the heartbeat stopped answering or an offer got no answer within `connectionTimeout`
 
 ## Key Files
 

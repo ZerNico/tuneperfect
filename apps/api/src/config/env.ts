@@ -53,9 +53,29 @@ const ConfigSchema = v.object({
   ),
   GITHUB_REPO: v.optional(v.string()),
   STUN_URL: v.optional(v.string(), "stun:stun.l.google.com:19302"),
-  TURN_URL: v.optional(v.string()),
-  TURN_USERNAME: v.optional(v.string()),
-  TURN_CREDENTIAL: v.optional(v.string()),
+  /** TURN servers sharing TURN_SECRET, comma-separated (e.g. the same host over UDP and TCP). */
+  TURN_URLS: v.optional(
+    v.pipe(
+      v.string(),
+      v.transform((value) =>
+        value
+          .split(",")
+          .map((url) => url.trim())
+          .filter(Boolean),
+      ),
+    ),
+    "",
+  ),
+  /**
+   * coturn's `static-auth-secret`: TURN credentials are signed with it and expire (see
+   * src/webrtc/service.ts). TURN is only offered when TURN_URLS and TURN_SECRET are both set.
+   */
+  TURN_SECRET: v.optional(v.pipe(v.string(), v.nonEmpty())),
+  /** Seconds a TURN credential can open new relays. Clients refetch hourly, so new connections get at least this minus an hour. */
+  TURN_CREDENTIAL_TTL: v.optional(
+    v.pipe(v.string(), v.transform(Number), v.number(), v.integer(), v.minValue(7200)),
+    "86400",
+  ),
   POSTHOG_TOKEN: v.optional(v.string()),
 });
 
