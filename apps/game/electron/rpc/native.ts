@@ -1,5 +1,6 @@
 import { systemPreferences } from "electron";
 
+import type { ParsedSongs } from "../../native/index";
 import type { ParseSongsEvent, UsdbCatalogEvent } from "../../src/lib/native/contract";
 import type { SongGroup, UsdbSearchEntry } from "../../src/lib/native/types.gen";
 import { native } from "../native";
@@ -36,9 +37,9 @@ export const nativeProcedures = {
   },
   songs: {
     parse: os.songs.parse.handler(({ input }) =>
-      stream<ParseSongsEvent, SongGroup[]>(
+      stream<ParseSongsEvent, ParsedSongs>(
         (emit) => native.parseSongsFromPaths(input.paths, emit),
-        (groups) => ({ type: "done", groups }),
+        ({ groups, notes, noteRanges }) => ({ type: "done", groups: groups as SongGroup[], notes, noteRanges }),
       ),
     ),
   },

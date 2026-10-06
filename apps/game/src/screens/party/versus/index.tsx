@@ -20,7 +20,7 @@ import KeyGlyph from "~/components/ui/key-glyph";
 import Panel from "~/components/ui/panel";
 import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
-import { t } from "~/lib/i18n";
+import { formatNumber, t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
@@ -202,7 +202,10 @@ export default function VersusScreen() {
     if (!players) return;
 
     playSound("confirm");
-    roundActions.startRound({ songs: [{ song, players, mode: "single", length: "full" }], returnTo: "/party/versus" });
+    roundActions.startRound({
+      songs: [{ song, players, mode: "single", length: "full" }],
+      returnTo: "/party/versus",
+    });
   };
 
   useNavigation({
@@ -420,7 +423,7 @@ function Jokers(props: { count: number; max: number; hint: JSX.Element; mirrored
           <For each={Array.from({ length: props.max }, (_, i) => i)}>
             {(i) => (
               <IconDice
-                class="text-2xl transition-all duration-300"
+                class="text-2xl transition-[color,scale,filter] duration-300"
                 classList={{ "text-white drop-shadow": i < props.count, "scale-75 text-white/20": i >= props.count }}
               />
             )}
@@ -471,7 +474,7 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
                       <span
                         class={`flex h-5 w-4 items-center justify-center rounded-[0.3cqw] text-[0.6cqw] font-black ${PIP_COLORS[result]}`}
                       >
-                        {result === "win" ? "W" : result === "draw" ? "D" : "L"}
+                        {t(`party.versus.form.${result === "win" ? "win" : result === "draw" ? "draw" : "loss"}`)}
                       </span>
                     )}
                   </For>
@@ -481,7 +484,7 @@ function Scoreboard(props: { standings: Standing[]; highlight: string[]; class?:
                 {standing.wins}/{standing.played}
               </span>
               <span class="w-[5cqw] shrink-0 text-right font-black tabular-nums">
-                {standing.totalScore.toLocaleString("en-US")}
+                {formatNumber(standing.totalScore)}
               </span>
             </div>
           )}
@@ -507,7 +510,7 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
     <div class="flex h-full flex-col items-center justify-center gap-6">
       <span class="text-6xl text-display text-yellow-300" classList={{ "animate-slam": effectsEnabled() }}>
         <Show when={winners().length === 1} fallback={t("party.versus.draw")}>
-          {winners()[0]?.user.username} {t("party.versus.wins")}!
+          {t("party.versus.winner", { name: winners()[0]?.user.username ?? "" })}
         </Show>
       </span>
       <div class="flex items-end gap-4">
@@ -560,26 +563,35 @@ function ReelCover(props: { song: LocalSong; emphasis: number; clickable: boolea
         "cursor-default": !props.clickable,
       }}
     >
-      <div
-        class="relative h-full w-full overflow-hidden rounded-[0.8cqw] bg-black outline-white"
-        style={{
-          transform: `translateY(${-props.emphasis * 0.6}cqw)`,
-          filter: `brightness(${0.6 + 0.4 * props.emphasis})`,
-          // Fades in as the cover reaches the centre.
-          "outline-width": `${(props.emphasis * 0.22).toFixed(3)}cqw`,
-          "outline-style": props.emphasis > 0.05 ? "solid" : "none",
-        }}
-      >
-        <Show
-          when={props.song.coverUrl}
-          fallback={
-            <div class="flex h-full w-full items-center justify-center bg-white/8">
-              <IconMusic class="text-4xl opacity-25" />
-            </div>
-          }
-        >
-          {(url) => <img class="h-full w-full object-cover" src={url()} alt={props.song.title} draggable={false} />}
-        </Show>
+      {/* Emphasis changes every frame of the spin: move and fade layers only (dark overlay instead of
+          a brightness filter, a separate outline instead of a growing one). */}
+      <div class="relative h-full w-full" style={{ transform: `translateY(${-props.emphasis * 0.6}cqw)` }}>
+        <div class="relative h-full w-full overflow-hidden rounded-[0.8cqw] bg-black">
+          <Show
+            when={props.song.coverUrl}
+            fallback={
+              <div class="flex h-full w-full items-center justify-center bg-white/8">
+                <IconMusic class="text-4xl opacity-25" />
+              </div>
+            }
+          >
+            {(url) => (
+              <img
+                class="h-full w-full object-cover"
+                src={url()}
+                alt={props.song.title}
+                draggable={false}
+                decoding="async"
+              />
+            )}
+          </Show>
+          <div class="absolute inset-0 bg-black" style={{ opacity: 0.4 * (1 - props.emphasis) }} />
+        </div>
+        {/* Fades in as the cover reaches the centre. */}
+        <div
+          class="pointer-events-none absolute inset-0 rounded-[0.8cqw] outline-[0.22cqw] outline-white outline-solid"
+          style={{ opacity: props.emphasis }}
+        />
       </div>
     </button>
   );

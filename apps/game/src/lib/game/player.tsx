@@ -2,7 +2,7 @@ import { ReactiveMap } from "@solid-primitives/map";
 import { type Accessor, createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 
 import { createEmptyStats, roundStore } from "~/stores/round";
-import { settingsStore } from "~/stores/settings";
+import { type Microphone, settingsStore } from "~/stores/settings";
 
 import { msToBeatWithoutGap } from "../ultrastar/bpm";
 import { isGolden, isRap, type Note } from "../ultrastar/note";
@@ -12,7 +12,7 @@ import { createComboTracker } from "./combo";
 import { useGame } from "./game";
 import { PitchProcessor } from "./pitch";
 import { type NoteEvent, PlayerContext, type PlayerContextValue, type ProcessedBeat } from "./player-context";
-import { beatsToProcess } from "./score-loop";
+import { beatsToProcess, isMeasuredBeat, lastFinishedBeat } from "./score-loop";
 import { createVoiceTracker } from "./voice-tracker";
 
 interface CreatePlayerOptions {
@@ -20,6 +20,8 @@ interface CreatePlayerOptions {
 }
 
 export { usePlayer } from "./player-context";
+
+const FALLBACK_MICROPHONE: Microphone = { name: "", channel: 0, color: "sky", delay: 0, gain: 1, threshold: 1 };
 
 export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const pitchProcessor = new PitchProcessor(settingsStore.general().difficulty);
@@ -43,13 +45,8 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return getMaxScore(v);
   });
 
-  const microphone = createMemo(() => {
-    const mic = roundSong()?.players[options().index]?.microphone;
-    if (!mic) {
-      throw new Error("Microphone not found");
-    }
-    return mic;
-  });
+  // The round can be reset while the lanes are still mounted; fall back instead of throwing inside the memo.
+  const microphone = createMemo(() => roundSong()?.players[options().index]?.microphone ?? FALLBACK_MICROPHONE);
   const micColor = (shade: ColorShade) => getColorVar(microphone().color, shade);
 
   const delayedBeat = createMemo(() => {
@@ -62,7 +59,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     return game.beat() - delayInBeats;
   });
 
-  const delayedFlooredBeat = createMemo(() => Math.floor(delayedBeat()));
+  const finishedBeat = createMemo(() => lastFinishedBeat(delayedBeat()));
 
   const beats = createMemo(() => {
     const beatMap = new Map<
@@ -212,27 +209,27 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     on(
       () => game.pitches(),
       (allPitches) => {
-        // The processor always returns the most recent pitch; compensate for
-        // this mic's input delay by scoring it against the corresponding
-        // earlier beat.
-        const flooredBeat = delayedFlooredBeat();
+        // The sample describes the audio just before it was taken, shifted by this mic's delay:
+        // score the beats that have finished in delayed time.
+        // Once the song is over and its delay tail has been waited out, the beat in progress at
+        // the end counts too.
+        const ending = game.finishing?.() ?? false;
+        const lastFinished = ending ? Math.floor(game.beat()) : finishedBeat();
 
         // First update: start at the current beat instead of back-filling from
         // the song start (e.g. when a player joins mid-song).
-        const from = lastProcessedBeat ?? flooredBeat - 1;
-        if (flooredBeat <= from) {
+        const from = lastProcessedBeat ?? lastFinished - 1;
+        if (lastFinished <= from) {
           return;
         }
 
-        // Only the latest pitch sample exists, so every back-filled beat is
-        // scored against it.
         const pitch = allPitches[options().index] ?? -1;
 
-        for (const beatNumber of beatsToProcess(from, flooredBeat)) {
-          processBeat(beatNumber, pitch);
+        for (const beatNumber of beatsToProcess(from, lastFinished)) {
+          processBeat(beatNumber, ending || isMeasuredBeat(beatNumber, lastFinished) ? pitch : -1);
         }
 
-        lastProcessedBeat = flooredBeat;
+        lastProcessedBeat = lastFinished;
       },
     ),
   );

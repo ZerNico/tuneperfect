@@ -17,11 +17,12 @@ import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import type { GuestUser, User } from "~/lib/types";
-import type { Song } from "~/lib/ultrastar/song";
+import { type Song, voiceCount } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
-import { isGuestUser } from "~/lib/utils/user";
+import { isGuestUser, isLocalUser } from "~/lib/utils/user";
 import { lobbyStore } from "~/stores/lobby";
+import { localStore } from "~/stores/local";
 import { medleyStore } from "~/stores/medley";
 import { type PlayerSelection, type RoundLength, useRoundActions } from "~/stores/round";
 import { selectionStore } from "~/stores/selection";
@@ -78,12 +79,16 @@ export default function PlayerSelectionScreen() {
   const initializeSlotSelections = () => {
     const micCount = settingsStore.microphones().length;
     const song = songs().length === 1 ? songs()[0] : null;
-    const maxVoice = song ? song.voices.length - 1 : 0;
+    const maxVoice = song ? voiceCount(song) - 1 : 0;
+
+    // Remembered across visits; a local player deleted since then can't sing (or keep scores).
+    const localIds = new Set(localStore.players().map((player) => player.id));
 
     setSlotSelections((prev) => {
       const next: (Selection | undefined)[] = Array.from({ length: micCount }, (_, i) => {
         const existing = prev[i];
         if (!existing) return undefined;
+        if (isLocalUser(existing.player) && !localIds.has(existing.player.id)) return undefined;
 
         const validVoice = Math.min(existing.voice, maxVoice);
         return { ...existing, voice: validVoice };
@@ -151,10 +156,10 @@ export default function PlayerSelectionScreen() {
 
     if (isMedley()) {
       const queuedSongs = songs().map((song) => {
-        const voiceCount = song.voices.length;
+        const voices = voiceCount(song);
         const medleyPlayers = players.map((p, i) => ({
           ...p,
-          voice: i % voiceCount,
+          voice: i % voices,
         }));
         return { song, players: medleyPlayers, mode: "medley" as const, length };
       });
@@ -170,14 +175,19 @@ export default function PlayerSelectionScreen() {
   return (
     <Layout
       intent="secondary"
+      decoration={false}
       header={<TitleBar title={t("select.title")} onBack={onBack} />}
       footer={<KeyHints hints={["back", "navigate", "confirm"]} />}
       background={
         <Show when={!isMedley() && songs()[0]} fallback={<div />}>
           {(song) => (
             <div class="h-full w-full bg-black">
-              <img class="h-full w-full object-cover opacity-50" src={song().coverUrl ?? ""} alt={song().title} />
-              <div class="absolute inset-0 z-1 backdrop-blur-2xl will-change-[backdrop-filter]" />
+              {/* Blurred once as an image, not re-blurred every frame by a backdrop filter on top. */}
+              <img
+                class="h-full w-full scale-110 object-cover opacity-50 blur-2xl"
+                src={song().coverUrl ?? ""}
+                alt={song().title}
+              />
             </div>
           )}
         </Show>
@@ -189,7 +199,7 @@ export default function PlayerSelectionScreen() {
           fallback={
             <Show when={isMedley()}>
               <SongHero
-                title="Medley"
+                title={t("sing.medley.title")}
                 subtitle={
                   songs().length === 1
                     ? t("sing.songCount.one", { count: 1 })
@@ -380,7 +390,7 @@ function PlayerSlot(props: PlayerSlotProps) {
       type="button"
       onClick={openSelectPlayerPopup}
       onMouseEnter={() => props.onMouseEnter?.()}
-      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-[1.4cqw] p-5 transition-all duration-200 ease-out"
+      class="relative flex h-[27cqh] w-48 cursor-pointer flex-col items-center overflow-hidden rounded-[1.4cqw] p-5 transition-[translate,scale,opacity,filter,outline-color] duration-200 ease-out"
       classList={{
         "-translate-y-2 outline-[0.22cqw] outline-white": props.selected && !pressed(),
         "scale-95 outline-[0.22cqw] outline-white": props.selected && pressed(),
@@ -483,7 +493,7 @@ function SelectPlayerPopup(props: SelectPlayerPopupProps) {
           label: t("sing.voice"),
           value: () => selectedVoice(),
           onChange: (voice: number) => setSelectedVoice(voice),
-          options: props.song?.voices.map((_, index) => index) ?? [],
+          options: props.song ? Array.from({ length: voiceCount(props.song) }, (_, index) => index) : [],
           renderValue: (voice: number | null) => <span>{voice !== null ? getVoiceName(props.song, voice) : "?"}</span>,
         }),
       );

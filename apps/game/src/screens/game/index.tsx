@@ -12,6 +12,7 @@ import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
+import { t } from "~/lib/i18n";
 import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
 import { roundStore, useRoundActions } from "~/stores/round";
@@ -51,6 +52,7 @@ export default function GameScreen() {
     GameProvider,
     start,
     stop,
+    finish,
     pause,
     resume,
     playing,
@@ -86,7 +88,12 @@ export default function GameScreen() {
 
   createEffect(() => {
     if (ready() && canPlayThrough() && !untrack(started)) {
-      untrack(() => start());
+      untrack(start).catch((error: unknown) => {
+        console.error("Failed to start the game:", error);
+        notify({ message: t("game.microphonesFailed"), intent: "error" });
+        // Not the song's fault: no result, so party modes don't drop it as unplayable.
+        roundActions.abortRound();
+      });
     }
   });
 
@@ -99,30 +106,37 @@ export default function GameScreen() {
     onCleanup(() => clearTimeout(timer));
   });
 
-  onCleanup(async () => {
-    await stop();
-  });
+  // Solid doesn't wait for cleanups; `stop` handles its own errors and an in-flight start.
+  onCleanup(() => void stop());
+
+  // The round ends once, however it ends: the song finishing waits a moment for its last notes,
+  // and exiting or skipping during that moment must not record it a second time.
+  let roundOver = false;
+  const endOnce = (end: () => void) => {
+    if (roundOver) return;
+    roundOver = true;
+    end();
+  };
 
   const handleEnded = () => {
-    queueMicrotask(() => {
-      roundActions.endRound(scores(), stats());
-    });
+    // The last notes are scored once the mics' delay has passed; then the results are final.
+    void finish().then(() => endOnce(() => roundActions.endRound(scores(), stats())));
   };
 
   const handleNext = () => {
-    queueMicrotask(() => {
-      roundActions.endRound(scores(), stats());
-    });
+    queueMicrotask(() => endOnce(() => roundActions.endRound(scores(), stats())));
   };
 
   const handleExit = () => {
-    queueMicrotask(() => {
-      if (roundSong()?.mode === "medley") {
-        roundActions.endMedley(scores(), stats());
-      } else {
-        roundActions.endRound(scores(), stats());
-      }
-    });
+    queueMicrotask(() =>
+      endOnce(() => {
+        if (roundSong()?.mode === "medley") {
+          roundActions.endMedley(scores(), stats());
+        } else {
+          roundActions.endRound(scores(), stats());
+        }
+      }),
+    );
   };
 
   const gradient = () => {
@@ -137,7 +151,7 @@ export default function GameScreen() {
   };
 
   const handleError = () => {
-    notify({ message: "Failed to play song", intent: "error" });
+    notify({ message: t("game.songFailed"), intent: "error" });
     roundActions.failRound();
   };
 
@@ -170,7 +184,7 @@ export default function GameScreen() {
               <div
                 class="relative z-1 h-full w-full"
                 classList={{
-                  "pointer-events-none opacity-0": paused(),
+                  "pointer-events-none opacity-0 fx-paused": paused(),
                 }}
               >
                 <div class="absolute inset-0">

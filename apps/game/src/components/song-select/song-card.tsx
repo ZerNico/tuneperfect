@@ -27,7 +27,9 @@ function Cover(props: CoverProps) {
         </div>
       }
     >
-      {(url) => <img class="h-full w-full object-cover" src={url()} alt={props.title} draggable={false} />}
+      {(url) => (
+        <img class="h-full w-full object-cover" src={url()} alt={props.title} draggable={false} decoding="async" />
+      )}
     </Show>
   );
 }
@@ -54,17 +56,21 @@ export function SongCard(props: SongCardProps) {
         "cursor-default": props.clickable === false,
       }}
     >
-      <div
-        class="relative h-full w-full overflow-hidden rounded-[1cqw] bg-black"
-        style={{
-          transform: `translateY(${-emphasis() * 0.6}cqw)`,
-          // The centred cover gets a white outline, fading in as it arrives; no glow around images.
-          outline: `0.18cqw solid rgb(255 255 255 / ${emphasis()})`,
-          "box-shadow": props.shadow === false ? undefined : "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
-          filter: `brightness(${0.6 + 0.4 * emphasis()})`,
-        }}
-      >
-        <Cover coverUrl={props.coverUrl} title={props.title} lazy={props.lazy} />
+      {/* Emphasis changes every frame while scrolling, so it only moves and fades layers: a dark
+          overlay instead of a brightness filter, a separate outline instead of recolouring one. */}
+      <div class="relative h-full w-full" style={{ transform: `translateY(${-emphasis() * 0.6}cqw)` }}>
+        <div
+          class="relative h-full w-full overflow-hidden rounded-[1cqw] bg-black"
+          classList={{ "shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]": props.shadow !== false }}
+        >
+          <Cover coverUrl={props.coverUrl} title={props.title} lazy={props.lazy} />
+          <div class="absolute inset-0 bg-black" style={{ opacity: 0.4 * (1 - emphasis()) }} />
+        </div>
+        {/* The centred cover gets a white outline, fading in as it arrives; no glow around images. */}
+        <div
+          class="pointer-events-none absolute inset-0 rounded-[1cqw] outline-[0.18cqw] outline-white outline-solid"
+          style={{ opacity: emphasis() }}
+        />
       </div>
     </button>
   );
@@ -78,7 +84,7 @@ interface SongGridCardProps extends CoverProps {
 export function SongGridCard(props: SongGridCardProps) {
   return (
     <div
-      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-all duration-200 ease-out active:scale-95"
+      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-[translate,scale,filter] duration-200 ease-out active:scale-95"
       classList={{
         "-translate-y-[0.4cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,
         "brightness-65": !props.selected,

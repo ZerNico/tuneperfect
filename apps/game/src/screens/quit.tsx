@@ -11,7 +11,7 @@ export default function QuitScreen() {
   const navigate = useNavigate();
 
   const closeGame = async () => {
-    await native.app.exit();
+    await native.app.exit().catch((error) => console.error("Failed to quit:", error));
   };
 
   const onBack = () => {

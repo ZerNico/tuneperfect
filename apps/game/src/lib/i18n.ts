@@ -34,4 +34,9 @@ if (import.meta.hot) {
   });
 }
 
-export { t };
+// One formatter per language, so digit grouping follows it (12,345 / 12.345) without building a
+// formatter per call; score count-ups format on every frame.
+const numberFormat = createMemo(() => new Intl.NumberFormat(locale(), { maximumFractionDigits: 0 }));
+const formatNumber = (value: number) => numberFormat().format(value);
+
+export { formatNumber, t };

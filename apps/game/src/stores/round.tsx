@@ -4,6 +4,7 @@ import { createSignal } from "solid-js";
 import type { User } from "~/lib/types";
 import { getMedleySong } from "~/lib/ultrastar/medley";
 import { type Song, isLocalSong } from "~/lib/ultrastar/song";
+import { withVoices } from "~/lib/ultrastar/song-voices";
 
 import type { Microphone } from "./settings";
 
@@ -93,19 +94,27 @@ export function useRoundActions() {
 
   const startRound = (settings: RoundSettings) => {
     const songs = settings.songs.map((queued) => {
+      // Library songs carry their notes packed until they're played.
+      const song = isLocalSong(queued.song) ? withVoices(queued.song) : queued.song;
       const targetDurationMs = TARGET_DURATION_MS[queued.length];
       // Only local songs can be trimmed to a medley; online songs play full.
-      if (targetDurationMs === null || !isLocalSong(queued.song)) {
-        return queued;
+      if (targetDurationMs === null || !isLocalSong(song)) {
+        return { ...queued, song };
       }
       return {
         ...queued,
-        song: getMedleySong(queued.song, targetDurationMs),
+        song: getMedleySong(song, targetDurationMs),
       };
     });
     roundStore.setSettings({ ...settings, songs });
     roundStore.setResults([]);
     navigate({ to: "/game" });
+  };
+
+  /** Leaves a round that never got going (e.g. the microphones didn't start) without a result, so
+   * party modes don't count it as an unplayable song. */
+  const abortRound = () => {
+    navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
   };
 
   const endRound = (scores: Score[], stats: PlayerStats[]) => {
@@ -156,5 +165,6 @@ export function useRoundActions() {
     endMedley,
     returnRound,
     failRound,
+    abortRound,
   };
 }

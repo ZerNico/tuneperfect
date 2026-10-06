@@ -7,6 +7,16 @@ import { getIceServers } from "~/lib/webrtc/ice-servers";
 
 import { lobbyStore } from "./lobby";
 
+const DISCONNECT_GRACE_MS = 10_000;
+const RECONNECT_MAX_MS = 30_000;
+
+/** Resolves after `ms`, or right away once `signal` aborts. */
+const abortableSleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+  });
+
 function createWebRTCStore() {
   const connections = new ReactiveMap<string, HostConnection>();
   const pendingIceCandidates = new Map<string, string[]>();
@@ -22,6 +32,19 @@ function createWebRTCStore() {
     }
 
     const iceServers = await getIceServers();
+
+    // `disconnected` often recovers by itself (a phone switching networks); only give up on it after a while.
+    let disconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    const dispose = () => {
+      clearTimeout(disconnectTimer);
+      // A newer connection from the same user may have replaced this one already.
+      if (connections.get(userId) === connection) {
+        connections.delete(userId);
+        pendingIceCandidates.delete(userId);
+      }
+      // Closes the data channels and the peer connection, so nothing keeps them alive.
+      connection.close();
+    };
 
     const connection = createHostConnection(userId, iceServers, {
       onIceCandidate: async (candidate) => {
@@ -39,10 +62,13 @@ function createWebRTCStore() {
         }
       },
       onConnectionStateChange: (state) => {
-        if (state === "disconnected" || state === "failed" || state === "closed") {
-          connections.delete(userId);
-          // Clean up any pending ICE candidates for this user
-          pendingIceCandidates.delete(userId);
+        if (state === "failed" || state === "closed") {
+          dispose();
+        } else if (state === "disconnected") {
+          clearTimeout(disconnectTimer);
+          disconnectTimer = setTimeout(dispose, DISCONNECT_GRACE_MS);
+        } else if (state === "connected") {
+          clearTimeout(disconnectTimer);
         }
       },
       onDataChannelOpen: () => {
@@ -111,27 +137,38 @@ function createWebRTCStore() {
     setAbortController(controller);
     setIsSubscribed(true);
 
+    // The stream ends when the API restarts, the network blips or a proxy times it out; without it
+    // no phone can join, so it's reopened (waiting longer after each failure) for as long as this
+    // lobby lasts.
+    const lobbyId = lobby.lobby.id;
+    let failures = 0;
     try {
-      const iterator = await orpcClient.signaling.subscribeAsHost(undefined, {
-        signal: controller.signal,
-      });
+      while (!controller.signal.aborted && lobbyStore.lobby()?.lobby.id === lobbyId) {
+        try {
+          const iterator = await orpcClient.signaling.subscribeAsHost(undefined, {
+            signal: controller.signal,
+          });
+          failures = 0;
 
-      for await (const signal of iterator) {
-        if (controller.signal.aborted) break;
+          for await (const signal of iterator) {
+            if (controller.signal.aborted) break;
 
-        if (signal.type === "offer") {
-          await handleOffer(signal.from, signal.sdp);
-        } else if (signal.type === "ice-candidate") {
-          await handleIceCandidate(signal.from, signal.candidate);
-        } else if (signal.type === "goodbye") {
-          // Guest is gracefully disconnecting - clean up their connection
-          console.log(`[WebRTC] Received goodbye from ${signal.from}, reason: ${signal.reason ?? "unknown"}`);
-          closeConnection(signal.from);
+            if (signal.type === "offer") {
+              await handleOffer(signal.from, signal.sdp);
+            } else if (signal.type === "ice-candidate") {
+              await handleIceCandidate(signal.from, signal.candidate);
+            } else if (signal.type === "goodbye") {
+              // Guest is gracefully disconnecting - clean up their connection
+              console.log(`[WebRTC] Received goodbye from ${signal.from}, reason: ${signal.reason ?? "unknown"}`);
+              closeConnection(signal.from);
+            }
+          }
+        } catch (error) {
+          if (controller.signal.aborted) break;
+          console.error("[WebRTC] Signaling subscription error:", error);
         }
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        console.error("[WebRTC] Signaling subscription error:", error);
+
+        await abortableSleep(Math.min(RECONNECT_MAX_MS, 1000 * 2 ** failures++), controller.signal);
       }
     } finally {
       // A stop + restart may already have replaced this subscription; only reset state that is still ours.

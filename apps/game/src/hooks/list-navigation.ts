@@ -8,6 +8,8 @@ import { type NavigationEvent, useNavigation } from "./navigation";
 
 type Action = NavigationEvent["action"];
 
+const LIST_REPEAT_MS = 120;
+
 interface ListNavigationOptions {
   count: number;
   layer?: number;
@@ -37,9 +39,9 @@ export function createListNavigation(options: ListNavigationOptions) {
   const [pressed, setPressed] = createSignal(false);
   const elements = new Map<number, HTMLElement>();
 
-  const scrollToSelected = () => {
+  const scrollToSelected = (behavior: ScrollBehavior = "smooth") => {
     elements.get(position())?.scrollIntoView({
-      behavior: "smooth",
+      behavior,
       block: options.scrollBlock ?? "nearest",
       inline: "nearest",
     });
@@ -55,30 +57,56 @@ export function createListNavigation(options: ListNavigationOptions) {
     else if (delta > 0 && Math.floor(position() / columns) < Math.floor((count - 1) / columns)) set(count - 1);
   };
 
-  /** Steps like the arrow keys do, scrolling the new item into view. */
-  const move = (delta: number) => {
-    if (options.count === 0) return;
+  /** Steps like the arrow keys do, scrolling the new item into view. A held key stops at the ends. */
+  const move = (delta: number, held = false) => {
+    const count = options.count;
+    if (count === 0) return;
+    if (held) {
+      const target = position() + delta;
+      if (target < 0 || target >= count) return;
+    }
     if (options.columns !== undefined) moveInGrid(delta);
     else if (options.wrap === false) set(position() + delta);
     else if (delta > 0) increment();
     else decrement();
-    scrollToSelected();
+    // Smooth scrolling can't keep up with a held key; it would lag behind the selection.
+    scrollToSelected(held ? "instant" : "smooth");
   };
+
+  /** How far an action moves the selection, or null when it's not a movement. */
+  const stepFor = (action: Action): number | null => {
+    const columns = options.columns;
+    if (columns !== undefined) {
+      if (action === "left") return -1;
+      if (action === "right") return 1;
+      if (action === "up") return -columns;
+      if (action === "down") return columns;
+      return null;
+    }
+    const [previous, next] = options.keys ?? ["up", "down"];
+    if (action === previous) return -1;
+    if (action === next) return 1;
+    return null;
+  };
+
+  // A held arrow keeps moving, slower than the raw repeat events (every 50 ms) so it can be followed.
+  let lastRepeat = 0;
 
   useNavigation(() => ({
     layer: options.layer,
     enabled: options.enabled,
     onKeydown(event) {
-      const columns = options.columns;
-      const [previous, next] = options.keys ?? ["up", "down"];
-      if (columns !== undefined && event.action === "left") move(-1);
-      else if (columns !== undefined && event.action === "right") move(1);
-      else if (columns !== undefined && event.action === "up") move(-columns);
-      else if (columns !== undefined && event.action === "down") move(columns);
-      else if (columns === undefined && event.action === previous) move(-1);
-      else if (columns === undefined && event.action === next) move(1);
+      const step = stepFor(event.action);
+      if (step !== null) move(step);
       else if (event.action === "confirm" && options.onActivate) setPressed(true);
       else options.onKeydown?.(event);
+    },
+    onRepeat(event) {
+      const step = stepFor(event.action);
+      const now = performance.now();
+      if (step === null || now - lastRepeat < LIST_REPEAT_MS) return;
+      lastRepeat = now;
+      move(step, true);
     },
     onKeyup(event) {
       if (event.action !== "confirm" || !options.onActivate) return;

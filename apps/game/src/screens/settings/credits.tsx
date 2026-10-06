@@ -4,6 +4,7 @@ import Layout from "~/components/layout";
 import Menu, { type MenuItem } from "~/components/menu";
 import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
+import { t } from "~/lib/i18n";
 
 export default function CreditsScreen() {
   const navigate = useNavigate();
@@ -18,22 +19,31 @@ export default function CreditsScreen() {
     },
     {
       type: "button",
+      label: "USDB Syncer",
+      action: () => window.open("https://github.com/bohning/usdb_syncer"),
+    },
+    {
+      type: "button",
       label: "Karol Szcześniak",
     },
     {
       type: "button",
-      label: "Sound effects by Kenney",
+      label: t("settings.sections.credits.soundsKenney"),
       action: () => window.open("https://kenney.nl"),
     },
     {
       type: "button",
-      label: "Sound effects from Freesound (CC0)",
+      label: t("settings.sections.credits.soundsFreesound"),
       action: () => window.open("https://freesound.org"),
     },
   ];
 
   return (
-    <Layout intent="secondary" header={<TitleBar title="Credits" onBack={onBack} />} footer={<SettingsFooter />}>
+    <Layout
+      intent="secondary"
+      header={<TitleBar title={t("settings.sections.credits.title")} onBack={onBack} />}
+      footer={<SettingsFooter />}
+    >
       <Menu items={menuItems} onBack={onBack} />
     </Layout>
   );

@@ -93,7 +93,7 @@ export function MedleyList(props: MedleyListProps) {
           </div>
           <button
             type="button"
-            class="flex shrink-0 cursor-pointer items-center gap-1.5 transition-all hover:opacity-75 active:scale-95"
+            class="flex shrink-0 cursor-pointer items-center gap-1.5 transition-[opacity,scale] hover:opacity-75 active:scale-95"
             onClick={() => list.move(-1)}
           >
             <UpKeyIcon />
@@ -136,8 +136,8 @@ export function MedleyList(props: MedleyListProps) {
                           </Show>
                           <button
                             type="button"
-                            aria-label="Remove"
-                            class="flex size-6 cursor-pointer items-center justify-center rounded-md bg-black/40 transition-all hover:bg-black/60 active:scale-95"
+                            aria-label={t("common.remove")}
+                            class="flex size-6 cursor-pointer items-center justify-center rounded-md bg-black/40 transition-[background-color,scale] hover:bg-black/60 active:scale-95"
                             onClick={(e) => {
                               e.stopPropagation();
                               props.onRemove(index());
@@ -167,7 +167,7 @@ export function MedleyList(props: MedleyListProps) {
           </Show>
           <button
             type="button"
-            class="ml-auto flex shrink-0 cursor-pointer items-center gap-1.5 transition-all hover:opacity-75 active:scale-95"
+            class="ml-auto flex shrink-0 cursor-pointer items-center gap-1.5 transition-[opacity,scale] hover:opacity-75 active:scale-95"
             onClick={() => list.move(1)}
           >
             <DownKeyIcon />

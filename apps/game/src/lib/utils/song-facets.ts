@@ -106,3 +106,28 @@ export const typeLabel = (value: SongTypeFilter): string => {
   if (value === "solo") return t("sing.filter.solo");
   return t("sing.filter.any");
 };
+
+export interface Facets {
+  decades: number[];
+  genres: string[];
+  languages: string[];
+  editions: string[];
+}
+
+// The library array only changes when songs are (re)loaded; the filter popup opens far more often.
+const facetsCache = new WeakMap<readonly SongLike[], Facets>();
+
+/** Every filter option of a song list, computed once per list. */
+export const getFacets = (songs: SongLike[]): Facets => {
+  let facets = facetsCache.get(songs);
+  if (!facets) {
+    facets = {
+      decades: getDecades(songs),
+      genres: getGenres(songs),
+      languages: getLanguages(songs),
+      editions: getEditions(songs),
+    };
+    facetsCache.set(songs, facets);
+  }
+  return facets;
+};

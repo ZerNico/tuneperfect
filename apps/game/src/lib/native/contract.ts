@@ -13,7 +13,8 @@ import type {
 
 /**
  * The contract between the renderer and Electron's main process, served over a
- * MessagePort (see `electron/rpc`). Inputs are validated with Valibot on the main side;
+ * MessagePort (see `electron/rpc`; stream events go as structured clones, so binary data in
+ * them stays binary). Inputs are validated with Valibot on the main side;
  * outputs come from trusted native code and are typed without runtime validation, which
  * keeps large payloads like a parsed song library cheap.
  */
@@ -32,7 +33,13 @@ const microphoneOptionsSchema = v.object({
   delay: v.number(),
 });
 
-export type ParseSongsEvent = ParseEvent | { type: "done"; groups: SongGroup[] };
+/**
+ * The songs come without their voices: those are packed into `notes`, one range per song (an
+ * offset and a length in `noteRanges`, in the order of the groups and their songs).
+ */
+export type ParseSongsEvent =
+  | ParseEvent
+  | { type: "done"; groups: SongGroup[]; notes: Uint8Array; noteRanges: Uint32Array };
 
 export type UsdbCatalogEvent =
   | ({ type: "progress" } & UsdbSyncProgressEvent)

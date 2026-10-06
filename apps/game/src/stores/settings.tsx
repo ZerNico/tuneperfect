@@ -1,47 +1,7 @@
-import * as v from "valibot";
-
 import { createPersistentStore } from "../lib/utils/store";
+import { type SettingsStore, settingsStoreSchema } from "./settings-schema";
 
-const settingsStoreSchema = v.object({
-  version: v.literal("1.0.0"),
-  general: v.object({
-    language: v.string(),
-    forceOfflineMode: v.boolean(),
-    showNoteSegments: v.fallback(v.boolean(), false),
-    difficulty: v.fallback(v.picklist(["easy", "medium", "hard"]), "easy"),
-    audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
-    micPlaybackEnabled: v.fallback(v.boolean(), false),
-    songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
-    outputLatency: v.fallback(v.number(), 0),
-    visualEffects: v.fallback(v.picklist(["full", "reduced"]), "full"),
-  }),
-  volume: v.object({
-    master: v.number(),
-    game: v.number(),
-    preview: v.number(),
-    menu: v.number(),
-    micPlayback: v.fallback(v.number(), 1),
-    effects: v.fallback(v.number(), 0.5),
-  }),
-  microphones: v.array(
-    v.object({
-      // Stable device ID (cpal `DeviceId`). Optional so configs saved before ID
-      // support remain valid; the backend falls back to matching by `name`.
-      deviceId: v.optional(v.string()),
-      name: v.string(),
-      channel: v.number(),
-      color: v.string(),
-      delay: v.number(),
-      gain: v.number(),
-      threshold: v.number(),
-    }),
-  ),
-  songs: v.object({
-    paths: v.array(v.string()),
-  }),
-});
-
-export type SettingsStore = v.InferOutput<typeof settingsStoreSchema>;
+export type { SettingsStore } from "./settings-schema";
 
 const defaultSettings: SettingsStore = {
   version: "1.0.0",

@@ -140,16 +140,24 @@ pub async fn get_audio_levels() -> Result<Vec<f64>> {
     Ok(widen(pitch::get_audio_levels().await?))
 }
 
+/// A scanned library (see `songs::ParsedLibrary`). `groups` are `SongGroup`s.
+#[napi(object)]
+pub struct ParsedSongs {
+    pub groups: Value,
+    pub notes: Uint8Array,
+    pub note_ranges: Uint32Array,
+}
+
 /// Parses every song below the given (allowed) folders. `on_event` receives
-/// `{type: "start", total}` once, then `{type: "progress", song}` per song file.
+/// `{type: "start", total}` once, then `{type: "progress", song, done}` as files are parsed.
 #[napi]
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
     #[napi(
-        ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string }) => void"
+        ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string; done: number }) => void"
     )]
     on_event: JsonCallback,
-) -> Result<Value> {
+) -> Result<ParsedSongs> {
     let on_event = Arc::new(on_event);
     let sink: songs::ParseEventSink = Arc::new(move |event| {
         if let Ok(value) = serde_json::to_value(event) {
@@ -157,8 +165,12 @@ pub async fn parse_songs_from_paths(
         }
     });
 
-    let groups = songs::parse_songs_from_paths(paths, sink).await?;
-    to_json(groups)
+    let library = songs::parse_songs_from_paths(paths, sink).await?;
+    Ok(ParsedSongs {
+        groups: to_json(library.groups)?,
+        notes: Uint8Array::new(library.notes),
+        note_ranges: Uint32Array::new(library.note_ranges),
+    })
 }
 
 #[napi]

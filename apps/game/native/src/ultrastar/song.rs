@@ -95,4 +95,8 @@ pub struct LocalSong {
     pub replay_gain_track_peak: Option<f32>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<f64>,
+    /// Number of voices (2+ for duets). A scanned library carries its voices packed (see
+    /// `packed_notes`) and leaves `voices` empty, so this is what lists and filters read.
+    #[serde(rename = "voiceCount")]
+    pub voice_count: u32,
 }

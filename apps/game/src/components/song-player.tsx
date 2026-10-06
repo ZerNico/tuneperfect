@@ -3,9 +3,11 @@ import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMoun
 
 import { getAudioContext } from "~/lib/audio/context";
 import { platform } from "~/lib/desktop";
+import { t } from "~/lib/i18n";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
+import { withVoices } from "~/lib/ultrastar/song-voices";
 import { createRefContent } from "~/lib/utils/ref";
 import { settingsStore } from "~/stores/settings";
 
@@ -249,7 +251,8 @@ export default function SongPlayer(props: SongPlayerProps) {
     const song = props.song;
     if (!song) return;
 
-    const previewStart = getPreviewStartTime(song, song.videoGap ?? 0);
+    // Without a set start, the chorus is looked for in the notes.
+    const previewStart = getPreviewStartTime(song.previewStart === null ? withVoices(song) : song, song.videoGap ?? 0);
     const videoGap = (song.videoGap ?? 0) / 1000;
     const outputLatencySec = settingsStore.general().outputLatency / 1000;
 
@@ -257,7 +260,7 @@ export default function SongPlayer(props: SongPlayerProps) {
       audioElementRef.currentTime = previewStart / 1000;
     }
     if (videoActive() && videoElementRef.currentTime === 0) {
-      videoElementRef.currentTime = Math.max(0, previewStart / 1000 + videoGap + outputLatencySec);
+      videoElementRef.currentTime = Math.max(0, previewStart / 1000 + videoGap - outputLatencySec);
     }
   };
 
@@ -338,7 +341,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           audio.currentTime = song.start / 1000;
         }
         if (video && video.currentTime === 0) {
-          video.currentTime = Math.max(0, song.start / 1000 + videoGap + outputLatencySec);
+          video.currentTime = Math.max(0, song.start / 1000 + videoGap - outputLatencySec);
         }
       }
 
@@ -462,7 +465,8 @@ export default function SongPlayer(props: SongPlayerProps) {
 
     const videoGap = (song.videoGap ?? 0) / 1000;
     const outputLatencySec = settingsStore.general().outputLatency / 1000;
-    const expectedVideoTime = audio.currentTime + videoGap + outputLatencySec;
+    // The picture shows instantly but the sound arrives `outputLatency` late: the video trails the audio by that much.
+    const expectedVideoTime = audio.currentTime + videoGap - outputLatencySec;
     const gap = video.currentTime - expectedVideoTime;
 
     if (Math.abs(gap) <= 0.01 || expectedVideoTime >= 0) {
@@ -479,7 +483,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     syncTimeout = setTimeout(async () => {
       try {
         const currentAudioTime = audio.currentTime;
-        const startVideoTime = Math.max(0, currentAudioTime + videoGap + outputLatencySec);
+        const startVideoTime = Math.max(0, currentAudioTime + videoGap - outputLatencySec);
         if (!Number.isNaN(startVideoTime)) {
           video.currentTime = startVideoTime;
         }
@@ -502,7 +506,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     try {
       const videoGap = (song.videoGap ?? 0) / 1000;
       const outputLatencySec = settingsStore.general().outputLatency / 1000;
-      const expectedVideoTime = audio.currentTime + videoGap + outputLatencySec;
+      const expectedVideoTime = audio.currentTime + videoGap - outputLatencySec;
       const timeDifference = Math.abs(expectedVideoTime - video.currentTime);
 
       if (timeDifference > 0.01) {
@@ -585,7 +589,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           const videoGap = (song.videoGap ?? 0) / 1000;
           const outputLatencySec = settingsStore.general().outputLatency / 1000;
           audioElementRef.currentTime = time;
-          videoElementRef.currentTime = time + videoGap + outputLatencySec;
+          videoElementRef.currentTime = time + videoGap - outputLatencySec;
         } else if (currentAudioUrl()) {
           audioElementRef.currentTime = time;
         } else if (hasVideo) {
@@ -612,6 +616,14 @@ export default function SongPlayer(props: SongPlayerProps) {
     } catch {
       // Ignore disconnection errors
     }
+
+    // Let go of the media now instead of whenever the elements are collected: song select keeps
+    // swapping players, and each holds decoders and buffered audio/video.
+    for (const element of [audioElementRef, videoElementRef]) {
+      if (!element) continue;
+      element.removeAttribute("src");
+      element.load();
+    }
   });
 
   return (
@@ -623,7 +635,7 @@ export default function SongPlayer(props: SongPlayerProps) {
     >
       <video
         ref={videoElementRef}
-        aria-label="Song video"
+        aria-label={t("common.songVideo")}
         class="h-full w-full object-cover"
         classList={{ hidden: !videoActive() }}
         preload="auto"
@@ -655,7 +667,7 @@ export default function SongPlayer(props: SongPlayerProps) {
 
       <audio
         ref={audioElementRef}
-        aria-label="Song audio"
+        aria-label={t("common.songAudio")}
         preload="auto"
         crossorigin="anonymous"
         onCanPlayThrough={handleAudioCanPlayThrough}

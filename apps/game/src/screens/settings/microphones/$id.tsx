@@ -9,6 +9,7 @@ import SettingsFooter from "~/components/settings-footer";
 import TitleBar from "~/components/title-bar";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
+import { notify } from "~/lib/toast";
 import { getColorVar } from "~/lib/utils/color";
 import { type Microphone, settingsStore } from "~/stores/settings";
 
@@ -81,23 +82,62 @@ export default function MicrophoneScreen() {
             const saveMicrophone = () => {
               const mic = microphone();
               if (!isValidMicrophone(mic)) {
+                notify({ message: t("settings.sections.microphones.noDevice"), intent: "error" });
+                return;
+              }
+              // Two slots on one input would score the same voice twice.
+              const taken = settingsStore
+                .microphones()
+                .findIndex((other, index) => index !== id() && other.channel === mic.channel && sameDevice(other, mic));
+              if (taken !== -1) {
+                notify({
+                  message: t("settings.sections.microphones.alreadyUsed", { number: taken + 1 }),
+                  intent: "error",
+                });
                 return;
               }
               settingsStore.saveMicrophone(id(), mic);
               onBack();
             };
 
+            // Devices by id (names can repeat, e.g. two of the same USB mic); devices without an id
+            // fall back to their name.
+            const deviceKey = (device: { id?: string | null; name: string }) => device.id ?? `name:${device.name}`;
+            const deviceByKey = (key: string) => microphones().find((device) => deviceKey(device) === key);
+            const deviceLabel = (key: string) => {
+              const device = deviceByKey(key);
+              if (!device) return microphone().name ?? "?";
+              const twins = microphones().filter((other) => other.name === device.name);
+              return twins.length > 1 ? `${device.name} (${twins.indexOf(device) + 1})` : device.name;
+            };
+            const selectedDevice = () => {
+              const mic = microphone();
+              return mic.deviceId
+                ? deviceByKey(mic.deviceId)
+                : microphones().find((device) => device.name === mic.name);
+            };
+
             const menuItems: MenuItem[] = [
               select({
                 label: t("settings.sections.microphones.microphone"),
-                value: () => microphone().name,
-                onChange: (name: string) => {
+                value: () => {
+                  const device = selectedDevice();
+                  return device ? deviceKey(device) : null;
+                },
+                onChange: (key: string) => {
+                  const device = deviceByKey(key);
+                  if (!device) return;
                   // Persist the stable device id alongside the name so the mic can
                   // still be matched if its name changes or collides.
-                  const deviceId = microphones().find((device) => device.name === name)?.id ?? undefined;
-                  setMicrophone((prev) => ({ ...prev, name, deviceId }));
+                  setMicrophone((prev) => ({
+                    ...prev,
+                    name: device.name,
+                    deviceId: device.id ?? undefined,
+                    channel: Math.min(prev.channel, Math.max(device.channels, 1) - 1),
+                  }));
                 },
-                options: microphones().map((microphone) => microphone.name),
+                options: microphones().map(deviceKey),
+                renderValue: (key: string | null) => <span>{key !== null ? deviceLabel(key) : "?"}</span>,
               }),
               select({
                 label: t("settings.sections.microphones.channel"),
@@ -106,7 +146,8 @@ export default function MicrophoneScreen() {
                   setMicrophone((prev) => ({ ...prev, channel }));
                 },
                 renderValue: (channel: number | null) => <span>{channel !== null ? `${channel + 1}` : "?"}</span>,
-                options: [0, 1, 2, 3, 4, 5, 6, 7],
+                // The device's own inputs; 8 when it's unknown (e.g. the saved device is unplugged).
+                options: () => Array.from({ length: selectedDevice()?.channels || 8 }, (_, channel) => channel),
               }),
               select({
                 label: t("settings.sections.microphones.color"),
@@ -191,6 +232,11 @@ export default function MicrophoneScreen() {
       </Suspense>
     </Layout>
   );
+}
+
+/** Whether two microphone settings use the same input device (by id when both have one). */
+function sameDevice(a: { deviceId?: string; name: string }, b: { deviceId?: string; name: string }) {
+  return a.deviceId && b.deviceId ? a.deviceId === b.deviceId : a.name === b.name;
 }
 
 type NullablePartial<T> = { [P in keyof T]?: T[P] | null };

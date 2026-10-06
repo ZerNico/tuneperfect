@@ -7,6 +7,8 @@ import { app } from "electron";
 
 import { verifyMinisign } from "./minisign";
 
+const CHECK_TIMEOUT_MS = 5000;
+
 /**
  * In-app updates in the model Tauri's updater used, which works without Apple/Microsoft
  * code signing: the API names a release file and its minisign signature, the download is
@@ -77,7 +79,8 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
     .replace("{{arch}}", arch)
     .replace("{{current_version}}", app.getVersion());
 
-  const response = await fetch(url);
+  // The splash screen waits for this; a slow or captive network mustn't hold the game up.
+  const response = await fetch(url, { signal: AbortSignal.timeout(CHECK_TIMEOUT_MS) });
   if (response.status === 204) return null;
   if (!response.ok) throw new Error(`Update check failed: ${response.status}`);
 

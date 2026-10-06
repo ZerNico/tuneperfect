@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 
+import { RouteError } from "./components/route-error";
 import { native } from "./lib/native/client";
 import { initPostHog } from "./lib/posthog";
 import { forwardConsole } from "./lib/utils/console";
@@ -11,6 +12,8 @@ import "./styles.css";
 
 forwardConsole("warn", (message) => native.app.log({ level: "warn", message }));
 forwardConsole("error", (message) => native.app.log({ level: "error", message }));
+// A promise that fails with nobody waiting on it would otherwise never reach the log file.
+window.addEventListener("unhandledrejection", (event) => console.error("Unhandled rejection:", event.reason));
 
 const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN;
 if (posthogToken) void initPostHog(posthogToken);
@@ -33,6 +36,9 @@ const router = createRouter({
     queryClient,
   },
   scrollRestoration: true,
+  // Every route gets the error screen, so a screen that throws doesn't take the root (lobby
+  // connections, toasts, popups) down with it.
+  defaultErrorComponent: RouteError,
   defaultPreload: false,
   defaultPreloadStaleTime: 0,
   defaultViewTransition: {

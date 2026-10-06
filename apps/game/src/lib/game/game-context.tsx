@@ -24,6 +24,8 @@ export interface GameContextValue {
   setPreferInstrumental: Setter<boolean>;
   pitches: Accessor<(number | null)[]>;
   playerCount: Accessor<number>;
+  /** True once the song ended and the last pitch sample is in: players score what's left of it. */
+  finishing?: Accessor<boolean>;
 }
 
 export const GameContext = createContext<GameContextValue>();

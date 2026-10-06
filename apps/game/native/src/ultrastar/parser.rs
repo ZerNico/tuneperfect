@@ -336,18 +336,22 @@ pub fn parse_ultrastar_txt(content: &str) -> Result<Song, AppError> {
     Ok(song)
 }
 
-pub fn parse_local_txt_file(
-    txt: &str,
-    files: &Vec<FileEntry>,
-    media_base_url: &str,
-) -> Result<LocalSong, AppError> {
+/// Reads a song file in whatever encoding it was saved in.
+fn read_txt(txt: &str) -> Result<String, AppError> {
     let bytes = fs::read(txt)?;
     let mut detector = EncodingDetector::new(Iso2022JpDetection::Deny);
     detector.feed(&bytes, true);
     let encoding = detector.guess(None, Utf8Detection::Allow);
     let (content, _, _) = encoding.decode(&bytes);
+    Ok(content.into_owned())
+}
 
-    let song = parse_ultrastar_txt(&content)?;
+pub fn parse_local_txt_file(
+    txt: &str,
+    files: &Vec<FileEntry>,
+    media_base_url: &str,
+) -> Result<LocalSong, AppError> {
+    let song = parse_ultrastar_txt(&read_txt(txt)?)?;
 
     let find_file = |filename: &Option<String>| -> Option<&FileEntry> {
         if let Some(filename) = filename {
@@ -364,9 +368,10 @@ pub fn parse_local_txt_file(
     let create_url_from_file =
         |file_entry: Option<&FileEntry>| -> Result<Option<String>, AppError> {
             if let Some(file_entry) = file_entry {
-                let path = dunce::canonicalize(&file_entry.path)?;
-                let path_string = path.to_string_lossy();
-                let encoded = urlencoding::encode(&path_string);
+                // The path as found below the (absolute) song folder; the media server resolves
+                // and checks it on every request, so resolving it here too only cost a realpath
+                // per file, and a failure rejected the whole song.
+                let encoded = urlencoding::encode(&file_entry.path);
                 Ok(Some(format!("{}/{}", media_base_url, encoded)))
             } else {
                 Ok(None)
@@ -435,6 +440,7 @@ pub fn parse_local_txt_file(
     });
 
     Ok(LocalSong {
+        voice_count: song.voices.len() as u32,
         song,
         audio_url,
         instrumental_url,

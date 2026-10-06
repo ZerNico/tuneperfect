@@ -9,6 +9,7 @@ import CardGrid, { type GridCard } from "~/components/ui/card-grid";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
 import { playSound } from "~/lib/sound";
+import { folderName } from "~/lib/utils/path";
 import { songsStore } from "~/stores/songs";
 
 export default function SongsScreen() {
@@ -34,12 +35,6 @@ export default function SongsScreen() {
     }
 
     setLoading(false);
-  };
-
-  const folderName = (path: string) => {
-    const unixPath = path.replace(/\\/g, "/");
-    const name = unixPath.split("/").pop();
-    return name || "Unknown";
   };
 
   const getSongCount = (path: string) => {

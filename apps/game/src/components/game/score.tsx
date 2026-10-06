@@ -1,8 +1,9 @@
-import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
+import { createEffect, createMemo, createSignal, on, onCleanup, untrack } from "solid-js";
 
 import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { usePlayer } from "~/lib/game/player-context";
+import { formatNumber } from "~/lib/i18n";
 
 const TWEEN_DURATION_MS = 250;
 const POP_THRESHOLD = 500;
@@ -55,11 +56,25 @@ export default function Score(props: ScoreProps) {
       : scoreRef?.animate(POP_KEYFRAMES, POP_OPTIONS);
   };
 
+  // One count-up loop that retargets: the score changes on nearly every sung beat, so starting a
+  // fresh tween (closures and a frame chain) each time adds up with four singers.
+  let tweenFrom = 0;
+  let tweenTo = 0;
+  let tweenStart = 0;
+  let frame: number | undefined;
+  onCleanup(() => frame !== undefined && cancelAnimationFrame(frame));
+
+  const step = (now: number) => {
+    const progress = Math.min((now - tweenStart) / TWEEN_DURATION_MS, 1);
+    setDisplayScore(Math.round(tweenFrom + (tweenTo - tweenFrom) * (1 - (1 - progress) ** 3)));
+    frame = progress < 1 ? requestAnimationFrame(step) : undefined;
+  };
+
   createEffect(
     on(targetScore, (target, previousTarget) => {
       // The tween starts from whatever is shown right now, even mid-tween.
-      const initialScore = displayScore();
-      if (target === initialScore) {
+      tweenFrom = untrack(displayScore);
+      if (target === tweenFrom) {
         return;
       }
 
@@ -68,23 +83,9 @@ export default function Score(props: ScoreProps) {
         pop();
       }
 
-      const startTime = performance.now();
-      let animationFrame: number;
-
-      const animate = (currentTime: number) => {
-        const progress = Math.min((currentTime - startTime) / TWEEN_DURATION_MS, 1);
-        const easeProgress = 1 - (1 - progress) ** 3;
-
-        setDisplayScore(Math.round(initialScore + (target - initialScore) * easeProgress));
-
-        if (progress < 1) {
-          animationFrame = requestAnimationFrame(animate);
-        }
-      };
-
-      animationFrame = requestAnimationFrame(animate);
-
-      onCleanup(() => cancelAnimationFrame(animationFrame));
+      tweenTo = target;
+      tweenStart = performance.now();
+      frame ??= requestAnimationFrame(step);
     }),
   );
 
@@ -102,9 +103,7 @@ export default function Score(props: ScoreProps) {
         // Digits in the singer's colour; a short, unblurred shadow (no haze on light videos).
         style={{ color: player.micColor(500) }}
       >
-        {displayScore().toLocaleString("en-US", {
-          maximumFractionDigits: 0,
-        })}
+        {formatNumber(displayScore())}
       </p>
     </div>
   );

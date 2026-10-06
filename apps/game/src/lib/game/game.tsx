@@ -1,11 +1,12 @@
 import createRAF from "@solid-primitives/raf";
-import { type Accessor, batch, createEffect, createSignal, type JSX } from "solid-js";
+import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX, untrack } from "solid-js";
 
 import type { SongPlayerRef } from "~/components/song-player";
 import { native } from "~/lib/native/client";
 import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
-import { beatToMs, beatToMsWithoutGap, msToBeat } from "~/lib/ultrastar/bpm";
+import { beatToMs, beatToMsWithoutGap, msToBeat, msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
+import { tryCatch } from "~/lib/utils/try-catch";
 import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
@@ -17,6 +18,9 @@ export interface CreateGameOptions {
 }
 
 export { useGame } from "./game-context";
+
+/** The previous game's recorder teardown; a new game's recording waits for it. */
+let teardown: Promise<void> = Promise.resolve();
 
 export function createGame(options: Accessor<CreateGameOptions>) {
   const [ms, setMs] = createSignal(0);
@@ -32,6 +36,15 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   );
   const [pitches, setPitches] = createSignal<(number | null)[]>([]);
 
+  const [finishing, setFinishing] = createSignal(false);
+
+  // Recording is started and stopped across the Electron boundary, so the screen can leave while
+  // `start` is still in flight. Only `stop` tears down: it waits for the start and stops the
+  // recorder if that came up. The recorder is global, so a start first waits for the previous
+  // screen's teardown, or that teardown could stop the new round's recorder.
+  let recording: Promise<boolean> | undefined;
+  let disposed = false;
+
   const start = async () => {
     const opts = options();
 
@@ -39,11 +52,18 @@ export function createGame(options: Accessor<CreateGameOptions>) {
       throw new Error("No song provided");
     }
 
-    await native.recording.start({
-      microphones: roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
-      playbackEnabled: settingsStore.general().micPlaybackEnabled,
-      playbackVolume: settingsStore.volume().micPlayback,
-    });
+    recording = (async () => {
+      await teardown;
+      if (disposed) return false;
+      await native.recording.start({
+        microphones: roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone) ?? [],
+        playbackEnabled: settingsStore.general().micPlaybackEnabled,
+        playbackVolume: settingsStore.volume().micPlayback,
+      });
+      return true;
+    })();
+
+    if (!(await recording) || disposed) return false;
 
     setStarted(true);
     setPlaying(true);
@@ -52,8 +72,33 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   };
 
   const stop = async () => {
-    await native.recording.stop();
+    disposed = true;
+    const current = recording;
+    teardown = (async () => {
+      if (await current?.catch(() => false)) {
+        await native.recording.stop().catch((error) => console.error("Failed to stop recording:", error));
+      }
+    })();
+    await teardown;
     logPerfReport();
+  };
+
+  /**
+   * After the song ends, a beat is only scored once it has finished in each mic's delayed time,
+   * so the last notes would be cut off. Waits out the longest delay plus a beat, takes one last
+   * sample and lets the players score the rest, before the results are taken.
+   */
+  const finish = async () => {
+    const current = untrack(song);
+    if (!current || !untrack(started) || untrack(finishing)) return;
+
+    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + 50;
+    await new Promise((resolve) => setTimeout(resolve, tailMs));
+    const [error, result] = await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }));
+    batch(() => {
+      setFinishing(true);
+      if (!error) setPitches(result);
+    });
   };
 
   const pause = () => {
@@ -139,8 +184,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
     const currentTime = opts.songPlayerRef.getCurrentTime();
     const duration = opts.songPlayerRef.getDuration();
+    // What's playing reaches the ears `outputLatency` ms late (e.g. Bluetooth or a TV's audio), so
+    // notes, lyrics and scoring follow the moment that's heard, like the calibration preview does.
     const outputLatency = settingsStore.general().outputLatency;
-    const ms = currentTime * 1000 + outputLatency;
+    const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
 
     batch(() => {
@@ -151,21 +198,38 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     });
   });
 
-  const flooredBeat = () => Math.floor(beat());
+  const song = createMemo(() => options().song);
 
-  // One request per beat; a slow response must not overwrite a newer one.
+  // Each player scores a beat once it has finished in their mic's delayed time, so a pitch is
+  // requested whenever one of those delayed beats ticks over: once per beat when all mics share a
+  // delay, instead of once per frame. Summing the floored beats changes whenever any of them does.
+  const micDelays = createMemo(
+    () => [...new Set(roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone.delay ?? 0) ?? [0])],
+    [],
+    { equals: (a, b) => a.length === b.length && a.every((delay, i) => delay === b[i]) },
+  );
+  const pitchTick = createMemo(() => {
+    const s = song();
+    if (!s) return 0;
+    const b = beat();
+    let tick = 0;
+    for (const delay of micDelays()) tick += Math.floor(b - msToBeatWithoutGap(s, delay));
+    return tick;
+  });
+
+  // A slow response must not overwrite a newer one.
   let latestPitchRequest = 0;
   let appliedPitchRequest = 0;
 
   createEffect(() => {
-    flooredBeat();
+    pitchTick();
     if (!started() || !playing()) return;
 
-    const song = options().song;
-    if (!song) return;
+    const current = untrack(song);
+    if (!current) return;
 
     // One beat as the analysis window; Rust converts to samples and clamps it.
-    const windowMs = beatToMsWithoutGap(song, 1);
+    const windowMs = beatToMsWithoutGap(current, 1);
 
     const request = ++latestPitchRequest;
     void (async () => {
@@ -203,8 +267,10 @@ export function createGame(options: Accessor<CreateGameOptions>) {
           newScores[i] = { normal: 0, golden: 0, bonus: 0 };
         }
       }
-      if (newScores[index]) {
-        newScores[index][type] += value;
+      const current = newScores[index];
+      if (current) {
+        // A new object: the previous array must not change under anyone still holding it.
+        newScores[index] = { ...current, [type]: current[type] + value };
       }
       return newScores;
     });
@@ -231,7 +297,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     playing,
     ms,
     beat,
-    song: () => options().song,
+    song,
     currentTime,
     duration,
     scores,
@@ -242,6 +308,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     setPreferInstrumental,
     pitches,
     playerCount,
+    finishing,
   };
 
   const Provider = (props: { children: JSX.Element }) => (
@@ -250,6 +317,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   return {
     GameProvider: Provider,
+    finish,
     ...values,
   };
 }

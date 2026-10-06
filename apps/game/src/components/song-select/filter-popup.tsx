@@ -9,7 +9,7 @@ import { createListNavigation } from "~/hooks/list-navigation";
 import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
-import { formatDecade, getDecades, getEditions, getGenres, getLanguages, typeLabel } from "~/lib/utils/song-facets";
+import { formatDecade, getFacets, typeLabel } from "~/lib/utils/song-facets";
 
 import Plate from "../ui/plate";
 
@@ -52,12 +52,7 @@ const cycle = <T,>(values: ReadonlyArray<T | null>, current: T | null, direction
 export function FilterPopup(props: FilterPopupProps) {
   let popupRef!: HTMLDivElement;
 
-  const facets = createMemo(() => ({
-    decades: getDecades(props.songs),
-    genres: getGenres(props.songs),
-    languages: getLanguages(props.songs),
-    editions: getEditions(props.songs),
-  }));
+  const facets = createMemo(() => getFacets(props.songs));
 
   const update = (patch: Partial<SongFilters>) => {
     props.onChange({ ...props.filters, ...patch });

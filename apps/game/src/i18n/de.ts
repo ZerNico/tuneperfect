@@ -16,6 +16,10 @@ const de = {
     players: {
       guest: "Gast",
     },
+    unknown: "Unbekannt",
+    remove: "Entfernen",
+    songVideo: "Songvideo",
+    songAudio: "Songaudio",
     yes: "Ja",
     no: "Nein",
     routeError: {
@@ -177,6 +181,9 @@ const de = {
     },
     combo: "Combo",
     nowSinging: "Jetzt singen",
+    pitchAccuracy: "Tongenauigkeit",
+    songFailed: "Der Song konnte nicht abgespielt werden",
+    microphonesFailed: "Die Mikrofone konnten nicht gestartet werden",
     phraseRating: {
       perfect: "Perfekt",
       great: "Super",
@@ -235,6 +242,8 @@ const de = {
         gain: "Verstärkung",
         threshold: "Schwellenwert",
         level: "Pegel",
+        noDevice: "Wähle zuerst ein Mikrofon aus.",
+        alreadyUsed: "Mikrofon {{number}} nutzt diesen Kanal dieses Geräts schon.",
       },
       localPlayers: {
         title: "Lokale Spieler",
@@ -270,6 +279,8 @@ const de = {
       },
       credits: {
         title: "Credits",
+        soundsKenney: "Soundeffekte von Kenney",
+        soundsFreesound: "Soundeffekte von Freesound (CC0)",
       },
     },
   },
@@ -288,7 +299,12 @@ const de = {
       continue: "Weiter",
       restart: "Neustart",
       draw: "Unentschieden",
-      wins: "hat gewonnen",
+      winner: "{{name}} hat gewonnen!",
+      form: {
+        win: "S",
+        draw: "U",
+        loss: "N",
+      },
       standings: "Tabelle",
       winsColumn: "Siege",
       score: "Punkte",

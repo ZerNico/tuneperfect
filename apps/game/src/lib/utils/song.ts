@@ -1,5 +1,5 @@
 import { t } from "~/lib/i18n";
-import type { Song } from "~/lib/ultrastar/song";
+import { type Song, voiceCount } from "~/lib/ultrastar/song";
 
 export function getVoiceName(song: Song | null, voiceIndex: number): string {
   if (!song) return `${t("sing.voice")} ${voiceIndex + 1}`;
@@ -8,5 +8,5 @@ export function getVoiceName(song: Song | null, voiceIndex: number): string {
 }
 
 export function isDuet(song: Song | null | undefined): boolean {
-  return song != null && song.voices.length > 1;
+  return song != null && voiceCount(song) > 1;
 }

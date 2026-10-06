@@ -391,13 +391,14 @@
     }
   }
 
-  /* Moves .bg-stripes by exactly one stripe period so the loop is seamless. */
+  /* Slides .bg-stripes by exactly one tile so the loop is seamless. A transform, so the stripes are
+     painted once and moved by the compositor instead of repainted every frame. */
   @keyframes stripesMove {
     from {
-      background-position: 0 0;
+      transform: translateX(0);
     }
     to {
-      background-position: calc(1.2cqw * 1.41421) 0;
+      transform: translateX(calc(1.2cqw * 1.41421));
     }
   }
 
@@ -702,6 +703,16 @@ body {
 
 /* Heavy numbers and headline text: Lato black, upright. Set --display-shadow for a hard
    drop shadow straight down (e.g. a dark shade of the player colour on score numbers). */
+/* Pauses every animation inside, for things nobody can see right now (a hidden lane, the game
+   under the pause menu). Paused animations stop costing frames and resume where they were. */
+@utility fx-paused {
+  & *,
+  & *::before,
+  & *::after {
+    animation-play-state: paused !important;
+  }
+}
+
 @utility text-display {
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -713,6 +724,8 @@ body {
    video shows through in its own colour), darker for readability, and a short unblurred drop. */
 @utility glass {
   background-color: rgb(0 0 0 / 0.6);
+  /* Only on popups and panels: over a moving video every blurred surface is redrawn each frame
+     (the radius doesn't change the cost, the number and size of surfaces does). */
   backdrop-filter: blur(1.2cqw);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.1),
@@ -734,6 +747,12 @@ body {
 /* Soft glow in the mode colour under a focused item (the gradient-* classes set --mode-glow). */
 @utility focus-glow {
   box-shadow: 0 0.3cqw 2cqw -0.8cqw color-mix(in oklch, var(--mode-glow, white) 50%, transparent);
+}
+
+/* The moving stripes start one tile further left, so sliding right never uncovers an edge. The
+   parent clips them (all users are inside overflow-hidden). */
+.animate-stripes-move {
+  margin-left: calc(-1.2cqw * 1.41421);
 }
 
 @utility bg-stripes {
