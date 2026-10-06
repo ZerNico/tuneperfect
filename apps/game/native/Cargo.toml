@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 
 [build-dependencies]
 napi-build = "2.5"
+static_vcruntime = "3.0"
 
 [dependencies]
 napi = { version = "3.13", default-features = false, features = ["napi8", "tokio_rt", "serde-json"] }
