@@ -239,6 +239,11 @@ const en = {
     unknown: "Look at the screen",
     unknownHint: "The game has something new this app doesn't know yet. Update the app to use it here.",
     unsupported: "Update the game to control it from your phone.",
+    clearText: "Clear",
+    songs: {
+      filters: "Filters",
+      any: "Any",
+    },
     pad: {
       up: "Up",
       down: "Down",

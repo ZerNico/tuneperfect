@@ -113,6 +113,40 @@ export const NAV_ACTIONS = [
 
 const NavActionSchema = v.picklist(NAV_ACTIONS);
 
+const OptionSchema = v.object({ value: v.string(), label: v.string() });
+
+/**
+ * Extras for phones with full control, shown with the pad where a pad is clumsy. `surface` says
+ * which mounted screen they belong to: the game turns down actions for one that's gone. Labels
+ * come from the game, in its language (the room's).
+ */
+const ExtrasSchema = v.object({
+  /** The TV wants text (a search, a name): typed on the phone instead of the on-screen keyboard. */
+  text: v.optional(
+    v.object({
+      surface: v.string(),
+      label: v.string(),
+      /** Empty for secret fields: the game never sends a password back. */
+      value: v.string(),
+      maxLength: v.optional(v.number()),
+      secret: v.optional(v.boolean()),
+    }),
+  ),
+  /** The song select: its sort and filters to pick directly, and the song on the TV. */
+  songs: v.optional(
+    v.object({
+      surface: v.string(),
+      sort: v.string(),
+      sorts: v.array(OptionSchema),
+      /** A filter's `value` is null while it's off; its options don't include "off". */
+      filters: v.array(
+        v.object({ id: v.string(), label: v.string(), value: v.nullable(v.string()), options: v.array(OptionSchema) }),
+      ),
+      song: v.nullable(SongSchema),
+    }),
+  ),
+});
+
 export const RemoteStateSchema = v.object({
   /** `full`: the phone may drive the whole game with navigation actions. */
   control: v.picklist(["full", "none"]),
@@ -127,6 +161,8 @@ export const RemoteStateSchema = v.object({
   panel: v.nullable(PanelSchema),
   /** It's this user's move: the phone brings the panel up and vibrates. */
   attention: v.boolean(),
+  /** With full control, where the screen has them. Older games don't send any. */
+  extras: v.optional(ExtrasSchema),
 });
 
 export const ActionSchema = v.variant("type", [
@@ -145,6 +181,10 @@ export const ActionSchema = v.variant("type", [
   v.object({ type: v.literal("ticTacToe.pick"), cell: v.number() }),
   v.object({ type: v.literal("ticTacToe.singerCursor"), index: v.number() }),
   v.object({ type: v.literal("ticTacToe.singerPick"), index: v.number() }),
+  // Extras (with full control).
+  v.object({ type: v.literal("text"), surface: v.string(), value: v.pipe(v.string(), v.maxLength(500)) }),
+  v.object({ type: v.literal("songs.sort"), surface: v.string(), sort: v.string() }),
+  v.object({ type: v.literal("songs.filter"), surface: v.string(), filter: v.string(), value: v.nullable(v.string()) }),
 ]);
 
 export const ActResultSchema = v.variant("ok", [
@@ -161,6 +201,7 @@ export type RemoteState = v.InferOutput<typeof RemoteStateSchema>;
 export type RemoteAction = v.InferOutput<typeof ActionSchema>;
 export type NavAction = (typeof NAV_ACTIONS)[number];
 export type ActResult = v.InferOutput<typeof ActResultSchema>;
+export type Extras = v.InferOutput<typeof ExtrasSchema>;
 
 export const remoteContract = {
   /** This user's state, now and after every change, until the phone stops listening. */

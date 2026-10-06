@@ -16,6 +16,7 @@ import {
 import { twMerge } from "tailwind-merge";
 
 import { createListNavigation } from "~/hooks/list-navigation";
+import { useRemoteExtras } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
 
 import Button from "./ui/button";
@@ -137,6 +138,24 @@ export default function Menu(props: MenuProps) {
     onCleanup(() => observer.disconnect());
   });
   const select = (index: number) => list.set(Math.max(0, positionOf(index)));
+
+  // A selected text field is typed on phones with full control.
+  useRemoteExtras({
+    get layer() {
+      return props.layer ?? 0;
+    },
+    text: () => {
+      const item = props.items[selectedIndex()];
+      if (item?.type !== "input") return null;
+      return {
+        label: item.label,
+        value: item.value(),
+        maxLength: item.maxLength,
+        secret: item.inputType === "password",
+        set: item.onInput,
+      };
+    },
+  });
 
   // Jump to the initial item once, as soon as it's there (items may arrive after a query).
   let startApplied = false;

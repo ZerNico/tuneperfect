@@ -349,6 +349,11 @@ export function releaseRemote(userId: string) {
 }
 
 const layerInstances = new ReactiveMap<number, number>();
+
+/** The layer that gets input now (a popup's is above its screen's); 0 when nothing listens. */
+export const topLayer = createRoot(() =>
+  createMemo(() => (layerInstances.size > 0 ? Math.max(...layerInstances.keys()) : 0)),
+);
 /** The actions of every listener that currently gets input, by listener: whether each does something now. */
 const activeActionLists = new ReactiveMap<object, [Action, boolean][]>();
 

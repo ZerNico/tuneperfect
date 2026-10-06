@@ -37,7 +37,9 @@ import {
   useSongFilter,
 } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
+import { OK, STALE, useRemoteExtras } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
+import { formatDecade, getFacets, typeLabel } from "~/lib/utils/song-facets";
 import { settingsStore } from "~/stores/settings";
 
 import { FilterButton } from "./filter-button";
@@ -223,6 +225,73 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
   });
 
   const total = () => props.items.length;
+
+  // Phones with full control type the search and pick the sort and filters directly; the pad does
+  // the rest. Always, also while a popup is open: the popups show the same state.
+  const filterOptions = createMemo(() => {
+    const facets = getFacets(props.items);
+    const strings = (values: string[]) => values.map((value) => ({ value, label: value }));
+    const list: { id: keyof SongFilters; label: string; options: { value: string; label: string }[] }[] = [];
+    if (props.showTypeFilter !== false) {
+      list.push({
+        id: "type",
+        label: t("sing.filter.type"),
+        options: (["solo", "duet"] as const).map((value) => ({ value, label: typeLabel(value) })),
+      });
+    }
+    const decades = facets.decades.map((decade) => ({ value: String(decade), label: formatDecade(decade) }));
+    if (decades.length > 0) list.push({ id: "decade", label: t("sing.filter.decade"), options: decades });
+    if (facets.genres.length > 0)
+      list.push({ id: "genre", label: t("sing.filter.genre"), options: strings(facets.genres) });
+    if (facets.languages.length > 0) {
+      list.push({ id: "language", label: t("sing.filter.language"), options: strings(facets.languages) });
+    }
+    if (facets.editions.length > 0) {
+      list.push({ id: "edition", label: t("sing.filter.edition"), options: strings(facets.editions) });
+    }
+    return list;
+  });
+
+  /** A filter's value as phones see it: null while it's off. */
+  const filterValue = (filters: SongFilters, id: keyof SongFilters): string | null => {
+    const value = filters[id];
+    if (id === "type") return value === "all" ? null : String(value);
+    return value === null ? null : String(value);
+  };
+
+  useRemoteExtras({
+    layer: false,
+    text: () => ({ label: t("sing.search"), value: state.searchQuery(), set: state.setSearchQuery }),
+    songs: () => {
+      const item = selected();
+      const info = item ? props.describe(item) : null;
+      const filters = state.filters();
+      return {
+        sort: state.sortOption(),
+        sorts: props.sortOptions.map((option) => ({ value: option, label: t(`sing.sort.${option}`) })),
+        filters: filterOptions().map((filter) => ({ ...filter, value: filterValue(filters, filter.id) })),
+        song: item && info ? { hash: props.getId(item), title: info.title, artist: info.artist } : null,
+        setSort: (sort) => {
+          const option = props.sortOptions.find((candidate) => candidate === sort);
+          if (!option) return STALE;
+          state.setSortOption(option);
+          playSound("select");
+          return OK;
+        },
+        setFilter: (id, value) => {
+          const filter = filterOptions().find((candidate) => candidate.id === id);
+          if (!filter || (value !== null && !filter.options.some((option) => option.value === value))) return STALE;
+          const current = state.filters();
+          if (filter.id === "type") state.setFilters({ ...current, type: (value ?? "all") as SongFilters["type"] });
+          else if (filter.id === "decade")
+            state.setFilters({ ...current, decade: value === null ? null : Number(value) });
+          else state.setFilters({ ...current, [filter.id]: value });
+          playSound("select");
+          return OK;
+        },
+      };
+    },
+  });
 
   return (
     <Layout

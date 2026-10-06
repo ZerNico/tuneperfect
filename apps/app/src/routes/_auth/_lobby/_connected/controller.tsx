@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 
 import PageHeader from "~/components/page-header";
+import { SongsStrip, TextExtraField } from "~/components/remote/extras";
 import NavPad from "~/components/remote/nav-pad";
 import RemotePanel, { Notice } from "~/components/remote/remote-panel";
 import { t } from "~/lib/i18n";
@@ -32,6 +33,9 @@ function ControllerComponent() {
           {(panel) => <RemotePanel panel={panel()} />}
         </Show>
         <Show when={fullControl()}>
+          {/* Where the pad is clumsy, the screen adds a few direct controls above it. */}
+          <Show when={remote.state()?.extras?.songs}>{(songs) => <SongsStrip songs={songs()} />}</Show>
+          <Show when={remote.state()?.extras?.text}>{(text) => <TextExtraField text={text()} />}</Show>
           <NavPad />
         </Show>
       </Show>

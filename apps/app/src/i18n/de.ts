@@ -243,6 +243,11 @@ const de: Dict = {
     unknownHint:
       "Das Spiel hat etwas Neues, das diese App noch nicht kennt. Aktualisiere die App, um es hier zu nutzen.",
     unsupported: "Aktualisiere das Spiel, um es mit dem Handy zu steuern.",
+    clearText: "Leeren",
+    songs: {
+      filters: "Filter",
+      any: "Alle",
+    },
     pad: {
       up: "Hoch",
       down: "Runter",
