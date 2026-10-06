@@ -27,6 +27,8 @@ interface MedleyListProps {
 }
 
 export function MedleyList(props: MedleyListProps) {
+  const removeSelected = () => props.onRemove(list.position());
+
   const list = createListNavigation({
     get count() {
       return props.songs.length;
@@ -36,7 +38,7 @@ export function MedleyList(props: MedleyListProps) {
     },
     sound: false,
     get actions() {
-      return { "remove-from-medley": props.songs.length > 0 ? () => props.onRemove(list.position()) : null };
+      return { "remove-from-medley": props.songs.length > 0 ? removeSelected : null };
     },
   });
 
