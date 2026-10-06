@@ -1,8 +1,21 @@
 # Tune Perfect Helm chart
 
-Deploys the web site, the phone app, the API (with PostgreSQL and Redis) and coturn. The
-production deploy runs `.github/workflows/deploy-kubernetes.yaml`, which sets the domain, image tag
-and secrets.
+Deploys the web site, the phone app, the API (with Redis) and coturn. The production deploy runs
+`.github/workflows/deploy-kubernetes.yaml`, which sets the domain, image tag and secrets.
+
+## PostgreSQL
+
+The database lives on the cluster's shared PostgreSQL (CloudNativePG, set up by the
+`k8s-infra` Ansible repo, which also runs its backups). The chart only declares the
+`tuneperfect` database, user and grant (`templates/database.yaml`), which postgresql-access-operator
+creates there with the password from `database.password`. The API connects to `database.host`.
+
+Without the operator (another cluster), set `database.accessOperator.enabled=false`, create the
+database and user yourself and point `database.host` at the server.
+
+## Redis
+
+Only holds rate-limit counters, so it runs without persistence and a restart just resets them.
 
 ## TURN (coturn)
 

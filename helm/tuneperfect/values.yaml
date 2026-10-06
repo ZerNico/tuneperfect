@@ -32,39 +32,36 @@ secrets:
     discordClientSecret: ""
     posthogToken: ""
 
-# PostgreSQL configuration
-postgresql:
-  enabled: true
-  image:
-    repository: bitnamilegacy/postgresql
-    tag: "17.6.0-debian-12-r4"
-  auth:
-    username: tuneperfect
-    database: tuneperfect
-    existingSecret: postgresql-credentials
-  primary:
-    persistence:
-      enabled: true
-      existingClaim: "{{ .Release.Name }}-postgresql-data"
-      size: 1Gi
+# PostgreSQL: the cluster's shared CloudNativePG cluster (k8s-infra). The chart declares its
+# own database and user there through postgresql-access-operator.
+database:
+  host: postgres-rw.postgresql.svc.cluster.local
+  port: 5432
+  name: tuneperfect
+  username: tuneperfect
+  password: ""
+  accessOperator:
+    enabled: true
+    # The PostgreSQL CR the infra registers for the shared cluster.
+    postgresRef:
+      name: postgres
+      namespace: postgresql
 
-# Redis configuration
+# Redis only holds rate-limit counters, which expire within minutes: nothing is persisted and a
+# restart just resets them.
 redis:
   enabled: true
   image:
-    repository: bitnamilegacy/redis
-    tag: "8.2.1-debian-12-r0"
-  auth:
-    enabled: true
-    existingSecret: redis-credentials
-    existingSecretPasswordKey: password
-  master:
-    persistence:
-      enabled: true
-      existingClaim: "{{ .Release.Name }}-redis-data"
-      size: 1Gi
-  replica:
-    replicaCount: 0
+    repository: redis
+    tag: "8.10.2-alpine"
+  password: ""
+  maxmemory: 64mb
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
 # Uploads storage configuration
 uploads:

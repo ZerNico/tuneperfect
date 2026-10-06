@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: tuneperfect
       POSTGRES_PASSWORD: tuneperfect
@@ -8,7 +8,8 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - .tmp/db:/var/lib/postgresql/data
+      # Since 18 the image keeps its data in a per-version folder below this path.
+      - .tmp/db:/var/lib/postgresql
 
   mailpit:
     image: axllent/mailpit
@@ -21,7 +22,7 @@ services:
       - .tmp/mailpit:/data
 
   redis:
-    image: redis:latest
+    image: redis:8-alpine
     ports:
       - 6379:6379
     volumes:
