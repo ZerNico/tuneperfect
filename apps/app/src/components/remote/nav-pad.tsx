@@ -173,7 +173,10 @@ export default function NavPad(props: {
           <section class="flex w-full flex-col gap-2">
             <h3 class="text-xs font-bold tracking-[0.12em] text-white/50 uppercase">{t("remote.pad.medley")}</h3>
             <div class="grid grid-cols-2 gap-2">
-              <For each={extras().filter((extra) => extra.group === "medley")}>{(extra) => extraButton(extra)}</For>
+              {/* An odd last one fills its row. */}
+              <For each={extras().filter((extra) => extra.group === "medley")}>
+                {(extra) => extraButton(extra, "last:odd:col-span-2")}
+              </For>
             </div>
           </section>
         </Show>
