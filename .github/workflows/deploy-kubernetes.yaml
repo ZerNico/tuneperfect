@@ -118,4 +118,5 @@ jobs:
             --set coturn.enabled=true \
             --set coturn.realm=$DOMAIN_NAME \
             --set coturn.stunUrl=stun:stun.$DOMAIN_NAME:3478 \
-            --set coturn.host=turn.$DOMAIN_NAME
+            --set coturn.host=turn.$DOMAIN_NAME \
+            --set coturn.tls.enabled=true

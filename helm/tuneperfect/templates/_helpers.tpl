@@ -105,5 +105,8 @@ The TURN server once per transport (e.g. UDP and TCP), comma-separated for the A
 {{- range .Values.coturn.transports -}}
 {{- $urls = append $urls (printf "turn:%s:%d?transport=%s" $.Values.coturn.host (int $.Values.coturn.listeningPort) .) -}}
 {{- end -}}
+{{- if .Values.coturn.tls.enabled -}}
+{{- $urls = append $urls (printf "turns:%s:%d?transport=tcp" .Values.coturn.host (int .Values.coturn.tls.port)) -}}
+{{- end -}}
 {{- join "," $urls -}}
 {{- end -}}

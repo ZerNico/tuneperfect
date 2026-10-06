@@ -196,6 +196,15 @@ coturn:
   host: "turn.tuneperfect.localhost"
   transports: [udp, tcp]
 
+  # TURN over TLS on 443, for networks that only let HTTPS through. Traefik terminates TLS for
+  # coturn.host (picked by SNI, next to the HTTP sites on the same port) with a cert-manager
+  # certificate and passes the TURN stream to coturn's TCP listener. Adds turns:<host>:<port>.
+  tls:
+    enabled: false
+    port: 443
+    entryPoint: websecure
+    clusterIssuer: letsencrypt-prod
+
   # The secret TURN credentials are signed with is generated on first install and kept in the
   # coturn-credentials Secret. Set this only to pin it (e.g. for `helm template`).
   authSecret: ""
