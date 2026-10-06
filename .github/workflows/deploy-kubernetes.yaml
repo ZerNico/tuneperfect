@@ -48,17 +48,6 @@ jobs:
           # verified with this version.
           version: "v4.2.0"
 
-      - name: Add Bitnami Helm repository
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo update
-
-      - name: Update Helm dependencies
-        run: |
-          helm dependency update ${{ env.HELM_CHART_PATH }}
-
       - name: Deploy Helm Chart
         env:
           DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
@@ -87,8 +76,8 @@ jobs:
             --create-namespace \
             --values ${{ env.HELM_CHART_PATH }}/values.yaml \
             --set global.image.tag=$IMAGE_TAG \
-            --set postgresql.auth.password=$POSTGRES_PASSWORD \
-            --set redis.auth.password=$REDIS_PASSWORD \
+            --set database.password=$POSTGRES_PASSWORD \
+            --set redis.password=$REDIS_PASSWORD \
             --set secrets.api.jwtSecret=$JWT_SECRET \
             --set secrets.api.emailSmtpUrl=$EMAIL_SMTP_URL \
             --set secrets.api.googleClientId=$GOOGLE_CLIENT_ID \

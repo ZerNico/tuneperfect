@@ -1,0 +1,57 @@
+{{- if .Values.database.accessOperator.enabled }}
+{{- $ref := .Values.database.accessOperator.postgresRef }}
+# postgresql-access-operator creates these on the shared cluster. cleanupPolicy Skip: deleting the
+# release never drops the database.
+apiVersion: db.zernico.de/v1alpha1
+kind: PostgreSQLDatabase
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  postgresRef:
+    name: {{ $ref.name }}
+    namespace: {{ $ref.namespace }}
+  name: {{ .Values.database.name | quote }}
+  cleanupPolicy: Skip
+---
+apiVersion: db.zernico.de/v1alpha1
+kind: PostgreSQLUser
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  postgresRef:
+    name: {{ $ref.name }}
+    namespace: {{ $ref.namespace }}
+  name: {{ .Values.database.username | quote }}
+  passwordSecretKeyRef:
+    name: postgresql-credentials
+    key: password
+  cleanupPolicy: Skip
+---
+# Also CREATE on the database and the public schema, so migrations can create schemas and tables.
+apiVersion: db.zernico.de/v1alpha1
+kind: PostgreSQLGrant
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  postgresRef:
+    name: {{ $ref.name }}
+    namespace: {{ $ref.namespace }}
+  privileges:
+    - ALL PRIVILEGES
+  database: {{ .Values.database.name | quote }}
+  schema: public
+  role: {{ .Values.database.username | quote }}
+  cleanupPolicy: Skip
+{{- end }}
