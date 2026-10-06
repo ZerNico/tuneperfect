@@ -8,8 +8,10 @@
     "./orpc/server": "./src/orpc/rpc-handler.ts",
     "./utils": "./src/utils/index.ts",
     "./contracts": "./src/contracts/index.ts",
-    "./contracts/game": "./src/contracts/game.ts",
-    "./contracts/app": "./src/contracts/app.ts"
+    "./contracts/game": "./src/contracts/game.ts"
+  },
+  "scripts": {
+    "test": "bun test"
   },
   "dependencies": {
     "@orpc/client": "^1.15.4",

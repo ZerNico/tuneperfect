@@ -5,7 +5,10 @@ export const WEBRTC_CONFIG = {
     initialDelay: 2_000,
     maxDelay: 64_000,
     maxAttemptsBeforeToast: 3,
-    waitForConnectionBuffer: 5_000,
+    /** After this many failed attempts in a row the phone stops and offers a retry button instead. */
+    maxAttempts: 8,
+    /** A `disconnected` connection often recovers by itself; after this long the phone tries an ICE restart. */
+    disconnectedGrace: 4_000,
   },
 
   heartbeat: {
@@ -15,7 +18,6 @@ export const WEBRTC_CONFIG = {
 
   channels: {
     gameRpc: "game-rpc",
-    appRpc: "app-rpc",
   },
 } as const;
 

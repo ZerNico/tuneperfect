@@ -16,9 +16,10 @@ export function createHeartbeat(pingFn: () => Promise<void>, options: HeartbeatO
   const performPing = async () => {
     if (!isRunning) return;
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Heartbeat timeout")), timeout);
+        timer = setTimeout(() => reject(new Error("Heartbeat timeout")), timeout);
       });
 
       await Promise.race([pingFn(), timeoutPromise]);
@@ -30,6 +31,8 @@ export function createHeartbeat(pingFn: () => Promise<void>, options: HeartbeatO
         stop();
         onFailure?.();
       }
+    } finally {
+      clearTimeout(timer);
     }
   };
 

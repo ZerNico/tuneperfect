@@ -66,21 +66,3 @@ export async function processBufferedCandidates(
     }
   }
 }
-
-export async function addIceCandidateWithBuffer(
-  pc: RTCPeerConnection,
-  buffer: IceCandidateBuffer,
-  candidate: string,
-  onError?: (error: unknown) => void,
-) {
-  const immediateCandidate = buffer.addCandidate(candidate);
-
-  if (immediateCandidate !== null) {
-    try {
-      const iceCandidate = parseIceCandidate(immediateCandidate);
-      await pc.addIceCandidate(iceCandidate);
-    } catch (error) {
-      onError?.(error);
-    }
-  }
-}

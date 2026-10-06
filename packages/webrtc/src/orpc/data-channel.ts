@@ -43,8 +43,32 @@ export function postDataChannelMessage(channel: RTCDataChannel, data: DataChanne
   }
 }
 
+/**
+ * Limits on what the other side can make us buffer while reassembling chunks: a 20k-song list is
+ * about 200 chunks, so these leave plenty of room while a misbehaving peer can't grow memory
+ * without bound. An incomplete message is dropped after `CHUNK_TIMEOUT_MS`.
+ */
+const MAX_CHUNKS_PER_MESSAGE = 4_096;
+const MAX_PENDING_LENGTH = 64 * 1024 * 1024;
+/** Messages being reassembled at once; replies arrive one after another, so a few is plenty. */
+const MAX_PENDING_MESSAGES = 32;
+const MAX_ID_LENGTH = 64;
+const CHUNK_TIMEOUT_MS = 30_000;
+
 export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: unknown) => void) {
-  const chunkBuffers = new Map<string, { total: number; parts: Map<number, string> }>();
+  const chunkBuffers = new Map<
+    string,
+    { total: number; parts: Map<number, string>; length: number; timer: ReturnType<typeof setTimeout> }
+  >();
+  let pendingLength = 0;
+
+  const drop = (id: string) => {
+    const buf = chunkBuffers.get(id);
+    if (!buf) return;
+    clearTimeout(buf.timer);
+    pendingLength -= buf.length;
+    chunkBuffers.delete(id);
+  };
 
   const handler = (event: MessageEvent) => {
     const raw = event.data;
@@ -55,26 +79,36 @@ export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: u
 
       const header = raw.slice(CHUNK_PREFIX.length, newlineIdx);
       const [id, indexStr, totalStr] = header.split(":");
-      if (!id || !indexStr || !totalStr) return;
+      if (!id || id.length > MAX_ID_LENGTH || !indexStr || !totalStr) return;
 
-      const index = Number.parseInt(indexStr, 10);
-      const total = Number.parseInt(totalStr, 10);
+      const index = Number(indexStr);
+      const total = Number(totalStr);
+      if (!Number.isInteger(total) || total < 1 || total > MAX_CHUNKS_PER_MESSAGE) return;
+      if (!Number.isInteger(index) || index < 0 || index >= total) return;
       const payload = raw.slice(newlineIdx + 1);
 
       let buf = chunkBuffers.get(id);
       if (!buf) {
-        buf = { total, parts: new Map() };
+        if (chunkBuffers.size >= MAX_PENDING_MESSAGES) return;
+        buf = { total, parts: new Map(), length: 0, timer: setTimeout(() => drop(id), CHUNK_TIMEOUT_MS) };
         chunkBuffers.set(id, buf);
+      }
+      if (buf.total !== total || buf.parts.has(index)) return;
+      if (pendingLength + payload.length > MAX_PENDING_LENGTH) {
+        drop(id);
+        return;
       }
 
       buf.parts.set(index, payload);
+      buf.length += payload.length;
+      pendingLength += payload.length;
 
       if (buf.parts.size === buf.total) {
-        chunkBuffers.delete(id);
-        const sorted = Array.from(buf.parts.entries())
-          .toSorted((a, b) => a[0] - b[0])
-          .map(([, v]) => v);
-        callback(sorted.join(""));
+        const parts = buf.parts;
+        drop(id);
+        let message = "";
+        for (let i = 0; i < total; i++) message += parts.get(i);
+        callback(message);
       }
     } else {
       callback(raw);
@@ -84,7 +118,7 @@ export function onDataChannelMessage(channel: RTCDataChannel, callback: (data: u
   channel.addEventListener("message", handler);
   return () => {
     channel.removeEventListener("message", handler);
-    chunkBuffers.clear();
+    for (const id of chunkBuffers.keys()) drop(id);
   };
 }
 

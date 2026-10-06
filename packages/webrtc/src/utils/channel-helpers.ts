@@ -24,38 +24,6 @@ export function setupDataChannelHandlers(
   return { cleanup };
 }
 
-// Tracks open state of multiple channels, calls callback when all are open
-export function createChannelTracker(channelNames: readonly string[], onAllOpen: () => void) {
-  const openChannels = new Set<string>();
-
-  return {
-    markOpen(channelName: string) {
-      openChannels.add(channelName);
-      if (openChannels.size === channelNames.length) {
-        onAllOpen();
-      }
-    },
-
-    markClosed(channelName: string) {
-      openChannels.delete(channelName);
-    },
-
-    get allOpen() {
-      return openChannels.size === channelNames.length;
-    },
-
-    isOpen(channelName: string) {
-      return openChannels.has(channelName);
-    },
-
-    reset() {
-      openChannels.clear();
-    },
-  };
-}
-
-export type ChannelTracker = ReturnType<typeof createChannelTracker>;
-
 export function createOrderedDataChannel(pc: RTCPeerConnection, label: string, options?: Partial<RTCDataChannelInit>) {
   return pc.createDataChannel(label, {
     ordered: true,

@@ -1,5 +1,5 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { createEffect, createSignal, onCleanup } from "solid-js";
+import { createEffect, createMemo, on, onCleanup, untrack } from "solid-js";
 
 import { orpcClient } from "~/lib/orpc";
 import { createHostConnection, type HostConnection } from "~/lib/webrtc/host-connection";
@@ -7,59 +7,102 @@ import { getIceServers } from "~/lib/webrtc/ice-servers";
 
 import { lobbyStore } from "./lobby";
 
-const DISCONNECT_GRACE_MS = 10_000;
+/** A `disconnected` connection often recovers by itself (a phone switching networks or waking up). */
+const DISCONNECT_GRACE_MS = 30_000;
 const RECONNECT_MAX_MS = 30_000;
+/** Once the signaling stream has delivered a signal or stayed open this long, its backoff starts over. */
+const HEALTHY_SUBSCRIPTION_MS = 30_000;
+/** A hung API call must not hold up a phone's signals forever. */
+const SIGNAL_TIMEOUT_MS = 10_000;
+/** Candidates kept per phone while waiting for its offer. */
+const MAX_PENDING_CANDIDATES = 64;
+
+type OutgoingSignal = Parameters<typeof orpcClient.signaling.sendSignal>[0]["signal"];
+
+interface PendingCandidate {
+  candidate: string;
+  session: string | undefined;
+}
+
+/**
+ * One run of `startSignaling`. Signals are handled asynchronously, so a stop (or a new lobby) can
+ * come in between: work of an ended generation checks `signal` and leaves everything alone.
+ */
+interface Generation {
+  signal: AbortSignal;
+  lobbyId: string;
+}
 
 /** Resolves after `ms`, or right away once `signal` aborts. */
 const abortableSleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+    const done = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done, { once: true });
   });
 
 function createWebRTCStore() {
   const connections = new ReactiveMap<string, HostConnection>();
-  const pendingIceCandidates = new Map<string, string[]>();
-  const [abortController, setAbortController] = createSignal<AbortController | null>(null);
-  const [isSubscribed, setIsSubscribed] = createSignal(false);
-  let isStartingSignaling = false;
+  // A phone sends its offer and candidates as separate requests, so a candidate can arrive first.
+  const pendingIceCandidates = new Map<string, PendingCandidate[]>();
+  // Each phone's signals are handled in order, but a slow one (or a slow API call) doesn't hold up the others.
+  const signalQueues = new Map<string, Promise<void>>();
+  let abortController: AbortController | null = null;
 
-  const handleOffer = async (userId: string, offerSdp: string) => {
-    const existingConnection = connections.get(userId);
-    if (existingConnection) {
-      existingConnection.close();
+  const enqueue = (generation: Generation, userId: string, task: () => Promise<void>) => {
+    const next = (signalQueues.get(userId) ?? Promise.resolve())
+      .then(() => (generation.signal.aborted ? undefined : task()))
+      .catch((error: unknown) => console.error(`[WebRTC] Failed to handle a signal from ${userId}:`, error));
+    signalQueues.set(userId, next);
+    void next.finally(() => {
+      if (signalQueues.get(userId) === next) signalQueues.delete(userId);
+    });
+  };
+
+  const sendToPhone = (userId: string, signal: OutgoingSignal) =>
+    orpcClient.signaling.sendSignal({ signal, to: userId }, { signal: AbortSignal.timeout(SIGNAL_TIMEOUT_MS) });
+
+  const handleOffer = async (generation: Generation, userId: string, offerSdp: string, session: string | undefined) => {
+    const from = generation.lobbyId;
+    const existing = connections.get(userId);
+
+    // The same attempt offering again restarts ICE on its connection, keeping the data channel.
+    if (existing && session !== undefined && existing.session === session) {
+      const answerSdp = await existing.createAnswer(offerSdp);
+      if (generation.signal.aborted) return;
+      await sendToPhone(userId, { type: "answer", sdp: answerSdp, from, to: userId, session });
+      return;
+    }
+
+    if (existing) {
+      existing.close();
       connections.delete(userId);
     }
 
     const iceServers = await getIceServers();
+    // Signaling stopped while the servers loaded: don't open a connection nobody will close.
+    if (generation.signal.aborted) return;
 
-    // `disconnected` often recovers by itself (a phone switching networks); only give up on it after a while.
     let disconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const dispose = () => {
       clearTimeout(disconnectTimer);
       // A newer connection from the same user may have replaced this one already.
       if (connections.get(userId) === connection) {
         connections.delete(userId);
-        pendingIceCandidates.delete(userId);
       }
-      // Closes the data channels and the peer connection, so nothing keeps them alive.
+      // Closes the data channel and the peer connection, so nothing keeps them alive.
       connection.close();
     };
 
-    const connection = createHostConnection(userId, iceServers, {
-      onIceCandidate: async (candidate) => {
-        try {
-          await orpcClient.signaling.sendSignal({
-            signal: {
-              type: "ice-candidate",
-              candidate,
-              from: lobbyStore.lobby()?.lobby.id || "",
-            },
-            to: userId,
-          });
-        } catch (error) {
-          console.error(`[WebRTC] Failed to send ICE candidate to ${userId}:`, error);
-        }
+    const connection = createHostConnection(userId, session, iceServers, {
+      onIceCandidate: (candidate) => {
+        sendToPhone(userId, { type: "ice-candidate", candidate, from, session }).catch((error: unknown) =>
+          console.error(`[WebRTC] Failed to send ICE candidate to ${userId}:`, error),
+        );
       },
       onConnectionStateChange: (state) => {
         if (state === "failed" || state === "closed") {
@@ -71,96 +114,77 @@ function createWebRTCStore() {
           clearTimeout(disconnectTimer);
         }
       },
-      onDataChannelOpen: () => {
-        // oRPC channels ready - app can now call songs.list() etc.
-      },
     });
 
     connections.set(userId, connection);
 
     try {
       const answerSdp = await connection.createAnswer(offerSdp);
-
-      // Process any buffered ICE candidates that arrived before the connection was ready
-      const bufferedCandidates = pendingIceCandidates.get(userId);
-      if (bufferedCandidates) {
-        for (const candidate of bufferedCandidates) {
-          await connection.addIceCandidate(candidate);
-        }
-        pendingIceCandidates.delete(userId);
+      if (generation.signal.aborted) {
+        dispose();
+        return;
       }
 
-      await orpcClient.signaling.sendSignal({
-        signal: {
-          type: "answer",
-          sdp: answerSdp,
-          from: lobbyStore.lobby()?.lobby.id || "",
-          to: userId,
-        },
-        to: userId,
-      });
+      // Candidates of this attempt that came before its offer; those of older attempts are dropped.
+      const pending = pendingIceCandidates.get(userId) ?? [];
+      pendingIceCandidates.delete(userId);
+      for (const { candidate } of pending.filter((pending) => pending.session === session)) {
+        await connection.addIceCandidate(candidate);
+      }
+
+      await sendToPhone(userId, { type: "answer", sdp: answerSdp, from, to: userId, session });
     } catch (error) {
       console.error(`[WebRTC] Failed to handle offer from ${userId}:`, error);
-      connection.close();
-      connections.delete(userId);
-      pendingIceCandidates.delete(userId);
+      dispose();
     }
   };
 
-  const handleIceCandidate = async (userId: string, candidate: string) => {
+  const handleIceCandidate = async (userId: string, candidate: string, session: string | undefined) => {
     const connection = connections.get(userId);
-    if (connection) {
+    if (connection && connection.session === session) {
       await connection.addIceCandidate(candidate);
-    } else {
-      const existing = pendingIceCandidates.get(userId);
-      if (existing) {
-        existing.push(candidate);
-      } else {
-        pendingIceCandidates.set(userId, [candidate]);
-      }
+      return;
     }
+    // No connection yet, or this belongs to a newer attempt whose offer hasn't arrived.
+    const pending = pendingIceCandidates.get(userId) ?? [];
+    if (pending.length < MAX_PENDING_CANDIDATES) pending.push({ candidate, session });
+    pendingIceCandidates.set(userId, pending);
   };
 
   const startSignaling = async () => {
-    if (isSubscribed() || isStartingSignaling) {
-      return;
-    }
-
-    const lobby = lobbyStore.lobby();
-    if (!lobby) {
-      return;
-    }
-
-    isStartingSignaling = true;
+    const id = lobbyStore.lobby()?.lobby.id;
+    if (abortController || !id) return;
 
     const controller = new AbortController();
-    setAbortController(controller);
-    setIsSubscribed(true);
+    abortController = controller;
+    const generation: Generation = { signal: controller.signal, lobbyId: id };
 
     // The stream ends when the API restarts, the network blips or a proxy times it out; without it
     // no phone can join, so it's reopened (waiting longer after each failure) for as long as this
     // lobby lasts.
-    const lobbyId = lobby.lobby.id;
     let failures = 0;
     try {
-      while (!controller.signal.aborted && lobbyStore.lobby()?.lobby.id === lobbyId) {
+      while (!controller.signal.aborted && lobbyStore.lobby()?.lobby.id === id) {
+        const openedAt = Date.now();
         try {
-          const iterator = await orpcClient.signaling.subscribeAsHost(undefined, {
-            signal: controller.signal,
-          });
-          failures = 0;
+          const iterator = await orpcClient.signaling.subscribeAsHost(undefined, { signal: controller.signal });
 
           for await (const signal of iterator) {
             if (controller.signal.aborted) break;
+            failures = 0;
 
+            const userId = signal.from;
             if (signal.type === "offer") {
-              await handleOffer(signal.from, signal.sdp);
+              enqueue(generation, userId, () => handleOffer(generation, userId, signal.sdp, signal.session));
             } else if (signal.type === "ice-candidate") {
-              await handleIceCandidate(signal.from, signal.candidate);
+              enqueue(generation, userId, () => handleIceCandidate(userId, signal.candidate, signal.session));
             } else if (signal.type === "goodbye") {
-              // Guest is gracefully disconnecting - clean up their connection
-              console.log(`[WebRTC] Received goodbye from ${signal.from}, reason: ${signal.reason ?? "unknown"}`);
-              closeConnection(signal.from);
+              console.log(`[WebRTC] Received goodbye from ${userId}, reason: ${signal.reason ?? "unknown"}`);
+              enqueue(generation, userId, async () => {
+                // A goodbye from an older attempt (e.g. a tab closing after its reload connected) is ignored.
+                const connection = connections.get(userId);
+                if (signal.session === undefined || connection?.session === signal.session) closeConnection(userId);
+              });
             }
           }
         } catch (error) {
@@ -168,28 +192,22 @@ function createWebRTCStore() {
           console.error("[WebRTC] Signaling subscription error:", error);
         }
 
+        // A stream that keeps dying right after opening backs off; one that lasted starts over.
+        if (Date.now() - openedAt >= HEALTHY_SUBSCRIPTION_MS) failures = 0;
         await abortableSleep(Math.min(RECONNECT_MAX_MS, 1000 * 2 ** failures++), controller.signal);
       }
     } finally {
-      // A stop + restart may already have replaced this subscription; only reset state that is still ours.
-      if (abortController() === controller) {
-        setIsSubscribed(false);
-        setAbortController(null);
-        isStartingSignaling = false;
-      }
+      // A stop + restart may already have replaced this subscription.
+      if (abortController === controller) abortController = null;
     }
   };
 
-  /**
-   * Stop listening for signaling messages and close all connections
-   */
+  /** Stops listening for signals and closes every phone's connection. */
   const stopSignaling = () => {
-    abortController()?.abort();
-    setAbortController(null);
-    setIsSubscribed(false);
-    isStartingSignaling = false;
+    abortController?.abort();
+    abortController = null;
 
-    for (const [_userId, connection] of connections) {
+    for (const connection of connections.values()) {
       connection.close();
     }
     connections.clear();
@@ -197,11 +215,8 @@ function createWebRTCStore() {
   };
 
   const closeConnection = (userId: string) => {
-    const connection = connections.get(userId);
-    if (connection) {
-      connection.close();
-      connections.delete(userId);
-    }
+    connections.get(userId)?.close();
+    connections.delete(userId);
     pendingIceCandidates.delete(userId);
   };
 
@@ -214,18 +229,19 @@ function createWebRTCStore() {
 
 export const webrtcStore = createWebRTCStore();
 
-/**
- * Effect to automatically start/stop signaling based on lobby state
- */
+/** Listens for phones while there's a lobby; a different lobby starts over. */
 export function useWebRTCAutoConnect() {
-  createEffect(() => {
-    const lobby = lobbyStore.lobby();
-    if (lobby) {
-      webrtcStore.startSignaling();
-    } else {
-      webrtcStore.stopSignaling();
-    }
-  });
+  // The lobby lives in the settings store, which changes for unrelated reasons (e.g. a local player
+  // added); only a different lobby id may restart signaling and drop the phones.
+  const lobbyId = createMemo(() => lobbyStore.lobby()?.lobby.id);
+  createEffect(
+    on(lobbyId, (lobbyId) => {
+      untrack(() => {
+        webrtcStore.stopSignaling();
+        if (lobbyId) void webrtcStore.startSignaling();
+      });
+    }),
+  );
 
   onCleanup(() => {
     webrtcStore.stopSignaling();

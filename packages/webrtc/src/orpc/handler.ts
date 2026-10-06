@@ -16,19 +16,19 @@ import { onDataChannelClose, onDataChannelMessage, postDataChannelMessage } from
 
 export type DataChannelHandlerErrorCallback = (error: Error, requestId?: string | number) => void;
 
-function isSerializedFormat(message: unknown): boolean {
-  if (isObject(message) && "i" in message && "p" in message) {
-    return true;
-  }
+type SerializedRequest = Parameters<typeof deserializeRequestMessage>[0];
+
+/** Our own clients send oRPC's serialized form as JSON (see link-client.ts); anything else is decoded as oRPC's encoded form. */
+function asSerializedRequest(message: unknown): SerializedRequest | null {
+  let value = message;
   if (typeof message === "string") {
     try {
-      const parsed = JSON.parse(message);
-      return isObject(parsed) && "i" in parsed && "p" in parsed;
+      value = JSON.parse(message);
     } catch {
-      return false;
+      return null;
     }
   }
-  return false;
+  return isObject(value) && "i" in value && "p" in value ? (value as unknown as SerializedRequest) : null;
 }
 
 export type DataChannelHandlerUpgradeOptions<T extends Context> = HandleStandardServerPeerMessageOptions<T> & {
@@ -52,17 +52,16 @@ export class DataChannelHandler<T extends Context> {
       requestFormats.delete(idKey);
 
       if (useSerialized) {
-        const serialized = serializeResponseMessage(id, type, payload);
-        postDataChannelMessage(channel, JSON.stringify(serialized));
+        postDataChannelMessage(channel, JSON.stringify(serializeResponseMessage(id, type, payload)));
       } else {
         const encoded = await encodeResponseMessage(id, type, payload);
-        if (typeof encoded === "string") {
-          postDataChannelMessage(channel, encoded);
-        } else if (encoded instanceof Uint8Array) {
-          postDataChannelMessage(channel, encoded.buffer as ArrayBuffer);
-        } else {
-          postDataChannelMessage(channel, encoded as ArrayBuffer);
-        }
+        postDataChannelMessage(
+          channel,
+          typeof encoded === "string"
+            ? encoded
+            : // A view may not start at its buffer's beginning; send exactly its bytes.
+              (new Uint8Array(encoded as ArrayBuffer).slice().buffer as ArrayBuffer),
+        );
       }
     });
 
@@ -70,21 +69,11 @@ export class DataChannelHandler<T extends Context> {
       let requestId: string | number | undefined;
       try {
         const handleFn = createServerPeerHandleRequestFn(this.standardHandler, options);
-        const useSerialized = isSerializedFormat(message);
-
-        let decoded: Awaited<ReturnType<typeof decodeRequestMessage>>;
-        if (isObject(message)) {
-          decoded = deserializeRequestMessage(message as unknown as Parameters<typeof deserializeRequestMessage>[0]);
-        } else if (typeof message === "string") {
-          if (useSerialized) {
-            const parsed = JSON.parse(message) as Parameters<typeof deserializeRequestMessage>[0];
-            decoded = deserializeRequestMessage(parsed);
-          } else {
-            decoded = await decodeRequestMessage(message);
-          }
-        } else {
-          decoded = await decodeRequestMessage(message as Parameters<typeof decodeRequestMessage>[0]);
-        }
+        const serialized = asSerializedRequest(message);
+        const useSerialized = serialized !== null;
+        const decoded = serialized
+          ? deserializeRequestMessage(serialized)
+          : await decodeRequestMessage(message as Parameters<typeof decodeRequestMessage>[0]);
 
         requestId = decoded[0];
         requestFormats.set(String(requestId), useSerialized);
