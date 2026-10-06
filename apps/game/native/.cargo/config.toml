@@ -1,5 +1,0 @@
-# Link the MSVC C runtime into the addon. Otherwise it needs VCRUNTIME140.dll, which a fresh
-# Windows doesn't have: loading the addon fails and the game never starts. The Tauri build
-# linked it statically as well, so its players never needed the Visual C++ Redistributable.
-[target.'cfg(all(windows, target_env = "msvc"))']
-rustflags = ["-C", "target-feature=+crt-static"]
