@@ -157,9 +157,11 @@ async function start() {
   await native.startLocalServer([appOrigin]);
 
   // The only web permissions the game uses; everything else is denied, for requests and
-  // for the synchronous checks behind APIs like navigator.permissions.
+  // for the synchronous checks behind APIs like navigator.permissions. Writing the clipboard
+  // (copying error details) is allowed, reading it isn't.
+  const permissions = new Set(["fullscreen", "screen-wake-lock", "clipboard-sanitized-write"]);
   const allowed = (url: string, permission: string) =>
-    URL.parse(url)?.origin === appOrigin && (permission === "fullscreen" || permission === "screen-wake-lock");
+    URL.parse(url)?.origin === appOrigin && permissions.has(permission);
   session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
     callback(allowed(contents.getURL(), permission));
   });
