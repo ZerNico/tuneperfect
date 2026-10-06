@@ -57,7 +57,10 @@ const EXTRAS: { action: NavAction; icon: Icon; label: () => string; group?: "med
  * nothing (e.g. a popup is open), so the others don't move around.
  */
 export default function NavPad(props: {
-  /** Actions offered elsewhere on the page (e.g. the song strip). */ hidden?: ReadonlySet<NavAction>;
+  /** Actions offered elsewhere on the page (e.g. the song strip). */
+  hidden?: ReadonlySet<NavAction>;
+  /** Shown right after Back (e.g. the song strip): below what stays in place, above what changes. */
+  afterBack?: JSX.Element;
 }) {
   const remote = useRemote();
 
@@ -153,18 +156,20 @@ export default function NavPad(props: {
           </div>
         </Show>
 
+        <Show when={shows("back")}>
+          <button
+            type="button"
+            class="flex h-12 w-full cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+            disabled={!has("back")}
+            {...hold("back")}
+          >
+            <IconArrowLeft />
+            {t("remote.pad.back")}
+          </button>
+        </Show>
+        {/* Hidden while empty, so screens without extras don't get a gap. */}
+        <div class="w-full empty:hidden">{props.afterBack}</div>
         <div class="grid w-full grid-cols-2 gap-2">
-          <Show when={shows("back")}>
-            <button
-              type="button"
-              class="col-span-2 flex h-12 cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
-              disabled={!has("back")}
-              {...hold("back")}
-            >
-              <IconArrowLeft />
-              {t("remote.pad.back")}
-            </button>
-          </Show>
           <For each={extras().filter((extra) => !extra.group)}>{(extra) => extraButton(extra)}</For>
         </div>
 

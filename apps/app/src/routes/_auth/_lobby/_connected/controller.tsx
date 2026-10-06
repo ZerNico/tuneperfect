@@ -36,15 +36,19 @@ function ControllerComponent() {
         {/* With full control the pad comes first and always sits in the same spot: whatever a screen
             adds goes below it, so nothing appearing or going away moves the buttons under a thumb. */}
         <Show when={fullControl()}>
-          <NavPad hidden={remote.state()?.extras?.songs ? SONG_STRIP_ACTIONS : undefined} />
-          {/* Where the pad is clumsy, the screen adds a few direct controls. On the song select the
-              search belongs to its strip. */}
-          <Show
-            when={remote.state()?.extras?.songs}
-            fallback={<Show when={remote.state()?.extras?.text}>{(text) => <TextExtraField text={text()} />}</Show>}
-          >
-            {(songs) => <SongsStrip songs={songs()} text={remote.state()?.extras?.text} />}
-          </Show>
+          <NavPad
+            hidden={remote.state()?.extras?.songs ? SONG_STRIP_ACTIONS : undefined}
+            // Where the pad is clumsy, the screen adds a few direct controls. On the song select the
+            // search belongs to its strip.
+            afterBack={
+              <Show
+                when={remote.state()?.extras?.songs}
+                fallback={<Show when={remote.state()?.extras?.text}>{(text) => <TextExtraField text={text()} />}</Show>}
+              >
+                {(songs) => <SongsStrip songs={songs()} text={remote.state()?.extras?.text} />}
+              </Show>
+            }
+          />
         </Show>
         <Show
           when={remote.state()?.panel}
