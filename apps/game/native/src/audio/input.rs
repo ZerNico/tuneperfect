@@ -32,6 +32,12 @@ impl InputStreamManager {
         for (device, config, mic_indices) in devices {
             let channels = config.channels as usize;
             let sample_rate = config.sample_rate;
+            log::info!(
+                "Microphone input {} for mics {:?}: {:?}",
+                device.id().map(|id| id.to_string()).unwrap_or_default(),
+                mic_indices,
+                config
+            );
 
             // Each mic gets a processor (reader side, behind the lock) and a
             // paired lock-free audio input (written by the callback).

@@ -26,13 +26,19 @@ impl Recorder {
         let (stop_tx, stop_rx) = mpsc::channel();
 
         let thread_handle = thread::spawn(move || {
-            Self::run_recording_loop(
+            let result = Self::run_recording_loop(
                 processors,
                 options,
                 stop_rx,
                 playback_enabled,
                 playback_volume,
-            )
+            );
+            // Nothing else sees this until the recorder is dropped, and then it's discarded:
+            // without the log, a failed start just looks like silent microphones.
+            if let Err(error) = &result {
+                log::error!("Recording failed: {error}");
+            }
+            result
         });
 
         Ok(Self {
