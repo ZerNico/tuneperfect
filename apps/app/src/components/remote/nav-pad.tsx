@@ -28,7 +28,7 @@ import { useRemote } from "~/lib/remote";
 type Icon = Component<{ class?: string }>;
 
 /** The game's other buttons, in the order they're offered, with the game's icons. Ones this app doesn't know are left out. */
-const EXTRAS: { action: NavAction; icon: Icon; label: () => string }[] = [
+const EXTRAS: { action: NavAction; icon: Icon; label: () => string; group?: "medley" }[] = [
   { action: "search", icon: IconMagnifyingGlass, label: () => t("remote.pad.search") },
   { action: "filter", icon: IconSliders, label: () => t("remote.pad.filter") },
   { action: "menu", icon: IconList, label: () => t("remote.pad.menu") },
@@ -37,11 +37,11 @@ const EXTRAS: { action: NavAction; icon: Icon; label: () => string }[] = [
   { action: "sort-right", icon: IconCaretRightFill, label: () => t("remote.pad.sort") },
   { action: "filter-left", icon: IconCaretLeftFill, label: () => t("remote.pad.searchIn") },
   { action: "filter-right", icon: IconCaretRightFill, label: () => t("remote.pad.searchIn") },
-  { action: "add-to-medley", icon: IconPlus, label: () => t("remote.pad.addToMedley") },
-  { action: "remove-from-medley", icon: IconX, label: () => t("remote.pad.removeFromMedley") },
-  { action: "medley-up", icon: IconCaretUpFill, label: () => t("remote.pad.medleyUp") },
-  { action: "medley-down", icon: IconCaretDownFill, label: () => t("remote.pad.medleyDown") },
-  { action: "start-random-medley", icon: IconShuffle, label: () => t("remote.pad.randomMedley") },
+  { action: "add-to-medley", icon: IconPlus, label: () => t("remote.pad.addToMedley"), group: "medley" },
+  { action: "remove-from-medley", icon: IconX, label: () => t("remote.pad.removeFromMedley"), group: "medley" },
+  { action: "medley-up", icon: IconCaretUpFill, label: () => t("remote.pad.medleyUp"), group: "medley" },
+  { action: "medley-down", icon: IconCaretDownFill, label: () => t("remote.pad.medleyDown"), group: "medley" },
+  { action: "start-random-medley", icon: IconShuffle, label: () => t("remote.pad.randomMedley"), group: "medley" },
   { action: "zoom-out", icon: IconMinus, label: () => t("remote.pad.zoomOut") },
   { action: "zoom-in", icon: IconPlus, label: () => t("remote.pad.zoomIn") },
   { action: "joker-1", icon: IconDice, label: () => t("remote.pad.joker", { number: 1 }) },
@@ -107,6 +107,18 @@ export default function NavPad(props: {
   const hasPad = () => (["up", "down", "left", "right", "confirm"] as const).some(shows);
   const extras = () => EXTRAS.filter((extra) => shows(extra.action));
 
+  const extraButton = (extra: (typeof EXTRAS)[number], classes = "") => (
+    <button
+      type="button"
+      class={`flex h-12 cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/12 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100 ${classes}`}
+      disabled={!has(extra.action)}
+      {...hold(extra.action)}
+    >
+      <Dynamic component={extra.icon} class="shrink-0" />
+      <span class="truncate">{extra.label()}</span>
+    </button>
+  );
+
   return (
     <Show
       when={hasPad() || shows("back") || extras().length > 0}
@@ -153,20 +165,18 @@ export default function NavPad(props: {
               {t("remote.pad.back")}
             </button>
           </Show>
-          <For each={extras()}>
-            {(extra) => (
-              <button
-                type="button"
-                class="flex h-12 cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/12 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
-                disabled={!has(extra.action)}
-                {...hold(extra.action)}
-              >
-                <Dynamic component={extra.icon} class="shrink-0" />
-                <span class="truncate">{extra.label()}</span>
-              </button>
-            )}
-          </For>
+          <For each={extras().filter((extra) => !extra.group)}>{(extra) => extraButton(extra)}</For>
         </div>
+
+        {/* Under their own heading, so the buttons only need a short label. */}
+        <Show when={extras().some((extra) => extra.group === "medley")}>
+          <section class="flex w-full flex-col gap-2">
+            <h3 class="text-xs font-bold tracking-[0.12em] text-white/50 uppercase">{t("remote.pad.medley")}</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <For each={extras().filter((extra) => extra.group === "medley")}>{(extra) => extraButton(extra)}</For>
+            </div>
+          </section>
+        </Show>
       </div>
     </Show>
   );
