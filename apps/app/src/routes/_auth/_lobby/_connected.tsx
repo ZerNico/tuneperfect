@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/solid-router";
 import { WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { createEffect, createMemo, createRoot, Show } from "solid-js";
+import { type Accessor, createEffect, createMemo, createRoot, createSignal, onCleanup, Show } from "solid-js";
 import IconCircleNotch from "~icons/ph/circle-notch-bold";
 
 import {
@@ -45,6 +45,23 @@ async function waitForChannelsReady() {
   });
 }
 
+const OVERLAY_DELAY = 1_500;
+const TROUBLE_DELAY = 10_000;
+
+/** True once `when` has been true for `delay` ms in a row; false again as soon as it isn't. */
+function createDelayed(when: Accessor<boolean>, delay: number) {
+  const [delayed, setDelayed] = createSignal(false);
+  createEffect(() => {
+    if (!when()) {
+      setDelayed(false);
+      return;
+    }
+    const timer = setTimeout(() => setDelayed(true), delay);
+    onCleanup(() => clearTimeout(timer));
+  });
+  return delayed;
+}
+
 export const Route = createFileRoute("/_auth/_lobby/_connected")({
   beforeLoad: async () => {
     await waitForChannelsReady();
@@ -58,6 +75,10 @@ function ConnectedLayout() {
   const gameClient = useGameConnection();
 
   const isReconnecting = createMemo(() => connectionStore.status() === "reconnecting");
+  // A dropout often recovers within a moment (most of all when coming back to the tab), so the
+  // overlay waits a little before covering the page, and longer before calling it trouble.
+  const showOverlay = createDelayed(isReconnecting, OVERLAY_DELAY);
+  const showTrouble = createDelayed(isReconnecting, TROUBLE_DELAY);
   const hasFailed = createMemo(() => connectionStore.status() === "failed");
 
   // Failing clears the connection, so the failed state can't live inside the connected branch.
@@ -68,10 +89,10 @@ function ConnectedLayout() {
           <GameClientProvider client={client()}>
             <Outlet />
 
-            <Show when={isReconnecting()}>
+            <Show when={showOverlay()}>
               <ConnectionOverlay>
                 <ConnectionState icon={IconCircleNotch} spinning title={t("songs.connecting")}>
-                  {t("songs.connectionTrouble")}
+                  <Show when={showTrouble()}>{t("songs.connectionTrouble")}</Show>
                 </ConnectionState>
               </ConnectionOverlay>
             </Show>
