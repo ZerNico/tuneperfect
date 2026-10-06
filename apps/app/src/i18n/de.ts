@@ -245,6 +245,7 @@ const de: Dict = {
     unsupported: "Aktualisiere das Spiel, um es mit dem Handy zu steuern.",
     clearText: "Leeren",
     songs: {
+      noResultsHint: "Probier eine andere Suche oder weniger Filter",
       searchIn: "Suchen in",
       sort: "Sortieren nach",
       clearFilters: "Filter löschen",

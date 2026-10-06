@@ -111,14 +111,23 @@ export function SongsStrip(props: { songs: SongsExtra; text?: TextExtra }) {
 
   return (
     <div class="flex flex-col gap-4">
-      <div class="flex min-h-14 items-center gap-3 rounded-[14px] bg-white/7 p-2">
+      {/* Same size with or without a song, so nothing below moves while searching. */}
+      <div class="flex h-15 items-center gap-3 rounded-[14px] bg-white/7 p-2">
         <Show
           when={props.songs.song}
           fallback={
-            <span class="flex items-center gap-2 px-2 text-white/50">
-              <IconMusicNotes />
-              {t("songs.noResults")}
-            </span>
+            <>
+              <span
+                class="flex size-11 shrink-0 items-center justify-center rounded-[8px] bg-white/8"
+                aria-hidden="true"
+              >
+                <IconMusicNotes class="text-white/25" />
+              </span>
+              <span class="flex min-w-0 grow flex-col">
+                <span class="truncate font-bold text-white/70">{t("songs.noResults")}</span>
+                <span class="truncate text-sm text-white/45">{t("remote.songs.noResultsHint")}</span>
+              </span>
+            </>
           }
         >
           {(song) => (

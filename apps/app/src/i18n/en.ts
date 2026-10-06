@@ -241,6 +241,7 @@ const en = {
     unsupported: "Update the game to control it from your phone.",
     clearText: "Clear",
     songs: {
+      noResultsHint: "Try another search or fewer filters",
       searchIn: "Search in",
       sort: "Sort by",
       clearFilters: "Clear filters",
