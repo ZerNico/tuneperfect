@@ -47,17 +47,18 @@ export default function Layout(props: LayoutProps) {
   return (
     <div>
       <div
-        class="flex h-screen w-screen items-center justify-center"
+        class="relative flex h-screen w-screen items-center justify-center"
         classList={{
           [backgroundClass()]: props.intent !== "popup",
         }}
       >
-        <div class="layout flex">
+        {/* Across the whole window, not just the letterboxed stage, so wide screens have no edge. */}
+        <Show when={props.intent !== "popup" && props.decoration !== false}>
+          <LayoutDecoration mode={mode()} />
+        </Show>
+        <div class="layout relative flex">
           <div class="@container relative flex grow overflow-hidden">
             <Suspense fallback={<div />}>
-              <Show when={props.intent !== "popup" && props.decoration !== false}>
-                <LayoutDecoration mode={mode()} />
-              </Show>
               <div class="absolute inset-0 h-full w-full">{props.background}</div>
               <div class="relative z-1 grid max-w-full grow grid-rows-[min-content_1fr_min-content] gap-6 p-16">
                 <div>{props.header}</div>
@@ -80,7 +81,8 @@ function LayoutDecoration(props: { mode: LayoutMode }) {
   const animated = () => effectsEnabled();
   const glow = (index: 0 | 1, alpha: number) => {
     const color = `var(--color-${MODE_COLORS[props.mode][index]})`;
-    return `radial-gradient(circle, color-mix(in oklch, ${color} ${alpha}%, transparent), color-mix(in oklch, ${color} ${alpha * 0.55}%, transparent) 30%, color-mix(in oklch, ${color} ${alpha * 0.18}%, transparent) 50%, transparent 70%)`;
+    // closest-side: the glow fades out inside its box, so the box edge never cuts it off.
+    return `radial-gradient(closest-side, color-mix(in oklch, ${color} ${alpha}%, transparent), color-mix(in oklch, ${color} ${alpha * 0.55}%, transparent) 43%, color-mix(in oklch, ${color} ${alpha * 0.18}%, transparent) 71%, transparent)`;
   };
 
   return (
