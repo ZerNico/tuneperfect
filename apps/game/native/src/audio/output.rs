@@ -133,6 +133,11 @@ impl OutputMixer {
             }
         };
 
+        log::info!(
+            "Microphone playback output {}: {:?}",
+            device.id().map(|id| id.to_string()).unwrap_or_default(),
+            config
+        );
         let stream = device.build_output_stream(
             config,
             output_callback,
