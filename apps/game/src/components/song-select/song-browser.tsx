@@ -204,24 +204,21 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
     if (item) props.onConfirm(item);
   };
 
+  const toggle = (panel: Parameters<typeof togglePanel>[0]) => () => {
+    togglePanel(panel);
+    playSound("select");
+  };
+
   useNavigation({
-    onKeydown(event) {
-      if (event.action === "back") back();
-      else if (event.action === "search") {
-        togglePanel("search");
-        playSound("select");
-      } else if (event.action === "filter") {
-        togglePanel("filter");
-        playSound("select");
-      } else if (event.action === "menu") {
-        togglePanel("menu");
-        playSound("select");
-      } else if (event.action === "random") selectRandom();
-      else if (event.action === "sort-left") moveSort(-1);
-      else if (event.action === "sort-right") moveSort(1);
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") confirm();
+    actions: {
+      back,
+      search: toggle("search"),
+      filter: toggle("filter"),
+      menu: toggle("menu"),
+      random: selectRandom,
+      "sort-left": () => moveSort(-1),
+      "sort-right": () => moveSort(1),
+      confirm: { up: confirm },
     },
   });
 

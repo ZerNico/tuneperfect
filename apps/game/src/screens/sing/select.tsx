@@ -311,12 +311,9 @@ function PlayerSlotsRow(props: PlayerSlotsRowProps) {
   useNavigation(() => ({
     layer: 0,
     enabled: props.selected,
-    onKeydown(event) {
-      if (event.action === "left") {
-        props.playerSlotLoop.decrement();
-      } else if (event.action === "right") {
-        props.playerSlotLoop.increment();
-      }
+    actions: {
+      left: () => props.playerSlotLoop.decrement(),
+      right: () => props.playerSlotLoop.increment(),
     },
   }));
 
@@ -370,16 +367,14 @@ function PlayerSlot(props: PlayerSlotProps) {
 
   useNavigation(() => ({
     enabled: props.selected,
-    onKeydown(event) {
-      if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        openSelectPlayerPopup();
-      }
+    actions: {
+      confirm: {
+        down: () => setPressed(true),
+        up: () => {
+          setPressed(false);
+          openSelectPlayerPopup();
+        },
+      },
     },
   }));
 

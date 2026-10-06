@@ -209,15 +209,17 @@ export default function VersusScreen() {
     });
   };
 
-  useNavigation({
-    onKeydown: (event) => {
-      if (champion()) return; // The menu handles input.
-      if (event.action === "back") onBack();
-      else if (event.action === "joker-1") void reroll(0);
-      else if (event.action === "joker-2") void reroll(1);
-      // Confirm goes through the footer button (it fires on key up, with press feedback).
-    },
-  });
+  // Confirm goes through the footer button (it fires on key up, with press feedback). Once there's a
+  // champion, the menu handles input.
+  useNavigation(() => ({
+    actions: champion()
+      ? {}
+      : {
+          back: onBack,
+          "joker-1": () => void reroll(0),
+          "joker-2": () => void reroll(1),
+        },
+  }));
 
   // The two singers spend their own jokers from their phones; everyone else sees who's up.
   useRemoteSurface({

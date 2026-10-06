@@ -54,12 +54,9 @@ export default function Select<T extends string | number>(props: SelectProps<T>)
   useNavigation(() => ({
     layer: props.layer,
     enabled: props.selected || false,
-    onKeydown: (event) => {
-      if (event.action === "left") {
-        changeOptions("left");
-      } else if (event.action === "right") {
-        changeOptions("right");
-      }
+    actions: {
+      left: () => changeOptions("left"),
+      right: () => changeOptions("right"),
     },
   }));
 

@@ -16,11 +16,7 @@ interface PauseMenuProps {
 export default function PauseMenu(props: PauseMenuProps) {
   useNavigation({
     layer: 1,
-    onKeydown: (event) => {
-      if (event.action === "back") {
-        props.onClose?.();
-      }
-    },
+    actions: { back: () => props.onClose?.() },
   });
 
   const menuItems = (): MenuItem[] => [

@@ -57,22 +57,18 @@ export function SearchPopup(props: SearchPopupProps) {
 
   useNavigation({
     layer: 1,
-    onKeydown(event) {
-      if (event.action === "back" || event.action === "search") {
-        props.onClose();
-      } else if (event.action === "filter-left") {
-        moveScope("left");
-      } else if (event.action === "filter-right") {
-        moveScope("right");
-      }
-    },
-
-    onKeyup(event) {
-      if (event.origin === "keyboard") {
-        if (event.action === "confirm" && event.originalKey !== " ") {
+    actions: {
+      back: () => props.onClose(),
+      search: () => props.onClose(),
+      "filter-left": () => moveScope("left"),
+      "filter-right": () => moveScope("right"),
+      confirm: {
+        // Enter closes; space types, and the gamepad's confirm belongs to the virtual keyboard.
+        up: (event) => {
+          if (event.origin === "gamepad" || event.originalKey === " ") return;
           props.onClose();
-        }
-      }
+        },
+      },
     },
   });
 

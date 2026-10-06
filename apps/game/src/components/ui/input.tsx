@@ -50,11 +50,7 @@ export default function Input(props: InputProps) {
   useNavigation(() => ({
     layer: layer(),
     enabled: props.selected,
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        inputRef.focus();
-      }
-    },
+    actions: { confirm: { up: () => inputRef.focus() } },
   }));
 
   createEffect(() => {

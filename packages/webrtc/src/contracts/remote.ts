@@ -78,15 +78,10 @@ export const PanelSchema = v.variant("kind", [
   TicTacToeWaitPanelSchema,
 ]);
 
-export const RemoteStateSchema = v.object({
-  /** `full`: the phone may drive the whole game with navigation actions. */
-  control: v.picklist(["full", "none"]),
-  panel: v.nullable(PanelSchema),
-  /** It's this user's move: the phone brings the panel up and vibrates. */
-  attention: v.boolean(),
-});
-
-/** The game's own buttons, for phones with full control. */
+/**
+ * The game's own buttons, for phones with full control. These are the game's navigation actions
+ * (what its keys and gamepad buttons do), so a phone presses exactly what a key would.
+ */
 export const NAV_ACTIONS = [
   "up",
   "down",
@@ -96,14 +91,43 @@ export const NAV_ACTIONS = [
   "back",
   "menu",
   "search",
+  "filter",
   "random",
+  "clear",
   "skip",
+  "instrumental",
+  "sort-left",
+  "sort-right",
+  "filter-left",
+  "filter-right",
+  "zoom-in",
+  "zoom-out",
+  "add-to-medley",
+  "remove-from-medley",
+  "medley-up",
+  "medley-down",
+  "start-random-medley",
   "joker-1",
   "joker-2",
 ] as const;
 
+const NavActionSchema = v.picklist(NAV_ACTIONS);
+
+export const RemoteStateSchema = v.object({
+  /** `full`: the phone may drive the whole game with navigation actions. */
+  control: v.picklist(["full", "none"]),
+  /**
+   * With full control: what the game's current screen reacts to, so the phone only offers those.
+   * A phone skips actions it doesn't know (a newer game may have more).
+   */
+  actions: v.array(NavActionSchema),
+  panel: v.nullable(PanelSchema),
+  /** It's this user's move: the phone brings the panel up and vibrates. */
+  attention: v.boolean(),
+});
+
 export const ActionSchema = v.variant("type", [
-  v.object({ type: v.literal("nav"), action: v.picklist(NAV_ACTIONS) }),
+  v.object({ type: v.literal("nav"), action: NavActionSchema }),
   v.object({ type: v.literal("versus.reroll") }),
   /** Moves the board cursor (everyone sees it on the screen) without picking. */
   v.object({ type: v.literal("ticTacToe.cursor"), cell: v.number() }),

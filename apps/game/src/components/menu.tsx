@@ -104,11 +104,16 @@ export default function Menu(props: MenuProps) {
     get layer() {
       return props.layer;
     },
-    onKeydown(event) {
-      if (event.action === "back") {
-        props.onBack?.();
-        playSound("confirm");
-      }
+    get actions() {
+      const onBack = props.onBack;
+      return onBack
+        ? {
+            back: () => {
+              onBack();
+              playSound("confirm");
+            },
+          }
+        : {};
     },
   });
 

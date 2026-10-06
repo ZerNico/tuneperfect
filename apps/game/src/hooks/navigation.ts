@@ -10,13 +10,32 @@ import { createGamepad, type GamepadButton } from "./gamepad";
 
 export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");
 
+export type NavigationHandler = (event: NavigationEvent) => void;
+
+/** A function runs on key down; the object form reacts to other phases of a press too. */
+export type ActionHandler =
+  | NavigationHandler
+  | {
+      down?: NavigationHandler;
+      /** Only for presses whose key down this listener got too. */
+      up?: NavigationHandler;
+      /** Once, after the key has been held for a moment. */
+      hold?: NavigationHandler;
+      /** Repeatedly while the key stays held, after `hold`. */
+      repeat?: NavigationHandler;
+    };
+
+export type NavigationActions = Partial<Record<Action, ActionHandler>>;
+
 interface UseNavigationOptions {
   layer?: number | false;
   enabled?: boolean;
-  onKeydown?: (event: NavigationEvent) => void;
-  onKeyup?: (event: NavigationEvent) => void;
-  onHold?: (event: NavigationEvent) => void;
-  onRepeat?: (event: NavigationEvent) => void;
+  /**
+   * What this listener does per action. Only the actions listed count as handled: they're what the
+   * screen offers right now (see `activeActions`), so build the map from the current state rather
+   * than ignoring actions inside a handler.
+   */
+  actions: NavigationActions;
 }
 
 export type NavigationEvent = {
@@ -54,7 +73,9 @@ export type NavigationEvent = {
     | "unknown";
 };
 
-const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
+export type Action = NavigationEvent["action"];
+
+const KEY_MAPPINGS = new Map<string, Action[]>([
   ["ArrowLeft", ["left"]],
   ["ArrowRight", ["right"]],
   ["ArrowUp", ["up"]],
@@ -81,7 +102,7 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["PageDown", ["medley-down"]],
 ]);
 
-const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
+const GAMEPAD_MAPPINGS = new Map<GamepadButton, Action[]>([
   ["DPAD_LEFT", ["left"]],
   ["DPAD_RIGHT", ["right"]],
   ["DPAD_UP", ["up"]],
@@ -101,7 +122,7 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
 /** How long a phone's button counts as held: long enough for press feedback, short of a hold. */
 const REMOTE_PRESS_MS = 80;
 
-const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
+const getAxisAction = (button: GamepadButton, direction: number): Action | undefined => {
   switch (button) {
     case "L_AXIS_X":
       return direction > 0 ? "right" : "left";
@@ -152,7 +173,7 @@ interface Press {
   origin: NavigationEvent["origin"];
   originalKey: string;
   modifiers?: string[];
-  actions: NavigationEvent["action"][];
+  actions: Action[];
   holdTimeout: number;
   repeatInterval?: number;
 }
@@ -288,13 +309,22 @@ createRoot(() => {
  * like a key, so everything that reacts on key up (buttons, menus) works the same. Doesn't change
  * `keyMode`: the key hints stay on what's used at the game itself.
  */
-export function pressRemote(userId: string, action: NavigationEvent["action"]) {
+export function pressRemote(userId: string, action: Action) {
   const id = `remote:${userId}:${action}`;
   press(id, { origin: "remote", originalKey: action, actions: [action] });
   window.setTimeout(() => release(id), REMOTE_PRESS_MS);
 }
 
 const layerInstances = new ReactiveMap<number, number>();
+/** The actions of every listener that currently gets input, by listener. */
+const activeActionLists = new ReactiveMap<object, Action[]>();
+
+/** What the game reacts to right now: the actions of the top layer's listeners (and layer-less ones). */
+export const activeActions = createRoot(() =>
+  createMemo(() => new Set([...activeActionLists.values()].flat()), undefined, {
+    equals: (a, b) => a.size === b.size && [...a].every((action) => b.has(action)),
+  }),
+);
 
 export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
   createEffect(
@@ -338,20 +368,32 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
 
     const opts = access(options);
     if (opts?.enabled === false) return;
+    const actions = opts.actions;
+
+    const registration = {};
+    activeActionLists.set(registration, Object.keys(actions) as Action[]);
+    onCleanup(() => activeActionLists.delete(registration));
+
+    const phase = (action: Action, name: "down" | "up" | "hold" | "repeat") => {
+      const handler = actions[action];
+      if (typeof handler === "function") return name === "down" ? handler : undefined;
+      return handler?.[name];
+    };
 
     const handleKeydown = ({ serial, event }: Emitted) => {
+      if (!(event.action in actions)) return;
       // Forget keydowns whose keyup this instance missed while it was inactive.
       for (const key of received) {
         if (!liveSerials.has(Number.parseInt(key, 10))) received.delete(key);
       }
       received.add(`${serial}:${event.action}`);
-      opts?.onKeydown?.(event);
+      phase(event.action, "down")?.(event);
     };
     const handleKeyup = ({ serial, event }: Emitted) => {
-      if (received.delete(`${serial}:${event.action}`)) opts?.onKeyup?.(event);
+      if (received.delete(`${serial}:${event.action}`)) phase(event.action, "up")?.(event);
     };
-    const handleHold = ({ event }: Emitted) => opts?.onHold?.(event);
-    const handleRepeat = ({ event }: Emitted) => opts?.onRepeat?.(event);
+    const handleHold = ({ event }: Emitted) => phase(event.action, "hold")?.(event);
+    const handleRepeat = ({ event }: Emitted) => phase(event.action, "repeat")?.(event);
 
     emitter.on("keydown", handleKeydown);
     emitter.on("keyup", handleKeyup);

@@ -25,20 +25,18 @@ export default function Button(props: ButtonProps) {
 
   useNavigation(() => ({
     layer: props.layer,
-    onKeydown(event) {
-      if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-
-        if (props.selected && !props.loading) {
-          props.onClick?.();
+    // Only the selected button takes confirm.
+    actions: props.selected
+      ? {
+          confirm: {
+            down: () => setPressed(true),
+            up: () => {
+              setPressed(false);
+              if (props.selected && !props.loading) props.onClick?.();
+            },
+          },
         }
-      }
-    },
+      : {},
   }));
 
   return (

@@ -135,12 +135,9 @@ export default function SingScreen() {
 
   // Library-only actions; search, filters, sort, random and confirm live in SongBrowser.
   useNavigation({
-    onKeydown(event) {
-      if (event.action === "add-to-medley") {
-        addCurrentToMedley();
-      } else if (event.action === "start-random-medley") {
-        startRandomMedley();
-      }
+    actions: {
+      "add-to-medley": addCurrentToMedley,
+      "start-random-medley": startRandomMedley,
     },
   });
 

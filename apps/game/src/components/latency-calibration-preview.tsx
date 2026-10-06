@@ -129,18 +129,14 @@ export default function LatencyCalibrationPreview(props: LatencyCalibrationPrevi
   useNavigation(() => ({
     layer: props.layer,
     enabled: props.selected(),
-    onKeydown(event) {
-      if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        if (props.selected()) {
-          toggle();
-        }
-      }
+    actions: {
+      confirm: {
+        down: () => setPressed(true),
+        up: () => {
+          setPressed(false);
+          if (props.selected()) toggle();
+        },
+      },
     },
   }));
 

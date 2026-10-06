@@ -32,6 +32,10 @@ export function MenuPopup(props: MenuPopupProps) {
     props.onClose();
     playSound("confirm");
   };
+  const close = () => {
+    props.onClose();
+    playSound("confirm");
+  };
 
   const list = createListNavigation({
     get count() {
@@ -39,12 +43,7 @@ export function MenuPopup(props: MenuPopupProps) {
     },
     layer: 2,
     onActivate: activate,
-    onKeydown(event) {
-      if (event.action === "back" || event.action === "menu") {
-        props.onClose();
-        playSound("confirm");
-      }
-    },
+    actions: { back: close, menu: close },
   });
 
   return (

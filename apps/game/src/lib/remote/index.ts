@@ -1,7 +1,14 @@
-import type { ActResult, Panel, RemoteAction, RemoteState } from "@tuneperfect/webrtc/contracts/game";
+import {
+  type ActResult,
+  NAV_ACTIONS,
+  type NavAction,
+  type Panel,
+  type RemoteAction,
+  type RemoteState,
+} from "@tuneperfect/webrtc/contracts/game";
 import { createEffect, createRoot, createSignal, onCleanup } from "solid-js";
 
-import { pressRemote } from "~/hooks/navigation";
+import { activeActions, pressRemote } from "~/hooks/navigation";
 import { lobbyStore } from "~/stores/lobby";
 
 /**
@@ -9,7 +16,8 @@ import { lobbyStore } from "~/stores/lobby";
  *
  * Screens offer phones something to do with `useRemoteSurface`: what each user sees (a panel) and
  * what happens on their actions. The last mounted surface is the one phones talk to. Players with
- * full control (granted in the lobby) also get the game's own buttons, which work everywhere.
+ * full control (granted in the lobby) also get the game's own buttons: the ones the current
+ * screen reacts to (see `useNavigation`'s `actions`).
  */
 
 export interface RemoteSurface {
@@ -34,11 +42,16 @@ export function useRemoteSurface(surface: RemoteSurface) {
 
 const hasFullControl = (userId: string) => lobbyStore.remoteControlIds().includes(userId);
 
+/** What a phone with full control can press right now: what the screen reacts to, minus game-only keys (fullscreen). */
+const remoteActions = (): NavAction[] => NAV_ACTIONS.filter((action) => activeActions().has(action));
+
 /** What `userId`'s phone shows; reactive. */
 function stateFor(userId: string): RemoteState {
   const current = activeSurface()?.panel(userId) ?? null;
+  const full = hasFullControl(userId);
   return {
-    control: hasFullControl(userId) ? "full" : "none",
+    control: full ? "full" : "none",
+    actions: full ? remoteActions() : [],
     panel: current?.panel ?? null,
     attention: current?.attention ?? false,
   };
@@ -48,6 +61,8 @@ function stateFor(userId: string): RemoteState {
 export function dispatchRemote(userId: string, action: RemoteAction): ActResult {
   if (action.type === "nav") {
     if (!hasFullControl(userId)) return NOT_ALLOWED;
+    // The screen changed since the phone got its buttons.
+    if (!activeActions().has(action.action)) return STALE;
     pressRemote(userId, action.action);
     return OK;
   }

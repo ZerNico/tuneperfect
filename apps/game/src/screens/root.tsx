@@ -20,11 +20,7 @@ export default function RootScreen() {
 
   useNavigation({
     layer: false,
-    onKeydown: (event) => {
-      if (event.action === "fullscreen") {
-        toggleFullscreen();
-      }
-    },
+    actions: { fullscreen: toggleFullscreen },
   });
 
   const [mouseHidden, setMouseHidden] = createSignal(false);

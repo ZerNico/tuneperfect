@@ -99,33 +99,25 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
 
   useNavigation(() => ({
     layer: props.layer || 0,
-    onKeydown(event) {
-      if (event.action === "left") {
-        goLeft();
-      } else if (event.action === "right") {
-        goRight();
-      } else if (event.action === "up") {
-        goUp();
-      } else if (event.action === "down") {
-        goDown();
-      } else if (event.action === "confirm") {
-        setPressed(true);
-      } else if (event.action === "clear") {
-        deleteCharacter();
-      } else if (event.action === "back") {
-        props.onClose?.();
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        const currentKey = activeKeys()[position().row]?.[position().col];
-        if (currentKey?.action) {
-          currentKey.action();
-        } else if (typeof currentKey?.content === "string") {
-          writeCharacter(currentKey.content);
-        }
-      }
+    actions: {
+      left: goLeft,
+      right: goRight,
+      up: goUp,
+      down: goDown,
+      clear: deleteCharacter,
+      ...(props.onClose && { back: () => props.onClose?.() }),
+      confirm: {
+        down: () => setPressed(true),
+        up: () => {
+          setPressed(false);
+          const currentKey = activeKeys()[position().row]?.[position().col];
+          if (currentKey?.action) {
+            currentKey.action();
+          } else if (typeof currentKey?.content === "string") {
+            writeCharacter(currentKey.content);
+          }
+        },
+      },
     },
   }));
 

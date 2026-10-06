@@ -62,19 +62,9 @@ export default function Slider(props: SliderProps) {
   useNavigation(() => ({
     layer: props.layer,
     enabled: props.selected || false,
-    onKeydown: (event) => {
-      if (event.action === "left") {
-        changeValue("left");
-      } else if (event.action === "right") {
-        changeValue("right");
-      }
-    },
-    onRepeat: (event) => {
-      if (event.action === "left") {
-        changeValue("left", props.step * 5);
-      } else if (event.action === "right") {
-        changeValue("right", props.step * 5);
-      }
+    actions: {
+      left: { down: () => changeValue("left"), repeat: () => changeValue("left", props.step * 5) },
+      right: { down: () => changeValue("right"), repeat: () => changeValue("right", props.step * 5) },
     },
   }));
 

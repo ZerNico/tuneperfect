@@ -35,8 +35,8 @@ export function MedleyList(props: MedleyListProps) {
       return props.useAlternativeNavigation ? (["medley-up", "medley-down"] as const) : (["up", "down"] as const);
     },
     sound: false,
-    onKeydown(event) {
-      if (event.action === "remove-from-medley" && props.songs.length > 0) props.onRemove(list.position());
+    get actions() {
+      return props.songs.length > 0 ? { "remove-from-medley": () => props.onRemove(list.position()) } : {};
     },
   });
 

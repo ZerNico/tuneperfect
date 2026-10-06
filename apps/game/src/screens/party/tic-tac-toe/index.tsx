@@ -201,30 +201,30 @@ export default function TicTacToeScreen() {
     playSound("select");
   };
 
+  const arrow = (action: "up" | "down" | "left" | "right") => () => {
+    moveCursor(action);
+    playSound("select");
+  };
+
+  // Confirm on the board goes through the footer button (it fires on key up, with press feedback).
   useNavigation(() => ({
     enabled: !winner(),
-    onKeydown(event) {
-      // Manual singer-pick phase takes over navigation while active.
-      if (pickingCell() !== null) {
-        if (event.action === "back") backFromPicking();
-        else if (event.action === "up" || event.action === "down") movePickCursor(event.action);
-        else if (event.action === "confirm") confirmPick();
-        return;
-      }
-
-      if (event.action === "back") {
-        onBack();
-      } else if (
-        event.action === "up" ||
-        event.action === "down" ||
-        event.action === "left" ||
-        event.action === "right"
-      ) {
-        moveCursor(event.action);
-        playSound("select");
-      }
-      // Confirm on the board goes through the footer button (it fires on key up, with press feedback).
-    },
+    // The manual singer pick takes over while it's on.
+    actions:
+      pickingCell() !== null
+        ? {
+            back: backFromPicking,
+            up: () => movePickCursor("up"),
+            down: () => movePickCursor("down"),
+            confirm: confirmPick,
+          }
+        : {
+            back: onBack,
+            up: arrow("up"),
+            down: arrow("down"),
+            left: arrow("left"),
+            right: arrow("right"),
+          },
   }));
 
   // Phones of the team on turn pick the cell (the cursor on screen follows them), and choose their
