@@ -1,50 +1,53 @@
 import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
 import { type Component, createMemo, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import IconBackspace from "~icons/ph/backspace-bold";
+import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
 import IconCaretDown from "~icons/ph/caret-down-bold";
+import IconCaretDownFill from "~icons/ph/caret-down-fill";
 import IconCaretLeft from "~icons/ph/caret-left-bold";
+import IconCaretLeftFill from "~icons/ph/caret-left-fill";
 import IconCaretRight from "~icons/ph/caret-right-bold";
+import IconCaretRightFill from "~icons/ph/caret-right-fill";
 import IconCaretUp from "~icons/ph/caret-up-bold";
-import IconDice from "~icons/ph/dice-five-bold";
-import IconFunnel from "~icons/ph/funnel-bold";
+import IconCaretUpFill from "~icons/ph/caret-up-fill";
+import IconDice from "~icons/ph/dice-five-fill";
 import IconList from "~icons/ph/list-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
-import IconMagnifyingGlassMinus from "~icons/ph/magnifying-glass-minus-bold";
-import IconMagnifyingGlassPlus from "~icons/ph/magnifying-glass-plus-bold";
 import IconMicrophoneSlash from "~icons/ph/microphone-slash-bold";
-import IconMinusCircle from "~icons/ph/minus-circle-bold";
-import IconPlusCircle from "~icons/ph/plus-circle-bold";
+import IconMinus from "~icons/ph/minus-bold";
+import IconPlus from "~icons/ph/plus-bold";
 import IconShuffle from "~icons/ph/shuffle-bold";
 import IconSkipForward from "~icons/ph/skip-forward-bold";
+import IconSliders from "~icons/ph/sliders-horizontal-bold";
+import IconX from "~icons/ph/x-bold";
 
 import { t } from "~/lib/i18n";
 import { useRemote } from "~/lib/remote";
 
 type Icon = Component<{ class?: string }>;
 
-/** The game's other buttons, in the order they're offered. Ones this app doesn't know are left out. */
+/** The game's other buttons, in the order they're offered, with the game's icons. Ones this app doesn't know are left out. */
 const EXTRAS: { action: NavAction; icon: Icon; label: () => string }[] = [
   { action: "search", icon: IconMagnifyingGlass, label: () => t("remote.pad.search") },
-  { action: "filter", icon: IconFunnel, label: () => t("remote.pad.filter") },
+  { action: "filter", icon: IconSliders, label: () => t("remote.pad.filter") },
   { action: "menu", icon: IconList, label: () => t("remote.pad.menu") },
-  { action: "random", icon: IconShuffle, label: () => t("remote.pad.random") },
-  { action: "sort-left", icon: IconCaretLeft, label: () => t("remote.pad.sort") },
-  { action: "sort-right", icon: IconCaretRight, label: () => t("remote.pad.sort") },
-  { action: "filter-left", icon: IconCaretLeft, label: () => t("remote.pad.searchIn") },
-  { action: "filter-right", icon: IconCaretRight, label: () => t("remote.pad.searchIn") },
-  { action: "add-to-medley", icon: IconPlusCircle, label: () => t("remote.pad.addToMedley") },
-  { action: "remove-from-medley", icon: IconMinusCircle, label: () => t("remote.pad.removeFromMedley") },
-  { action: "medley-up", icon: IconCaretUp, label: () => t("remote.pad.medleyUp") },
-  { action: "medley-down", icon: IconCaretDown, label: () => t("remote.pad.medleyDown") },
+  { action: "random", icon: IconDice, label: () => t("remote.pad.random") },
+  { action: "sort-left", icon: IconCaretLeftFill, label: () => t("remote.pad.sort") },
+  { action: "sort-right", icon: IconCaretRightFill, label: () => t("remote.pad.sort") },
+  { action: "filter-left", icon: IconCaretLeftFill, label: () => t("remote.pad.searchIn") },
+  { action: "filter-right", icon: IconCaretRightFill, label: () => t("remote.pad.searchIn") },
+  { action: "add-to-medley", icon: IconPlus, label: () => t("remote.pad.addToMedley") },
+  { action: "remove-from-medley", icon: IconX, label: () => t("remote.pad.removeFromMedley") },
+  { action: "medley-up", icon: IconCaretUpFill, label: () => t("remote.pad.medleyUp") },
+  { action: "medley-down", icon: IconCaretDownFill, label: () => t("remote.pad.medleyDown") },
   { action: "start-random-medley", icon: IconShuffle, label: () => t("remote.pad.randomMedley") },
-  { action: "zoom-out", icon: IconMagnifyingGlassMinus, label: () => t("remote.pad.zoomOut") },
-  { action: "zoom-in", icon: IconMagnifyingGlassPlus, label: () => t("remote.pad.zoomIn") },
+  { action: "zoom-out", icon: IconMinus, label: () => t("remote.pad.zoomOut") },
+  { action: "zoom-in", icon: IconPlus, label: () => t("remote.pad.zoomIn") },
   { action: "joker-1", icon: IconDice, label: () => t("remote.pad.joker", { number: 1 }) },
   { action: "joker-2", icon: IconDice, label: () => t("remote.pad.joker", { number: 2 }) },
   { action: "skip", icon: IconSkipForward, label: () => t("remote.pad.skip") },
   { action: "instrumental", icon: IconMicrophoneSlash, label: () => t("remote.pad.instrumental") },
-  { action: "clear", icon: IconBackspace, label: () => t("remote.pad.clear") },
+  { action: "clear", icon: IconArrowFatLeft, label: () => t("remote.pad.clear") },
 ];
 
 /**
