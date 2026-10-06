@@ -1,5 +1,5 @@
 import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
-import { type Component, createMemo, For, Show } from "solid-js";
+import { type Component, createMemo, For, type JSX, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
 import IconCaretDown from "~icons/ph/caret-down-bold";
@@ -72,7 +72,34 @@ export default function NavPad() {
 
   const shows = (action: NavAction) => shown().actions.has(action);
   const has = (action: NavAction) => enabled().has(action);
-  const press = (action: NavAction) => remote.act({ type: "nav", action });
+  /**
+   * Holds the game's button while the finger is on it (lists keep scrolling, like a held key).
+   * Keyboard activation (Enter/Space on the focused button) is a tap.
+   */
+  const hold = (action: NavAction) => {
+    let held = false;
+    const release = () => {
+      if (!held) return;
+      held = false;
+      remote.act({ type: "nav", action, state: "up" });
+    };
+    return {
+      onPointerDown: (event: PointerEvent & { currentTarget: HTMLButtonElement }) => {
+        if (event.button !== 0 || !has(action)) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        held = true;
+        remote.act({ type: "nav", action, state: "down" });
+      },
+      onPointerUp: release,
+      onPointerCancel: release,
+      onLostPointerCapture: release,
+      onClick: (event: MouseEvent) => {
+        if (event.detail === 0) remote.act({ type: "nav", action });
+      },
+      // A long press would otherwise select text or open the context menu.
+      onContextMenu: (event: MouseEvent) => event.preventDefault(),
+    };
+  };
 
   const hasPad = () => (["up", "down", "left", "right", "confirm"] as const).some(shows);
   const extras = () => EXTRAS.filter((extra) => shows(extra.action));
@@ -87,20 +114,14 @@ export default function NavPad() {
           {/* Missing directions keep their place, so the pad doesn't jump around between screens. */}
           <div class="grid grid-cols-3 gap-2">
             <span />
-            <Arrow action="up" icon={IconCaretUp} label={t("remote.pad.up")} enabled={has("up")} onPress={press} />
+            <Arrow action="up" icon={IconCaretUp} label={t("remote.pad.up")} enabled={has("up")} hold={hold} />
             <span />
-            <Arrow
-              action="left"
-              icon={IconCaretLeft}
-              label={t("remote.pad.left")}
-              enabled={has("left")}
-              onPress={press}
-            />
+            <Arrow action="left" icon={IconCaretLeft} label={t("remote.pad.left")} enabled={has("left")} hold={hold} />
             <button
               type="button"
-              class="gradient-accent flex size-20 cursor-pointer items-center justify-center rounded-full text-lg font-black shadow-crisp transition-[scale,opacity] select-none active:scale-95 disabled:cursor-default disabled:opacity-25"
+              class="gradient-accent flex size-20 cursor-pointer touch-none items-center justify-center rounded-full text-lg font-black shadow-crisp transition-[scale,opacity] select-none [-webkit-touch-callout:none] active:scale-95 disabled:cursor-default disabled:opacity-25"
               disabled={!has("confirm")}
-              onClick={() => press("confirm")}
+              {...hold("confirm")}
             >
               {t("remote.pad.confirm")}
             </button>
@@ -109,16 +130,10 @@ export default function NavPad() {
               icon={IconCaretRight}
               label={t("remote.pad.right")}
               enabled={has("right")}
-              onPress={press}
+              hold={hold}
             />
             <span />
-            <Arrow
-              action="down"
-              icon={IconCaretDown}
-              label={t("remote.pad.down")}
-              enabled={has("down")}
-              onPress={press}
-            />
+            <Arrow action="down" icon={IconCaretDown} label={t("remote.pad.down")} enabled={has("down")} hold={hold} />
             <span />
           </div>
         </Show>
@@ -127,9 +142,9 @@ export default function NavPad() {
           <Show when={shows("back")}>
             <button
               type="button"
-              class="col-span-2 flex h-12 cursor-pointer items-center justify-center rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+              class="col-span-2 flex h-12 cursor-pointer touch-none items-center justify-center rounded-[12px] bg-white/10 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
               disabled={!has("back")}
-              onClick={() => press("back")}
+              {...hold("back")}
             >
               {t("remote.pad.back")}
             </button>
@@ -138,9 +153,9 @@ export default function NavPad() {
             {(extra) => (
               <button
                 type="button"
-                class="flex h-12 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none hover:bg-white/12 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
+                class="flex h-12 cursor-pointer touch-none items-center justify-center gap-1.5 rounded-[12px] bg-white/8 px-3 text-[15px] font-bold transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/12 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100"
                 disabled={!has(extra.action)}
-                onClick={() => press(extra.action)}
+                {...hold(extra.action)}
               >
                 <Dynamic component={extra.icon} class="shrink-0" />
                 <span class="truncate">{extra.label()}</span>
@@ -158,15 +173,15 @@ function Arrow(props: {
   icon: Icon;
   label: string;
   enabled: boolean;
-  onPress: (action: NavAction) => void;
+  hold: (action: NavAction) => JSX.HTMLAttributes<HTMLButtonElement>;
 }) {
   return (
     <button
       type="button"
       aria-label={props.label}
-      class="flex size-20 cursor-pointer items-center justify-center rounded-[16px] bg-white/10 text-3xl transition-[scale,background-color,opacity] select-none hover:bg-white/15 active:scale-95 disabled:cursor-default disabled:opacity-25"
+      class="flex size-20 cursor-pointer touch-none items-center justify-center rounded-[16px] bg-white/10 text-3xl transition-[scale,background-color,opacity] select-none [-webkit-touch-callout:none] hover:bg-white/15 active:scale-95 disabled:cursor-default disabled:opacity-25"
       disabled={!props.enabled}
-      onClick={() => props.onPress(props.action)}
+      {...props.hold(props.action)}
     >
       <Dynamic component={props.icon} />
     </button>

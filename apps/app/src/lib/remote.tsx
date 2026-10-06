@@ -56,7 +56,7 @@ export function createRemote(client: Accessor<GameClient | null>): Remote {
   const act = (action: RemoteAction) => {
     const game = client();
     if (!game) return;
-    navigator.vibrate?.(10);
+    if (!("state" in action) || action.state !== "up") navigator.vibrate?.(10);
     // Turned down actions need no message: the game's next state shows what's possible instead.
     game.remote.act(action).catch((error: unknown) => console.warn("[Remote] Action failed:", error));
   };

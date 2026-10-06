@@ -130,7 +130,15 @@ export const RemoteStateSchema = v.object({
 });
 
 export const ActionSchema = v.variant("type", [
-  v.object({ type: v.literal("nav"), action: NavActionSchema }),
+  v.object({
+    type: v.literal("nav"),
+    action: NavActionSchema,
+    /**
+     * `down` and `up` hold the button in between, like a held key (lists keep scrolling). Without
+     * it, a tap. The game lets go of a held button by itself if the `up` never comes.
+     */
+    state: v.optional(v.picklist(["down", "up"])),
+  }),
   v.object({ type: v.literal("versus.reroll") }),
   /** Moves the board cursor (everyone sees it on the screen) without picking. */
   v.object({ type: v.literal("ticTacToe.cursor"), cell: v.number() }),

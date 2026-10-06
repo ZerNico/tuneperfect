@@ -7,7 +7,7 @@ import {
 } from "@tuneperfect/webrtc/contracts/game";
 import { createEffect, createRoot, createSignal, onCleanup } from "solid-js";
 
-import { activeActions, pressRemote } from "~/hooks/navigation";
+import { activeActions, pressRemote, releaseRemote } from "~/hooks/navigation";
 import { lobbyStore } from "~/stores/lobby";
 
 /**
@@ -72,9 +72,14 @@ function stateFor(userId: string): RemoteState {
 export function dispatchRemote(userId: string, action: RemoteAction): ActResult {
   if (action.type === "nav") {
     if (!hasFullControl(userId)) return NOT_ALLOWED;
+    // A release always goes through, so nothing stays held.
+    if (action.state === "up") {
+      pressRemote(userId, action.action, "up");
+      return OK;
+    }
     // The screen changed since the phone got its buttons.
     if (!activeActions().get(action.action)) return STALE;
-    pressRemote(userId, action.action);
+    pressRemote(userId, action.action, action.state ?? "tap");
     return OK;
   }
   return activeSurface()?.act?.(userId, action) ?? UNAVAILABLE;
@@ -116,5 +121,7 @@ export async function* watchRemote(userId: string, signal?: AbortSignal): AsyncG
   } finally {
     signal?.removeEventListener("abort", onAbort);
     dispose();
+    // Gone (or in the background): it can't let go of what it holds anymore.
+    releaseRemote(userId);
   }
 }

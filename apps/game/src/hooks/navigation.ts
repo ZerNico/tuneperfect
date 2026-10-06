@@ -121,8 +121,10 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, Action[]>([
   ["RT", ["add-to-medley"]],
 ]);
 
-/** How long a phone's button counts as held: long enough for press feedback, short of a hold. */
-const REMOTE_PRESS_MS = 80;
+/** How long a phone's tap counts as held: long enough for press feedback, short of a hold. */
+const REMOTE_TAP_MS = 80;
+/** A phone's button held longer than this is let go: its release got lost (the phone went away). */
+const REMOTE_HOLD_MAX_MS = 10_000;
 
 const getAxisAction = (button: GamepadButton, direction: number): Action | undefined => {
   switch (button) {
@@ -306,15 +308,44 @@ createRoot(() => {
   });
 });
 
+const remoteReleaseTimers = new Map<string, number>();
+
 /**
- * A button pressed on a phone with full control (see `lib/remote`). It goes down and comes back up
- * like a key, so everything that reacts on key up (buttons, menus) works the same. Doesn't change
- * `keyMode`: the key hints stay on what's used at the game itself.
+ * A button on a phone with full control (see `lib/remote`), going down, up, or both (a tap). It
+ * behaves like a key: held, it repeats, and everything reacting on key up works the same. Doesn't
+ * change `keyMode`: the key hints stay on what's used at the game itself.
  */
-export function pressRemote(userId: string, action: Action) {
+export function pressRemote(userId: string, action: Action, state: "down" | "up" | "tap") {
   const id = `remote:${userId}:${action}`;
+  window.clearTimeout(remoteReleaseTimers.get(id));
+  remoteReleaseTimers.delete(id);
+
+  if (state === "up") {
+    release(id);
+    return;
+  }
   press(id, { origin: "remote", originalKey: action, actions: [action] });
-  window.setTimeout(() => release(id), REMOTE_PRESS_MS);
+  remoteReleaseTimers.set(
+    id,
+    window.setTimeout(
+      () => {
+        remoteReleaseTimers.delete(id);
+        release(id);
+      },
+      state === "tap" ? REMOTE_TAP_MS : REMOTE_HOLD_MAX_MS,
+    ),
+  );
+}
+
+/** Lets go of everything a phone holds down, e.g. when it stops listening. */
+export function releaseRemote(userId: string) {
+  const prefix = `remote:${userId}:`;
+  for (const id of presses.keys()) {
+    if (!id.startsWith(prefix)) continue;
+    window.clearTimeout(remoteReleaseTimers.get(id));
+    remoteReleaseTimers.delete(id);
+    release(id);
+  }
 }
 
 const layerInstances = new ReactiveMap<number, number>();
