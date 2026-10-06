@@ -22,7 +22,7 @@ interface SearchPopupProps {
   onClose: () => void;
 }
 
-const SCOPE_OPTIONS: { value: SearchFieldScope; label: () => string }[] = [
+export const SCOPE_OPTIONS: { value: SearchFieldScope; label: () => string }[] = [
   { value: "all", label: () => t("sing.filter.all") },
   { value: "artist", label: () => t("sing.sort.artist") },
   { value: "title", label: () => t("sing.sort.title") },

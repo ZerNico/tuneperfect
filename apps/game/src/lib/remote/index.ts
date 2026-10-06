@@ -39,6 +39,7 @@ export interface RemoteExtras {
   songs?: () =>
     | (Omit<NonNullable<Extras["songs"]>, "surface"> & {
         setSort: (sort: string) => ActResult;
+        setScope?: (scope: string) => ActResult;
         setFilter: (filter: string, value: string | null) => ActResult;
       })
     | null;
@@ -112,6 +113,8 @@ const currentExtras = (): Extras => {
           surface: songs.id,
           sort: songs.value.sort,
           sorts: songs.value.sorts,
+          scope: songs.value.scope,
+          scopes: songs.value.scopes,
           filters: songs.value.filters,
           song: songs.value.song,
         }
@@ -129,9 +132,9 @@ const actExtra = (action: ExtraAction): ActResult => {
   }
   const songs = extraOf("songs");
   if (songs?.id !== action.surface) return STALE;
-  return action.type === "songs.sort"
-    ? songs.value.setSort(action.sort)
-    : songs.value.setFilter(action.filter, action.value);
+  if (action.type === "songs.sort") return songs.value.setSort(action.sort);
+  if (action.type === "songs.scope") return songs.value.setScope?.(action.scope) ?? UNAVAILABLE;
+  return songs.value.setFilter(action.filter, action.value);
 };
 
 const hasFullControl = (userId: string) => lobbyStore.remoteControlIds().includes(userId);

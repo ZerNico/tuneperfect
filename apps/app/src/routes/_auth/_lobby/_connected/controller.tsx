@@ -34,8 +34,13 @@ function ControllerComponent() {
         </Show>
         <Show when={fullControl()}>
           {/* Where the pad is clumsy, the screen adds a few direct controls above it. */}
-          <Show when={remote.state()?.extras?.songs}>{(songs) => <SongsStrip songs={songs()} />}</Show>
-          <Show when={remote.state()?.extras?.text}>{(text) => <TextExtraField text={text()} />}</Show>
+          {/* On the song select the search belongs to its strip. */}
+          <Show
+            when={remote.state()?.extras?.songs}
+            fallback={<Show when={remote.state()?.extras?.text}>{(text) => <TextExtraField text={text()} />}</Show>}
+          >
+            {(songs) => <SongsStrip songs={songs()} text={remote.state()?.extras?.text} />}
+          </Show>
           <NavPad />
         </Show>
       </Show>

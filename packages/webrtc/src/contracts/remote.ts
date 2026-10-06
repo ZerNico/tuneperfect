@@ -138,6 +138,9 @@ const ExtrasSchema = v.object({
       surface: v.string(),
       sort: v.string(),
       sorts: v.array(OptionSchema),
+      /** Which field the search looks in (all, artist, title, …). Optional: older games don't send it. */
+      scope: v.optional(v.string()),
+      scopes: v.optional(v.array(OptionSchema)),
       /** A filter's `value` is null while it's off; its options don't include "off". */
       filters: v.array(
         v.object({ id: v.string(), label: v.string(), value: v.nullable(v.string()), options: v.array(OptionSchema) }),
@@ -184,6 +187,7 @@ export const ActionSchema = v.variant("type", [
   // Extras (with full control).
   v.object({ type: v.literal("text"), surface: v.string(), value: v.pipe(v.string(), v.maxLength(500)) }),
   v.object({ type: v.literal("songs.sort"), surface: v.string(), sort: v.string() }),
+  v.object({ type: v.literal("songs.scope"), surface: v.string(), scope: v.string() }),
   v.object({ type: v.literal("songs.filter"), surface: v.string(), filter: v.string(), value: v.nullable(v.string()) }),
 ]);
 

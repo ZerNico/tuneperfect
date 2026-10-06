@@ -47,7 +47,7 @@ import { FilterChips } from "./filter-chips";
 import { FilterPopup } from "./filter-popup";
 import { MenuPopup, type MenuPopupItem } from "./menu-popup";
 import { SearchButton } from "./search-button";
-import { SearchPopup } from "./search-popup";
+import { SCOPE_OPTIONS, SearchPopup } from "./search-popup";
 import { SongCard, SongGridCard } from "./song-card";
 import { SongGrid, type SongGridRef } from "./song-grid";
 import { SongScroller, type SongScrollerRef } from "./song-scroller";
@@ -269,6 +269,15 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
       return {
         sort: state.sortOption(),
         sorts: props.sortOptions.map((option) => ({ value: option, label: t(`sing.sort.${option}`) })),
+        scope: state.searchFieldScope(),
+        scopes: SCOPE_OPTIONS.map((option) => ({ value: option.value, label: option.label() })),
+        setScope: (scope) => {
+          const option = SCOPE_OPTIONS.find((candidate) => candidate.value === scope);
+          if (!option) return STALE;
+          state.setSearchFieldScope(option.value);
+          playSound("select");
+          return OK;
+        },
         filters: filterOptions().map((filter) => ({ ...filter, value: filterValue(filters, filter.id) })),
         song: item && info ? { hash: props.getId(item), title: info.title, artist: info.artist } : null,
         setSort: (sort) => {
