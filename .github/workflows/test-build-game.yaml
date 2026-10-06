@@ -1,0 +1,14 @@
+# Temporary: builds the game installers for this branch so they can be tested before merging.
+# Delete before merging.
+name: Test build game
+
+on:
+  push:
+    branches: [fix/windows-arm64-installer]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-game.yaml
+    with:
+      tag: v0.4.2
+    secrets: inherit
