@@ -42,6 +42,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 999
         runAsGroup: 999
+        # The config secret is mounted 0440, so the group has to own it for redis to read it.
+        fsGroup: 999
         seccompProfile:
           type: RuntimeDefault
       containers:
