@@ -77,7 +77,7 @@
     "@types/youtube": "^0.3.0",
     "baseline-browser-mapping": "^2.11.26",
     "electron": "^44.4.5",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^26.17.0",
     "esbuild": "^0.28.2",
     "typescript": "^7.0.2",
     "unplugin-icons": "^24.0.0",
