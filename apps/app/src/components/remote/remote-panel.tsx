@@ -2,6 +2,7 @@ import type { Panel } from "@tuneperfect/webrtc/contracts/game";
 import { createMemo, For, Index, type JSX, Match, Show, Switch } from "solid-js";
 import IconDice from "~icons/ph/dice-five-fill";
 import IconMonitor from "~icons/ph/monitor-bold";
+import IconMusicNotes from "~icons/ph/music-notes-fill";
 
 import SongCover from "~/components/song-cover";
 import Button from "~/components/ui/button";
@@ -51,20 +52,36 @@ export function Notice(props: { title: string; children?: JSX.Element }) {
   );
 }
 
-function SongLine(props: { song: { hash: string; title: string; artist: string } | null }) {
+/**
+ * A song with its cover. Always the same height: while there's none (the versus reel is spinning, a
+ * taken cell) it shows `empty` instead, so the buttons below don't jump.
+ */
+function SongLine(props: { song: { hash: string; title: string; artist: string } | null; empty?: string }) {
   const client = useGameConnection();
   return (
-    <Show when={props.song}>
-      {(song) => (
-        <div class="flex min-w-0 items-center gap-3">
-          <SongCover hash={song().hash} client={client()} class="size-12 rounded-[8px]" />
-          <div class="flex min-w-0 flex-col">
-            <span class="truncate font-bold">{song().title}</span>
-            <span class="truncate text-sm text-white/60">{song().artist}</span>
-          </div>
-        </div>
-      )}
-    </Show>
+    <div class="flex h-12 min-w-0 items-center gap-3">
+      <Show
+        when={props.song}
+        fallback={
+          <>
+            <span class="flex size-12 shrink-0 items-center justify-center rounded-[8px] bg-white/8" aria-hidden="true">
+              <IconMusicNotes class="text-white/25" />
+            </span>
+            <span class="truncate text-white/50">{props.empty}</span>
+          </>
+        }
+      >
+        {(song) => (
+          <>
+            <SongCover hash={song().hash} client={client()} class="size-12 rounded-[8px]" />
+            <div class="flex min-w-0 flex-col">
+              <span class="truncate font-bold">{song().title}</span>
+              <span class="truncate text-sm text-white/60">{song().artist}</span>
+            </div>
+          </>
+        )}
+      </Show>
+    </div>
   );
 }
 
@@ -85,7 +102,7 @@ function VersusPanel(props: { panel: PanelOf<"versus"> }) {
             {t("remote.versus.against", { name: props.panel.opponent.name })}
           </span>
         </div>
-        <SongLine song={props.panel.song} />
+        <SongLine song={props.panel.song} empty={t("remote.versus.spinning")} />
       </div>
 
       <div class="flex items-center justify-between gap-3">
@@ -112,7 +129,7 @@ function VersusWatchPanel(props: { panel: PanelOf<"versus.watch"> }) {
       <span class="text-xl font-black">
         {t("remote.versus.watch", { a: props.panel.players[0], b: props.panel.players[1] })}
       </span>
-      <SongLine song={props.panel.song} />
+      <SongLine song={props.panel.song} empty={t("remote.versus.spinning")} />
     </div>
   );
 }
@@ -168,7 +185,7 @@ function BoardPanel(props: { panel: PanelOf<"ticTacToe.board"> }) {
       </div>
 
       <Show when={yourTurn()}>
-        <SongLine song={selected()} />
+        <SongLine song={selected()} empty={t("remote.ticTacToe.taken")} />
         <Button
           intent="gradient"
           class="w-full"

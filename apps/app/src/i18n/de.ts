@@ -280,6 +280,7 @@ const de: Dict = {
       joker: "Joker {{ number }}",
     },
     versus: {
+      spinning: "Song wird ausgewählt…",
       mic: "Mikro {{ number }}",
       against: "gegen {{ name }}",
       jokers: "{{ count }} von {{ max }} Jokern übrig",

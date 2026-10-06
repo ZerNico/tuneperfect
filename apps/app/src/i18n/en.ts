@@ -276,6 +276,7 @@ const en = {
       joker: "Joker {{ number }}",
     },
     versus: {
+      spinning: "Picking a song…",
       mic: "Mic {{ number }}",
       against: "vs {{ name }}",
       jokers: "{{ count }} of {{ max }} jokers left",
