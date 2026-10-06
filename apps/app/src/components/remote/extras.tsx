@@ -47,14 +47,15 @@ export function TextExtraField(props: {
           <IconMagnifyingGlass class="shrink-0 text-white/45" />
         </Show>
         <input
-          type={props.text.secret ? "password" : props.search ? "search" : "text"}
+          // Not type="search": browsers add their own clear button next to ours.
+          type={props.text.secret ? "password" : "text"}
           aria-label={props.text.label}
           placeholder={props.search ? props.text.label : undefined}
           class="min-w-0 grow bg-transparent text-white outline-none placeholder:text-white/40"
           value={value()}
           maxLength={props.text.maxLength}
           autocomplete="off"
-          enterkeyhint="done"
+          enterkeyhint={props.search ? "search" : "done"}
           onFocus={() => {
             setDraft(props.text.value);
             setFocused(true);
