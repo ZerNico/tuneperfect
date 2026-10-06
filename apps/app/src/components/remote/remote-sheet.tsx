@@ -41,7 +41,7 @@ export default function RemoteSheet() {
       <KDialog.Portal>
         <KDialog.Overlay class="fixed inset-0 z-15 bg-black/60 backdrop-blur-sm" />
         <div class="fixed inset-x-0 bottom-0 z-16 flex justify-center">
-          <KDialog.Content class="max-h-[85dvh] w-full max-w-md overflow-auto rounded-t-[24px] surface-raised px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-white">
+          <KDialog.Content class="max-h-[85dvh] w-full max-w-md overflow-auto rounded-t-[24px] surface-raised px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-white outline-none">
             <div class="mb-4 flex items-center justify-between">
               <KDialog.Title class="text-xl font-bold">{t("remote.yourMove")}</KDialog.Title>
               <KDialog.CloseButton

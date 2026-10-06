@@ -162,7 +162,7 @@ function SortFilterSheet(props: {
       <KDialog.Portal>
         <KDialog.Overlay class="fixed inset-0 z-15 bg-black/60 backdrop-blur-sm" />
         <div class="fixed inset-x-0 bottom-0 z-16 flex justify-center">
-          <KDialog.Content class="flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-[24px] surface-raised text-white">
+          <KDialog.Content class="flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-[24px] surface-raised text-white outline-none">
             <div class="flex items-center justify-between px-6 pt-4 pb-2">
               <KDialog.Title class="text-xl font-bold">{t("remote.songs.title")}</KDialog.Title>
               <KDialog.CloseButton
@@ -172,7 +172,7 @@ function SortFilterSheet(props: {
                 <IconX />
               </KDialog.CloseButton>
             </div>
-            <div class="flex flex-col gap-5 overflow-y-auto px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div class="flex min-h-0 flex-col gap-5 overflow-y-auto overscroll-contain px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
               <Section label={t("remote.songs.sort")}>
                 <For each={props.songs.sorts}>
                   {(sort) => (
@@ -189,7 +189,7 @@ function SortFilterSheet(props: {
               </Section>
               <For each={props.songs.filters}>
                 {(item) => (
-                  <Section label={item.label} long={item.options.length > 12}>
+                  <Section label={item.label}>
                     <Chip active={item.value === null} onClick={() => props.onFilter(item.id, null)}>
                       {t("remote.songs.any")}
                     </Chip>
@@ -225,14 +225,12 @@ function SortFilterSheet(props: {
   );
 }
 
-/** A heading with its options; long lists (genres) scroll within a few rows. */
-function Section(props: { label: string; long?: boolean; children: JSX.Element }) {
+/** A heading with its options in one row; long lists (genres) scroll sideways. */
+function Section(props: { label: string; children: JSX.Element }) {
   return (
     <section class="flex flex-col gap-2">
       <h3 class="text-xs font-bold tracking-[0.12em] text-white/50 uppercase">{props.label}</h3>
-      <div class="flex flex-wrap gap-2" classList={{ "max-h-[9.5rem] overflow-y-auto": props.long }}>
-        {props.children}
-      </div>
+      <div class="-mx-6 flex [scrollbar-width:none] gap-2 overflow-x-auto px-6">{props.children}</div>
     </section>
   );
 }
