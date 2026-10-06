@@ -1,12 +1,11 @@
+import { Dialog as KDialog } from "@kobalte/core/dialog";
 import type { Extras } from "@tuneperfect/webrtc/contracts/game";
-import { createSignal, For, onCleanup, Show } from "solid-js";
-import IconCheck from "~icons/ph/check-bold";
+import { createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
 import IconSliders from "~icons/ph/sliders-horizontal-bold";
 import IconX from "~icons/ph/x-bold";
 
 import SongCover from "~/components/song-cover";
-import Dialog from "~/components/ui/dialog";
 import { useGameConnection } from "~/contexts/game-client";
 import { t } from "~/lib/i18n";
 import { useRemote } from "~/lib/remote";
@@ -83,18 +82,20 @@ export function TextExtraField(props: { text: TextExtra }) {
   );
 }
 
-/** The song select: the song on the TV, its sort as chips and its filters to pick from a list. */
+/**
+ * The song select: the song on the TV, and one button for its sort and filters. Active filters
+ * stay visible next to it and come off with a tap.
+ */
 export function SongsStrip(props: { songs: SongsExtra }) {
   const remote = useRemote();
   const client = useGameConnection();
-  const [filtersOpen, setFiltersOpen] = createSignal(false);
-  const [editing, setEditing] = createSignal<string | null>(null);
-  const filter = () => props.songs.filters.find((candidate) => candidate.id === editing());
+  const [open, setOpen] = createSignal(false);
   const active = () => props.songs.filters.filter((candidate) => candidate.value !== null);
+  const sortLabel = () => props.songs.sorts.find((sort) => sort.value === props.songs.sort)?.label ?? "";
   const setFilter = (id: string, value: string | null) =>
     void remote.act({ type: "songs.filter", surface: props.songs.surface, filter: id, value });
   const optionLabel = (item: SongsExtra["filters"][number]) =>
-    item.options.find((option) => option.value === item.value)?.label ?? t("remote.songs.any");
+    item.options.find((option) => option.value === item.value)?.label ?? item.value;
 
   return (
     <div class="flex flex-col gap-3">
@@ -120,85 +121,123 @@ export function SongsStrip(props: { songs: SongsExtra }) {
         </Show>
       </div>
 
-      <div class="-mx-6 flex [scrollbar-width:none] gap-2 overflow-x-auto px-6">
-        <For each={props.songs.sorts}>
-          {(sort) => (
-            <Chip
-              active={props.songs.sort === sort.value}
-              onClick={() => void remote.act({ type: "songs.sort", surface: props.songs.surface, sort: sort.value })}
-            >
-              {sort.label}
+      <div class="flex flex-wrap gap-2">
+        <Chip onClick={() => setOpen(true)}>
+          <IconSliders />
+          {sortLabel()}
+          <Show when={active().length > 0}>
+            <span class="flex size-5 items-center justify-center rounded-full bg-white text-xs text-slate-900">
+              {active().length}
+            </span>
+          </Show>
+        </Chip>
+        <For each={active()}>
+          {(item) => (
+            <Chip active onClick={() => setFilter(item.id, null)}>
+              {optionLabel(item)}
+              <IconX class="text-sm opacity-70" />
             </Chip>
           )}
         </For>
       </div>
 
-      <Show when={props.songs.filters.length > 0}>
-        <div class="flex flex-wrap gap-2">
-          <Chip onClick={() => setFiltersOpen(true)}>
-            <IconSliders />
-            {t("remote.songs.filters")}
-          </Chip>
-          <For each={active()}>
-            {(item) => (
-              <Chip active onClick={() => setFilter(item.id, null)}>
-                {optionLabel(item)}
-                <IconX class="text-sm opacity-80" />
-              </Chip>
-            )}
-          </For>
-        </div>
-      </Show>
-
-      <Show when={filtersOpen() && !filter()}>
-        <Dialog title={t("remote.songs.filters")} onClose={() => setFiltersOpen(false)}>
-          <div class="-mx-2 flex flex-col gap-1">
-            <For each={props.songs.filters}>
-              {(item) => (
-                <button
-                  type="button"
-                  class="flex min-h-12 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-start font-bold transition-colors hover:bg-white/8"
-                  onClick={() => setEditing(item.id)}
-                >
-                  <span class="min-w-0 grow truncate">{item.label}</span>
-                  <span class="max-w-[50%] truncate text-white/60">{optionLabel(item)}</span>
-                </button>
-              )}
-            </For>
-          </div>
-        </Dialog>
-      </Show>
-      <Show when={filter()}>
-        {(current) => (
-          <Dialog title={current().label} onClose={() => setEditing(null)}>
-            <div class="-mx-2 flex max-h-[60dvh] flex-col gap-1 overflow-y-auto">
-              <For each={[{ value: null, label: t("remote.songs.any") }, ...current().options]}>
-                {(option) => (
-                  <button
-                    type="button"
-                    class="flex min-h-12 shrink-0 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-start font-bold transition-colors hover:bg-white/8"
-                    classList={{ "bg-white/10": option.value === current().value }}
-                    onClick={() => {
-                      setFilter(current().id, option.value);
-                      setEditing(null);
-                    }}
-                  >
-                    <span class="min-w-0 grow truncate">{option.label}</span>
-                    <Show when={option.value === current().value}>
-                      <IconCheck class="shrink-0" />
-                    </Show>
-                  </button>
-                )}
-              </For>
-            </div>
-          </Dialog>
-        )}
+      <Show when={open()}>
+        <SortFilterSheet songs={props.songs} onClose={() => setOpen(false)} onFilter={setFilter} />
       </Show>
     </div>
   );
 }
 
-function Chip(props: { active?: boolean; onClick: () => void; children: import("solid-js").JSX.Element }) {
+/** Sort and every filter in one sheet, each as a row of options: a tap applies it on the TV. */
+function SortFilterSheet(props: {
+  songs: SongsExtra;
+  onClose: () => void;
+  onFilter: (id: string, value: string | null) => void;
+}) {
+  const remote = useRemote();
+  const anyActive = () => props.songs.filters.some((item) => item.value !== null);
+
+  return (
+    <KDialog open onOpenChange={(open) => !open && props.onClose()}>
+      <KDialog.Portal>
+        <KDialog.Overlay class="fixed inset-0 z-15 bg-black/60 backdrop-blur-sm" />
+        <div class="fixed inset-x-0 bottom-0 z-16 flex justify-center">
+          <KDialog.Content class="flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-[24px] surface-raised text-white">
+            <div class="flex items-center justify-between px-6 pt-4 pb-2">
+              <KDialog.Title class="text-xl font-bold">{t("remote.songs.title")}</KDialog.Title>
+              <KDialog.CloseButton
+                aria-label={t("remote.close")}
+                class="flex size-9 cursor-pointer items-center justify-center rounded-[10px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <IconX />
+              </KDialog.CloseButton>
+            </div>
+            <div class="flex flex-col gap-5 overflow-y-auto px-6 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <Section label={t("remote.songs.sort")}>
+                <For each={props.songs.sorts}>
+                  {(sort) => (
+                    <Chip
+                      active={props.songs.sort === sort.value}
+                      onClick={() =>
+                        void remote.act({ type: "songs.sort", surface: props.songs.surface, sort: sort.value })
+                      }
+                    >
+                      {sort.label}
+                    </Chip>
+                  )}
+                </For>
+              </Section>
+              <For each={props.songs.filters}>
+                {(item) => (
+                  <Section label={item.label} long={item.options.length > 12}>
+                    <Chip active={item.value === null} onClick={() => props.onFilter(item.id, null)}>
+                      {t("remote.songs.any")}
+                    </Chip>
+                    <For each={item.options}>
+                      {(option) => (
+                        <Chip
+                          active={item.value === option.value}
+                          onClick={() => props.onFilter(item.id, option.value)}
+                        >
+                          {option.label}
+                        </Chip>
+                      )}
+                    </For>
+                  </Section>
+                )}
+              </For>
+              <Show when={anyActive()}>
+                <button
+                  type="button"
+                  class="flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-[12px] bg-white/8 font-bold text-red-300 transition-colors hover:bg-white/12"
+                  onClick={() => {
+                    for (const item of props.songs.filters) if (item.value !== null) props.onFilter(item.id, null);
+                  }}
+                >
+                  {t("remote.songs.clearFilters")}
+                </button>
+              </Show>
+            </div>
+          </KDialog.Content>
+        </div>
+      </KDialog.Portal>
+    </KDialog>
+  );
+}
+
+/** A heading with its options; long lists (genres) scroll within a few rows. */
+function Section(props: { label: string; long?: boolean; children: JSX.Element }) {
+  return (
+    <section class="flex flex-col gap-2">
+      <h3 class="text-xs font-bold tracking-[0.12em] text-white/50 uppercase">{props.label}</h3>
+      <div class="flex flex-wrap gap-2" classList={{ "max-h-[9.5rem] overflow-y-auto": props.long }}>
+        {props.children}
+      </div>
+    </section>
+  );
+}
+
+function Chip(props: { active?: boolean; onClick: () => void; children: JSX.Element }) {
   return (
     <button
       type="button"
