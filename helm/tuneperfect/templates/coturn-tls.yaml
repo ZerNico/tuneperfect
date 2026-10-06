@@ -1,0 +1,58 @@
+{{- if and .Values.coturn.enabled .Values.coturn.tls.enabled }}
+# TURN over TLS: Traefik terminates TLS for coturn.host on its HTTPS entrypoint (matched by SNI) and
+# forwards the TURN stream to coturn's TCP listener. coturn runs with host networking, so the
+# Service's endpoint is the node itself.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-turn-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  secretName: {{ include "tuneperfect.fullname" . }}-turn-tls
+  dnsNames:
+    - {{ .Values.coturn.host | quote }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ .Values.coturn.tls.clusterIssuer }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-coturn
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "tuneperfect.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+  ports:
+    - name: turn-tcp
+      port: {{ .Values.coturn.listeningPort }}
+      targetPort: {{ .Values.coturn.listeningPort }}
+      protocol: TCP
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "tuneperfect.fullname" . }}-turn-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tuneperfect.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  entryPoints:
+    - {{ .Values.coturn.tls.entryPoint }}
+  routes:
+    - match: HostSNI(`{{ .Values.coturn.host }}`)
+      services:
+        - name: {{ include "tuneperfect.fullname" . }}-coturn
+          port: {{ .Values.coturn.listeningPort }}
+  tls:
+    secretName: {{ include "tuneperfect.fullname" . }}-turn-tls
+{{- end }}

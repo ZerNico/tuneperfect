@@ -53,5 +53,11 @@ random throwaway secret (use `--dry-run=server` to preview against the cluster, 
 
 **TLS**
 
-Not set up yet (`--no-tls`): TURN over UDP and TCP on 3478. `turns:` needs a certificate for
-`turn.<domain>`.
+With `coturn.tls.enabled`, TURN is also offered as `turns:turn.<domain>:443` for networks that only
+let HTTPS through. coturn itself doesn't do TLS (`--no-tls`): Traefik picks these connections by
+their server name (SNI) on its HTTPS entrypoint, terminates TLS with a cert-manager certificate and
+passes the stream to coturn's TCP port (`templates/coturn-tls.yaml`).
+
+- Browsers send SNI for `turns:`. Tools that don't (e.g. `turnutils_uclient -S`) get Traefik's
+  default certificate and fail, so test with a browser or a TLS proxy that sets SNI.
+- coturn sees these clients with Traefik's address. Quotas are per credential, so they still apply.
