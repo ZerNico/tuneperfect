@@ -83,13 +83,12 @@ export function SongTitle(props: SongTitleProps) {
     // the bottom: one- and two-line titles swap without moving anything around them.
     <div class="relative grid h-[12.5cqw]">
       {/* Soft scrim keeps the title readable over bright preview videos. `closest-side` fades it out
-          inside its box, so the box edge never shows as a line, and the app's navy reads as shade on a
-          light cover where black would look like a grey smudge. */}
+          inside its box, so the box edge never shows as a line next to the song grid. */}
       <div
-        class="pointer-events-none absolute -inset-y-[4cqw] -right-[8cqw] -left-[5cqw] -z-1"
+        class="pointer-events-none absolute -inset-y-[5cqw] -right-[10cqw] -left-[6cqw] -z-1"
         style={{
           background:
-            "radial-gradient(closest-side, color-mix(in oklch, var(--color-slate-950) 34%, transparent), color-mix(in oklch, var(--color-slate-950) 26%, transparent) 30%, color-mix(in oklch, var(--color-slate-950) 12%, transparent) 65%, transparent)",
+            "radial-gradient(closest-side, rgb(0 0 0 / 0.34), rgb(0 0 0 / 0.26) 35%, rgb(0 0 0 / 0.12) 72%, transparent)",
         }}
       />
       <For each={layers()}>
