@@ -7,6 +7,7 @@ import { logger } from "../lib/logger";
 import { userService } from "../user/service";
 import { cookieMaxAge, defaultCookieOptions } from "../utils/cookie";
 import { executeWithConstantTime, isValidRedirectUrl } from "../utils/security";
+import { requireUser } from "./middleware";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
 
@@ -34,6 +35,12 @@ export const authRouter = os.prefix("/auth").router({
 
         if (existingUser) {
           if (!existingUser.emailVerified) {
+            // Nobody has proven they own the address yet, so the latest sign-up's password counts.
+            // Otherwise whoever registered it first (maybe not the owner) would keep theirs after verifying.
+            // Older links die with it, so a link from an earlier sign-up can't verify this password.
+            const hashedPassword = await authService.hashPassword(input.password);
+            await userService.updateUser(existingUser.id, { password: hashedPassword });
+            await authService.deleteVerificationTokens(existingUser.id, "email_verification");
             await authService.sendVerificationEmail(existingUser, { redirect: input.redirect });
           }
           return;
@@ -258,11 +265,41 @@ export const authRouter = os.prefix("/auth").router({
         ...defaultCookieOptions,
         maxAge: cookieMaxAge(accessToken.expires),
       });
-      context.setCookie?.("refresh_token", newRefreshToken.token, {
-        ...defaultCookieOptions,
-        maxAge: cookieMaxAge(newRefreshToken.expires),
-      });
+      if (newRefreshToken.token) {
+        context.setCookie?.("refresh_token", newRefreshToken.token, {
+          ...defaultCookieOptions,
+          maxAge: cookieMaxAge(newRefreshToken.expires),
+        });
+      }
     }),
+
+  /** The signed-in user's logins (one per device or browser), to see where they're signed in. */
+  sessions: base.use(requireUser).handler(async ({ context }) => {
+    return await authService.listSessions(context.payload.sub, context.cookies?.get("refresh_token") ?? undefined);
+  }),
+
+  /** Signs out one other device. The current one signs out with `signOut`. */
+  revokeSession: base
+    .use(requireUser)
+    .errors({
+      NOT_FOUND: {
+        status: 404,
+      },
+    })
+    .input(v.object({ id: v.pipe(v.string(), v.uuid()) }))
+    .handler(async ({ context, input, errors }) => {
+      if (!(await authService.deleteSession(context.payload.sub, input.id))) {
+        throw errors.NOT_FOUND();
+      }
+    }),
+
+  /** Signs out every device but this one. */
+  revokeOtherSessions: base.use(requireUser).handler(async ({ context }) => {
+    const refreshToken = context.cookies?.get("refresh_token");
+    // Without this device's login nothing tells which one to keep, and ending all would sign this one out too
+    if (!refreshToken) return;
+    await authService.deleteAllRefreshTokensForUser(context.payload.sub, refreshToken);
+  }),
 
   signOut: base
     .route({

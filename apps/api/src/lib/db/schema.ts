@@ -40,6 +40,8 @@ export const refreshTokens = p.pgTable(
   "refresh_tokens",
   {
     token: p.text("token").primaryKey(),
+    // Names the login for its owner: the token itself changes on every refresh
+    id: p.uuid("id").notNull().defaultRandom().unique(),
     userId: p
       .uuid("user_id")
       .references(() => users.id, {
@@ -49,9 +51,15 @@ export const refreshTokens = p.pgTable(
       .notNull(),
     userAgent: p.text("user_agent").notNull(),
     expires: p.timestamp("expires").notNull(),
+    // The token this one replaced, kept briefly so a refresh racing the rotation still works
+    previousToken: p.text("previous_token"),
+    rotatedAt: p.timestamp("rotated_at"),
     ...timestampColumns,
   },
-  (table) => [p.index("refresh_tokens_user_id_index").on(table.userId)],
+  (table) => [
+    p.index("refresh_tokens_user_id_index").on(table.userId),
+    p.index("refresh_tokens_previous_token_index").on(table.previousToken),
+  ],
 );
 
 export const verificationTokens = p.pgTable(

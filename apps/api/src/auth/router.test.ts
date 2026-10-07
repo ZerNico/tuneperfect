@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { call } from "@orpc/server";
 
-import { expectORPCError, makeUser } from "../../test/helpers";
+import { authedContext, expectORPCError, makeUser } from "../../test/helpers";
 import type { ORPCContext } from "../lib/orpc";
 import { authRouter } from "./router";
 import { authService } from "./service";
@@ -75,6 +75,21 @@ describe("refreshToken", () => {
     expect(refreshCall?.[1]).toBe("rotated-refresh-token");
   });
 
+  it("only renews the access token while a concurrent refresh's cookie is in place", async () => {
+    const user = makeUser();
+    const { context, setCookie, deleteCookie } = cookieContext({ refresh_token: "just-replaced" });
+    spyOn(authService, "verifyAndRotateRefreshToken").mockResolvedValue({
+      token: undefined,
+      expires: new Date(Date.now() + 1000 * 60 * 60),
+      user: { ...user, password: null },
+    });
+
+    await call(authRouter.refreshToken, undefined, { context });
+
+    expect(deleteCookie).not.toHaveBeenCalled();
+    expect(setCookie.mock.calls.map((c) => c[0])).toEqual(["access_token"]);
+  });
+
   it("sets cookie Max-Age in seconds, not milliseconds", async () => {
     const user = makeUser();
     const { context, setCookie } = cookieContext({ refresh_token: "valid-token" });
@@ -120,5 +135,50 @@ describe("signOut", () => {
 
     expect(deleteSpy).not.toHaveBeenCalled();
     expect(deleteCookie).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("sessions", () => {
+  it("lists the user's logins, telling which one is this device", async () => {
+    const user = makeUser();
+    const list = spyOn(authService, "listSessions").mockResolvedValue([]);
+
+    await call(authRouter.sessions, undefined, { context: await authedContext(user, { refresh_token: "mine" }) });
+
+    expect(list).toHaveBeenCalledWith(user.id, "mine");
+  });
+
+  it("404s for a login that isn't the user's", async () => {
+    const user = makeUser();
+    spyOn(authService, "deleteSession").mockResolvedValue(false);
+
+    await expectORPCError(
+      call(
+        authRouter.revokeSession,
+        { id: "00000000-0000-4000-8000-00000000abcd" },
+        { context: await authedContext(user) },
+      ),
+      "NOT_FOUND",
+    );
+  });
+
+  it("keeps this device when signing out the others", async () => {
+    const user = makeUser();
+    const revoke = spyOn(authService, "deleteAllRefreshTokensForUser").mockResolvedValue();
+
+    await call(authRouter.revokeOtherSessions, undefined, {
+      context: await authedContext(user, { refresh_token: "mine" }),
+    });
+
+    expect(revoke).toHaveBeenCalledWith(user.id, "mine");
+  });
+
+  it("ends nothing without this device's login", async () => {
+    const user = makeUser();
+    const revoke = spyOn(authService, "deleteAllRefreshTokensForUser").mockResolvedValue();
+
+    await call(authRouter.revokeOtherSessions, undefined, { context: await authedContext(user) });
+
+    expect(revoke).not.toHaveBeenCalled();
   });
 });

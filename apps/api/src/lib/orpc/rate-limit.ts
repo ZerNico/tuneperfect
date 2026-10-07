@@ -129,7 +129,15 @@ export const rateLimit = init.middleware(async ({ procedure, next, path, errors,
   const ip = getClientIp(context.headers);
   const key = `rate-limit:${path.join(":")}:${ip}`;
 
-  const [current, ttl] = await executeRateLimit(key, limit, windowMs);
+  const [error, result] = await tryCatch(executeRateLimit(key, limit, windowMs));
+
+  // Without Redis nothing is counted: let requests through rather than fail every endpoint
+  if (error) {
+    logger.error(error, "Rate limit check failed, allowing request");
+    return next();
+  }
+
+  const [current, ttl] = result;
 
   const remaining = Math.max(0, limit - current);
   const reset = Math.ceil(ttl / 1000);

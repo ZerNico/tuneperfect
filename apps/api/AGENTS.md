@@ -65,7 +65,9 @@ export const myRouter = os.prefix("/things").router({
 ### Auth flow
 
 - JWT access tokens stored in HTTP-only cookies
-- Refresh token rotation via `src/auth/service.ts`
+- Refresh token rotation via `src/auth/service.ts`: a login ends after 30 idle days (one year at most). The replaced token keeps working for 30s (concurrent refreshes from other tabs get an access token only); presenting it later ends that login
+- A refresh token row is one login (device). Its `id` names it for the Devices page (`auth.sessions`, `auth.revokeSession`, `auth.revokeOtherSessions`); `updatedAt` is when it was last used
+- Responses that embed other users select `publicUserColumns` (`src/user/models.ts`), never email or account fields
 - OAuth: Google + Discord (`src/auth/oauth/`)
 - Protect routes with `requireUser` middleware from `src/auth/middleware.ts`
 

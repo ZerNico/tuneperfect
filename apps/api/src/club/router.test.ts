@@ -69,7 +69,11 @@ describe("getClub", () => {
     spyOn(clubService, "getClub").mockResolvedValue(undefined);
 
     await expectORPCError(
-      call(clubRouter.getClub, { clubId: "unknown" }, { context: await authedContext(user) }),
+      call(
+        clubRouter.getClub,
+        { clubId: "00000000-0000-4000-8000-00000000ffff" },
+        { context: await authedContext(user) },
+      ),
       "NOT_FOUND",
     );
   });
