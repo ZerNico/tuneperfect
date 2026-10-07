@@ -9,14 +9,14 @@ import type { User } from "../types";
 import { LobbyService, lobbyService } from "./service";
 
 describe("getLobbyById", () => {
-  it("never selects the password column for lobby users", async () => {
+  it("only selects public columns for lobby users and club members", async () => {
     await lobbyService.getLobbyById("LOBBY123");
 
     const findFirst = db.query.lobbies.findFirst as Mock<typeof db.query.lobbies.findFirst>;
     const args = findFirst.mock.calls.at(-1)?.[0] as Record<string, any>;
 
-    expect(args.with.users).toEqual({ columns: { password: false } });
-    expect(args.with.selectedClub.with.members.with.user.columns.password).toBe(false);
+    expect(args.with.users).toEqual({ columns: { id: true, username: true, image: true } });
+    expect(args.with.selectedClub.with.members.with.user.columns).toEqual({ id: true, username: true, image: true });
   });
 });
 

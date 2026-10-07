@@ -38,9 +38,8 @@ export class CsrfProtectionPlugin<T extends Context> implements StandardHandlerP
       }
 
       if (referer && typeof referer === "string") {
-        const url = new URL(referer);
-        const origin = url.origin;
-        if (!allowedOrigin.includes(origin)) {
+        const origin = URL.parse(referer)?.origin;
+        if (!origin || !allowedOrigin.includes(origin)) {
           throw new ORPCError("CSRF_PROTECTION_ERROR", {
             status: 403,
             message: "Referer not allowed",

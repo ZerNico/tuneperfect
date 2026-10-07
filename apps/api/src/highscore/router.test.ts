@@ -17,7 +17,7 @@ function stubLobbyWith(user: ReturnType<typeof makeUser>) {
   spyOn(lobbyService, "getLobbyById").mockResolvedValue({
     id: LOBBY_ID,
     users: [user],
-  } as Awaited<ReturnType<typeof lobbyService.getLobbyById>>);
+  } as unknown as Awaited<ReturnType<typeof lobbyService.getLobbyById>>);
 }
 
 describe("setHighscore", () => {

@@ -110,7 +110,7 @@ export const lobbyRouter = os.prefix("/lobbies").router({
 
   kickUser: base
     .use(requireLobby)
-    .input(v.object({ userId: v.string() }))
+    .input(v.object({ userId: v.pipe(v.string(), v.uuid()) }))
     .handler(async ({ context, input }) => {
       await lobbyService.kickUser(context.payload.sub, input.userId);
     }),
@@ -126,7 +126,7 @@ export const lobbyRouter = os.prefix("/lobbies").router({
         status: 403,
       },
     })
-    .input(v.object({ clubId: v.nullable(v.string()) }))
+    .input(v.object({ clubId: v.nullable(v.pipe(v.string(), v.uuid())) }))
     .handler(async ({ context, errors, input }) => {
       if (input.clubId !== null) {
         const availableClubs = await lobbyService.getAvailableClubsForLobby(context.payload.sub);
