@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 
-import { type Context, ORPCError } from "@orpc/server";
+import type { Context } from "@orpc/server";
 import type { StandardHandlerOptions } from "@orpc/server/standard";
 
 import { CsrfProtectionPlugin } from "./csrf-protection";
@@ -24,6 +24,14 @@ function run(interceptor: Interceptor, method: string, headers: Record<string, s
   return { result: interceptor({ request: { method, headers }, next }), next };
 }
 
+/** Answered with a 403 response, not thrown (a throw here would reach Bun as a 500). */
+async function expectForbidden(result: Promise<unknown>) {
+  expect(await result).toMatchObject({
+    matched: true,
+    response: { status: 403, body: { code: "CSRF_PROTECTION_ERROR" } },
+  });
+}
+
 describe("CsrfProtectionPlugin", () => {
   it("lets GET requests through without headers", async () => {
     const interceptor = createInterceptor();
@@ -44,10 +52,7 @@ describe("CsrfProtectionPlugin", () => {
     const interceptor = createInterceptor();
     const { result } = run(interceptor, "POST", { origin: "https://evil.com" });
 
-    expect(result).rejects.toBeInstanceOf(ORPCError);
-    await result.catch((error: ORPCError<string, unknown>) => {
-      expect(error.status).toBe(403);
-    });
+    await expectForbidden(result);
   });
 
   it("falls back to the referer header when origin is missing", async () => {
@@ -61,14 +66,14 @@ describe("CsrfProtectionPlugin", () => {
     const interceptor = createInterceptor();
     const { result } = run(interceptor, "POST", { referer: "https://evil.com/page" });
 
-    expect(result).rejects.toBeInstanceOf(ORPCError);
+    await expectForbidden(result);
   });
 
   it("rejects requests without origin or referer", async () => {
     const interceptor = createInterceptor();
     const { result } = run(interceptor, "POST");
 
-    expect(result).rejects.toBeInstanceOf(ORPCError);
+    await expectForbidden(result);
   });
 
   it("supports multiple allowed origins", async () => {
@@ -82,6 +87,6 @@ describe("CsrfProtectionPlugin", () => {
     const interceptor = createInterceptor();
     const { result } = run(interceptor, "POST", { origin: `${ALLOWED}.evil.com` });
 
-    expect(result).rejects.toBeInstanceOf(ORPCError);
+    await expectForbidden(result);
   });
 });

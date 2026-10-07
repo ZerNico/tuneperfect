@@ -58,19 +58,22 @@ export const oauthRouter = os.prefix("/providers").router({
       method: "GET",
       successStatus: 302,
     })
-    .errors({
-      BAD_REQUEST: {
-        status: 400,
-      },
-    })
     .input(
       v.object({
         provider: v.picklist(["google", "discord"]),
-        code: v.string(),
-        state: v.string(),
+        // Both are missing when the user cancels on the provider's page: it sends `error` instead
+        code: v.optional(v.string()),
+        state: v.optional(v.string()),
+        error: v.optional(v.string()),
       }),
     )
-    .handler(async ({ context, errors, input }) => {
+    .handler(async ({ context, input }) => {
+      // The browser is mid-redirect: a JSON error would be a dead end, so every failure goes back to
+      // sign-in with a reason the app can explain.
+      const backToSignIn = (error: string) => {
+        context.resHeaders?.append("location", withQuery(joinURL(env.APP_URL, "/sign-in"), { error }));
+      };
+
       const storedState = context.cookies?.get("state");
       const storedCodeVerifier = context.cookies?.get("codeVerifier");
       const storedRedirect = context.cookies?.get("redirect");
@@ -85,12 +88,14 @@ export const oauthRouter = os.prefix("/providers").router({
         ...defaultCookieOptions,
       });
 
-      if (!input.state || !input.code || !storedState || !storedCodeVerifier) {
-        throw errors.BAD_REQUEST();
+      if (input.error === "access_denied") {
+        backToSignIn("oauth_cancelled");
+        return;
       }
 
-      if (input.state !== storedState) {
-        throw errors.BAD_REQUEST();
+      if (!input.state || !input.code || !storedState || !storedCodeVerifier || input.state !== storedState) {
+        backToSignIn("oauth_failed");
+        return;
       }
 
       const [tokenError, token] = await tryCatch(
@@ -99,7 +104,8 @@ export const oauthRouter = os.prefix("/providers").router({
 
       if (tokenError) {
         logger.error(tokenError, "Failed to exchange code for access token");
-        throw errors.BAD_REQUEST();
+        backToSignIn("oauth_failed");
+        return;
       }
 
       const [userError, user] = await tryCatch(oauthService.getOrCreateUser(input.provider, token));
@@ -108,14 +114,12 @@ export const oauthRouter = os.prefix("/providers").router({
         // Check if the error is because an unverified account with password exists
         if (userError instanceof UnverifiedEmailExistsError) {
           logger.info("Unverified account with password exists, redirecting to sign-in");
-          const signInUrl = withQuery(joinURL(env.APP_URL, "/sign-in"), {
-            error: "unverified_email_exists",
-          });
-          context.resHeaders?.append("location", signInUrl);
+          backToSignIn("unverified_email_exists");
           return;
         }
         logger.error(userError, "Failed to get or create user");
-        throw errors.BAD_REQUEST();
+        backToSignIn("oauth_failed");
+        return;
       }
 
       const accessToken = await authService.generateAccessToken(user);
@@ -132,6 +136,7 @@ export const oauthRouter = os.prefix("/providers").router({
         ...defaultCookieOptions,
         maxAge: cookieMaxAge(refreshToken.expires),
       });
-      context.resHeaders?.append("location", storedRedirect ?? "/");
+      // "/" would be the API's own root: without a stored redirect, go to the app
+      context.resHeaders?.append("location", storedRedirect ?? env.APP_URL);
     }),
 });

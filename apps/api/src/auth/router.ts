@@ -230,7 +230,8 @@ export const authRouter = os.prefix("/auth").router({
       }
 
       const hashedPassword = await authService.hashPassword(input.password);
-      await userService.updateUser(verificationToken.userId, { password: hashedPassword });
+      // The link reached their inbox, which proves the address as much as a verification link would
+      await userService.updateUser(verificationToken.userId, { password: hashedPassword, emailVerified: true });
       await authService.deleteAllRefreshTokensForUser(verificationToken.userId);
     }),
 

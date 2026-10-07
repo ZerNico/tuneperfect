@@ -6,8 +6,10 @@ import { authService } from "../auth/service";
 import { base } from "../base";
 import { env } from "../config/env";
 import type { UserWithPassword } from "../types";
+import { isUniqueViolation } from "../utils/db";
+import { tryCatch } from "../utils/try-catch";
 import { UsernameSchema } from "./models";
-import { userService } from "./service";
+import { InvalidImageError, userService } from "./service";
 
 export const userRouter = os.prefix("/users").router({
   getMe: base
@@ -33,6 +35,9 @@ export const userRouter = os.prefix("/users").router({
       },
       INVALID_CURRENT_PASSWORD: {
         status: 403,
+      },
+      INVALID_IMAGE: {
+        status: 400,
       },
     })
     .input(
@@ -63,7 +68,9 @@ export const userRouter = os.prefix("/users").router({
       }
 
       if (input.imageFile) {
-        await userService.storeUserImage(context.payload.sub, input.imageFile);
+        const [imageError] = await tryCatch(userService.storeUserImage(context.payload.sub, input.imageFile));
+        if (imageError instanceof InvalidImageError) throw errors.INVALID_IMAGE();
+        if (imageError) throw imageError;
         newUser.image = `/v1.0/users/${context.payload.sub}/image.webp?t=${Date.now()}`;
       }
 
@@ -84,7 +91,9 @@ export const userRouter = os.prefix("/users").router({
         newUser.password = await authService.hashPassword(input.password);
       }
 
-      const updatedUser = await userService.updateUser(context.payload.sub, newUser);
+      const [updateError, updatedUser] = await tryCatch(userService.updateUser(context.payload.sub, newUser));
+      // The check above can lose a race against someone taking the same name at the same moment
+      if (updateError) throw isUniqueViolation(updateError) ? errors.USERNAME_ALREADY_TAKEN() : updateError;
 
       if (input.password) {
         // Invalidate all other sessions after a password change.

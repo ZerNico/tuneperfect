@@ -218,19 +218,36 @@ describe("refresh tokens", () => {
   });
 
   it("keeps the cookie of a concurrent refresh that rotated first", async () => {
-    findFirstRefreshToken.mockResolvedValue({
-      token: sha256("raced"),
-      userId: testUser.id,
-      user: testUser,
-      expires: addDays(new Date(), 3),
-      createdAt: new Date(),
-    });
+    findFirstRefreshToken
+      .mockResolvedValueOnce({
+        token: sha256("raced"),
+        userId: testUser.id,
+        user: testUser,
+        expires: addDays(new Date(), 3),
+        createdAt: new Date(),
+      })
+      .mockResolvedValueOnce({ expires: addDays(new Date(), 30) });
     nextReturning("update", []);
 
     const result = await authService.verifyAndRotateRefreshToken("raced");
 
     expect(result?.user.id).toBe(testUser.id);
     expect(result?.token).toBeUndefined();
+  });
+
+  it("lets nobody in when the login was ended between reading and rotating it", async () => {
+    findFirstRefreshToken
+      .mockResolvedValueOnce({
+        token: sha256("revoked"),
+        userId: testUser.id,
+        user: testUser,
+        expires: addDays(new Date(), 3),
+        createdAt: new Date(),
+      })
+      .mockResolvedValueOnce(undefined);
+    nextReturning("update", []);
+
+    expect(await authService.verifyAndRotateRefreshToken("revoked")).toBeNull();
   });
 
   it("accepts the replaced token for a few seconds without rotating again", async () => {

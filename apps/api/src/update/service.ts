@@ -6,6 +6,8 @@ export interface UpdateManifest {
   signature: string;
 }
 
+const SIGNATURE_TIMEOUT_MS = 5000;
+
 export class UpdateService {
   /**
    * The update a client on `currentVersion` should install to reach `releaseVersion`, in the
@@ -50,14 +52,24 @@ export class UpdateService {
     return file || null;
   }
 
-  async downloadSignatureFile(signatureFileUrl: string) {
-    const response = await fetch(signatureFileUrl);
+  /** A release's signature never changes, so each is fetched from GitHub once, not on every update check. */
+  private readonly signatures = new Map<string, string>();
 
-    if (!response.ok) {
+  /** The signature file's text, or null when GitHub doesn't answer in time or has none (no update then). */
+  async downloadSignatureFile(signatureFileUrl: string) {
+    const cached = this.signatures.get(signatureFileUrl);
+    if (cached !== undefined) return cached;
+
+    try {
+      const response = await fetch(signatureFileUrl, { signal: AbortSignal.timeout(SIGNATURE_TIMEOUT_MS) });
+      if (!response.ok) return null;
+
+      const signature = await response.text();
+      this.signatures.set(signatureFileUrl, signature);
+      return signature;
+    } catch {
       return null;
     }
-
-    return response.text();
   }
 }
 
