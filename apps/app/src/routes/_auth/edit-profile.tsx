@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createSignal, Show } from "solid-js";
 import * as v from "valibot";
 import IconCaretRight from "~icons/ph/caret-right-bold";
+import IconDevices from "~icons/ph/devices-bold";
 import IconLockKey from "~icons/ph/lock-key-bold";
 import IconPencil from "~icons/ph/pencil-simple-bold";
 import IconSignOut from "~icons/ph/sign-out-bold";
@@ -205,6 +206,14 @@ function EditProfileComponent() {
         >
           <IconLockKey class="text-xl text-white/60" />
           <span class="grow">{t("editProfile.changePassword")}</span>
+          <IconCaretRight class="text-white/40" />
+        </Link>
+        <Link
+          to="/devices"
+          class="flex min-h-14 items-center gap-3 rounded-[12px] bg-white/7 px-4 font-bold transition-colors hover:bg-white/10"
+        >
+          <IconDevices class="text-xl text-white/60" />
+          <span class="grow">{t("editProfile.devices")}</span>
           <IconCaretRight class="text-white/40" />
         </Link>
         <button

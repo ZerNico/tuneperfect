@@ -15,6 +15,7 @@ import { Route as AuthLobbyRouteImport } from './routes/_auth/_lobby'
 import { Route as AuthNoLobbyRouteImport } from './routes/_auth/_no-lobby'
 import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
 import { Route as AuthCompleteProfileRouteImport } from './routes/_auth/complete-profile'
+import { Route as AuthDevicesRouteImport } from './routes/_auth/devices'
 import { Route as AuthEditProfileRouteImport } from './routes/_auth/edit-profile'
 import { Route as NoAuthForgotPasswordRouteImport } from './routes/_no-auth/forgot-password'
 import { Route as NoAuthResetPasswordRouteImport } from './routes/_no-auth/reset-password'
@@ -54,6 +55,11 @@ const AuthChangePasswordRoute = AuthChangePasswordRouteImport.update({
 const AuthCompleteProfileRoute = AuthCompleteProfileRouteImport.update({
   id: '/complete-profile',
   path: '/complete-profile',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthDevicesRoute = AuthDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthEditProfileRoute = AuthEditProfileRouteImport.update({
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthLobbyIndexRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/complete-profile': typeof AuthCompleteProfileRoute
+  '/devices': typeof AuthDevicesRoute
   '/edit-profile': typeof AuthEditProfileRoute
   '/forgot-password': typeof NoAuthForgotPasswordRoute
   '/reset-password': typeof NoAuthResetPasswordRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthLobbyIndexRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/complete-profile': typeof AuthCompleteProfileRoute
+  '/devices': typeof AuthDevicesRoute
   '/edit-profile': typeof AuthEditProfileRoute
   '/forgot-password': typeof NoAuthForgotPasswordRoute
   '/reset-password': typeof NoAuthResetPasswordRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_auth/_no-lobby': typeof AuthNoLobbyRouteWithChildren
   '/_auth/change-password': typeof AuthChangePasswordRoute
   '/_auth/complete-profile': typeof AuthCompleteProfileRoute
+  '/_auth/devices': typeof AuthDevicesRoute
   '/_auth/edit-profile': typeof AuthEditProfileRoute
   '/_no-auth/forgot-password': typeof NoAuthForgotPasswordRoute
   '/_no-auth/reset-password': typeof NoAuthResetPasswordRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/complete-profile'
+    | '/devices'
     | '/edit-profile'
     | '/forgot-password'
     | '/reset-password'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/complete-profile'
+    | '/devices'
     | '/edit-profile'
     | '/forgot-password'
     | '/reset-password'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/_auth/_no-lobby'
     | '/_auth/change-password'
     | '/_auth/complete-profile'
+    | '/_auth/devices'
     | '/_auth/edit-profile'
     | '/_no-auth/forgot-password'
     | '/_no-auth/reset-password'
@@ -290,6 +302,13 @@ declare module '@tanstack/solid-router' {
       path: '/complete-profile'
       fullPath: '/complete-profile'
       preLoaderRoute: typeof AuthCompleteProfileRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/devices': {
+      id: '/_auth/devices'
+      path: '/devices'
+      fullPath: '/devices'
+      preLoaderRoute: typeof AuthDevicesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/edit-profile': {
@@ -439,6 +458,7 @@ interface AuthRouteChildren {
   AuthNoLobbyRoute: typeof AuthNoLobbyRouteWithChildren
   AuthChangePasswordRoute: typeof AuthChangePasswordRoute
   AuthCompleteProfileRoute: typeof AuthCompleteProfileRoute
+  AuthDevicesRoute: typeof AuthDevicesRoute
   AuthEditProfileRoute: typeof AuthEditProfileRoute
   AuthClubsIdRoute: typeof AuthClubsIdRoute
   AuthClubsIndexRoute: typeof AuthClubsIndexRoute
@@ -449,6 +469,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthNoLobbyRoute: AuthNoLobbyRouteWithChildren,
   AuthChangePasswordRoute: AuthChangePasswordRoute,
   AuthCompleteProfileRoute: AuthCompleteProfileRoute,
+  AuthDevicesRoute: AuthDevicesRoute,
   AuthEditProfileRoute: AuthEditProfileRoute,
   AuthClubsIdRoute: AuthClubsIdRoute,
   AuthClubsIndexRoute: AuthClubsIndexRoute,

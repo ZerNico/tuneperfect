@@ -7,6 +7,7 @@ import { logger } from "../lib/logger";
 import { userService } from "../user/service";
 import { cookieMaxAge, defaultCookieOptions } from "../utils/cookie";
 import { executeWithConstantTime, isValidRedirectUrl } from "../utils/security";
+import { requireUser } from "./middleware";
 import { oauthRouter } from "./oauth/router";
 import { authService } from "./service";
 
@@ -271,6 +272,34 @@ export const authRouter = os.prefix("/auth").router({
         });
       }
     }),
+
+  /** The signed-in user's logins (one per device or browser), to see where they're signed in. */
+  sessions: base.use(requireUser).handler(async ({ context }) => {
+    return await authService.listSessions(context.payload.sub, context.cookies?.get("refresh_token") ?? undefined);
+  }),
+
+  /** Signs out one other device. The current one signs out with `signOut`. */
+  revokeSession: base
+    .use(requireUser)
+    .errors({
+      NOT_FOUND: {
+        status: 404,
+      },
+    })
+    .input(v.object({ id: v.pipe(v.string(), v.uuid()) }))
+    .handler(async ({ context, input, errors }) => {
+      if (!(await authService.deleteSession(context.payload.sub, input.id))) {
+        throw errors.NOT_FOUND();
+      }
+    }),
+
+  /** Signs out every device but this one. */
+  revokeOtherSessions: base.use(requireUser).handler(async ({ context }) => {
+    const refreshToken = context.cookies?.get("refresh_token");
+    // Without this device's login nothing tells which one to keep, and ending all would sign this one out too
+    if (!refreshToken) return;
+    await authService.deleteAllRefreshTokensForUser(context.payload.sub, refreshToken);
+  }),
 
   signOut: base
     .route({

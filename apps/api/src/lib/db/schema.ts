@@ -40,6 +40,8 @@ export const refreshTokens = p.pgTable(
   "refresh_tokens",
   {
     token: p.text("token").primaryKey(),
+    // Names the login for its owner: the token itself changes on every refresh
+    id: p.uuid("id").notNull().defaultRandom().unique(),
     userId: p
       .uuid("user_id")
       .references(() => users.id, {
