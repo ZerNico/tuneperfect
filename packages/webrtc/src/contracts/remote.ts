@@ -7,8 +7,9 @@ import * as v from "valibot";
  * told and asks.
  *
  * Phones and games of different versions meet, so both sides must cope with the other knowing
- * more: a phone shows a fallback for a panel kind it doesn't know, and the game turns down an
- * action type it doesn't know. Only add new variants, never change existing ones.
+ * more: a phone shows a fallback for a panel kind it doesn't know, and an action type the game
+ * doesn't know fails its input validation (an error, not an `ActResult`), so phones treat a failed
+ * `act` like a turned down one. Only add new variants, never change existing ones.
  */
 
 /** Whether games answer `remote.*`; phones only offer the controller when `ping` lists it. */
@@ -27,7 +28,12 @@ const VersusPanelSchema = v.object({
   color: v.string(),
   jokers: v.number(),
   maxJokers: v.number(),
-  opponent: v.object({ name: v.string(), jokers: v.number() }),
+  opponent: v.object({
+    name: v.string(),
+    jokers: v.number(),
+    /** Their profile picture (an absolute URL or a path on the API), if they have one. */
+    image: v.optional(v.nullable(v.string())),
+  }),
   canReroll: v.boolean(),
   song: v.nullable(SongSchema),
 });

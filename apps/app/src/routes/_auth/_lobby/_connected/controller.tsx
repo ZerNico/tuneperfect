@@ -27,17 +27,28 @@ export const Route = createFileRoute("/_auth/_lobby/_connected/controller")({
 function ControllerComponent() {
   const remote = useRemote();
   const fullControl = () => remote.state()?.control === "full";
+  const hidden = (): ReadonlySet<NavAction> | undefined => {
+    const state = remote.state();
+    if (state?.extras?.songs) return SONG_STRIP_ACTIONS;
+    // The joker card has its own button for your joker. The other one stays, e.g. for an opponent without a phone.
+    if (state?.panel?.kind === "versus") return new Set([state.panel.slot === 0 ? "joker-1" : "joker-2"]);
+    return undefined;
+  };
 
   return (
     <main class="mx-auto flex w-full max-w-md grow flex-col gap-6 px-6 pt-4 pb-8">
       <PageHeader back={{ to: "/", label: t("lobby.title") }} title={t("remote.title")} />
 
-      <Show when={remote.supported()} fallback={<Notice title={t("remote.unsupported")} />}>
+      {/* Nothing until the game said, so "update the game" doesn't flash up first. */}
+      <Show when={remote.supported() === false}>
+        <Notice title={t("remote.unsupported")} />
+      </Show>
+      <Show when={remote.supported()}>
         {/* With full control the pad comes first and always sits in the same spot: whatever a screen
             adds goes below it, so nothing appearing or going away moves the buttons under a thumb. */}
         <Show when={fullControl()}>
           <NavPad
-            hidden={remote.state()?.extras?.songs ? SONG_STRIP_ACTIONS : undefined}
+            hidden={hidden()}
             // Where the pad is clumsy, the screen adds a few direct controls. On the song select the
             // search belongs to its strip.
             afterBack={

@@ -281,6 +281,7 @@ const de: Dict = {
     },
     versus: {
       spinning: "Song wird ausgewählt…",
+      jokersLabel: "Joker",
       mic: "Mikro {{ number }}",
       against: "gegen {{ name }}",
       jokers: "{{ count }} von {{ max }} Jokern übrig",
@@ -290,7 +291,7 @@ const de: Dict = {
     ticTacToe: {
       yourTurn: "Ihr seid dran. Wählt ein Feld",
       theirTurn: "Team {{ mark }} wählt ein Feld",
-      pick: "Dieses singen",
+      pick: "Diesen Song singen",
       taken: "Belegt",
       chooseSinger: "Wer singt für euer Team?",
       confirmSinger: "{{ name }} singt",

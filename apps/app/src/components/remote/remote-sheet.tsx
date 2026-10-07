@@ -5,7 +5,7 @@ import Sheet from "~/components/ui/sheet";
 import { t } from "~/lib/i18n";
 import { useRemote } from "~/lib/remote";
 
-import RemotePanel from "./remote-panel";
+import RemotePanel, { panelTitle } from "./remote-panel";
 
 /**
  * Brings up your controls from anywhere in the lobby when it becomes your move in the game (e.g.
@@ -36,8 +36,12 @@ export default function RemoteSheet() {
   });
 
   return (
-    <Sheet open={open() && !!panel()} onOpenChange={setOpen} title={t("remote.yourMove")}>
-      <Show when={panel()}>{(panel) => <RemotePanel panel={panel()} />}</Show>
+    <Sheet
+      open={open() && !!panel()}
+      onOpenChange={setOpen}
+      title={(panel() && panelTitle(panel()!)) ?? t("remote.yourMove")}
+    >
+      <Show when={panel()}>{(panel) => <RemotePanel panel={panel()} titled={false} />}</Show>
       <Link
         to="/controller"
         class="mt-3 flex h-12 items-center justify-center rounded-[12px] font-bold text-white/70 transition-colors hover:bg-white/8 hover:text-white"
