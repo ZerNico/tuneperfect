@@ -72,7 +72,7 @@ export function ConnectionState(props: {
     <div class="flex w-full max-w-sm flex-col items-center gap-3 text-center">
       <span
         class="mb-1 flex size-14 items-center justify-center rounded-[16px] text-3xl"
-        classList={{ "gradient-accent shadow-crisp": !props.failed, "bg-red-500/20 text-red-300": props.failed }}
+        classList={{ "gradient-accent": !props.failed, "bg-red-500/20 text-red-300": props.failed }}
       >
         <Dynamic component={props.icon} class={props.spinning ? "animate-spin" : undefined} />
       </span>

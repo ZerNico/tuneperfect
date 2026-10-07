@@ -508,7 +508,6 @@ function TurnBanner(props: { mark: Mark; color: string; subtitle: string }) {
       surface="overflow-hidden rounded-[1.4cqw] "
       surfaceStyle={{
         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
     >
       <MarkGlyph mark={props.mark} color={props.color} class="size-[5cqw] shrink-0" />
@@ -598,7 +597,6 @@ function MatchupBox(props: MatchupBoxProps) {
                   props.cursor === index()
                     ? {
                         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 700)})`,
-                        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
                       }
                     : undefined
                 }
@@ -624,7 +622,6 @@ function WinnerCard(props: { mark: Mark; color: string; team: Team }) {
       surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-yellow-300 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(160deg, ${getColorVar(props.color, 400)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
     >
       <div class="flex items-center gap-5">

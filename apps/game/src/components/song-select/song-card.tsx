@@ -39,8 +39,6 @@ interface SongCardProps extends CoverProps {
   emphasis?: number;
   /** Pointer cursor and press feedback; off for covers that can't be clicked. Defaults to true. */
   clickable?: boolean;
-  /** Soft drop shadow under the cover. Defaults to true. */
-  shadow?: boolean;
 }
 
 /** Cover in the coverflow. */
@@ -59,10 +57,7 @@ export function SongCard(props: SongCardProps) {
       {/* Emphasis changes every frame while scrolling, so it only moves and fades layers: a dark
           overlay instead of a brightness filter, a separate outline instead of recolouring one. */}
       <div class="relative h-full w-full" style={{ transform: `translateY(${-emphasis() * 0.6}cqw)` }}>
-        <div
-          class="relative h-full w-full overflow-hidden rounded-[1cqw] bg-black"
-          classList={{ "shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]": props.shadow !== false }}
-        >
+        <div class="relative h-full w-full overflow-hidden rounded-[1cqw] bg-black">
           <Cover coverUrl={props.coverUrl} title={props.title} lazy={props.lazy} />
           <div class="absolute inset-0 bg-black" style={{ opacity: 0.4 * (1 - emphasis()) }} />
         </div>
@@ -84,7 +79,7 @@ interface SongGridCardProps extends CoverProps {
 export function SongGridCard(props: SongGridCardProps) {
   return (
     <div
-      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-[translate,scale,filter] duration-200 ease-out active:scale-95"
+      class="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[1cqw] bg-black transition-[translate,scale,filter] duration-200 ease-out active:scale-95"
       classList={{
         "-translate-y-[0.4cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,
         "brightness-65": !props.selected,

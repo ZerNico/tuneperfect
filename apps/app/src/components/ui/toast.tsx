@@ -43,7 +43,7 @@ export default function Toast(props: ToastProps) {
       class="pointer-events-auto w-full data-[closed]:animate-hide data-[opened]:animate-slide-in data-[swipe=end]:animate-swipe-out data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)]"
     >
       <div
-        class="flex items-start gap-3 rounded-[16px] bg-black/75 p-3 pl-4 text-white ring-1 shadow-crisp ring-white/10 backdrop-blur-md ring-inset"
+        class="flex items-start gap-3 rounded-[16px] bg-black/75 p-3 pl-4 text-white ring-1 ring-white/10 backdrop-blur-md ring-inset"
         style={{
           "background-image": `radial-gradient(circle at 24px 24px, color-mix(in oklch, ${colors().tint} 28%, transparent), transparent 140px)`,
         }}

@@ -65,7 +65,7 @@ export default function PhraseRating() {
             />
           </Show>
           <div
-            class="relative overflow-hidden rounded-[0.8cqw] px-[1.4cqw] py-[0.5cqh] text-white shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]"
+            class="relative overflow-hidden rounded-[0.8cqw] px-[1.4cqw] py-[0.5cqh] text-white"
             classList={{
               "text-3xl": !isCompact(),
               "text-2xl": isCompact(),

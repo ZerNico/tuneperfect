@@ -101,7 +101,7 @@ function ClubsIndexComponent() {
             <button
               type="button"
               aria-label={t("clubs.create")}
-              class="gradient-accent flex size-11 cursor-pointer items-center justify-center rounded-[12px] text-xl shadow-crisp transition-transform active:scale-95"
+              class="gradient-accent flex size-11 cursor-pointer items-center justify-center rounded-[12px] text-xl transition-transform active:scale-95"
               onClick={() => setCreateClubDialog(true)}
             >
               <IconPlus />
@@ -206,7 +206,7 @@ function ClubsIndexComponent() {
 
       <Show when={clubsQuery.isSuccess && !clubsQuery.data?.length}>
         <div class="flex flex-col items-center gap-3 py-12 text-center">
-          <span class="gradient-accent flex size-16 items-center justify-center rounded-[18px] text-3xl shadow-crisp">
+          <span class="gradient-accent flex size-16 items-center justify-center rounded-[18px] text-3xl">
             <IconUsersThree />
           </span>
           <h2 class="mt-2 text-xl font-bold">{t("clubs.noClubs")}</h2>

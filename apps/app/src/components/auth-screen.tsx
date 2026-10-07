@@ -15,7 +15,7 @@ export default function AuthScreen(props: AuthScreenProps) {
     <main class="mx-auto flex w-full max-w-sm grow flex-col px-6 pt-6 pb-8">
       <Show when={props.icon}>
         {(icon) => (
-          <span class="gradient-accent mb-5 flex size-14 items-center justify-center rounded-[16px] text-3xl shadow-crisp">
+          <span class="gradient-accent mb-5 flex size-14 items-center justify-center rounded-[16px] text-3xl">
             <Dynamic component={icon()} />
           </span>
         )}

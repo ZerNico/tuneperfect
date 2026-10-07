@@ -180,7 +180,7 @@ function BrowseSongs() {
     >
       <Link
         to="/songs"
-        class="gradient-sing flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 shadow-crisp transition-transform active:scale-[0.98]"
+        class="gradient-sing flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
       >
         {content()}
       </Link>
@@ -197,7 +197,7 @@ function Controller() {
     <Show when={remote.supported()}>
       <Link
         to="/controller"
-        class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 shadow-crisp transition-transform active:scale-[0.98]"
+        class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
       >
         <span class="flex size-11 shrink-0 items-center justify-center rounded-[8px] bg-black/20 text-2xl">
           <IconGameController />

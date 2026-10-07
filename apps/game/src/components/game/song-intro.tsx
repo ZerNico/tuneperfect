@@ -60,7 +60,7 @@ export default function SongIntro(props: SongIntroProps) {
       <div class="relative flex h-full w-full items-center">
         <div class="relative flex min-h-[14cqw] w-full flex-col items-center justify-center gap-[1.2cqw] px-[4cqw] py-[2cqw]">
           <div
-            class={`absolute inset-0 origin-left animate-band-in bg-linear-to-r shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] [animation-delay:400ms] ${props.gradient}`}
+            class={`absolute inset-0 origin-left animate-band-in bg-linear-to-r [animation-delay:400ms] ${props.gradient}`}
           />
           <SlamText trigger={props.song.hash} class="relative text-2xl [animation-delay:500ms]">
             <TagChip

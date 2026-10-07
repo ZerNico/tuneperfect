@@ -250,7 +250,6 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
                   surfaceClassList={{
                     "bg-black/25": !active(),
                     "bg-white/20": active() && !column.mark,
-                    "shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]": active(),
                   }}
                   surfaceStyle={
                     active() && column.mark
