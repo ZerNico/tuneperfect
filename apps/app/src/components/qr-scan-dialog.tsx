@@ -16,8 +16,11 @@ const SCAN_INTERVAL_MS = 250;
 
 /** The lobby code from a scanned value: the game's join link (…/join/CODE) or a bare code. */
 function codeFromScan(value: string): string | null {
-  const pattern = new RegExp(`(?:/join/)?([A-Z0-9]{${LOBBY_CODE_LENGTH}})\\b`, "i");
-  return value.match(pattern)?.[1]?.toUpperCase() ?? null;
+  const code = `([A-Z0-9]{${LOBBY_CODE_LENGTH}})`;
+  // The link must match on /join/, otherwise the domain ("tuneperfect") reads as a code.
+  const match =
+    value.match(new RegExp(`/join/${code}(?![A-Z0-9])`, "i")) ?? value.trim().match(new RegExp(`^${code}$`, "i"));
+  return match?.[1]?.toUpperCase() ?? null;
 }
 
 interface QrScanDialogProps {
