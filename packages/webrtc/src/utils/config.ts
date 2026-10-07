@@ -28,6 +28,11 @@ export const WEBRTC_CONFIG = {
 
   channels: {
     gameRpc: "game-rpc",
+    /**
+     * Small, urgent calls (ping, remote control), so they don't wait behind song lists and covers on
+     * `gameRpc`. Phones only use it once the game lists `CONTROL_CHANNEL_FEATURE` in `ping`.
+     */
+    gameControl: "game-control",
   },
 } as const;
 

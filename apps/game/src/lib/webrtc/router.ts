@@ -1,5 +1,10 @@
 import { implement } from "@orpc/server";
-import { gameContract, REMOTE_FEATURE, type SongSummary } from "@tuneperfect/webrtc/contracts/game";
+import {
+  CONTROL_CHANNEL_FEATURE,
+  gameContract,
+  REMOTE_FEATURE,
+  type SongSummary,
+} from "@tuneperfect/webrtc/contracts/game";
 
 import { dispatchRemote, watchRemote } from "~/lib/remote";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -41,7 +46,7 @@ export const gameRouter = os.router({
   ping: os.ping.handler(async () => ({
     timestamp: Date.now(),
     libraryVersion: currentLibrary().version,
-    features: [REMOTE_FEATURE],
+    features: [REMOTE_FEATURE, CONTROL_CHANNEL_FEATURE],
   })),
 
   songs: {

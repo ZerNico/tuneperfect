@@ -52,8 +52,8 @@ src/
 
 ### How it connects
 
-1. **App** (guest, a phone) creates the `RTCPeerConnection` and the `game-rpc` DataChannel, sends the offer and calls the game with `rpc-link`
-2. **Game** (host) answers and serves `gameContract` on that channel with `rpc-handler`
+1. **App** (guest, a phone) creates the `RTCPeerConnection` and two DataChannels, `game-rpc` and `game-control`, sends the offer and calls the game with `rpc-link`
+2. **Game** (host) answers and serves `gameContract` on both channels with `rpc-handler`. Song lists and covers go over `game-rpc`; ping and remote control go over `game-control` (`apps/app/src/lib/webrtc/game-link.ts`), so they don't wait behind big replies. Phones only use `game-control` once `ping` lists `CONTROL_CHANNEL_FEATURE`: older games only serve `game-rpc`
 3. Signaling (offer/answer/ICE) goes through the API's signaling endpoints. Every signal of a phone's connection attempt carries the same `session` id, which the game echoes: signals of an older attempt are ignored, and a second offer with the same session is an ICE restart on the existing connection
 4. TURN credentials from the API expire after 24 h (for opening new relays). `createIceServerSource` refetches them after an hour, and both sides call `setIceServers` with fresh ones before an ICE restart
 5. The phone reconnects by itself (`apps/app/src/stores/connection.ts`): an ICE restart first when the connection is `disconnected`, a new connection when it failed, the heartbeat stopped answering or an offer got no answer within `connectionTimeout`
