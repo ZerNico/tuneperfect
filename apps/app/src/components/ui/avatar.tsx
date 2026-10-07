@@ -80,7 +80,7 @@ export default function Avatar(props: AvatarProps) {
         <img
           onError={() => setError(true)}
           src={pictureUrl()}
-          alt={props.user?.username || "Avatar"}
+          alt={props.user?.username ?? ""}
           class="col-start-1 row-start-1 block h-full w-full rounded-full object-cover"
           referrerPolicy="no-referrer"
         />

@@ -29,7 +29,7 @@ function LobbyLayout() {
   const remote = createRemote(gameConnection);
 
   return (
-    <GameConnectionProvider client={gameConnection}>
+    <GameConnectionProvider client={gameConnection.client}>
       <RemoteProvider remote={remote}>
         <Outlet />
         <RemoteSheet />

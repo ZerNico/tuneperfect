@@ -25,6 +25,8 @@ interface Attempt {
   connection: GuestConnection | null;
   /** The game echoed our session, so it knows how to restart ICE on this connection (older games don't). */
   hostCanRestartIce: boolean;
+  /** A signaling stream is feeding this attempt. It can end while connected (an API restart). */
+  listening: boolean;
   /** Running out means the attempt failed: no answer to an offer, or an ICE restart that didn't help. */
   timeout?: ReturnType<typeof setTimeout>;
   disconnectedTimer?: ReturnType<typeof setTimeout>;
@@ -101,6 +103,34 @@ function createConnectionStore() {
     }, delay);
   };
 
+  type SignalStream = Awaited<ReturnType<typeof orpcClient.signaling.subscribeAsGuest>>;
+
+  /** Feeds the game's answers and candidates into the attempt's connection until the stream ends. */
+  const listen = async (current: Attempt, stream: SignalStream) => {
+    current.listening = true;
+    try {
+      for await (const signal of stream) {
+        if (attempt !== current || !current.connection) break;
+        // An older attempt's late answer or candidates don't belong to this connection.
+        if (signal.session !== undefined && signal.session !== current.session) continue;
+
+        if (signal.type === "answer") {
+          if (signal.session === current.session) current.hostCanRestartIce = true;
+          await current.connection.setAnswer(signal.sdp);
+        } else if (signal.type === "ice-candidate") {
+          await current.connection.addIceCandidate(signal.candidate);
+        } else if (signal.type === "goodbye") {
+          console.log(`[WebRTC] Received goodbye: ${signal.reason ?? "unknown"}`);
+          endAttempt();
+          setStatus("failed");
+          return;
+        }
+      }
+    } finally {
+      current.listening = false;
+    }
+  };
+
   /** Finds a new network path for the current connection (e.g. after switching from Wi-Fi to mobile data). */
   const restartIce = async (current: Attempt) => {
     if (attempt !== current || !current.connection) return;
@@ -111,6 +141,15 @@ function createConnectionStore() {
     }
     try {
       startTimeout(current, "ICE restart timed out");
+      // The stream that brought the first answer may be gone by now: without one the restart's answer is lost
+      if (!current.listening) {
+        const stream = await orpcClient.signaling.subscribeAsGuest(undefined, { signal: current.abort.signal });
+        if (attempt !== current) return;
+        // oxlint-disable-next-line solid/reactivity -- a store callback, not a component
+        listen(current, stream).catch((err: unknown) => {
+          if (attempt === current) fail(current, err instanceof Error ? err.message : "Signaling failed");
+        });
+      }
       // The connection's TURN credentials may have expired since it was set up.
       const iceServers = await getIceServers();
       if (attempt !== current || !current.connection) return;
@@ -132,6 +171,7 @@ function createConnectionStore() {
       abort: new AbortController(),
       connection: null,
       hostCanRestartIce: false,
+      listening: false,
     };
     attempt = current;
     setStatus(reconnectAttempts() > 0 ? "reconnecting" : "connecting");
@@ -186,26 +226,10 @@ function createConnectionStore() {
       const offerSdp = await conn.createOffer();
       await send({ type: "offer", sdp: offerSdp, from: userId, session: current.session });
 
-      for await (const signal of iterator) {
-        if (attempt !== current) break;
-        // An older attempt's late answer or candidates don't belong to this connection.
-        if (signal.session !== undefined && signal.session !== current.session) continue;
-
-        if (signal.type === "answer") {
-          if (signal.session === current.session) current.hostCanRestartIce = true;
-          await conn.setAnswer(signal.sdp);
-        } else if (signal.type === "ice-candidate") {
-          await conn.addIceCandidate(signal.candidate);
-        } else if (signal.type === "goodbye") {
-          console.log(`[WebRTC] Received goodbye: ${signal.reason ?? "unknown"}`);
-          endAttempt();
-          setStatus("failed");
-          return;
-        }
-      }
+      await listen(current, iterator);
 
       // The signaling stream ended (an API restart or a proxy timeout). A working connection
-      // doesn't need it; one that isn't up yet won't get its answer.
+      // doesn't need it (an ICE restart subscribes again); one that isn't up yet won't get its answer.
       if (attempt === current && status() !== "connected") fail(current, "Signaling ended");
     } catch (err) {
       if (attempt !== current) return;

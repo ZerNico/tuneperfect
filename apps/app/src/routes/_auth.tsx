@@ -1,5 +1,5 @@
 import { createEventListener } from "@solid-primitives/event-listener";
-import { useQuery } from "@tanstack/solid-query";
+import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, on, onCleanup } from "solid-js";
 import * as v from "valibot";
@@ -36,9 +36,12 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const session = useQuery(() => sessionQueryOptions());
 
   createEventListener(window, "session:expired", () => {
+    // Otherwise sign-in finds the cached session and sends us straight back
+    queryClient.setQueryData(sessionQueryOptions().queryKey, null);
     navigate({ to: "/sign-in", search: { redirect: location.pathname } });
   });
 

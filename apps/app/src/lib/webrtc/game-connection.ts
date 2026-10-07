@@ -2,20 +2,31 @@ import { createORPCClient } from "@orpc/client";
 import { useQueryClient } from "@tanstack/solid-query";
 import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
 import { createHeartbeat, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { type Accessor, createEffect, createMemo, onCleanup } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 
 import { isSongListCurrent, songsQueryKey } from "~/lib/game-query";
 import { connectionStore } from "~/stores/connection";
 
 import { GameLink } from "./game-link";
 
+export interface GameConnection {
+  /** The RPC client for the game, or null while it isn't connected. */
+  client: Accessor<GameClient | null>;
+  /** What the connected game supports (see its `ping`); undefined until it answered, or while not connected. */
+  features: Accessor<readonly string[] | undefined>;
+}
+
 /**
- * The RPC client for the game over the lobby's WebRTC connection, or null while it isn't connected.
+ * The RPC client for the game over the lobby's WebRTC connection.
  * Keeps the connection alive with a heartbeat, which also tells when the game's library changed.
  * Create it once per lobby (the lobby layout does) so every lobby screen shares one link.
  */
-export function createGameConnection(): Accessor<GameClient | null> {
+export function createGameConnection(): GameConnection {
   const queryClient = useQueryClient();
+  const [features, setFeatures] = createSignal<readonly string[] | undefined>(undefined, {
+    // Every heartbeat reports them: only a real change should reach the screens
+    equals: (a, b) => a?.join() === b?.join(),
+  });
   let link: GameLink | null = null;
   /** The client the last heartbeat ran for, to tell a new connection from the page coming back. */
   let pingedClient: GameClient | null = null;
@@ -23,6 +34,7 @@ export function createGameConnection(): Accessor<GameClient | null> {
   const closeLink = () => {
     link?.close();
     link = null;
+    setFeatures(undefined);
   };
 
   const client = createMemo(() => {
@@ -32,7 +44,7 @@ export function createGameConnection(): Accessor<GameClient | null> {
       return null;
     }
 
-    link ??= new GameLink({ main: connection.gameRpcChannel, control: connection.gameControlChannel });
+    link ??= new GameLink({ main: connection.gameRpcChannel, control: connection.gameControlChannel }, setFeatures);
     return createORPCClient(link) as GameClient;
   });
 
@@ -75,5 +87,5 @@ export function createGameConnection(): Accessor<GameClient | null> {
 
   onCleanup(closeLink);
 
-  return client;
+  return { client, features };
 }

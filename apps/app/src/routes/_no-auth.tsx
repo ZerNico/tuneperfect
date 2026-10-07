@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_no-auth")({
   beforeLoad: async ({ context }) => {
     const [_error, session] = await tryCatch(context.queryClient.ensureQueryData(sessionQueryOptions()));
 
-    if (session !== null) {
+    if (session) {
       throw redirect({ to: "/" });
     }
   },

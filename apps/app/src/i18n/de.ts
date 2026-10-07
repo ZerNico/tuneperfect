@@ -130,6 +130,7 @@ const de: Dict = {
     title: "Spiel beitreten",
     description: "Gib den Code ein, der im Spiel angezeigt wird",
     lobbyNotFound: "Kein Spiel mit diesem Code. Prüfe den Code im Spiel.",
+    alreadyInLobby: "Du bist schon in einem Spiel. Verlasse es zuerst, um einem anderen beizutreten.",
     lobbyCode: "Lobby-Code",
     codeLength: "Der Code hat 8 Zeichen",
     join: "Beitreten",

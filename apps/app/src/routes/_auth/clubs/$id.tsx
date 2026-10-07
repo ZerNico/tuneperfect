@@ -155,7 +155,7 @@ function ClubDetailComponent() {
     client.club.removeMember.mutationOptions({
       onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
     }),
   );
@@ -164,7 +164,7 @@ function ClubDetailComponent() {
     client.club.transferOwnership.mutationOptions({
       onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
     }),
   );
@@ -172,8 +172,9 @@ function ClubDetailComponent() {
   const inviteMemberMutation = useMutation(() =>
     client.club.invite.mutationOptions({
       onSuccess: (_data, variables) => {
-        queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
         setDialog(null);
+        inviteForm.reset();
         notify({
           intent: "success",
           message: t("lobby.memberInvited", { username: variables.username, clubName: clubQuery.data?.name ?? "" }),
@@ -197,7 +198,7 @@ function ClubDetailComponent() {
     client.club.changeRole.mutationOptions({
       onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
       },
     }),
   );
@@ -216,7 +217,7 @@ function ClubDetailComponent() {
     client.club.updateClub.mutationOptions({
       onError: () => notify({ intent: "error", message: t("error.unknown") }),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["clubs", params().id] });
+        queryClient.invalidateQueries({ queryKey: client.club.key() });
         setDialog(null);
       },
     }),

@@ -200,18 +200,29 @@ const markLabel = (mark: "x" | "o") => mark.toUpperCase();
  * The game's cursor, or the one just tapped until the game's answer arrives: confirming right
  * after a tap picks what was tapped, not what the game showed a moment ago.
  */
-function createCursor(fromGame: () => number) {
+/**
+ * The highlighted entry: the one just tapped, until the game's cursor follows. If the game turns the
+ * tap down, its cursor stays where it was, so the highlight goes back there.
+ */
+function createCursor(fromGame: () => number, act: (index: number) => Promise<boolean>) {
   const [tapped, setTapped] = createSignal<number | null>(null);
   createEffect(on(fromGame, () => setTapped(null), { defer: true }));
   const cursor = () => tapped() ?? fromGame();
-  return [cursor, setTapped] as const;
+  const tap = async (index: number) => {
+    setTapped(index);
+    if (!(await act(index)) && tapped() === index) setTapped(null);
+  };
+  return [cursor, tap] as const;
 }
 
 function BoardPanel(props: { panel: PanelOf<"ticTacToe.board">; titled: boolean }) {
   const remote = useRemote();
   const client = useGameConnection();
   const yourTurn = () => props.panel.turn === props.panel.mark;
-  const [cursor, setCursor] = createCursor(() => props.panel.cursor);
+  const [cursor, tapCursor] = createCursor(
+    () => props.panel.cursor,
+    (cell) => remote.act({ type: "ticTacToe.cursor", cell }),
+  );
   const selected = createMemo(() => {
     const cell = props.panel.cells[cursor()];
     return cell && cell.owner === null ? cell.song : null;
@@ -237,10 +248,7 @@ function BoardPanel(props: { panel: PanelOf<"ticTacToe.board">; titled: boolean 
               disabled={!yourTurn() || cell().owner !== null}
               aria-label={cell().song?.title ?? t("remote.ticTacToe.taken")}
               aria-pressed={yourTurn() && cell().owner === null ? index === cursor() : undefined}
-              onClick={() => {
-                setCursor(index);
-                remote.act({ type: "ticTacToe.cursor", cell: index });
-              }}
+              onClick={() => void tapCursor(index)}
             >
               <Show when={cell().song}>
                 {(song) => <SongCover hash={song().hash} client={client()} class="absolute inset-0 size-full" />}
@@ -277,7 +285,10 @@ function BoardPanel(props: { panel: PanelOf<"ticTacToe.board">; titled: boolean 
 
 function SingerPanel(props: { panel: PanelOf<"ticTacToe.singer">; titled: boolean }) {
   const remote = useRemote();
-  const [cursor, setCursor] = createCursor(() => props.panel.cursor);
+  const [cursor, tapCursor] = createCursor(
+    () => props.panel.cursor,
+    (index) => remote.act({ type: "ticTacToe.singerCursor", index }),
+  );
   const chosen = () => props.panel.players[cursor()];
 
   return (
@@ -295,10 +306,7 @@ function SingerPanel(props: { panel: PanelOf<"ticTacToe.singer">; titled: boolea
               classList={{ "bg-white/8 hover:bg-white/12": index() !== cursor() }}
               style={index() === cursor() ? { "background-color": colorVar(props.panel.color, 600) } : undefined}
               aria-pressed={index() === cursor()}
-              onClick={() => {
-                setCursor(index());
-                remote.act({ type: "ticTacToe.singerCursor", index: index() });
-              }}
+              onClick={() => void tapCursor(index())}
             >
               {player.name}
             </button>

@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/client";
 import { queryOptions } from "@tanstack/solid-query";
 import { joinURL, withQuery } from "ufo";
 
@@ -11,7 +12,14 @@ export function sessionQueryOptions() {
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {
-      const [_error, session] = await tryCatch(client.user.getMe.call());
+      const [error, session] = await tryCatch(client.user.getMe.call());
+
+      // Only the API saying "not signed in" ends the session. A network error throws, so a page that
+      // already has the session keeps it instead of tearing down the game connection.
+      if (error) {
+        if (error instanceof ORPCError && error.status === 401) return null;
+        throw error;
+      }
 
       return session;
     },

@@ -1,4 +1,4 @@
-import type { Extras } from "@tuneperfect/webrtc/contracts/game";
+import { type Extras, TEXT_MAX_LENGTH } from "@tuneperfect/webrtc/contracts/game";
 import { createEffect, createSignal, For, type JSX, on, onCleanup, Show } from "solid-js";
 import IconCheck from "~icons/ph/check-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
@@ -73,7 +73,8 @@ export function TextExtraField(props: {
           placeholder={props.search ? props.text.label : undefined}
           class="min-w-0 grow bg-transparent text-white outline-none placeholder:text-white/40"
           value={value()}
-          maxLength={props.text.maxLength}
+          // The game's limit, but never more than an action may carry
+          maxLength={Math.min(props.text.maxLength ?? TEXT_MAX_LENGTH, TEXT_MAX_LENGTH)}
           autocomplete="off"
           enterkeyhint={props.search ? "search" : "done"}
           onFocus={() => {

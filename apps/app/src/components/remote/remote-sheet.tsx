@@ -16,19 +16,28 @@ export default function RemoteSheet() {
   const location = useLocation();
   const [open, setOpen] = createSignal(false);
 
-  const attention = () => remote.state()?.attention ?? false;
   const panel = () => remote.state()?.panel ?? null;
+  /** This move was announced already (or seen on the controller): don't pop up or vibrate for it again. */
+  let announced = false;
 
   createEffect(
-    on(attention, (attention, previous) => {
-      if (!attention) {
-        setOpen(false);
-        return;
-      }
-      if (previous || location().pathname === "/controller") return;
-      setOpen(true);
-      navigator.vibrate?.([40, 60, 40]);
-    }),
+    on(
+      () => remote.state()?.attention,
+      (attention) => {
+        // Not connected right now: a reconnect brings back the same move, which was announced already
+        if (attention === undefined) return;
+        if (!attention) {
+          announced = false;
+          setOpen(false);
+          return;
+        }
+        if (announced) return;
+        announced = true;
+        if (location().pathname === "/controller") return;
+        setOpen(true);
+        navigator.vibrate?.([40, 60, 40]);
+      },
+    ),
   );
   // Went to the controller: the same controls are right there.
   createEffect(() => {

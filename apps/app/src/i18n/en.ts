@@ -128,6 +128,7 @@ const en = {
     title: "Join a game",
     description: "Enter the code shown in the game",
     lobbyNotFound: "No game with this code. Check the code shown in the game.",
+    alreadyInLobby: "You are already in a game. Leave it first to join another one.",
     lobbyCode: "Lobby code",
     codeLength: "The code has 8 characters",
     join: "Join",

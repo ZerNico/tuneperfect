@@ -23,6 +23,8 @@ export function DialogProvider(props: { children: JSX.Element }) {
   let resolvePromise: ((value: boolean) => void) | null = null;
 
   const showDialog = (options: DialogOptions): Promise<boolean> => {
+    // A dialog opened over another one answers the first with "cancel", so nobody waits forever
+    resolvePromise?.(false);
     return new Promise((resolve) => {
       setDialogOptions(options);
       resolvePromise = resolve;
