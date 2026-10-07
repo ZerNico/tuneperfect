@@ -2,6 +2,10 @@ import QRCode from "qrcode";
 import { createMemo, For } from "solid-js";
 
 const FINDER_SIZE = 7;
+/** White margin around the code, as a share of its width in modules (about 9% of the card per side). */
+const MARGIN = 0.11;
+/** Corner radius as a share of the whole card. */
+const RADIUS = 0.07;
 
 interface QRCodeProps {
   value: string;
@@ -39,9 +43,15 @@ export default function QRCodeView(props: QRCodeProps) {
     };
   });
 
+  // The white card is drawn in the SVG, so its margin and corners scale with the code itself. CSS
+  // padding in % would follow the parent's width and differ between the home screen and the lobby.
+  const margin = () => matrix().size * MARGIN;
+  const total = () => matrix().size + 2 * margin();
+
   return (
-    <div class={`aspect-square rounded-[1cqw] bg-white p-[4.5%] ${props.class ?? ""}`}>
-      <svg viewBox={`0 0 ${matrix().size} ${matrix().size}`} class="block h-full w-full" aria-hidden="true">
+    <div class={`aspect-square ${props.class ?? ""}`}>
+      <svg viewBox={`${-margin()} ${-margin()} ${total()} ${total()}`} class="block h-full w-full" aria-hidden="true">
+        <rect x={-margin()} y={-margin()} width={total()} height={total()} rx={total() * RADIUS} fill="white" />
         <g fill="black">
           <For each={matrix().dots}>{(dot) => <circle cx={dot.col + 0.5} cy={dot.row + 0.5} r="0.45" />}</For>
           <For each={matrix().finders}>
