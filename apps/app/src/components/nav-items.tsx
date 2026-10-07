@@ -43,7 +43,7 @@ export default function NavItems(props: NavItemsProps) {
       to: "/edit-profile",
       label: () => t("nav.profile"),
       icon: IconUserCircle,
-      matches: (path) => path === "/edit-profile" || path === "/change-password",
+      matches: (path) => path === "/edit-profile" || path === "/change-password" || path === "/devices",
     },
   ];
 

@@ -214,17 +214,57 @@ class AuthService {
     await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, this.hashToken(refreshToken)));
   }
 
-  async deleteAllRefreshTokensForUser(userId: string, exceptToken?: string) {
-    if (exceptToken) {
-      await db
-        .delete(schema.refreshTokens)
-        .where(
-          and(eq(schema.refreshTokens.userId, userId), ne(schema.refreshTokens.token, this.hashToken(exceptToken))),
-        );
-      return;
-    }
+  /** The login a refresh token cookie belongs to; also right after a rotation, while the cookie may be the old one. */
+  private async findSession(userId: string, refreshToken: string) {
+    const hashedToken = this.hashToken(refreshToken);
+    return await db.query.refreshTokens.findFirst({
+      where: { userId, OR: [{ token: hashedToken }, { previousToken: hashedToken }] },
+      columns: { id: true },
+    });
+  }
 
-    await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.userId, userId));
+  /** Ends all of a user's logins, or all but the one `exceptToken` belongs to. */
+  async deleteAllRefreshTokensForUser(userId: string, exceptToken?: string) {
+    const current = exceptToken ? await this.findSession(userId, exceptToken) : undefined;
+
+    await db
+      .delete(schema.refreshTokens)
+      .where(
+        and(eq(schema.refreshTokens.userId, userId), current ? ne(schema.refreshTokens.id, current.id) : undefined),
+      );
+  }
+
+  /** A user's logins, the one `currentToken` belongs to first, then the most recently used. */
+  async listSessions(userId: string, currentToken?: string) {
+    const current = currentToken ? await this.findSession(userId, currentToken) : undefined;
+    const now = new Date();
+
+    const sessions = await db.query.refreshTokens.findMany({
+      where: { userId },
+      columns: { id: true, userAgent: true, createdAt: true, updatedAt: true, expires: true },
+    });
+
+    return sessions
+      .filter((session) => isAfter(session.expires, now))
+      .map((session) => ({
+        id: session.id,
+        userAgent: session.userAgent,
+        createdAt: session.createdAt,
+        // Every refresh (about every 5 minutes in use) touches the row
+        lastActiveAt: session.updatedAt,
+        current: session.id === current?.id,
+      }))
+      .toSorted((a, b) => Number(b.current) - Number(a.current) || b.lastActiveAt.getTime() - a.lastActiveAt.getTime());
+  }
+
+  /** Ends one of the user's logins. Returns whether there was one with that id. */
+  async deleteSession(userId: string, sessionId: string) {
+    const deleted = await db
+      .delete(schema.refreshTokens)
+      .where(and(eq(schema.refreshTokens.userId, userId), eq(schema.refreshTokens.id, sessionId)))
+      .returning({ id: schema.refreshTokens.id });
+
+    return deleted.length > 0;
   }
 
   async verifyAccessToken(accessToken: string) {
