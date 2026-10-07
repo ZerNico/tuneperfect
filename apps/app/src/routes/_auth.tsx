@@ -4,19 +4,23 @@ import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/solid-
 import { createEffect, createMemo, on, onCleanup } from "solid-js";
 import * as v from "valibot";
 
+import { OfflineErrorUI } from "~/components/connection-state";
 import { sessionQueryOptions } from "~/lib/auth";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { startConnection, stopConnection } from "~/stores/connection";
 
 export const Route = createFileRoute("/_auth")({
   component: AuthLayout,
+  errorComponent: OfflineErrorUI,
   validateSearch: v.object({
     redirect: v.optional(v.string()),
   }),
   beforeLoad: async ({ context, location, search }) => {
     const [error, session] = await tryCatch(context.queryClient.ensureQueryData(sessionQueryOptions()));
 
-    if (error || session === null) {
+    // Couldn't ask (offline, server trouble): not the same as signed out, so no trip to sign-in
+    if (error) throw error;
+    if (session === null) {
       throw redirect({ to: "/sign-in", search: { redirect: search.redirect ?? location.pathname } });
     }
 

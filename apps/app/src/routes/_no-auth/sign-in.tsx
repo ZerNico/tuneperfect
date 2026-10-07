@@ -38,11 +38,13 @@ function SignInComponent() {
 
   // Check for OAuth error on mount
   onMount(() => {
-    if (search().error === "unverified_email_exists") {
-      notify({
-        message: t("signIn.oauthUnverifiedEmailExists"),
-        intent: "error",
-      });
+    const message = {
+      unverified_email_exists: t("signIn.oauthUnverifiedEmailExists"),
+      oauth_cancelled: t("signIn.oauthCancelled"),
+      oauth_failed: t("signIn.oauthFailed"),
+    }[search().error ?? ""];
+    if (message) {
+      notify({ message, intent: "error" });
       // Clear the error from URL
       navigate({
         to: "/sign-in",

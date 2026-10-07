@@ -4,6 +4,7 @@ import { createSignal, untrack } from "solid-js";
 import { t } from "~/lib/i18n";
 import { orpcClient } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
+import { tryCatch } from "~/lib/utils/try-catch";
 import { createGuestConnection, type GuestConnection } from "~/lib/webrtc/guest-connection";
 import { getIceServers } from "~/lib/webrtc/ice-servers";
 
@@ -27,6 +28,8 @@ interface Attempt {
   hostCanRestartIce: boolean;
   /** A signaling stream is feeding this attempt. It can end while connected (an API restart). */
   listening: boolean;
+  /** The connection came up at least once: losing signaling then leaves recovery to the ICE restart. */
+  connectedOnce: boolean;
   /** Running out means the attempt failed: no answer to an offer, or an ICE restart that didn't help. */
   timeout?: ReturnType<typeof setTimeout>;
   disconnectedTimer?: ReturnType<typeof setTimeout>;
@@ -68,6 +71,7 @@ function createConnectionStore() {
     clearTimeout(current.disconnectedTimer);
     setError(null);
     setReconnectAttempts(0);
+    current.connectedOnce = true;
     setStatus("connected");
   };
 
@@ -145,10 +149,8 @@ function createConnectionStore() {
       if (!current.listening) {
         const stream = await orpcClient.signaling.subscribeAsGuest(undefined, { signal: current.abort.signal });
         if (attempt !== current) return;
-        // oxlint-disable-next-line solid/reactivity -- a store callback, not a component
-        listen(current, stream).catch((err: unknown) => {
-          if (attempt === current) fail(current, err instanceof Error ? err.message : "Signaling failed");
-        });
+        // If it breaks off, the restart's timeout decides; once recovered, the connection doesn't need it.
+        listen(current, stream).catch((err: unknown) => console.warn("[WebRTC] Signaling stream broke off:", err));
       }
       // The connection's TURN credentials may have expired since it was set up.
       const iceServers = await getIceServers();
@@ -172,6 +174,7 @@ function createConnectionStore() {
       connection: null,
       hostCanRestartIce: false,
       listening: false,
+      connectedOnce: false,
     };
     attempt = current;
     setStatus(reconnectAttempts() > 0 ? "reconnecting" : "connecting");
@@ -226,11 +229,14 @@ function createConnectionStore() {
       const offerSdp = await conn.createOffer();
       await send({ type: "offer", sdp: offerSdp, from: userId, session: current.session });
 
-      await listen(current, iterator);
+      const [streamError] = await tryCatch(listen(current, iterator));
 
-      // The signaling stream ended (an API restart or a proxy timeout). A working connection
-      // doesn't need it (an ICE restart subscribes again); one that isn't up yet won't get its answer.
-      if (attempt === current && status() !== "connected") fail(current, "Signaling ended");
+      // The signaling stream ended or broke off (an API restart, a proxy timeout, switching networks).
+      // A connection that came up doesn't need it: if it's in trouble too, its ICE restart subscribes
+      // again. One that never came up won't get its answer.
+      if (attempt !== current || current.connectedOnce) return;
+      if (streamError) throw streamError;
+      fail(current, "Signaling ended");
     } catch (err) {
       if (attempt !== current) return;
       console.error("[WebRTC] Connection error:", err);

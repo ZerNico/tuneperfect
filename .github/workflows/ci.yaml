@@ -87,7 +87,28 @@ jobs:
       - name: Check generated TypeScript types are up to date
         run: git diff --exit-code -- apps/game/src/lib/native/types.gen.ts
 
-      - name: Typecheck the Electron main process
+      - name: Typecheck the Electron main process and the renderer
         working-directory: apps/game
         # Needs the addon's generated type declarations.
-        run: bun run native:build && bunx tsc --noEmit -p electron/tsconfig.json
+        run: bun run native:build && bun run typecheck
+
+  typecheck-app:
+    name: App typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Vite builds without type checking, so this is the only place a type error shows up
+      - name: Typecheck
+        working-directory: apps/app
+        run: bunx tsc --noEmit
