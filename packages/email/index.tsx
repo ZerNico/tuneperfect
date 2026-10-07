@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 export { VerifyEmail } from "./emails/verify-email";
 
 import { render } from "@react-email/render";
