@@ -26,3 +26,14 @@ export async function locked<T>(client: BunSQL, lockId: number, callback: () => 
     reservedClient.release();
   }
 }
+
+/** Whether a query failed on a unique constraint (Postgres 23505), also when Drizzle wrapped the driver's error. */
+export function isUniqueViolation(error: unknown): boolean {
+  let current = error;
+  for (let depth = 0; current && depth < 5; depth++) {
+    const { errno, code } = current as { errno?: unknown; code?: unknown };
+    if (errno === "23505" || code === "23505") return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}

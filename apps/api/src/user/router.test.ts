@@ -50,6 +50,19 @@ describe("updateMe username", () => {
     );
   });
 
+  it("reports a name taken at the same moment as taken, not as a server error", async () => {
+    const user = makeUser();
+    spyOn(userService, "getUserByUsername").mockResolvedValue(undefined);
+    spyOn(userService, "updateUser").mockRejectedValue(
+      Object.assign(new Error("Failed query"), { cause: { errno: "23505" } }),
+    );
+
+    await expectORPCError(
+      call(userRouter.updateMe, { username: "racer" }, { context: await authedContext(user) }),
+      "USERNAME_ALREADY_TAKEN",
+    );
+  });
+
   it("allows keeping your own username", async () => {
     const user = makeUser({ username: "myname" });
     spyOn(userService, "getUserByUsername").mockResolvedValue(user);

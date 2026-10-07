@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 import { renderResetPassword, renderVerifyEmail } from "@tuneperfect/email";
 import { addDays, addHours, addMinutes, addSeconds, addYears, differenceInSeconds, isAfter, isBefore } from "date-fns";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, ne, or, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { joinURL, withQuery } from "ufo";
 import * as v from "valibot";
@@ -202,16 +202,25 @@ class AuthService {
       .where(eq(schema.refreshTokens.token, hashedToken))
       .returning({ token: schema.refreshTokens.token });
 
-    // A concurrent refresh rotated it between our read and write: that one's cookie wins
+    // Nothing matched: either a concurrent refresh rotated it first (its cookie wins), or the login was
+    // ended meanwhile (signed out, revoked from another device). Only the first may still get in.
     if (!rotated) {
-      return { token: undefined, expires: token.expires, user: token.user };
+      const replacedBy = await db.query.refreshTokens.findFirst({
+        where: { previousToken: hashedToken },
+        columns: { expires: true },
+      });
+      return replacedBy ? { token: undefined, expires: replacedBy.expires, user: token.user } : null;
     }
 
     return { token: newToken, expires: newExpires, user: token.user };
   }
 
+  /** Ends the login this cookie belongs to, also when a refresh just replaced the token in it. */
   async deleteRefreshToken(refreshToken: string) {
-    await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, this.hashToken(refreshToken)));
+    const hashedToken = this.hashToken(refreshToken);
+    await db
+      .delete(schema.refreshTokens)
+      .where(or(eq(schema.refreshTokens.token, hashedToken), eq(schema.refreshTokens.previousToken, hashedToken)));
   }
 
   /** The login a refresh token cookie belongs to; also right after a rotation, while the cookie may be the old one. */
@@ -244,17 +253,22 @@ class AuthService {
       columns: { id: true, userAgent: true, createdAt: true, updatedAt: true, expires: true },
     });
 
-    return sessions
-      .filter((session) => isAfter(session.expires, now))
-      .map((session) => ({
-        id: session.id,
-        userAgent: session.userAgent,
-        createdAt: session.createdAt,
-        // Every refresh (about every 5 minutes in use) touches the row
-        lastActiveAt: session.updatedAt,
-        current: session.id === current?.id,
-      }))
-      .toSorted((a, b) => Number(b.current) - Number(a.current) || b.lastActiveAt.getTime() - a.lastActiveAt.getTime());
+    return (
+      sessions
+        // The same limits a refresh enforces: past them the login is over, even if its row is still there
+        .filter((session) => isAfter(session.expires, now) && isAfter(addYears(session.createdAt, 1), now))
+        .map((session) => ({
+          id: session.id,
+          userAgent: session.userAgent,
+          createdAt: session.createdAt,
+          // Every refresh (about every 5 minutes in use) touches the row
+          lastActiveAt: session.updatedAt,
+          current: session.id === current?.id,
+        }))
+        .toSorted(
+          (a, b) => Number(b.current) - Number(a.current) || b.lastActiveAt.getTime() - a.lastActiveAt.getTime(),
+        )
+    );
   }
 
   /** Ends one of the user's logins. Returns whether there was one with that id. */

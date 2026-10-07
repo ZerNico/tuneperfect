@@ -5,6 +5,15 @@ export interface CsrfProtectionOptions {
   allowedOrigin: string | string[];
 }
 
+/**
+ * Answered from here rather than thrown: errors thrown in a root interceptor escape oRPC's error
+ * handling and reach Bun as a 500, so a blocked request would look like an outage.
+ */
+function forbidden(message: string) {
+  const error = new ORPCError("CSRF_PROTECTION_ERROR", { status: 403, message });
+  return { matched: true, response: { status: 403, headers: {}, body: error.toJSON() } } as const;
+}
+
 export class CsrfProtectionPlugin<T extends Context> implements StandardHandlerPlugin<T> {
   private readonly options: CsrfProtectionOptions;
 
@@ -28,10 +37,7 @@ export class CsrfProtectionPlugin<T extends Context> implements StandardHandlerP
 
       if (origin && typeof origin === "string") {
         if (!allowedOrigin.includes(origin)) {
-          throw new ORPCError("CSRF_PROTECTION_ERROR", {
-            status: 403,
-            message: "Origin not allowed",
-          });
+          return forbidden("Origin not allowed");
         }
 
         return options.next();
@@ -40,19 +46,13 @@ export class CsrfProtectionPlugin<T extends Context> implements StandardHandlerP
       if (referer && typeof referer === "string") {
         const origin = URL.parse(referer)?.origin;
         if (!origin || !allowedOrigin.includes(origin)) {
-          throw new ORPCError("CSRF_PROTECTION_ERROR", {
-            status: 403,
-            message: "Referer not allowed",
-          });
+          return forbidden("Referer not allowed");
         }
 
         return options.next();
       }
 
-      throw new ORPCError("CSRF_PROTECTION_ERROR", {
-        status: 403,
-        message: "No origin or referer header found",
-      });
+      return forbidden("No origin or referer header found");
     });
   }
 }
