@@ -127,7 +127,7 @@ export default function Board(props: BoardProps) {
       <Show when={props.result === "draw"}>
         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span
-            class="text-9xl text-display whitespace-nowrap text-yellow-300 [--display-shadow:var(--color-yellow-800)]"
+            class="text-9xl text-display whitespace-nowrap text-yellow-300"
             classList={{ "animate-stamp [animation-delay:200ms]": effectsEnabled() }}
           >
             {t("party.ticTacToe.drawStamp")}

@@ -85,9 +85,7 @@ export default function PhraseRating() {
                 }}
               />
             </Show>
-            <span class="relative inline-block font-black [text-shadow:0_0.06em_0_rgb(0_0_0/0.3)]">
-              {t(`game.phraseRating.${rating.tier}`)}
-            </span>
+            <span class="relative inline-block font-black">{t(`game.phraseRating.${rating.tier}`)}</span>
           </div>
           <Show when={rating.bonus}>
             <TagChip

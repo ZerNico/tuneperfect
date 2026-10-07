@@ -239,7 +239,7 @@ function PitchNote(props: PitchNoteProps) {
       }}
     >
       <div class="relative h-2/1 w-full -translate-y-1/4 transform">
-        {/* One outline and a short, unblurred drop shadow (a blurred one turns into a grey haze on light videos). */}
+        {/* One outline, no shadow (a blurred one turns into a grey haze on light videos). */}
         <div
           class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] transition-opacity duration-300"
           classList={{

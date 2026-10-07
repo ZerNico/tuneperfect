@@ -584,7 +584,7 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
               <div
                 class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 ${step.colors} ${step.height}`}
               >
-                <span class="text-6xl text-display text-white [--display-shadow:rgb(0_0_0/0.25)]">{step.place}</span>
+                <span class="text-6xl text-display text-white">{step.place}</span>
               </div>
             </div>
           )}
