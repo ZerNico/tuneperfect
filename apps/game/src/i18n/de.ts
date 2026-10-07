@@ -76,6 +76,7 @@ const de = {
     selectClub: "Club auswählen",
     noClub: "Kein Club",
     recreateLobby: "Lobby neu erstellen",
+    remoteControl: "Fernsteuerung",
   },
   select: {
     title: "Auswahl",
@@ -128,7 +129,7 @@ const de = {
       title: "Menü",
       showGrid: "Als Raster anzeigen",
       showCoverflow: "Als Coverflow anzeigen",
-      addToMedley: "Zu Medley hinzufügen",
+      addToMedley: "Zum Medley hinzufügen",
       startRandomMedley: "Zufälliges Medley starten",
       startMedley: "Medley starten",
       searchUsdb: "Auf USDB suchen",

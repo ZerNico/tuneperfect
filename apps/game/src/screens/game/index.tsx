@@ -71,19 +71,13 @@ export default function GameScreen() {
 
   useNavigation(() => ({
     layer: 0,
-    onKeydown: (event) => {
-      if (!started()) {
-        return;
-      }
-
-      if (event.action === "back") {
-        pause();
-      } else if (event.action === "skip") {
-        skip();
-      } else if (event.action === "instrumental") {
-        setPreferInstrumental((value) => !value);
-      }
-    },
+    actions: started()
+      ? {
+          back: pause,
+          skip,
+          instrumental: () => setPreferInstrumental((value) => !value),
+        }
+      : { back: null, skip: null, instrumental: null },
   }));
 
   createEffect(() => {

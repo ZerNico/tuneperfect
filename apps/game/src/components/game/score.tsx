@@ -95,12 +95,12 @@ export default function Score(props: ScoreProps) {
     <div class={props.class} classList={props.classList}>
       <p
         ref={scoreRef}
-        class="font-black tracking-[-0.01em] tabular-nums [text-shadow:0_0.15cqw_0_rgb(0_0_0/0.35)]"
+        class="font-black tracking-[-0.01em] tabular-nums"
         classList={{
           "text-5xl": !isCompact(),
           "text-3xl": isCompact(),
         }}
-        // Digits in the singer's colour; a short, unblurred shadow (no haze on light videos).
+        // Digits in the singer's colour.
         style={{ color: player.micColor(500) }}
       >
         {formatNumber(displayScore())}

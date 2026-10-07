@@ -471,27 +471,25 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
     () => ({ goToRandomSong, spinTo }),
   );
 
+  /** A step per press; held, the strip keeps scrolling until the key is released. */
+  const scrollKey = (direction: -1 | 1) => ({
+    down: () => stepBy(direction),
+    hold: () => {
+      holdDirection = direction;
+      snapTarget = null;
+      startAnimation();
+    },
+    up: () => {
+      holdDirection = 0;
+      velocity = 0;
+    },
+  });
+
   useNavigation({
     get enabled() {
       return props.interactive !== false;
     },
-    onKeydown(event) {
-      if (event.action === "left") stepBy(-1);
-      else if (event.action === "right") stepBy(1);
-    },
-    onHold(event) {
-      if (event.action === "left" || event.action === "right") {
-        holdDirection = event.action === "left" ? -1 : 1;
-        snapTarget = null;
-        startAnimation();
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "left" || event.action === "right") {
-        holdDirection = 0;
-        velocity = 0;
-      }
-    },
+    actions: { left: scrollKey(-1), right: scrollKey(1) },
   });
 
   onMount(() => {

@@ -6,6 +6,7 @@ import IconTrash from "~icons/ph/trash-bold";
 
 import { createClickOutside } from "~/hooks/click-outside";
 import { createListNavigation } from "~/hooks/list-navigation";
+import type { NavigationActions } from "~/hooks/navigation";
 import { DEFAULT_FILTERS, type SongFilters, type SongLike, type SongTypeFilter } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
@@ -155,25 +156,29 @@ export function FilterPopup(props: FilterPopupProps) {
       return rows().length;
     },
     layer: 1,
-    onKeydown(event) {
+    // What left, right and confirm do depends on the row.
+    get actions(): NavigationActions {
       const row = rows()[list.position()];
-      if (event.action === "back" || event.action === "filter") {
-        props.onClose();
-      } else if (event.action === "left") {
-        row?.onLeft?.();
-        if (row?.onLeft) playSound("select");
-      } else if (event.action === "right") {
-        row?.onRight?.();
-        if (row?.onRight) playSound("select");
-      } else if (event.action === "confirm") {
-        if (row?.kind === "clear") {
-          row.onConfirm?.();
-          playSound("confirm");
-        } else {
-          row?.onRight?.();
-          if (row?.onRight) playSound("select");
-        }
-      }
+      const left = row?.onLeft;
+      const right = row?.onRight;
+      const step = (change: () => void) => () => {
+        change();
+        playSound("select");
+      };
+      const confirm =
+        row?.kind === "clear"
+          ? () => {
+              row.onConfirm?.();
+              playSound("confirm");
+            }
+          : right && step(right);
+      return {
+        back: () => props.onClose(),
+        filter: () => props.onClose(),
+        left: left ? step(left) : null,
+        right: right ? step(right) : null,
+        confirm: confirm || null,
+      };
     },
   });
 

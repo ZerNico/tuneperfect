@@ -215,9 +215,9 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
   // Only left/right cycle the team; up/down stay with the Menu to move between players.
   useNavigation(() => ({
     enabled: props.selected,
-    onKeydown(event) {
-      if (event.action === "left") props.onCycle("left");
-      else if (event.action === "right") props.onCycle("right");
+    actions: {
+      left: () => props.onCycle("left"),
+      right: () => props.onCycle("right"),
     },
   }));
 
@@ -250,7 +250,6 @@ function TeamAssignmentRow(props: TeamAssignmentRowProps) {
                   surfaceClassList={{
                     "bg-black/25": !active(),
                     "bg-white/20": active() && !column.mark,
-                    "shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]": active(),
                   }}
                   surfaceStyle={
                     active() && column.mark

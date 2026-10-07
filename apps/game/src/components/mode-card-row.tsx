@@ -42,11 +42,11 @@ export default function ModeCardRow(props: ModeCardRowProps) {
     layer: 0,
     keys: ["left", "right"],
     onActivate: activate,
-    onKeydown(event) {
-      if (event.action === "back") {
+    actions: {
+      back: () => {
         props.onBack();
         playSound("confirm");
-      }
+      },
     },
   });
 

@@ -13,9 +13,9 @@ function DialogRoot(props: DialogProps) {
   return (
     <KDialog open onOpenChange={(open) => !open && props.onClose()}>
       <KDialog.Portal>
-        <KDialog.Overlay class="fixed inset-0 z-15 bg-black/60 backdrop-blur-sm" />
+        <KDialog.Overlay class="fixed inset-0 z-15 bg-black/35" />
         <div class="fixed inset-0 z-16 flex items-center justify-center">
-          <KDialog.Content class="m-4 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-auto rounded-[20px] surface-raised text-white">
+          <KDialog.Content class="m-4 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-auto rounded-[20px] surface-raised text-white outline-none">
             <div class="flex flex-col gap-4 p-6">
               <div class="flex items-center justify-between">
                 <KDialog.Title class="text-xl font-bold">{props.title}</KDialog.Title>

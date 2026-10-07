@@ -133,25 +133,30 @@ export default function SingScreen() {
     }
   };
 
-  // Library-only actions; search, filters, sort, random and confirm live in SongBrowser.
-  useNavigation({
-    onKeydown(event) {
-      if (event.action === "add-to-medley") {
-        addCurrentToMedley();
-      } else if (event.action === "start-random-medley") {
-        startRandomMedley();
-      }
+  // The medley list's selected entry, which removing by key takes out.
+  const [medleySelected, setMedleySelected] = createSignal(0);
+  const removeFromMedley = (index: number) => {
+    medleyStore.removeAt(index);
+    playSound("select");
+  };
+  const removeSelectedFromMedley = () => removeFromMedley(medleySelected());
+
+  // Library-only actions; search, filters, sort, random and confirm live in SongBrowser. Removing is
+  // here rather than in the medley list, so it's offered (disabled) before the medley has songs.
+  useNavigation(() => ({
+    actions: {
+      "add-to-medley": addCurrentToMedley,
+      "remove-from-medley": isMedley() ? removeSelectedFromMedley : null,
+      "start-random-medley": startRandomMedley,
     },
-  });
+  }));
 
   const medleyList = (alternativeNavigation: boolean) => (
     <Show when={isMedley()}>
       <MedleyList
         songs={medleyStore.songs()}
-        onRemove={(index) => {
-          medleyStore.removeAt(index);
-          playSound("select");
-        }}
+        onRemove={removeFromMedley}
+        onSelectedChange={setMedleySelected}
         onStart={startMedley}
         useAlternativeNavigation={alternativeNavigation}
       />

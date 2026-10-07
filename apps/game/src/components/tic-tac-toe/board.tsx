@@ -127,7 +127,7 @@ export default function Board(props: BoardProps) {
       <Show when={props.result === "draw"}>
         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span
-            class="text-9xl text-display whitespace-nowrap text-yellow-300 [--display-shadow:var(--color-yellow-800)]"
+            class="text-9xl text-display whitespace-nowrap text-yellow-300"
             classList={{ "animate-stamp [animation-delay:200ms]": effectsEnabled() }}
           >
             {t("party.ticTacToe.drawStamp")}
@@ -160,7 +160,7 @@ function BoardCell(props: BoardCellProps) {
       disabled={props.disabled}
       onClick={() => props.onClick()}
       onMouseEnter={() => props.onMouseEnter()}
-      class="relative block aspect-square w-full rounded-[1cqw] shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] transition-[scale,translate] duration-200"
+      class="relative block aspect-square w-full rounded-[1cqw] transition-[scale,translate] duration-200"
       classList={{
         "cursor-pointer active:scale-95": !props.disabled,
         "z-10 -translate-y-[0.3cqw] scale-106 outline-[0.22cqw] outline-white": props.selected,

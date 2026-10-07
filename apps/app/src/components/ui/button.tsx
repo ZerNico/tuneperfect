@@ -28,9 +28,9 @@ const button = cva({
       /** Quiet secondary action on the dark background. */
       primary: "bg-white/10 text-white hover:bg-white/15",
       /** The screen's main action, in the section's colours. */
-      gradient: "gradient-accent text-white shadow-crisp hover:opacity-90",
-      danger: "bg-red-500 text-white shadow-crisp hover:bg-red-600",
-      white: "bg-white text-slate-900 shadow-crisp hover:bg-slate-100",
+      gradient: "gradient-accent text-white hover:opacity-90",
+      danger: "bg-red-500 text-white hover:bg-red-600",
+      white: "bg-white text-slate-900 hover:bg-slate-100",
     },
   },
   defaultVariants: {

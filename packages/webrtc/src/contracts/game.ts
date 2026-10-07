@@ -2,6 +2,10 @@ import type { ContractRouterClient, InferContractRouterOutputs } from "@orpc/con
 import { oc } from "@orpc/contract";
 import * as v from "valibot";
 
+import { remoteContract } from "./remote";
+
+export * from "./remote";
+
 export const SongSummarySchema = v.object({
   hash: v.string(),
   title: v.string(),
@@ -29,6 +33,8 @@ export const pingContract = oc.output(
      * it changed. Optional: older games don't send it.
      */
     libraryVersion: v.optional(v.string()),
+    /** What else this game answers, e.g. `REMOTE_FEATURE`. Optional: older games don't send it. */
+    features: v.optional(v.array(v.string())),
   }),
 );
 
@@ -38,6 +44,8 @@ export const gameContract = {
     list: listSongsContract,
     cover: songCoverContract,
   },
+  /** Only games listing `REMOTE_FEATURE` in `ping` answer these. */
+  remote: remoteContract,
 };
 
 export type GameContract = typeof gameContract;

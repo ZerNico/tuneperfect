@@ -33,7 +33,7 @@ export default function LobbyScreen() {
       cards.push({
         id: `online-${user.id}`,
         label: user.username ?? t("lobby.unknownPlayer"),
-        subtitle: t("lobby.online"),
+        subtitle: lobbyStore.remoteControlIds().includes(user.id) ? t("lobby.remoteControl") : t("lobby.online"),
         visual: <Avatar user={user} class="size-[6cqw] text-[2.5cqw]" />,
         accent: "yellow",
         action: () => navigate({ to: "/lobby/$id", params: { id: user.id } }),

@@ -14,7 +14,7 @@ import {
   serializeResponseMessage,
 } from "@orpc/standard-server-peer";
 
-import { onDataChannelClose, onDataChannelMessage, postDataChannelMessage } from "./data-channel";
+import { onDataChannelClose, onDataChannelMessage, postDataChannelMessage, whenDrained } from "./data-channel";
 
 export type DataChannelHandlerErrorCallback = (error: Error, requestId?: string | number) => void;
 
@@ -77,6 +77,8 @@ export class DataChannelHandler<T extends Context> {
       const idKey = String(id);
       const useSerialized = requestFormats.get(idKey) ?? false;
       if (isLastMessage(type, payload)) requestFormats.delete(idKey);
+      // A stream's next event is only pulled once this one is out, so its source can collapse what changed meanwhile.
+      await whenDrained(channel);
 
       if (useSerialized) {
         postDataChannelMessage(

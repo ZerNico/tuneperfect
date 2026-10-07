@@ -52,14 +52,11 @@ const SPARKLES = [
 /** One player's result: name line, a score bar that fills like a race, and stats. */
 export default function ScoreLane(props: ScoreLaneProps) {
   const animate = () => !props.instant && effectsEnabled();
-  const color = (shade: 400 | 700 | 900) => getColorVar(props.result.micColor, shade);
+  const color = (shade: 400 | 700) => getColorVar(props.result.micColor, shade);
   const fill = () => (props.maxScore > 0 ? (props.shownScore / props.maxScore) * 100 : 0);
 
   const scoreText = () => (
-    <span
-      class={`inline-block leading-none text-display tabular-nums ${SCORE_TEXT[props.size]}`}
-      style={{ "--display-shadow": color(900) }}
-    >
+    <span class={`inline-block leading-none text-display tabular-nums ${SCORE_TEXT[props.size]}`}>
       {formatNumber(Math.floor(props.shownScore))}
     </span>
   );

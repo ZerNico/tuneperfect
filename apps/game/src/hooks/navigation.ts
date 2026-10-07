@@ -10,17 +10,43 @@ import { createGamepad, type GamepadButton } from "./gamepad";
 
 export const [keyMode, setKeyMode] = createSignal<"gamepad" | "keyboard">("keyboard");
 
+export type NavigationHandler = (event: NavigationEvent) => void;
+
+/** A function runs on key down; the object form reacts to other phases of a press too. */
+export type ActionHandler =
+  | NavigationHandler
+  | {
+      down?: NavigationHandler;
+      /** This and the ones below only for presses whose key down this listener got too. */
+      up?: NavigationHandler;
+      /** Once, after the key has been held for a moment. */
+      hold?: NavigationHandler;
+      /** Repeatedly while the key stays held, after `hold`. */
+      repeat?: NavigationHandler;
+      /**
+       * Instead of `up` when a press ends without being released (the window lost focus, a phone
+       * went away): undo what `down` started, without doing what a release would.
+       */
+      cancel?: NavigationHandler;
+    };
+
+/** Null: the screen has this action, but it does nothing right now (e.g. removing from an empty medley). */
+export type NavigationActions = Partial<Record<Action, ActionHandler | null>>;
+
 interface UseNavigationOptions {
   layer?: number | false;
   enabled?: boolean;
-  onKeydown?: (event: NavigationEvent) => void;
-  onKeyup?: (event: NavigationEvent) => void;
-  onHold?: (event: NavigationEvent) => void;
-  onRepeat?: (event: NavigationEvent) => void;
+  /**
+   * What this listener does per action. Only the actions listed count as handled: they're what the
+   * screen offers right now (see `activeActions`), so build the map from the current state rather
+   * than ignoring actions inside a handler. List one that only works at times as null meanwhile, so
+   * phones show it disabled instead of rearranging their buttons.
+   */
+  actions: NavigationActions;
 }
 
 export type NavigationEvent = {
-  origin: "gamepad" | "keyboard";
+  origin: "gamepad" | "keyboard" | "remote";
   originalKey: string;
   modifiers?: string[];
   action:
@@ -54,7 +80,9 @@ export type NavigationEvent = {
     | "unknown";
 };
 
-const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
+export type Action = NavigationEvent["action"];
+
+const KEY_MAPPINGS = new Map<string, Action[]>([
   ["ArrowLeft", ["left"]],
   ["ArrowRight", ["right"]],
   ["ArrowUp", ["up"]],
@@ -81,7 +109,7 @@ const KEY_MAPPINGS = new Map<string, NavigationEvent["action"][]>([
   ["PageDown", ["medley-down"]],
 ]);
 
-const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
+const GAMEPAD_MAPPINGS = new Map<GamepadButton, Action[]>([
   ["DPAD_LEFT", ["left"]],
   ["DPAD_RIGHT", ["right"]],
   ["DPAD_UP", ["up"]],
@@ -98,7 +126,12 @@ const GAMEPAD_MAPPINGS = new Map<GamepadButton, NavigationEvent["action"][]>([
   ["RT", ["add-to-medley"]],
 ]);
 
-const getAxisAction = (button: GamepadButton, direction: number): NavigationEvent["action"] | undefined => {
+/** How long a phone's tap counts as held: long enough for press feedback, short of a hold. */
+const REMOTE_TAP_MS = 80;
+/** A phone's button held longer than this is let go: its release got lost (the phone went away). */
+const REMOTE_HOLD_MAX_MS = 10_000;
+
+const getAxisAction = (button: GamepadButton, direction: number): Action | undefined => {
   switch (button) {
     case "L_AXIS_X":
       return direction > 0 ? "right" : "left";
@@ -141,6 +174,7 @@ type Events = {
   keyup: Emitted;
   hold: Emitted;
   repeat: Emitted;
+  cancel: Emitted;
 };
 
 /** A key, button or stick direction that is held down, with the actions it had when it went down. */
@@ -149,13 +183,13 @@ interface Press {
   origin: NavigationEvent["origin"];
   originalKey: string;
   modifiers?: string[];
-  actions: NavigationEvent["action"][];
+  actions: Action[];
   holdTimeout: number;
   repeatInterval?: number;
 }
 
 const emitter = mitt<Events>();
-/** Held inputs by source: `key:<code>`, `pad:<gamepad>:<button>` or `axis:<gamepad>:<axis>`. */
+/** Held inputs by source: `key:<code>`, `pad:<gamepad>:<button>`, `axis:<gamepad>:<axis>` or `remote:<user>:<action>`. */
 const presses = new Map<string, Press>();
 const liveSerials = new Set<number>();
 let nextSerial = 0;
@@ -171,7 +205,7 @@ const emit = (type: keyof Events, press: Press) => {
   }
 };
 
-/** Forgets a press without a keyup, e.g. when the window loses focus mid-press. */
+/** Forgets a press without telling listeners. */
 const drop = (id: string) => {
   const press = presses.get(id);
   if (!press) return;
@@ -205,9 +239,17 @@ const release = (id: string) => {
   emit("keyup", state);
 };
 
-const dropWhere = (predicate: (id: string, press: Press) => boolean) => {
+/** Ends a press without a keyup, e.g. when the window loses focus mid-press: nothing activates. */
+const cancel = (id: string) => {
+  const state = presses.get(id);
+  if (!state) return;
+  drop(id);
+  emit("cancel", state);
+};
+
+const cancelWhere = (predicate: (id: string, press: Press) => boolean) => {
   for (const [id, state] of presses) {
-    if (predicate(id, state)) drop(id);
+    if (predicate(id, state)) cancel(id);
   }
 };
 
@@ -247,7 +289,7 @@ createRoot(() => {
   });
 
   // Keyups are lost while the window is in the background.
-  createEventListener(window, "blur", () => dropWhere((id) => id.startsWith("key:")));
+  createEventListener(window, "blur", () => cancelWhere((id) => id.startsWith("key:")));
 
   createGamepad({
     onButtonDown: (event) => {
@@ -275,12 +317,84 @@ createRoot(() => {
       release(`axis:${event.gamepadId}:${event.button}`);
     },
     onDisconnect: (gamepadId) => {
-      dropWhere((id) => id.startsWith(`pad:${gamepadId}:`) || id.startsWith(`axis:${gamepadId}:`));
+      cancelWhere((id) => id.startsWith(`pad:${gamepadId}:`) || id.startsWith(`axis:${gamepadId}:`));
     },
   });
 });
 
+const remoteReleaseTimers = new Map<string, number>();
+
+/**
+ * A button on a phone with full control (see `lib/remote`), going down, up, or both (a tap). It
+ * behaves like a key: held, it repeats, and everything reacting on key up works the same. Doesn't
+ * change `keyMode`: the key hints stay on what's used at the game itself.
+ */
+export function pressRemote(userId: string, action: Action, state: "down" | "up" | "tap") {
+  const id = `remote:${userId}:${action}`;
+  window.clearTimeout(remoteReleaseTimers.get(id));
+  remoteReleaseTimers.delete(id);
+
+  if (state === "up") {
+    release(id);
+    return;
+  }
+  press(id, { origin: "remote", originalKey: action, actions: [action] });
+  remoteReleaseTimers.set(
+    id,
+    window.setTimeout(
+      () => {
+        remoteReleaseTimers.delete(id);
+        // A tap ends like a key going up. A hold this long lost its release: nothing activates.
+        if (state === "tap") release(id);
+        else cancel(id);
+      },
+      state === "tap" ? REMOTE_TAP_MS : REMOTE_HOLD_MAX_MS,
+    ),
+  );
+}
+
+/**
+ * Lets go of everything a phone holds down without activating anything, e.g. when it stops
+ * listening or loses full control: its finger didn't come off the button.
+ */
+export function cancelRemote(userId: string) {
+  const prefix = `remote:${userId}:`;
+  for (const id of presses.keys()) {
+    if (!id.startsWith(prefix)) continue;
+    window.clearTimeout(remoteReleaseTimers.get(id));
+    remoteReleaseTimers.delete(id);
+    cancel(id);
+  }
+}
+
 const layerInstances = new ReactiveMap<number, number>();
+
+/** The layer that gets input now (a popup's is above its screen's); 0 when nothing listens. */
+export const topLayer = createRoot(() =>
+  createMemo(() => (layerInstances.size > 0 ? Math.max(...layerInstances.keys()) : 0)),
+);
+/** The actions of every listener that currently gets input, by listener: whether each does something now. */
+const activeActionLists = new ReactiveMap<object, [Action, boolean][]>();
+
+/**
+ * What the current screen offers: the actions of the top layer's listeners (and layer-less ones),
+ * true for those that do something right now.
+ */
+export const activeActions = createRoot(() =>
+  createMemo(
+    () => {
+      const actions = new Map<Action, boolean>();
+      for (const list of activeActionLists.values()) {
+        for (const [action, enabled] of list) actions.set(action, enabled || (actions.get(action) ?? false));
+      }
+      return actions;
+    },
+    undefined,
+    {
+      equals: (a, b) => a.size === b.size && [...a].every(([action, enabled]) => b.get(action) === enabled),
+    },
+  ),
+);
 
 export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
   createEffect(
@@ -324,31 +438,56 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
 
     const opts = access(options);
     if (opts?.enabled === false) return;
+    const actions = opts.actions;
+
+    const registration = {};
+    activeActionLists.set(
+      registration,
+      (Object.keys(actions) as Action[]).map((action) => [action, actions[action] != null]),
+    );
+    onCleanup(() => activeActionLists.delete(registration));
+
+    const phase = (action: Action, name: "down" | "up" | "hold" | "repeat" | "cancel") => {
+      const handler = actions[action];
+      if (typeof handler === "function") return name === "down" ? handler : undefined;
+      return handler?.[name];
+    };
 
     const handleKeydown = ({ serial, event }: Emitted) => {
+      if (actions[event.action] == null) return;
       // Forget keydowns whose keyup this instance missed while it was inactive.
       for (const key of received) {
         if (!liveSerials.has(Number.parseInt(key, 10))) received.delete(key);
       }
       received.add(`${serial}:${event.action}`);
-      opts?.onKeydown?.(event);
+      phase(event.action, "down")?.(event);
     };
     const handleKeyup = ({ serial, event }: Emitted) => {
-      if (received.delete(`${serial}:${event.action}`)) opts?.onKeyup?.(event);
+      if (received.delete(`${serial}:${event.action}`)) phase(event.action, "up")?.(event);
     };
-    const handleHold = ({ event }: Emitted) => opts?.onHold?.(event);
-    const handleRepeat = ({ event }: Emitted) => opts?.onRepeat?.(event);
+    const handleCancel = ({ serial, event }: Emitted) => {
+      if (received.delete(`${serial}:${event.action}`)) phase(event.action, "cancel")?.(event);
+    };
+    // Like keyups, only for presses that went down here: a popup opening mid-hold doesn't scroll.
+    const handleHold = ({ serial, event }: Emitted) => {
+      if (received.has(`${serial}:${event.action}`)) phase(event.action, "hold")?.(event);
+    };
+    const handleRepeat = ({ serial, event }: Emitted) => {
+      if (received.has(`${serial}:${event.action}`)) phase(event.action, "repeat")?.(event);
+    };
 
     emitter.on("keydown", handleKeydown);
     emitter.on("keyup", handleKeyup);
     emitter.on("hold", handleHold);
     emitter.on("repeat", handleRepeat);
+    emitter.on("cancel", handleCancel);
 
     onCleanup(() => {
       emitter.off("keydown", handleKeydown);
       emitter.off("keyup", handleKeyup);
       emitter.off("hold", handleHold);
       emitter.off("repeat", handleRepeat);
+      emitter.off("cancel", handleCancel);
     });
   });
 }

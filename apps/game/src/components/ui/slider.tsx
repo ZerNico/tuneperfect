@@ -62,19 +62,9 @@ export default function Slider(props: SliderProps) {
   useNavigation(() => ({
     layer: props.layer,
     enabled: props.selected || false,
-    onKeydown: (event) => {
-      if (event.action === "left") {
-        changeValue("left");
-      } else if (event.action === "right") {
-        changeValue("right");
-      }
-    },
-    onRepeat: (event) => {
-      if (event.action === "left") {
-        changeValue("left", props.step * 5);
-      } else if (event.action === "right") {
-        changeValue("right", props.step * 5);
-      }
+    actions: {
+      left: { down: () => changeValue("left"), repeat: () => changeValue("left", props.step * 5) },
+      right: { down: () => changeValue("right"), repeat: () => changeValue("right", props.step * 5) },
     },
   }));
 
@@ -110,7 +100,7 @@ export default function Slider(props: SliderProps) {
           {/* The value is the handle and rides along the track. */}
           <span class="pointer-events-none relative col-start-1 row-start-1 h-0">
             <span
-              class="absolute top-1/2 -translate-1/2 rounded-[0.4cqw] bg-white px-[0.6cqw] py-[0.45cqw] text-base font-black whitespace-nowrap text-slate-900 tabular-nums shadow-[0_0.15cqw_0_rgb(0_0_0/0.25)] [text-box:trim-both_cap_alphabetic]"
+              class="absolute top-1/2 -translate-1/2 rounded-[0.4cqw] bg-white px-[0.6cqw] py-[0.45cqw] text-base font-black whitespace-nowrap text-slate-900 tabular-nums [text-box:trim-both_cap_alphabetic]"
               classList={{ "transition-[left] duration-100": !dragging() }}
               style={{ left: `${percentage()}%` }}
             >

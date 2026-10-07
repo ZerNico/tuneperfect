@@ -113,6 +113,13 @@ resources/icons/          # App icons for electron-builder
 - Contracts defined in `@tuneperfect/webrtc` package
 - Signaling and per-phone connections: `src/stores/webrtc.tsx`. Phones send the offer; each attempt has a `session` id that the game echoes, and a second offer with the same session is an ICE restart on the existing connection (see `packages/webrtc/AGENTS.md`)
 - Released games must keep working with the deployed phone app and API: new signal or contract fields stay optional
+- Phones controlling the game: `src/lib/remote`. A screen offers phone controls with `useRemoteSurface` (a panel per user plus its actions, see `remoteContract`); players with full control (lobby toggle) press the game's own buttons
+
+### Input
+
+- Keyboard, gamepad and phone presses all become navigation actions (`src/hooks/navigation.ts`)
+- Listen with `useNavigation({ layer, actions: { back: onBack, left: { down, repeat } } })`: a map of the actions the screen handles, built from the current state (leave an action out rather than ignoring it in its handler). The map is what phones with full control are offered, so it must match what the screen really does
+- Lists and grids: `createListNavigation` (moving and confirm), with extra `actions` merged in
 
 ## Key Files
 

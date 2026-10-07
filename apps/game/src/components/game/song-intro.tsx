@@ -17,7 +17,7 @@ interface SongIntroProps {
   started: boolean;
   /** The mode gradient (e.g. "gradient-sing"), as on the rest of the mode's screens. */
   gradient: string;
-  /** Palette name for the darker accents (chip segment, title shadow), e.g. "teal". */
+  /** Palette name for the darker accent (chip segment), e.g. "teal". */
   accentColor: string;
 }
 
@@ -56,11 +56,11 @@ export default function SongIntro(props: SongIntroProps) {
         style={{ "--fx-color": "white", "mask-image": "linear-gradient(to top, black, transparent 50%)" }}
       />
       {/* The chip sits above the title on the band, like always. The band keeps its height for a one-line title and
-          grows when a long one wraps. The title's bottom padding keeps its drop shadow inside the line clamp. */}
+          grows when a long one wraps. The title's bottom padding keeps its descenders inside the line clamp. */}
       <div class="relative flex h-full w-full items-center">
         <div class="relative flex min-h-[14cqw] w-full flex-col items-center justify-center gap-[1.2cqw] px-[4cqw] py-[2cqw]">
           <div
-            class={`absolute inset-0 origin-left animate-band-in bg-linear-to-r shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] [animation-delay:400ms] ${props.gradient}`}
+            class={`absolute inset-0 origin-left animate-band-in bg-linear-to-r [animation-delay:400ms] ${props.gradient}`}
           />
           <SlamText trigger={props.song.hash} class="relative text-2xl [animation-delay:500ms]">
             <TagChip
@@ -72,7 +72,6 @@ export default function SongIntro(props: SongIntroProps) {
           <SlamText
             trigger={props.song.hash}
             class={`relative line-clamp-2 max-w-320 pb-[0.08em] text-center leading-[1.1] text-display text-balance text-white [animation-delay:650ms] ${titleSize(props.song.title)}`}
-            style={{ "--display-shadow": getColorVar(props.accentColor, 900) }}
           >
             {props.song.title}
           </SlamText>

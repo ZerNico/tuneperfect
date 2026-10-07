@@ -56,9 +56,7 @@ export default function CardGrid(props: CardGridProps) {
     // Centred: at the start and end this clamps, so the padding (room for the enlarged card) stays visible.
     scrollBlock: "center",
     onActivate: activate,
-    onKeydown(event) {
-      if (event.action === "back") props.onBack();
-    },
+    actions: { back: () => props.onBack() },
   });
 
   return (

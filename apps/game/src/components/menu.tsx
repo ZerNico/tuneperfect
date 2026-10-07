@@ -104,11 +104,16 @@ export default function Menu(props: MenuProps) {
     get layer() {
       return props.layer;
     },
-    onKeydown(event) {
-      if (event.action === "back") {
-        props.onBack?.();
-        playSound("confirm");
-      }
+    get actions() {
+      const onBack = props.onBack;
+      return onBack
+        ? {
+            back: () => {
+              onBack();
+              playSound("confirm");
+            },
+          }
+        : {};
     },
   });
 
@@ -183,7 +188,7 @@ export default function Menu(props: MenuProps) {
                       label={item().label}
                       value={item().value()}
                       placeholder={item().placeholder}
-                      onInput={(e) => item().onInput(e.currentTarget.value)}
+                      onValue={(value) => item().onInput(value)}
                       selected={isSelected(index)}
                       onMouseEnter={() => select(index)}
                       maxLength={item().maxLength}

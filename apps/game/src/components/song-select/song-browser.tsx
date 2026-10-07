@@ -37,7 +37,9 @@ import {
   useSongFilter,
 } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
+import { OK, STALE, useRemoteExtras } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
+import { formatDecade, getFacets, typeLabel } from "~/lib/utils/song-facets";
 import { settingsStore } from "~/stores/settings";
 
 import { FilterButton } from "./filter-button";
@@ -45,7 +47,7 @@ import { FilterChips } from "./filter-chips";
 import { FilterPopup } from "./filter-popup";
 import { MenuPopup, type MenuPopupItem } from "./menu-popup";
 import { SearchButton } from "./search-button";
-import { SearchPopup } from "./search-popup";
+import { SCOPE_OPTIONS, SearchPopup } from "./search-popup";
 import { SongCard, SongGridCard } from "./song-card";
 import { SongGrid, type SongGridRef } from "./song-grid";
 import { SongScroller, type SongScrollerRef } from "./song-scroller";
@@ -204,28 +206,101 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
     if (item) props.onConfirm(item);
   };
 
+  const toggle = (panel: Parameters<typeof togglePanel>[0]) => () => {
+    togglePanel(panel);
+    playSound("select");
+  };
+
   useNavigation({
-    onKeydown(event) {
-      if (event.action === "back") back();
-      else if (event.action === "search") {
-        togglePanel("search");
-        playSound("select");
-      } else if (event.action === "filter") {
-        togglePanel("filter");
-        playSound("select");
-      } else if (event.action === "menu") {
-        togglePanel("menu");
-        playSound("select");
-      } else if (event.action === "random") selectRandom();
-      else if (event.action === "sort-left") moveSort(-1);
-      else if (event.action === "sort-right") moveSort(1);
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") confirm();
+    actions: {
+      back,
+      search: toggle("search"),
+      filter: toggle("filter"),
+      menu: toggle("menu"),
+      random: selectRandom,
+      "sort-left": () => moveSort(-1),
+      "sort-right": () => moveSort(1),
+      confirm: { up: confirm },
     },
   });
 
   const total = () => props.items.length;
+
+  // Phones with full control type the search and pick the sort and filters directly; the pad does
+  // the rest. Always, also while a popup is open: the popups show the same state.
+  const filterOptions = createMemo(() => {
+    const facets = getFacets(props.items);
+    const strings = (values: string[]) => values.map((value) => ({ value, label: value }));
+    const list: { id: keyof SongFilters; label: string; options: { value: string; label: string }[] }[] = [];
+    if (props.showTypeFilter !== false) {
+      list.push({
+        id: "type",
+        label: t("sing.filter.type"),
+        options: (["solo", "duet"] as const).map((value) => ({ value, label: typeLabel(value) })),
+      });
+    }
+    const decades = facets.decades.map((decade) => ({ value: String(decade), label: formatDecade(decade) }));
+    if (decades.length > 0) list.push({ id: "decade", label: t("sing.filter.decade"), options: decades });
+    if (facets.genres.length > 0)
+      list.push({ id: "genre", label: t("sing.filter.genre"), options: strings(facets.genres) });
+    if (facets.languages.length > 0) {
+      list.push({ id: "language", label: t("sing.filter.language"), options: strings(facets.languages) });
+    }
+    if (facets.editions.length > 0) {
+      list.push({ id: "edition", label: t("sing.filter.edition"), options: strings(facets.editions) });
+    }
+    return list;
+  });
+
+  /** A filter's value as phones see it: null while it's off. */
+  const filterValue = (filters: SongFilters, id: keyof SongFilters): string | null => {
+    const value = filters[id];
+    if (id === "type") return value === "all" ? null : String(value);
+    return value === null ? null : String(value);
+  };
+
+  useRemoteExtras({
+    layer: false,
+    text: () => ({ label: t("sing.search"), value: state.searchQuery(), set: state.setSearchQuery }),
+    songs: () => {
+      const item = selected();
+      const info = item ? props.describe(item) : null;
+      const filters = state.filters();
+      return {
+        sort: state.sortOption(),
+        sorts: props.sortOptions.map((option) => ({ value: option, label: t(`sing.sort.${option}`) })),
+        scope: state.searchFieldScope(),
+        scopes: SCOPE_OPTIONS.map((option) => ({ value: option.value, label: option.label() })),
+        setScope: (scope) => {
+          const option = SCOPE_OPTIONS.find((candidate) => candidate.value === scope);
+          if (!option) return STALE;
+          state.setSearchFieldScope(option.value);
+          playSound("select");
+          return OK;
+        },
+        filters: filterOptions().map((filter) => ({ ...filter, value: filterValue(filters, filter.id) })),
+        song: item && info ? { hash: props.getId(item), title: info.title, artist: info.artist } : null,
+        setSort: (sort) => {
+          const option = props.sortOptions.find((candidate) => candidate === sort);
+          if (!option) return STALE;
+          state.setSortOption(option);
+          playSound("select");
+          return OK;
+        },
+        setFilter: (id, value) => {
+          const filter = filterOptions().find((candidate) => candidate.id === id);
+          if (!filter || (value !== null && !filter.options.some((option) => option.value === value))) return STALE;
+          const current = state.filters();
+          if (filter.id === "type") state.setFilters({ ...current, type: (value ?? "all") as SongFilters["type"] });
+          else if (filter.id === "decade")
+            state.setFilters({ ...current, decade: value === null ? null : Number(value) });
+          else state.setFilters({ ...current, [filter.id]: value });
+          playSound("select");
+          return OK;
+        },
+      };
+    },
+  });
 
   return (
     <Layout

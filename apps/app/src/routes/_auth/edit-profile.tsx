@@ -160,7 +160,7 @@ function EditProfileComponent() {
           >
             <img src={fileUrl()} alt="" class="h-30 w-30 rounded-full object-cover" />
           </Show>
-          <span class="gradient-accent absolute right-0 bottom-0 flex size-10 items-center justify-center rounded-full text-lg shadow-crisp">
+          <span class="gradient-accent absolute right-0 bottom-0 flex size-10 items-center justify-center rounded-full text-lg">
             <IconPencil />
           </span>
         </button>

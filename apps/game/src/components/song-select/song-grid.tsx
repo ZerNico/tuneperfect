@@ -236,19 +236,13 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   // oxlint-disable-next-line solid/reactivity
   const throttledNavigate = throttle((direction: "left" | "right" | "up" | "down") => navigate(direction), 100);
 
+  const arrow = (direction: "left" | "right" | "up" | "down") => ({
+    down: () => navigate(direction),
+    repeat: () => throttledNavigate(direction),
+  });
+
   useNavigation({
-    onKeydown: (event) => {
-      if (event.action === "left") navigate("left");
-      else if (event.action === "right") navigate("right");
-      else if (event.action === "up") navigate("up");
-      else if (event.action === "down") navigate("down");
-    },
-    onRepeat: (event) => {
-      if (event.action === "left") throttledNavigate("left");
-      else if (event.action === "right") throttledNavigate("right");
-      else if (event.action === "up") throttledNavigate("up");
-      else if (event.action === "down") throttledNavigate("down");
-    },
+    actions: { left: arrow("left"), right: arrow("right"), up: arrow("up"), down: arrow("down") },
   });
 
   // Real pointer movement only: smooth scrolling moves cards under a resting pointer,

@@ -1,6 +1,6 @@
 import { createEventListener } from "@solid-primitives/event-listener";
 import { debounce } from "@solid-primitives/scheduled";
-import { Outlet } from "@tanstack/solid-router";
+import { Outlet, useLocation } from "@tanstack/solid-router";
 import { createSignal, Suspense } from "solid-js";
 
 import PopupContainer from "~/components/popup-container";
@@ -8,11 +8,14 @@ import { ToastRegion } from "~/components/ui/toast";
 import { useNavigation } from "~/hooks/navigation";
 import { useWakeLock } from "~/hooks/use-wake-lock";
 import { native } from "~/lib/native/client";
+import { useRemoteScreen } from "~/lib/remote";
 import { useWebRTCAutoConnect } from "~/stores/webrtc";
 
 export default function RootScreen() {
   useWakeLock();
   useWebRTCAutoConnect();
+  const location = useLocation();
+  useRemoteScreen(() => location().pathname);
 
   const toggleFullscreen = async () => {
     await native.window.toggleFullscreen().catch((error) => console.error("Failed to toggle fullscreen:", error));
@@ -20,11 +23,7 @@ export default function RootScreen() {
 
   useNavigation({
     layer: false,
-    onKeydown: (event) => {
-      if (event.action === "fullscreen") {
-        toggleFullscreen();
-      }
-    },
+    actions: { fullscreen: toggleFullscreen },
   });
 
   const [mouseHidden, setMouseHidden] = createSignal(false);

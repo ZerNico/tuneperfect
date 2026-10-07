@@ -17,6 +17,7 @@ import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
+import { NOT_ALLOWED, STALE, UNAVAILABLE, useRemoteSurface } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
@@ -200,31 +201,108 @@ export default function TicTacToeScreen() {
     playSound("select");
   };
 
+  const arrow = (action: "up" | "down" | "left" | "right") => () => {
+    moveCursor(action);
+    playSound("select");
+  };
+
+  // Confirm on the board goes through the footer button (it fires on key up, with press feedback).
   useNavigation(() => ({
     enabled: !winner(),
-    onKeydown(event) {
-      // Manual singer-pick phase takes over navigation while active.
-      if (pickingCell() !== null) {
-        if (event.action === "back") backFromPicking();
-        else if (event.action === "up" || event.action === "down") movePickCursor(event.action);
-        else if (event.action === "confirm") confirmPick();
-        return;
+    // The manual singer pick takes over while it's on.
+    actions:
+      pickingCell() !== null
+        ? {
+            back: backFromPicking,
+            up: () => movePickCursor("up"),
+            down: () => movePickCursor("down"),
+            confirm: confirmPick,
+          }
+        : {
+            back: onBack,
+            up: arrow("up"),
+            down: arrow("down"),
+            left: arrow("left"),
+            right: arrow("right"),
+          },
+  }));
+
+  // Phones of the team on turn pick the cell (the cursor on screen follows them), and choose their
+  // singer in manual mode. The other team watches.
+  const songInfo = (song: LocalSong | null) =>
+    song ? { hash: song.hash, title: song.title, artist: song.artist } : null;
+  const teamOf = (userId: string) =>
+    (["x", "o"] as const).find((mark) => getTeam(state(), mark).players.some((player) => player.id === userId));
+  /** Whether `userId` may move on the board now. */
+  const onTurn = (userId: string) => !winner() && pickingCell() === null && teamOf(userId) === turn();
+  const freeCell = (index: number) => {
+    const cell = board()[index];
+    return !!cell && cell.owner === null && !!cell.song;
+  };
+
+  useRemoteSurface({
+    panel: (userId) => {
+      const mark = teamOf(userId);
+      if (!mark || winner()) return null;
+
+      const cellIndex = pickingCell();
+      if (cellIndex !== null) {
+        if (pickingMark() !== mark) return { panel: { kind: "ticTacToe.wait", mark, choosing: pickingMark() } };
+        return {
+          panel: {
+            kind: "ticTacToe.singer",
+            mark,
+            color: teamColor(mark),
+            song: songInfo(board()[cellIndex]?.song ?? null),
+            players: getTeam(state(), mark).players.map((player) => ({ id: player.id, name: player.username ?? "?" })),
+            cursor: pickCursor(),
+          },
+          attention: true,
+        };
       }
 
-      if (event.action === "back") {
-        onBack();
-      } else if (
-        event.action === "up" ||
-        event.action === "down" ||
-        event.action === "left" ||
-        event.action === "right"
-      ) {
-        moveCursor(event.action);
-        playSound("select");
-      }
-      // Confirm on the board goes through the footer button (it fires on key up, with press feedback).
+      return {
+        panel: {
+          kind: "ticTacToe.board",
+          mark,
+          turn: turn(),
+          colors: { x: teamColor("x"), o: teamColor("o") },
+          size: gridSize(),
+          cursor: cursor(),
+          cells: board().map((cell) => ({ song: songInfo(cell.song), owner: cell.owner })),
+        },
+        attention: turn() === mark,
+      };
     },
-  }));
+    act: (userId, action) => {
+      switch (action.type) {
+        case "ticTacToe.cursor":
+        case "ticTacToe.pick": {
+          if (!onTurn(userId)) return NOT_ALLOWED;
+          if (!freeCell(action.cell)) return STALE;
+          if (cursor() !== action.cell) {
+            setCursor(action.cell);
+            playSound("select");
+          }
+          if (action.type === "ticTacToe.pick") startSingOff(action.cell);
+          return { ok: true };
+        }
+        case "ticTacToe.singerCursor":
+        case "ticTacToe.singerPick": {
+          if (winner() || pickingCell() === null || teamOf(userId) !== pickingMark()) return NOT_ALLOWED;
+          if (!pickingTeam()?.players[action.index]) return STALE;
+          if (pickCursor() !== action.index) {
+            setPickCursor(action.index);
+            playSound("select");
+          }
+          if (action.type === "ticTacToe.singerPick") confirmPick();
+          return { ok: true };
+        }
+        default:
+          return UNAVAILABLE;
+      }
+    },
+  });
 
   const menuItems: MenuItem[] = [
     {
@@ -430,7 +508,6 @@ function TurnBanner(props: { mark: Mark; color: string; subtitle: string }) {
       surface="overflow-hidden rounded-[1.4cqw] "
       surfaceStyle={{
         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
     >
       <MarkGlyph mark={props.mark} color={props.color} class="size-[5cqw] shrink-0" />
@@ -520,7 +597,6 @@ function MatchupBox(props: MatchupBoxProps) {
                   props.cursor === index()
                     ? {
                         background: `linear-gradient(90deg, ${getColorVar(props.color, 500)}, ${getColorVar(props.color, 700)})`,
-                        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
                       }
                     : undefined
                 }
@@ -546,7 +622,6 @@ function WinnerCard(props: { mark: Mark; color: string; team: Team }) {
       surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-yellow-300 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(160deg, ${getColorVar(props.color, 400)}, ${getColorVar(props.color, 800)})`,
-        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
     >
       <div class="flex items-center gap-5">

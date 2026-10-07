@@ -9,7 +9,7 @@ import IconGamepadRB from "~icons/sing/gamepad-rb";
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import TitleBar from "~/components/title-bar";
-import { type NavigationEvent, useNavigation } from "~/hooks/navigation";
+import { useNavigation } from "~/hooks/navigation";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
 
@@ -156,38 +156,33 @@ export default function ImageCrop(props: ImageCropProps) {
   };
 
   /** Arrows pan and the shoulder keys zoom, also while held; back and confirm only on the first press. */
-  const handle = (action: NavigationEvent["action"], repeat: boolean) => {
-    switch (action) {
-      case "left":
-        return applyPan(PAN_SPEED, 0);
-      case "right":
-        return applyPan(-PAN_SPEED, 0);
-      case "up":
-        return applyPan(0, PAN_SPEED);
-      case "down":
-        return applyPan(0, -PAN_SPEED);
-      case "zoom-out":
-      case "zoom-in":
-        applyZoom(action === "zoom-in" ? "in" : "out");
-        if (!repeat) playSound("select");
-        return;
-      case "back":
-        if (repeat) return;
-        props.onCancel();
-        playSound("confirm");
-        return;
-      case "confirm":
-        if (repeat) return;
-        exportCroppedImage();
-        playSound("confirm");
-        return;
-    }
-  };
+  const held = (run: () => void) => ({ down: run, repeat: run });
+  const zoom = (direction: "in" | "out") => ({
+    down: () => {
+      applyZoom(direction);
+      playSound("select");
+    },
+    repeat: () => applyZoom(direction),
+  });
 
   useNavigation(() => ({
     layer: props.layer ?? 1,
-    onKeydown: (event) => handle(event.action, false),
-    onRepeat: (event) => handle(event.action, true),
+    actions: {
+      left: held(() => applyPan(PAN_SPEED, 0)),
+      right: held(() => applyPan(-PAN_SPEED, 0)),
+      up: held(() => applyPan(0, PAN_SPEED)),
+      down: held(() => applyPan(0, -PAN_SPEED)),
+      "zoom-out": zoom("out"),
+      "zoom-in": zoom("in"),
+      back: () => {
+        props.onCancel();
+        playSound("confirm");
+      },
+      confirm: () => {
+        exportCroppedImage();
+        playSound("confirm");
+      },
+    },
   }));
 
   onMount(() => {

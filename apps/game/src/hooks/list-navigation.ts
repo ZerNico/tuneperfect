@@ -4,9 +4,7 @@ import { createEffect, createRenderEffect, createSignal, on, onCleanup } from "s
 import { playSound } from "~/lib/sound";
 
 import { createLoop } from "./loop";
-import { type NavigationEvent, useNavigation } from "./navigation";
-
-type Action = NavigationEvent["action"];
+import { type Action, type NavigationActions, useNavigation } from "./navigation";
 
 const LIST_REPEAT_MS = 120;
 
@@ -26,8 +24,8 @@ interface ListNavigationOptions {
   sound?: boolean;
   /** Confirm on the selected item: pressed while the key is down, activated when it's released. */
   onActivate?: (index: number) => void;
-  /** Every key the list doesn't handle itself. */
-  onKeydown?: (event: NavigationEvent) => void;
+  /** More actions on top of moving and confirming, e.g. back. */
+  actions?: NavigationActions;
 }
 
 /**
@@ -73,47 +71,53 @@ export function createListNavigation(options: ListNavigationOptions) {
     scrollToSelected(held ? "instant" : "smooth");
   };
 
-  /** How far an action moves the selection, or null when it's not a movement. */
-  const stepFor = (action: Action): number | null => {
+  /** The actions stepping back and forth, with how far each one moves the selection. */
+  const steps = (): [Action, number][] => {
     const columns = options.columns;
     if (columns !== undefined) {
-      if (action === "left") return -1;
-      if (action === "right") return 1;
-      if (action === "up") return -columns;
-      if (action === "down") return columns;
-      return null;
+      return [
+        ["left", -1],
+        ["right", 1],
+        ["up", -columns],
+        ["down", columns],
+      ];
     }
     const [previous, next] = options.keys ?? ["up", "down"];
-    if (action === previous) return -1;
-    if (action === next) return 1;
-    return null;
+    return [
+      [previous, -1],
+      [next, 1],
+    ];
   };
 
   // A held arrow keeps moving, slower than the raw repeat events (every 50 ms) so it can be followed.
   let lastRepeat = 0;
+  const repeatMove = (step: number) => {
+    const now = performance.now();
+    if (now - lastRepeat < LIST_REPEAT_MS) return;
+    lastRepeat = now;
+    move(step, true);
+  };
 
-  useNavigation(() => ({
-    layer: options.layer,
-    enabled: options.enabled,
-    onKeydown(event) {
-      const step = stepFor(event.action);
-      if (step !== null) move(step);
-      else if (event.action === "confirm" && options.onActivate) setPressed(true);
-      else options.onKeydown?.(event);
-    },
-    onRepeat(event) {
-      const step = stepFor(event.action);
-      const now = performance.now();
-      if (step === null || now - lastRepeat < LIST_REPEAT_MS) return;
-      lastRepeat = now;
-      move(step, true);
-    },
-    onKeyup(event) {
-      if (event.action !== "confirm" || !options.onActivate) return;
-      setPressed(false);
-      if (options.count > 0) options.onActivate(position());
-    },
-  }));
+  useNavigation(() => {
+    const actions: NavigationActions = { ...options.actions };
+    // With one item (or none) there's nowhere to move.
+    const movable = options.count > 1;
+    for (const [action, step] of steps()) {
+      actions[action] = movable ? { down: () => move(step), repeat: () => repeatMove(step) } : null;
+    }
+    const onActivate = options.onActivate;
+    if (onActivate) {
+      actions.confirm = {
+        down: () => setPressed(true),
+        up: () => {
+          setPressed(false);
+          if (options.count > 0) onActivate(position());
+        },
+        cancel: () => setPressed(false),
+      };
+    }
+    return { layer: options.layer, enabled: options.enabled, actions };
+  });
 
   createEffect(on(position, () => options.sound !== false && playSound("select"), { defer: true }));
 

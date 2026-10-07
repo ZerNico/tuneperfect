@@ -22,6 +22,7 @@ import { useNavigation } from "~/hooks/navigation";
 import { effectsEnabled } from "~/lib/fx";
 import { formatNumber, t } from "~/lib/i18n";
 import { buildDuelPlayers, partySongs, slotColor } from "~/lib/party/common";
+import { NOT_ALLOWED, STALE, UNAVAILABLE, useRemoteSurface } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
 import type { User } from "~/lib/types";
 import { type LocalSong } from "~/lib/ultrastar/song";
@@ -208,13 +209,57 @@ export default function VersusScreen() {
     });
   };
 
-  useNavigation({
-    onKeydown: (event) => {
-      if (champion()) return; // The menu handles input.
-      if (event.action === "back") onBack();
-      else if (event.action === "joker-1") void reroll(0);
-      else if (event.action === "joker-2") void reroll(1);
-      // Confirm goes through the footer button (it fires on key up, with press feedback).
+  // Confirm goes through the footer button (it fires on key up, with press feedback). Once there's a
+  // champion, the menu handles input.
+  useNavigation(() => ({
+    actions: champion()
+      ? { back: null, "joker-1": null, "joker-2": null }
+      : {
+          back: onBack,
+          "joker-1": () => void reroll(0),
+          "joker-2": () => void reroll(1),
+        },
+  }));
+
+  // The two singers spend their own jokers from their phones; everyone else sees who's up.
+  useRemoteSurface({
+    panel: (userId) => {
+      const pair = matchup();
+      if (!pair) return null;
+      const song = spinning() ? null : currentSong();
+      const songInfo = song ? { hash: song.hash, title: song.title, artist: song.artist } : null;
+      const name = (user: User) => user.username ?? "?";
+
+      const slot = pair.findIndex((user) => user.id === userId);
+      if (slot !== 0 && slot !== 1) {
+        return { panel: { kind: "versus.watch", players: [name(pair[0]), name(pair[1])], song: songInfo } };
+      }
+      const other = slot === 0 ? 1 : 0;
+      return {
+        panel: {
+          kind: "versus",
+          slot,
+          color: slotColor(slot),
+          jokers: jokers()[slot],
+          maxJokers,
+          opponent: {
+            name: name(pair[other]),
+            jokers: jokers()[other],
+            image: "image" in pair[other] ? (pair[other].image ?? null) : null,
+          },
+          canReroll: jokers()[slot] > 0 && !spinning() && availableSongs().length > 1,
+          song: songInfo,
+        },
+        attention: true,
+      };
+    },
+    act: (userId, action) => {
+      if (action.type !== "versus.reroll") return UNAVAILABLE;
+      const slot = matchup()?.findIndex((user) => user.id === userId);
+      if (slot !== 0 && slot !== 1) return NOT_ALLOWED;
+      if (jokers()[slot] <= 0 || !nextSong()) return STALE;
+      void reroll(slot);
+      return { ok: true };
     },
   });
 
@@ -366,7 +411,6 @@ function PlayerCard(props: PlayerCardProps) {
       surface="overflow-hidden rounded-[1.6cqw] ring-[0.22cqw] ring-white/80 ring-inset"
       surfaceStyle={{
         background: `linear-gradient(${props.index ? "200deg" : "160deg"}, ${color(400)}, ${color(800)})`,
-        "box-shadow": "0 0.15cqw 0 rgb(0 0 0 / 0.3)",
       }}
     >
       <div class="mt-auto size-[calc(var(--card)*0.36)]">
@@ -538,9 +582,9 @@ function Champion(props: { standings: Standing[]; menuItems: MenuItem[]; onBack:
                   .join(" & ") || "—"}
               </span>
               <div
-                class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)] ${step.colors} ${step.height}`}
+                class={`flex w-full items-start justify-center rounded-t-[1.4cqw] bg-linear-to-b pt-3 ${step.colors} ${step.height}`}
               >
-                <span class="text-6xl text-display text-white [--display-shadow:rgb(0_0_0/0.25)]">{step.place}</span>
+                <span class="text-6xl text-display text-white">{step.place}</span>
               </div>
             </div>
           )}

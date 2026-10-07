@@ -279,7 +279,7 @@ function SongHero(props: SongHeroProps) {
         <For each={props.covers.slice(0, 3).toReversed()}>
           {(cover, index) => (
             <img
-              class="absolute top-0 aspect-square h-full rounded-[1.4cqw] object-cover shadow-[0_0.15cqw_0_rgb(0_0_0/0.3)]"
+              class="absolute top-0 aspect-square h-full rounded-[1.4cqw] object-cover"
               style={{
                 left: `${(Math.min(props.covers.length, 3) - 1 - index()) * 3}cqh`,
                 transform: `rotate(${-4 + index() * 4}deg)`,
@@ -311,12 +311,9 @@ function PlayerSlotsRow(props: PlayerSlotsRowProps) {
   useNavigation(() => ({
     layer: 0,
     enabled: props.selected,
-    onKeydown(event) {
-      if (event.action === "left") {
-        props.playerSlotLoop.decrement();
-      } else if (event.action === "right") {
-        props.playerSlotLoop.increment();
-      }
+    actions: {
+      left: () => props.playerSlotLoop.decrement(),
+      right: () => props.playerSlotLoop.increment(),
     },
   }));
 
@@ -370,16 +367,14 @@ function PlayerSlot(props: PlayerSlotProps) {
 
   useNavigation(() => ({
     enabled: props.selected,
-    onKeydown(event) {
-      if (event.action === "confirm") {
-        setPressed(true);
-      }
-    },
-    onKeyup(event) {
-      if (event.action === "confirm") {
-        setPressed(false);
-        openSelectPlayerPopup();
-      }
+    actions: {
+      confirm: {
+        down: () => setPressed(true),
+        up: () => {
+          setPressed(false);
+          openSelectPlayerPopup();
+        },
+      },
     },
   }));
 

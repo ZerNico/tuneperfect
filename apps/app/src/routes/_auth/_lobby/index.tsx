@@ -7,6 +7,7 @@ import IconArrowClockwise from "~icons/ph/arrow-clockwise-bold";
 import IconCaretRight from "~icons/ph/caret-right-bold";
 import IconCheckCircle from "~icons/ph/check-circle-fill";
 import IconCircleNotch from "~icons/ph/circle-notch-bold";
+import IconGameController from "~icons/ph/game-controller-fill";
 import IconSignOut from "~icons/ph/sign-out-bold";
 import IconUserPlus from "~icons/ph/user-plus-bold";
 import IconWarningCircle from "~icons/ph/warning-circle-fill";
@@ -23,6 +24,7 @@ import { useDialog } from "~/lib/dialog";
 import { songsQueryOptions } from "~/lib/game-query";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
+import { useRemote } from "~/lib/remote";
 import { notify } from "~/lib/toast";
 import { connectionStore } from "~/stores/connection";
 
@@ -71,6 +73,7 @@ function LobbyComponent() {
         <Suspense fallback={<BrowseSongsPlaceholder />}>
           <BrowseSongs />
         </Suspense>
+        <Controller />
         <Players />
       </div>
 
@@ -177,9 +180,33 @@ function BrowseSongs() {
     >
       <Link
         to="/songs"
-        class="gradient-sing flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 shadow-crisp transition-transform active:scale-[0.98]"
+        class="gradient-sing flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
       >
         {content()}
+      </Link>
+    </Show>
+  );
+}
+
+/** The way into the controller, once the game offers it. */
+function Controller() {
+  const remote = useRemote();
+  const fullControl = () => remote.state()?.control === "full";
+
+  return (
+    <Show when={remote.supported()}>
+      <Link
+        to="/controller"
+        class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
+      >
+        <span class="flex size-11 shrink-0 items-center justify-center rounded-[8px] bg-black/20 text-2xl">
+          <IconGameController />
+        </span>
+        <div class="flex min-w-0 grow flex-col">
+          <span class="text-[17px] font-black">{t("remote.title")}</span>
+          <span class="truncate text-sm text-white/80">{fullControl() ? t("remote.cardFull") : t("remote.card")}</span>
+        </div>
+        <IconCaretRight class="shrink-0 text-lg" />
       </Link>
     </Show>
   );
