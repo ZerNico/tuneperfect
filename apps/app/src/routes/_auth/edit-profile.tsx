@@ -56,6 +56,11 @@ function EditProfileComponent() {
           return;
         }
 
+        if (isDefined && error.code === "INVALID_IMAGE") {
+          notify({ message: t("editProfile.invalidImage"), intent: "error" });
+          return;
+        }
+
         notify({
           message: t("error.unknown"),
           intent: "error",

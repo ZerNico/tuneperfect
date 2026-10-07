@@ -11,6 +11,8 @@ const de: Dict = {
     emailInvalid: "Ungültige E-Mail",
     passwordMinLength: "Passwort muss mindestens 6 Zeichen lang sein",
     invalidEmailOrPassword: "Ungültige E-Mail oder Passwort",
+    oauthCancelled: "Die Anmeldung wurde abgebrochen.",
+    oauthFailed: "Die Anmeldung hat nicht geklappt. Bitte versuche es noch einmal.",
     oauthUnverifiedEmailExists:
       "Ein unbestätigtes Konto mit dieser E-Mail existiert bereits. Bitte überprüfe dein Postfach, um deine E-Mail zu bestätigen, oder nutze die Passwort-Zurücksetzen-Funktion, falls du keinen Zugriff mehr hast.",
     or: "Oder",
@@ -107,6 +109,7 @@ const de: Dict = {
     changePassword: "Passwort ändern",
     devices: "Geräte",
     success: "Profil erfolgreich aktualisiert",
+    invalidImage: "Das Bild konnte nicht gelesen werden. Nutze ein PNG-, JPEG- oder WebP-Bild.",
     invalidFileType: "Bitte wähle eine Bilddatei aus",
     cropImage: "Profilbild zuschneiden",
   },
@@ -122,13 +125,14 @@ const de: Dict = {
     justNow: "gerade eben",
     signOut: "Abmelden",
     signOutNamed: "{{ device }} abmelden",
-    signOutTitle: "Dieses Gerät abmelden?",
+    signOutTitle: "{{ device }} abmelden?",
     signOutDescription: "{{ device }} muss sich neu anmelden.",
     signOutOthers: "Alle anderen Geräte abmelden",
     signOutOthersTitle: "Alle anderen Geräte abmelden?",
     signOutOthersDescription: "Alle anderen Handys und Browser müssen sich neu anmelden.",
     signedOut: "Gerät abgemeldet",
     signedOutOthers: "Alle anderen Geräte abgemeldet",
+    loadFailed: "Deine Geräte konnten nicht geladen werden",
     delayNote: "Ein abgemeldetes Gerät merkt es spätestens nach fünf Minuten.",
   },
   imageCrop: {
@@ -218,6 +222,9 @@ const de: Dict = {
   error: {
     unknown: "Ein unbekannter Fehler ist aufgetreten",
     rateLimit: "Rate-Limit überschritten, versuche es in {{ retryAfter }} Sekunden erneut",
+    offlineTitle: "Tune Perfect ist nicht erreichbar",
+    offlineHint: "Prüfe deine Internetverbindung. Sobald du wieder online bist, versucht es die App von selbst.",
+    retry: "Nochmal versuchen",
   },
   toast: {
     success: "Erfolg",

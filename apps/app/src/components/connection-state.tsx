@@ -1,3 +1,4 @@
+import { createEventListener } from "@solid-primitives/event-listener";
 import { useNavigate, useRouter } from "@tanstack/solid-router";
 import { type Component, type JSX, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -12,6 +13,33 @@ export function ConnectionPendingUI() {
   return (
     <main class="flex grow items-center justify-center px-6">
       <ConnectionState icon={IconCircleNotch} spinning title={t("songs.connecting")} />
+    </main>
+  );
+}
+
+/**
+ * The API couldn't be reached to check the session (offline, server trouble). That isn't being
+ * signed out, so it offers a retry instead of sign-in, and retries by itself once back online.
+ */
+export function OfflineErrorUI() {
+  const router = useRouter();
+  const retry = () => void router.invalidate();
+  createEventListener(window, "online", retry);
+
+  return (
+    <main class="flex grow items-center justify-center px-6">
+      <ConnectionState
+        icon={IconWifiSlash}
+        failed
+        title={t("error.offlineTitle")}
+        action={
+          <Button intent="gradient" class="w-full" onClick={retry}>
+            {t("error.retry")}
+          </Button>
+        }
+      >
+        {t("error.offlineHint")}
+      </ConnectionState>
     </main>
   );
 }

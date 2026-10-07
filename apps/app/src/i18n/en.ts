@@ -9,6 +9,8 @@ const en = {
     emailInvalid: "Invalid email",
     passwordMinLength: "Password must be at least 6 characters",
     invalidEmailOrPassword: "Invalid email or password",
+    oauthCancelled: "Sign-in was cancelled.",
+    oauthFailed: "Sign-in didn't work. Please try again.",
     oauthUnverifiedEmailExists:
       "An unverified account exists with this email. Please check your inbox to verify your email, or use password reset if you've lost access.",
     or: "Or",
@@ -105,6 +107,7 @@ const en = {
     changePassword: "Change Password",
     devices: "Devices",
     success: "Profile updated successfully",
+    invalidImage: "That picture couldn't be read. Use a PNG, JPEG or WebP image.",
     invalidFileType: "Please select an image file",
     cropImage: "Crop Profile Picture",
   },
@@ -120,13 +123,14 @@ const en = {
     justNow: "just now",
     signOut: "Sign out",
     signOutNamed: "Sign out {{ device }}",
-    signOutTitle: "Sign out this device?",
+    signOutTitle: "Sign out {{ device }}?",
     signOutDescription: "{{ device }} will need to sign in again.",
     signOutOthers: "Sign out all other devices",
     signOutOthersTitle: "Sign out all other devices?",
     signOutOthersDescription: "Every other phone and browser will need to sign in again.",
     signedOut: "Device signed out",
     signedOutOthers: "All other devices signed out",
+    loadFailed: "Couldn't load your devices",
     delayNote: "A signed out device can take up to five minutes to notice.",
   },
   imageCrop: {
@@ -215,6 +219,9 @@ const en = {
   error: {
     unknown: "An unknown error occurred",
     rateLimit: "Rate limit exceeded, retry in {{ retryAfter }} seconds",
+    offlineTitle: "Can't reach Tune Perfect",
+    offlineHint: "Check your internet connection. It tries again by itself once you are back online.",
+    retry: "Try again",
   },
   toast: {
     success: "Success",

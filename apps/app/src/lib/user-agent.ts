@@ -7,8 +7,8 @@ export interface DeviceInfo {
 
 // Order matters: Edge, Opera and Samsung Internet also say "Chrome", and Chrome also says "Safari".
 const BROWSERS: [RegExp, string][] = [
-  [/EdgA?\//, "Edge"],
-  [/OPR\/|Opera/, "Opera"],
+  [/EdgA?\/|EdgiOS\//, "Edge"],
+  [/OPR\/|OPiOS\/|Opera/, "Opera"],
   [/SamsungBrowser\//, "Samsung Internet"],
   [/Firefox\/|FxiOS\//, "Firefox"],
   [/Chrome\/|CriOS\//, "Chrome"],
