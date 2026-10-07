@@ -85,17 +85,6 @@ export default function MicrophoneScreen() {
                 notify({ message: t("settings.sections.microphones.noDevice"), intent: "error" });
                 return;
               }
-              // Two slots on one input would score the same voice twice.
-              const taken = settingsStore
-                .microphones()
-                .findIndex((other, index) => index !== id() && other.channel === mic.channel && sameDevice(other, mic));
-              if (taken !== -1) {
-                notify({
-                  message: t("settings.sections.microphones.alreadyUsed", { number: taken + 1 }),
-                  intent: "error",
-                });
-                return;
-              }
               settingsStore.saveMicrophone(id(), mic);
               onBack();
             };
@@ -232,11 +221,6 @@ export default function MicrophoneScreen() {
       </Suspense>
     </Layout>
   );
-}
-
-/** Whether two microphone settings use the same input device (by id when both have one). */
-function sameDevice(a: { deviceId?: string; name: string }, b: { deviceId?: string; name: string }) {
-  return a.deviceId && b.deviceId ? a.deviceId === b.deviceId : a.name === b.name;
 }
 
 type NullablePartial<T> = { [P in keyof T]?: T[P] | null };

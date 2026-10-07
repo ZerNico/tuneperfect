@@ -37,6 +37,7 @@ function createConnectionStore() {
   const [error, setError] = createSignal<string | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = createSignal(0);
   const [currentUserId, setCurrentUserId] = createSignal<string | null>(null);
+  const [visible, setVisible] = createSignal(document.visibilityState === "visible");
 
   let attempt: Attempt | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
@@ -83,11 +84,15 @@ function createConnectionStore() {
       setStatus("failed");
       return;
     }
+
+    setStatus("reconnecting");
+    // In the background the phone often can't connect at all (it's suspended or throttled), so trying
+    // there would only use up the attempts and warn about it: `resume` starts over once it's back.
+    if (!visible()) return;
+
     if (attempts === WEBRTC_CONFIG.reconnect.maxAttemptsBeforeToast) {
       notify({ message: t("songs.connectionTrouble"), intent: "warning" });
     }
-
-    setStatus("reconnecting");
     const delay = Math.min(WEBRTC_CONFIG.reconnect.initialDelay * 2 ** attempts, WEBRTC_CONFIG.reconnect.maxDelay);
     clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
@@ -263,7 +268,8 @@ function createConnectionStore() {
   // Coming back to the phone (screen unlocked, app switched back) or back online: don't wait out the
   // backoff, and start over if the phone had given up.
   const resume = () => {
-    if (document.visibilityState !== "visible" || !currentUserId()) return;
+    setVisible(document.visibilityState === "visible");
+    if (!visible() || !currentUserId()) return;
     // Waiting for the next attempt, or given up.
     if ((status() === "reconnecting" && !attempt) || status() === "failed") retryConnection();
   };
@@ -276,6 +282,8 @@ function createConnectionStore() {
     channelsReady,
     error,
     reconnectAttempts,
+    /** Whether the page is in the foreground; the phone doesn't retry or check the connection in the background. */
+    visible,
     startConnection,
     stopConnection,
     retryConnection,

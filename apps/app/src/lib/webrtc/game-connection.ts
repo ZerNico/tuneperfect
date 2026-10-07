@@ -17,6 +17,8 @@ import { connectionStore } from "~/stores/connection";
 export function createGameConnection(): Accessor<GameClient | null> {
   const queryClient = useQueryClient();
   let link: RPCLink<ClientContext> | null = null;
+  /** The client the last heartbeat ran for, to tell a new connection from the page coming back. */
+  let pingedClient: GameClient | null = null;
 
   const closeLink = () => {
     link?.close();
@@ -34,17 +36,20 @@ export function createGameConnection(): Accessor<GameClient | null> {
     return createORPCClient(link) as GameClient;
   });
 
-  // Runs while connected: a reconnect or a recovered connection starts it over, so a heartbeat that
-  // failed while the connection was down doesn't stay stopped.
+  // Runs while connected and in the foreground: a reconnect or a recovered connection starts it over,
+  // so a heartbeat that failed while the connection was down doesn't stay stopped. In the background
+  // the phone may be frozen mid-ping, and that ping's timeout would fire on coming back although
+  // nothing is wrong, so it pauses there and pings right away on coming back.
   createEffect(() => {
     // This run's client: the effect runs again (with a new heartbeat) whenever the client changes.
     // oxlint-disable-next-line solid/reactivity
     const game = client();
-    if (!game || connectionStore.status() !== "connected") return;
+    if (!game || connectionStore.status() !== "connected" || !connectionStore.visible()) return;
 
     // The song list is only fetched again when the game's library changed (a game restarted with
     // other songs, a folder added), not every time the phone comes back to the tab.
-    let firstPing = true;
+    let firstPing = game !== pingedClient;
+    pingedClient = game;
     const ping = async () => {
       const { libraryVersion } = await game.ping();
       // Nothing cached yet: the first fetch is still coming and brings its own version.

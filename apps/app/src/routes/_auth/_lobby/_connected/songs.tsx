@@ -95,7 +95,7 @@ function SongsComponent() {
           <button
             type="button"
             aria-label={t("songs.refresh")}
-            class="flex size-10 cursor-pointer items-center justify-center rounded-[10px] bg-white/8 text-lg transition-colors hover:bg-white/12 disabled:opacity-50"
+            class="flex size-11 cursor-pointer items-center justify-center rounded-[12px] bg-white/8 text-xl transition-colors hover:bg-white/12 disabled:opacity-50"
             disabled={songsQuery.isFetching}
             onClick={() => void songsQuery.refetch()}
           >
