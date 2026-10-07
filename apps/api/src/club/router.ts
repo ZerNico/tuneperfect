@@ -29,7 +29,7 @@ export const clubRouter = os.prefix("/clubs").router({
       FORBIDDEN: { status: 403 },
     })
     .use(requireUser)
-    .input(v.object({ clubId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()) }))
     .handler(async ({ input, context, errors }) => {
       const club = await clubService.getClub(input.clubId);
 
@@ -54,7 +54,7 @@ export const clubRouter = os.prefix("/clubs").router({
     .use(requireUser)
     .input(
       v.object({
-        clubId: v.string(),
+        clubId: v.pipe(v.string(), v.uuid()),
         name: ClubNameSchema,
       }),
     )
@@ -92,7 +92,7 @@ export const clubRouter = os.prefix("/clubs").router({
     .use(requireUser)
     .input(
       v.object({
-        clubId: v.string(),
+        clubId: v.pipe(v.string(), v.uuid()),
         username: UsernameSchema,
       }),
     )
@@ -131,7 +131,7 @@ export const clubRouter = os.prefix("/clubs").router({
 
   acceptInvite: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()) }))
     .errors({
       NOT_FOUND: {
         status: 404,
@@ -150,14 +150,14 @@ export const clubRouter = os.prefix("/clubs").router({
 
   declineInvite: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()) }))
     .handler(async ({ context, input }) => {
       await clubService.declineInvite(input.clubId, context.payload.sub);
     }),
 
   removeMember: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string(), userId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()), userId: v.pipe(v.string(), v.uuid()) }))
     .errors({
       NOT_FOUND: {
         status: 404,
@@ -191,7 +191,7 @@ export const clubRouter = os.prefix("/clubs").router({
 
   transferOwnership: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string(), userId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()), userId: v.pipe(v.string(), v.uuid()) }))
     .errors({
       NOT_FOUND: {
         status: 404,
@@ -225,7 +225,7 @@ export const clubRouter = os.prefix("/clubs").router({
 
   leaveClub: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()) }))
     .errors({
       FORBIDDEN: {
         status: 403,
@@ -254,7 +254,7 @@ export const clubRouter = os.prefix("/clubs").router({
 
   deleteClub: base
     .use(requireUser)
-    .input(v.object({ clubId: v.string() }))
+    .input(v.object({ clubId: v.pipe(v.string(), v.uuid()) }))
     .errors({
       NOT_FOUND: {
         status: 404,
@@ -281,8 +281,8 @@ export const clubRouter = os.prefix("/clubs").router({
     .use(requireUser)
     .input(
       v.object({
-        clubId: v.string(),
-        userId: v.string(),
+        clubId: v.pipe(v.string(), v.uuid()),
+        userId: v.pipe(v.string(), v.uuid()),
         role: ClubMemberRoleSchema,
       }),
     )

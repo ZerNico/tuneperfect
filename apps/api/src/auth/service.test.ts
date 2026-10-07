@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, type Mock } from "bun:test";
+import crypto from "node:crypto";
 
-import { addDays, subDays, subYears } from "date-fns";
+import { addDays, subDays, subSeconds, subYears } from "date-fns";
 import jwt from "jsonwebtoken";
 
 import { env } from "../config/env";
@@ -25,6 +26,21 @@ const testUser: User = {
   createdAt: new Date(),
   updatedAt: new Date(),
 } as User;
+
+const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
+
+/** Makes the next db.<method>(...)...returning() resolve to `rows` (the shared stub always returns []). */
+function nextReturning(method: "update" | "delete", rows: unknown[]) {
+  const spy = db[method] as unknown as AnyMock;
+  spy.mockImplementationOnce((() => {
+    const builder = {
+      set: () => builder,
+      where: () => builder,
+      returning: async () => rows,
+    };
+    return builder;
+  }) as never);
+}
 
 beforeEach(() => {
   findFirstUser.mockReset();
@@ -181,14 +197,15 @@ describe("refresh tokens", () => {
     expect(inserted.token).toHaveLength(64); // sha256 hex digest
   });
 
-  it("rotates a valid refresh token", async () => {
+  it("rotates a valid refresh token to 30 days from now", async () => {
     findFirstRefreshToken.mockResolvedValue({
-      token: "stored-hash",
+      token: sha256("some-presented-token"),
       userId: testUser.id,
       user: testUser,
-      expires: addDays(new Date(), 3),
+      expires: addDays(new Date(), 300),
       createdAt: new Date(),
     });
+    nextReturning("update", [{ token: "new-hash" }]);
 
     const result = await authService.verifyAndRotateRefreshToken("some-presented-token");
 
@@ -196,7 +213,61 @@ describe("refresh tokens", () => {
     expect(result?.token).toHaveLength(64);
     expect(result?.token).not.toBe("some-presented-token");
     expect(result?.user.id).toBe(testUser.id);
-    expect(result?.expires.getTime()).toBeGreaterThan(Date.now());
+    // From now, not stacked onto the old expiry
+    expect(Math.round((result!.expires.getTime() - Date.now()) / 86_400_000)).toBe(30);
+  });
+
+  it("keeps the cookie of a concurrent refresh that rotated first", async () => {
+    findFirstRefreshToken.mockResolvedValue({
+      token: sha256("raced"),
+      userId: testUser.id,
+      user: testUser,
+      expires: addDays(new Date(), 3),
+      createdAt: new Date(),
+    });
+    nextReturning("update", []);
+
+    const result = await authService.verifyAndRotateRefreshToken("raced");
+
+    expect(result?.user.id).toBe(testUser.id);
+    expect(result?.token).toBeUndefined();
+  });
+
+  it("accepts the replaced token for a few seconds without rotating again", async () => {
+    const updateSpy = db.update as unknown as AnyMock;
+    updateSpy.mockClear();
+    findFirstRefreshToken.mockResolvedValue({
+      token: "current-hash",
+      previousToken: sha256("just-replaced"),
+      rotatedAt: subSeconds(new Date(), 5),
+      userId: testUser.id,
+      user: testUser,
+      expires: addDays(new Date(), 30),
+      createdAt: new Date(),
+    });
+
+    const result = await authService.verifyAndRotateRefreshToken("just-replaced");
+
+    expect(result?.user.id).toBe(testUser.id);
+    expect(result?.token).toBeUndefined();
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it("ends the login when a replaced token comes back later", async () => {
+    const deleteSpy = db.delete as unknown as AnyMock;
+    deleteSpy.mockClear();
+    findFirstRefreshToken.mockResolvedValue({
+      token: "current-hash",
+      previousToken: sha256("stolen"),
+      rotatedAt: subSeconds(new Date(), 120),
+      userId: testUser.id,
+      user: testUser,
+      expires: addDays(new Date(), 30),
+      createdAt: new Date(),
+    });
+
+    expect(await authService.verifyAndRotateRefreshToken("stolen")).toBeNull();
+    expect(deleteSpy).toHaveBeenCalled();
   });
 
   it("returns null for an unknown token", async () => {
@@ -241,25 +312,15 @@ describe("verification tokens", () => {
     expect(token).toMatch(/^[0-9a-f]+$/);
   });
 
-  it("returns null and deletes the row for an expired token", async () => {
-    const findFirstVerificationToken = db.query.verificationTokens.findFirst as unknown as AnyMock;
-    const deleteSpy = db.delete as unknown as AnyMock;
-    deleteSpy.mockClear();
-    findFirstVerificationToken.mockResolvedValue({
-      token: "stored",
-      userId: testUser.id,
-      type: "password_reset",
-      expires: subDays(new Date(), 1),
-    });
+  it("returns null for an expired token, deleting it in the same step", async () => {
+    nextReturning("delete", [
+      { token: "stored", userId: testUser.id, type: "password_reset", expires: subDays(new Date(), 1) },
+    ]);
 
     expect(await authService.verifyAndDeleteVerificationToken("stored", "password_reset")).toBeNull();
-    expect(deleteSpy).toHaveBeenCalled();
   });
 
-  it("is single use: deletes the token after successful verification", async () => {
-    const findFirstVerificationToken = db.query.verificationTokens.findFirst as unknown as AnyMock;
-    const deleteSpy = db.delete as unknown as AnyMock;
-    deleteSpy.mockClear();
+  it("is single use: a second use finds nothing", async () => {
     const row = {
       token: "stored",
       userId: testUser.id,
@@ -268,12 +329,10 @@ describe("verification tokens", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    findFirstVerificationToken.mockResolvedValue(row);
+    nextReturning("delete", [row]);
 
-    const result = await authService.verifyAndDeleteVerificationToken("stored", "password_reset");
-
-    expect(result).toEqual(row);
-    expect(deleteSpy).toHaveBeenCalled();
+    expect(await authService.verifyAndDeleteVerificationToken("stored", "password_reset")).toEqual(row);
+    expect(await authService.verifyAndDeleteVerificationToken("stored", "password_reset")).toBeNull();
   });
 });
 

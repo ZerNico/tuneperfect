@@ -8,6 +8,7 @@ import * as v from "valibot";
 import { env } from "../config/env";
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
+import { publicUserColumns } from "../user/models";
 import { tryCatch } from "../utils/try-catch";
 import { LobbyTokenSchema } from "./models";
 
@@ -19,18 +20,14 @@ export class LobbyService {
       },
       with: {
         users: {
-          columns: {
-            password: false,
-          },
+          columns: publicUserColumns,
         },
         selectedClub: {
           with: {
             members: {
               with: {
                 user: {
-                  columns: {
-                    password: false,
-                  },
+                  columns: publicUserColumns,
                 },
               },
             },
@@ -97,6 +94,8 @@ export class LobbyService {
   }
 
   async joinLobby(lobbyId: string, userId: string) {
+    const user = await db.query.users.findFirst({ where: { id: userId }, columns: { lobbyId: true } });
+
     await db
       .update(schema.users)
       .set({
@@ -107,6 +106,10 @@ export class LobbyService {
     // If no club has been selected for the lobby yet, auto-select one of the
     // joining user's clubs so additional scores are shown without manual selection.
     await this.autoSelectClubForLobby(lobbyId, userId);
+
+    if (user?.lobbyId && user.lobbyId !== lobbyId) {
+      await this.releaseUnusedClub(user.lobbyId);
+    }
   }
 
   private async autoSelectClubForLobby(lobbyId: string, userId: string) {
@@ -132,7 +135,13 @@ export class LobbyService {
   }
 
   async leaveLobby(userId: string) {
+    const user = await db.query.users.findFirst({ where: { id: userId }, columns: { lobbyId: true } });
+
     await db.update(schema.users).set({ lobbyId: null }).where(eq(schema.users.id, userId));
+
+    if (user?.lobbyId) {
+      await this.releaseUnusedClub(user.lobbyId);
+    }
   }
 
   async kickUser(lobbyId: string, userId: string) {
@@ -140,6 +149,36 @@ export class LobbyService {
       .update(schema.users)
       .set({ lobbyId: null })
       .where(and(eq(schema.users.lobbyId, lobbyId), eq(schema.users.id, userId)));
+
+    await this.releaseUnusedClub(lobbyId);
+  }
+
+  /** Drops the lobby's club once nobody left in the lobby belongs to it, so its scores and members stop showing. */
+  private async releaseUnusedClub(lobbyId: string) {
+    const lobby = await db.query.lobbies.findFirst({
+      where: { id: lobbyId },
+      columns: { clubId: true },
+      with: { users: { columns: { id: true } } },
+    });
+
+    if (!lobby?.clubId) {
+      return;
+    }
+
+    const userIds = lobby.users.map((user) => user.id);
+    const member =
+      userIds.length > 0 &&
+      (await db.query.clubMembers.findFirst({
+        where: { clubId: lobby.clubId, userId: { in: userIds } },
+        columns: { userId: true },
+      }));
+
+    if (!member) {
+      await db
+        .update(schema.lobbies)
+        .set({ clubId: null })
+        .where(and(eq(schema.lobbies.id, lobbyId), eq(schema.lobbies.clubId, lobby.clubId)));
+    }
   }
 
   async deleteLobby(lobbyId: string) {

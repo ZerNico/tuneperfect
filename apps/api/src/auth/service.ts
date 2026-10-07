@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 import { renderResetPassword, renderVerifyEmail } from "@tuneperfect/email";
-import { addDays, addHours, addMinutes, addYears, differenceInSeconds, isAfter, isBefore } from "date-fns";
+import { addDays, addHours, addMinutes, addSeconds, addYears, differenceInSeconds, isAfter, isBefore } from "date-fns";
 import { and, eq, ne, sql } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { joinURL, withQuery } from "ufo";
@@ -16,6 +16,11 @@ import type { User } from "../types";
 import { isValidRedirectUrl } from "../utils/security";
 import { tryCatch } from "../utils/try-catch";
 import { AccessTokenSchema } from "./models";
+
+/** A login ends after this many days without use. Every refresh pushes it out again, up to a year in total. */
+const REFRESH_IDLE_DAYS = 30;
+/** How long the token a refresh replaced keeps working, for requests that were already in flight. */
+const REFRESH_GRACE_SECONDS = 30;
 
 class AuthService {
   async createAndStoreVerificationToken(userId: string, type: "email_verification" | "password_reset") {
@@ -33,26 +38,23 @@ class AuthService {
   }
 
   async verifyAndDeleteVerificationToken(token: string, type: "email_verification" | "password_reset") {
-    const verificationToken = await db.query.verificationTokens.findFirst({
-      where: {
-        token,
-        type,
-      },
-    });
+    // Deleting and reading in one statement: two concurrent uses can't both get the token
+    const [verificationToken] = await db
+      .delete(schema.verificationTokens)
+      .where(and(eq(schema.verificationTokens.token, token), eq(schema.verificationTokens.type, type)))
+      .returning();
 
-    if (!verificationToken) {
+    if (!verificationToken || isBefore(verificationToken.expires, new Date())) {
       return null;
     }
-
-    if (isBefore(verificationToken.expires, new Date())) {
-      await db.delete(schema.verificationTokens).where(eq(schema.verificationTokens.token, token));
-
-      return null;
-    }
-
-    await db.delete(schema.verificationTokens).where(eq(schema.verificationTokens.token, token));
 
     return verificationToken;
+  }
+
+  async deleteVerificationTokens(userId: string, type: "email_verification" | "password_reset") {
+    await db
+      .delete(schema.verificationTokens)
+      .where(and(eq(schema.verificationTokens.userId, userId), eq(schema.verificationTokens.type, type)));
   }
 
   async sendVerificationEmail(user: User, options: { redirect?: string } = {}) {
@@ -140,7 +142,7 @@ class AuthService {
 
   async generateAndStoreRefreshToken(user: User, userAgent: string) {
     const token = crypto.randomBytes(32).toString("hex");
-    const expires = addDays(new Date(), 7);
+    const expires = addDays(new Date(), REFRESH_IDLE_DAYS);
 
     await db.insert(schema.refreshTokens).values({
       userId: user.id,
@@ -152,12 +154,18 @@ class AuthService {
     return { token, expires };
   }
 
+  /**
+   * Swaps a refresh token for a new one. Returns `token: undefined` when the presented token was rotated
+   * moments ago by a concurrent refresh (another tab): the caller keeps the cookie that refresh set.
+   * Presenting a rotated token after the grace period means it leaked, so that login is ended.
+   */
   async verifyAndRotateRefreshToken(refreshToken: string) {
     const hashedToken = this.hashToken(refreshToken);
+    const now = new Date();
 
     const token = await db.query.refreshTokens.findFirst({
       where: {
-        token: hashedToken,
+        OR: [{ token: hashedToken }, { previousToken: hashedToken }],
       },
       with: {
         user: true,
@@ -168,25 +176,36 @@ class AuthService {
       return null;
     }
 
-    if (isBefore(token.expires, new Date())) {
-      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, hashedToken));
+    if (isBefore(token.expires, now) || isAfter(now, addYears(token.createdAt, 1))) {
+      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, token.token));
 
       return null;
     }
 
-    if (isAfter(new Date(), addYears(token.createdAt, 1))) {
-      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, hashedToken));
+    if (token.token !== hashedToken) {
+      if (token.rotatedAt && isAfter(addSeconds(token.rotatedAt, REFRESH_GRACE_SECONDS), now)) {
+        return { token: undefined, expires: token.expires, user: token.user };
+      }
+
+      logger.warn({ userId: token.userId }, "Rotated refresh token reused, ending that login");
+      await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.token, token.token));
 
       return null;
     }
 
-    const newExpires = addDays(token.expires, 7);
+    const newExpires = addDays(now, REFRESH_IDLE_DAYS);
     const newToken = crypto.randomBytes(32).toString("hex");
 
-    await db
+    const [rotated] = await db
       .update(schema.refreshTokens)
-      .set({ expires: newExpires, token: this.hashToken(newToken) })
-      .where(eq(schema.refreshTokens.token, hashedToken));
+      .set({ expires: newExpires, token: this.hashToken(newToken), previousToken: hashedToken, rotatedAt: now })
+      .where(eq(schema.refreshTokens.token, hashedToken))
+      .returning({ token: schema.refreshTokens.token });
+
+    // A concurrent refresh rotated it between our read and write: that one's cookie wins
+    if (!rotated) {
+      return { token: undefined, expires: token.expires, user: token.user };
+    }
 
     return { token: newToken, expires: newExpires, user: token.user };
   }

@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../lib/db";
 import * as schema from "../lib/db/schema";
+import { publicUserColumns } from "../user/models";
 import { userService } from "../user/service";
 import { filterNullish } from "../utils/array";
 
@@ -40,9 +41,7 @@ export class ClubService {
         members: {
           with: {
             user: {
-              columns: {
-                password: false,
-              },
+              columns: publicUserColumns,
             },
           },
         },
@@ -67,9 +66,7 @@ export class ClubService {
             members: {
               with: {
                 user: {
-                  columns: {
-                    password: false,
-                  },
+                  columns: publicUserColumns,
                 },
               },
             },
@@ -139,9 +136,7 @@ export class ClubService {
       with: {
         club: true,
         inviter: {
-          columns: {
-            password: false,
-          },
+          columns: publicUserColumns,
         },
       },
     });

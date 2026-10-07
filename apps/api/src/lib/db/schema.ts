@@ -49,9 +49,15 @@ export const refreshTokens = p.pgTable(
       .notNull(),
     userAgent: p.text("user_agent").notNull(),
     expires: p.timestamp("expires").notNull(),
+    // The token this one replaced, kept briefly so a refresh racing the rotation still works
+    previousToken: p.text("previous_token"),
+    rotatedAt: p.timestamp("rotated_at"),
     ...timestampColumns,
   },
-  (table) => [p.index("refresh_tokens_user_id_index").on(table.userId)],
+  (table) => [
+    p.index("refresh_tokens_user_id_index").on(table.userId),
+    p.index("refresh_tokens_previous_token_index").on(table.previousToken),
+  ],
 );
 
 export const verificationTokens = p.pgTable(

@@ -75,6 +75,21 @@ describe("refreshToken", () => {
     expect(refreshCall?.[1]).toBe("rotated-refresh-token");
   });
 
+  it("only renews the access token while a concurrent refresh's cookie is in place", async () => {
+    const user = makeUser();
+    const { context, setCookie, deleteCookie } = cookieContext({ refresh_token: "just-replaced" });
+    spyOn(authService, "verifyAndRotateRefreshToken").mockResolvedValue({
+      token: undefined,
+      expires: new Date(Date.now() + 1000 * 60 * 60),
+      user: { ...user, password: null },
+    });
+
+    await call(authRouter.refreshToken, undefined, { context });
+
+    expect(deleteCookie).not.toHaveBeenCalled();
+    expect(setCookie.mock.calls.map((c) => c[0])).toEqual(["access_token"]);
+  });
+
   it("sets cookie Max-Age in seconds, not milliseconds", async () => {
     const user = makeUser();
     const { context, setCookie } = cookieContext({ refresh_token: "valid-token" });

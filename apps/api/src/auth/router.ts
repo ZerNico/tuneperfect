@@ -34,6 +34,12 @@ export const authRouter = os.prefix("/auth").router({
 
         if (existingUser) {
           if (!existingUser.emailVerified) {
+            // Nobody has proven they own the address yet, so the latest sign-up's password counts.
+            // Otherwise whoever registered it first (maybe not the owner) would keep theirs after verifying.
+            // Older links die with it, so a link from an earlier sign-up can't verify this password.
+            const hashedPassword = await authService.hashPassword(input.password);
+            await userService.updateUser(existingUser.id, { password: hashedPassword });
+            await authService.deleteVerificationTokens(existingUser.id, "email_verification");
             await authService.sendVerificationEmail(existingUser, { redirect: input.redirect });
           }
           return;
@@ -258,10 +264,12 @@ export const authRouter = os.prefix("/auth").router({
         ...defaultCookieOptions,
         maxAge: cookieMaxAge(accessToken.expires),
       });
-      context.setCookie?.("refresh_token", newRefreshToken.token, {
-        ...defaultCookieOptions,
-        maxAge: cookieMaxAge(newRefreshToken.expires),
-      });
+      if (newRefreshToken.token) {
+        context.setCookie?.("refresh_token", newRefreshToken.token, {
+          ...defaultCookieOptions,
+          maxAge: cookieMaxAge(newRefreshToken.expires),
+        });
+      }
     }),
 
   signOut: base
