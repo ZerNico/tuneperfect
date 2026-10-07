@@ -82,10 +82,15 @@ export function SongTitle(props: SongTitleProps) {
     // Fixed height for artist + two title lines + badges, with each layer anchored to
     // the bottom: one- and two-line titles swap without moving anything around them.
     <div class="relative grid h-[12.5cqw]">
-      {/* Soft scrim keeps the title readable over bright preview videos. */}
+      {/* Soft scrim keeps the title readable over bright preview videos. `closest-side` fades it out
+          inside its box, so the box edge never shows as a line, and the app's navy reads as shade on a
+          light cover where black would look like a grey smudge. */}
       <div
-        class="pointer-events-none absolute -inset-x-16 -inset-y-10 -z-1"
-        style={{ background: "radial-gradient(ellipse at 20% 50%, rgb(0 0 0 / 0.45), transparent 70%)" }}
+        class="pointer-events-none absolute -inset-y-[4cqw] -right-[8cqw] -left-[5cqw] -z-1"
+        style={{
+          background:
+            "radial-gradient(closest-side, color-mix(in oklch, var(--color-slate-950) 34%, transparent), color-mix(in oklch, var(--color-slate-950) 26%, transparent) 30%, color-mix(in oklch, var(--color-slate-950) 12%, transparent) 65%, transparent)",
+        }}
       />
       <For each={layers()}>
         {(layer) => (
