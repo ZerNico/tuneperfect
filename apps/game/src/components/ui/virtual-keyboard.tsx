@@ -117,6 +117,7 @@ export function VirtualKeyboard(props: VirtualKeyboardProps) {
             writeCharacter(currentKey.content);
           }
         },
+        cancel: () => setPressed(false),
       },
     },
   }));

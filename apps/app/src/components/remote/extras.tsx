@@ -1,5 +1,5 @@
 import type { Extras } from "@tuneperfect/webrtc/contracts/game";
-import { createSignal, For, type JSX, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, For, type JSX, on, onCleanup, Show } from "solid-js";
 import IconCheck from "~icons/ph/check-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -33,14 +33,29 @@ export function TextExtraField(props: {
   const remote = useRemote();
   const [focused, setFocused] = createSignal(false);
   const [draft, setDraft] = createSignal("");
+  /** Typing not sent yet. */
   let timer: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(timer));
 
-  const send = (value: string) => {
+  const send = (value: string, surface = props.text.surface) => {
     clearTimeout(timer);
-    void remote.act({ type: "text", surface: props.text.surface, value });
+    timer = undefined;
+    void remote.act({ type: "text", surface, value });
   };
   const value = () => (focused() ? draft() : props.text.value);
+
+  // Another field on the TV: what was typed for the last one stays there (a password never shows here).
+  createEffect(
+    on(
+      () => props.text.surface,
+      () => {
+        clearTimeout(timer);
+        timer = undefined;
+        setDraft(props.text.value);
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <label class="flex flex-col gap-1.5">
@@ -66,14 +81,16 @@ export function TextExtraField(props: {
             setFocused(true);
           }}
           onBlur={() => {
-            if (draft() !== props.text.value) send(draft());
+            // Only what's still waiting: resending the draft could undo a newer change on the TV.
+            if (timer !== undefined) send(draft());
             setFocused(false);
           }}
           onInput={(event) => {
             const next = event.currentTarget.value;
+            const surface = props.text.surface;
             setDraft(next);
             clearTimeout(timer);
-            timer = setTimeout(() => send(next), TEXT_DEBOUNCE_MS);
+            timer = setTimeout(() => send(next, surface), TEXT_DEBOUNCE_MS);
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();

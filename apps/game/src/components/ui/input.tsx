@@ -1,8 +1,9 @@
 import { mergeRefs } from "@solid-primitives/refs";
-import { createEffect, createSignal, type JSX, type Ref } from "solid-js";
+import { createEffect, createSignal, type Ref } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
 
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { useRemoteExtras } from "~/lib/remote";
 
 import MenuRow from "./menu-row";
 import { VirtualKeyboard } from "./virtual-keyboard";
@@ -10,7 +11,8 @@ import { VirtualKeyboard } from "./virtual-keyboard";
 interface InputProps {
   value?: string;
   placeholder?: string;
-  onInput?: JSX.EventHandler<HTMLInputElement, InputEvent>;
+  /** Typed here, or on a phone with full control while this field is selected. */
+  onValue?: (value: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
   class?: string;
@@ -52,6 +54,25 @@ export default function Input(props: InputProps) {
     enabled: props.selected,
     actions: { confirm: { up: () => inputRef.focus() } },
   }));
+
+  // Its own registration, so what's typed on a phone can't end up in another field.
+  useRemoteExtras({
+    // The virtual keyboard listens one layer up while it's open.
+    get layer() {
+      return showVirtualKeyboard() ? layer() + 1 : layer();
+    },
+    text: () => {
+      const set = props.onValue;
+      if (!props.selected || !set) return null;
+      return {
+        label: props.label || props.placeholder || "",
+        value: props.value || "",
+        maxLength: props.maxLength,
+        secret: props.type === "password",
+        set,
+      };
+    },
+  });
 
   createEffect(() => {
     if (!props.selected) {
@@ -106,7 +127,7 @@ export default function Input(props: InputProps) {
             placeholder={props.placeholder}
             aria-label={props.label || props.placeholder}
             maxLength={props.maxLength}
-            onInput={(event) => props.onInput?.(event)}
+            onInput={(event) => props.onValue?.(event.currentTarget.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
             class="w-full bg-transparent py-2 text-xl font-bold text-white placeholder:text-white/40 focus:outline-none"

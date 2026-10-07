@@ -43,6 +43,25 @@ export function postDataChannelMessage(channel: RTCDataChannel, data: DataChanne
   }
 }
 
+/** Above this much unsent data, `whenDrained` waits: a slow link gets fewer, fresher messages instead of a backlog. */
+const MAX_BUFFERED_AMOUNT = 1024 * 1024;
+
+/** Resolves once `channel` has room to send again (or closed, where sending fails anyway). */
+export function whenDrained(channel: RTCDataChannel): Promise<void> {
+  // Not `<=`: test doubles may not have a buffer at all.
+  if (!(channel.bufferedAmount > MAX_BUFFERED_AMOUNT) || channel.readyState !== "open") return Promise.resolve();
+  channel.bufferedAmountLowThreshold = MAX_BUFFERED_AMOUNT / 2;
+  return new Promise((resolve) => {
+    const done = () => {
+      channel.removeEventListener("bufferedamountlow", done);
+      channel.removeEventListener("close", done);
+      resolve();
+    };
+    channel.addEventListener("bufferedamountlow", done);
+    channel.addEventListener("close", done);
+  });
+}
+
 /**
  * Limits on what the other side can make us buffer while reassembling chunks: a 20k-song list is
  * about 200 chunks, so these leave plenty of room while a misbehaving peer can't grow memory

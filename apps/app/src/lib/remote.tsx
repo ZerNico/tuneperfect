@@ -13,17 +13,22 @@ import { connectionStore } from "~/stores/connection";
  * sends what this user can do right now, the phone sends actions back.
  */
 export interface Remote {
-  /** Whether the game takes part (older games don't). */
-  supported: Accessor<boolean>;
+  /** Whether the game takes part (older games don't); undefined until it said. */
+  supported: Accessor<boolean | undefined>;
   /** The latest state from the game; null until there is one, or while not connected. */
   state: Accessor<RemoteState | null>;
   act: (action: RemoteAction) => void;
 }
 
+/** How long to wait before following the game again after its stream failed. */
+const RETRY_MS = 3000;
+
 /** Follows the game's remote state while connected. Create it once per lobby (the lobby layout does). */
 export function createRemote(client: Accessor<GameClient | null>): Remote {
-  const [supported, setSupported] = createSignal(false);
+  const [supported, setSupported] = createSignal<boolean>();
   const [state, setState] = createSignal<RemoteState | null>(null);
+  /** Bumped to follow the game again after the stream broke off while connected. */
+  const [attempt, setAttempt] = createSignal(0);
 
   createEffect(() => {
     // oxlint-disable-next-line solid/reactivity
@@ -34,6 +39,7 @@ export function createRemote(client: Accessor<GameClient | null>): Remote {
     }
     // In the background the state just stops updating; coming back subscribes again and gets it fresh.
     if (!connectionStore.visible()) return;
+    attempt();
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -46,8 +52,11 @@ export function createRemote(client: Accessor<GameClient | null>): Remote {
 
         for await (const next of await game.remote.watch(undefined, { signal })) setState(next);
       } catch (error) {
-        // A dropped connection runs this effect again once it's back.
-        if (!signal.aborted) console.warn("[Remote] Stopped following the game:", error);
+        // A dropped connection runs this effect again once it's back. Otherwise try again in a moment.
+        if (signal.aborted) return;
+        console.warn("[Remote] Stopped following the game:", error);
+        const retry = setTimeout(() => setAttempt((current) => current + 1), RETRY_MS);
+        signal.addEventListener("abort", () => clearTimeout(retry));
       }
     })();
     onCleanup(() => controller.abort());

@@ -17,12 +17,17 @@ export type ActionHandler =
   | NavigationHandler
   | {
       down?: NavigationHandler;
-      /** Only for presses whose key down this listener got too. */
+      /** This and the ones below only for presses whose key down this listener got too. */
       up?: NavigationHandler;
       /** Once, after the key has been held for a moment. */
       hold?: NavigationHandler;
       /** Repeatedly while the key stays held, after `hold`. */
       repeat?: NavigationHandler;
+      /**
+       * Instead of `up` when a press ends without being released (the window lost focus, a phone
+       * went away): undo what `down` started, without doing what a release would.
+       */
+      cancel?: NavigationHandler;
     };
 
 /** Null: the screen has this action, but it does nothing right now (e.g. removing from an empty medley). */
@@ -169,6 +174,7 @@ type Events = {
   keyup: Emitted;
   hold: Emitted;
   repeat: Emitted;
+  cancel: Emitted;
 };
 
 /** A key, button or stick direction that is held down, with the actions it had when it went down. */
@@ -199,7 +205,7 @@ const emit = (type: keyof Events, press: Press) => {
   }
 };
 
-/** Forgets a press without a keyup, e.g. when the window loses focus mid-press. */
+/** Forgets a press without telling listeners. */
 const drop = (id: string) => {
   const press = presses.get(id);
   if (!press) return;
@@ -233,9 +239,17 @@ const release = (id: string) => {
   emit("keyup", state);
 };
 
-const dropWhere = (predicate: (id: string, press: Press) => boolean) => {
+/** Ends a press without a keyup, e.g. when the window loses focus mid-press: nothing activates. */
+const cancel = (id: string) => {
+  const state = presses.get(id);
+  if (!state) return;
+  drop(id);
+  emit("cancel", state);
+};
+
+const cancelWhere = (predicate: (id: string, press: Press) => boolean) => {
   for (const [id, state] of presses) {
-    if (predicate(id, state)) drop(id);
+    if (predicate(id, state)) cancel(id);
   }
 };
 
@@ -275,7 +289,7 @@ createRoot(() => {
   });
 
   // Keyups are lost while the window is in the background.
-  createEventListener(window, "blur", () => dropWhere((id) => id.startsWith("key:")));
+  createEventListener(window, "blur", () => cancelWhere((id) => id.startsWith("key:")));
 
   createGamepad({
     onButtonDown: (event) => {
@@ -303,7 +317,7 @@ createRoot(() => {
       release(`axis:${event.gamepadId}:${event.button}`);
     },
     onDisconnect: (gamepadId) => {
-      dropWhere((id) => id.startsWith(`pad:${gamepadId}:`) || id.startsWith(`axis:${gamepadId}:`));
+      cancelWhere((id) => id.startsWith(`pad:${gamepadId}:`) || id.startsWith(`axis:${gamepadId}:`));
     },
   });
 });
@@ -330,21 +344,26 @@ export function pressRemote(userId: string, action: Action, state: "down" | "up"
     window.setTimeout(
       () => {
         remoteReleaseTimers.delete(id);
-        release(id);
+        // A tap ends like a key going up. A hold this long lost its release: nothing activates.
+        if (state === "tap") release(id);
+        else cancel(id);
       },
       state === "tap" ? REMOTE_TAP_MS : REMOTE_HOLD_MAX_MS,
     ),
   );
 }
 
-/** Lets go of everything a phone holds down, e.g. when it stops listening. */
-export function releaseRemote(userId: string) {
+/**
+ * Lets go of everything a phone holds down without activating anything, e.g. when it stops
+ * listening or loses full control: its finger didn't come off the button.
+ */
+export function cancelRemote(userId: string) {
   const prefix = `remote:${userId}:`;
   for (const id of presses.keys()) {
     if (!id.startsWith(prefix)) continue;
     window.clearTimeout(remoteReleaseTimers.get(id));
     remoteReleaseTimers.delete(id);
-    release(id);
+    cancel(id);
   }
 }
 
@@ -428,7 +447,7 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     );
     onCleanup(() => activeActionLists.delete(registration));
 
-    const phase = (action: Action, name: "down" | "up" | "hold" | "repeat") => {
+    const phase = (action: Action, name: "down" | "up" | "hold" | "repeat" | "cancel") => {
       const handler = actions[action];
       if (typeof handler === "function") return name === "down" ? handler : undefined;
       return handler?.[name];
@@ -446,19 +465,29 @@ export function useNavigation(options: MaybeAccessor<UseNavigationOptions>) {
     const handleKeyup = ({ serial, event }: Emitted) => {
       if (received.delete(`${serial}:${event.action}`)) phase(event.action, "up")?.(event);
     };
-    const handleHold = ({ event }: Emitted) => phase(event.action, "hold")?.(event);
-    const handleRepeat = ({ event }: Emitted) => phase(event.action, "repeat")?.(event);
+    const handleCancel = ({ serial, event }: Emitted) => {
+      if (received.delete(`${serial}:${event.action}`)) phase(event.action, "cancel")?.(event);
+    };
+    // Like keyups, only for presses that went down here: a popup opening mid-hold doesn't scroll.
+    const handleHold = ({ serial, event }: Emitted) => {
+      if (received.has(`${serial}:${event.action}`)) phase(event.action, "hold")?.(event);
+    };
+    const handleRepeat = ({ serial, event }: Emitted) => {
+      if (received.has(`${serial}:${event.action}`)) phase(event.action, "repeat")?.(event);
+    };
 
     emitter.on("keydown", handleKeydown);
     emitter.on("keyup", handleKeyup);
     emitter.on("hold", handleHold);
     emitter.on("repeat", handleRepeat);
+    emitter.on("cancel", handleCancel);
 
     onCleanup(() => {
       emitter.off("keydown", handleKeydown);
       emitter.off("keyup", handleKeyup);
       emitter.off("hold", handleHold);
       emitter.off("repeat", handleRepeat);
+      emitter.off("cancel", handleCancel);
     });
   });
 }

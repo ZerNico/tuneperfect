@@ -6,9 +6,9 @@ import {
   type RemoteAction,
   type RemoteState,
 } from "@tuneperfect/webrtc/contracts/game";
-import { createEffect, createRoot, createSignal, onCleanup, untrack } from "solid-js";
+import { createEffect, createRoot, createSignal, on, onCleanup, untrack } from "solid-js";
 
-import { activeActions, pressRemote, releaseRemote, topLayer } from "~/hooks/navigation";
+import { activeActions, cancelRemote, pressRemote, topLayer } from "~/hooks/navigation";
 import { lobbyStore } from "~/stores/lobby";
 
 /**
@@ -170,12 +170,12 @@ function stateFor(userId: string): RemoteState {
 /** An action from `userId`'s phone. */
 export function dispatchRemote(userId: string, action: RemoteAction): ActResult {
   if (action.type === "nav") {
-    if (!hasFullControl(userId)) return NOT_ALLOWED;
-    // A release always goes through, so nothing stays held.
+    // A release always goes through, so nothing stays held. It only ends this user's own presses.
     if (action.state === "up") {
       pressRemote(userId, action.action, "up");
       return OK;
     }
+    if (!hasFullControl(userId)) return NOT_ALLOWED;
     // The screen changed since the phone got its buttons.
     if (!activeActions().get(action.action)) return STALE;
     pressRemote(userId, action.action, action.state ?? "tap");
@@ -187,6 +187,9 @@ export function dispatchRemote(userId: string, action: RemoteAction): ActResult 
   }
   return activeSurface()?.act?.(userId, action) ?? UNAVAILABLE;
 }
+
+/** Open watches by user: a phone may briefly have two (reconnecting). */
+const watchers = new Map<string, number>();
 
 /** `userId`'s state now and after every change, until `signal` aborts. Changes in between collapse into the latest. */
 export async function* watchRemote(userId: string, signal?: AbortSignal): AsyncGenerator<RemoteState> {
@@ -204,8 +207,19 @@ export async function* watchRemote(userId: string, signal?: AbortSignal): AsyncG
       pending = state;
       wake?.();
     });
+    // Losing full control mid-press: the release won't count anymore, so let go now.
+    createEffect(
+      on(
+        () => hasFullControl(userId),
+        (full) => {
+          if (!full) cancelRemote(userId);
+        },
+        { defer: true },
+      ),
+    );
     return dispose;
   });
+  watchers.set(userId, (watchers.get(userId) ?? 0) + 1);
   const onAbort = () => wake?.();
   signal?.addEventListener("abort", onAbort);
 
@@ -224,7 +238,12 @@ export async function* watchRemote(userId: string, signal?: AbortSignal): AsyncG
   } finally {
     signal?.removeEventListener("abort", onAbort);
     dispose();
-    // Gone (or in the background): it can't let go of what it holds anymore.
-    releaseRemote(userId);
+    const left = (watchers.get(userId) ?? 1) - 1;
+    if (left > 0) watchers.set(userId, left);
+    else {
+      watchers.delete(userId);
+      // Gone (or in the background): it can't let go of what it holds anymore.
+      cancelRemote(userId);
+    }
   }
 }

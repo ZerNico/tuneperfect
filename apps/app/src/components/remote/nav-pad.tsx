@@ -1,5 +1,5 @@
 import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
-import { type Component, createMemo, For, type JSX, Show } from "solid-js";
+import { type Component, createMemo, For, type JSX, onCleanup, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
 import IconArrowLeft from "~icons/ph/arrow-left-bold";
@@ -89,6 +89,8 @@ export default function NavPad(props: {
       held = false;
       remote.act({ type: "nav", action, state: "up" });
     };
+    // The button going away mid-press (another screen, leaving the page) sends no pointerup.
+    onCleanup(release);
     return {
       onPointerDown: (event: PointerEvent & { currentTarget: HTMLButtonElement }) => {
         if (event.button !== 0 || !has(action)) return;
@@ -137,7 +139,7 @@ export default function NavPad(props: {
             <Arrow action="left" icon={IconCaretLeft} label={t("remote.pad.left")} enabled={has("left")} hold={hold} />
             <button
               type="button"
-              class="gradient-accent flex size-20 cursor-pointer touch-none items-center justify-center rounded-full text-lg font-black shadow-crisp transition-[scale,opacity] select-none [-webkit-touch-callout:none] active:scale-95 disabled:cursor-default disabled:opacity-25"
+              class="gradient-accent flex size-20 cursor-pointer touch-none items-center justify-center rounded-full text-lg font-black transition-[scale,opacity] select-none [-webkit-touch-callout:none] active:scale-95 disabled:cursor-default disabled:opacity-25"
               disabled={!has("confirm")}
               {...hold("confirm")}
             >

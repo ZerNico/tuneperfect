@@ -113,6 +113,7 @@ export function createListNavigation(options: ListNavigationOptions) {
           setPressed(false);
           if (options.count > 0) onActivate(position());
         },
+        cancel: () => setPressed(false),
       };
     }
     return { layer: options.layer, enabled: options.enabled, actions };

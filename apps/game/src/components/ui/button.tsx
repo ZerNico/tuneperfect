@@ -1,4 +1,4 @@
-import { createSignal, type JSX, type Ref, Show } from "solid-js";
+import { createEffect, createSignal, type JSX, type Ref, Show } from "solid-js";
 import { twMerge } from "tailwind-merge";
 import IconSpinner from "~icons/ph/spinner-gap-bold";
 
@@ -22,6 +22,10 @@ interface ButtonProps {
 
 export default function Button(props: ButtonProps) {
   const [pressed, setPressed] = createSignal(false);
+  // Its confirm stops listening when deselected, so the release won't reach it.
+  createEffect(() => {
+    if (!props.selected) setPressed(false);
+  });
 
   useNavigation(() => ({
     layer: props.layer,
@@ -34,6 +38,7 @@ export default function Button(props: ButtonProps) {
               setPressed(false);
               if (props.selected && !props.loading) props.onClick?.();
             },
+            cancel: () => setPressed(false),
           }
         : null,
     },
