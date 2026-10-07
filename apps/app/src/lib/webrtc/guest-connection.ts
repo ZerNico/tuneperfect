@@ -18,6 +18,8 @@ export interface GuestConnectionCallbacks {
 export interface GuestConnection {
   pc: RTCPeerConnection;
   gameRpcChannel: RTCDataChannel;
+  /** For small, urgent calls, once the game serves it (see `GameLink`). Not waited for: older games ignore it. */
+  gameControlChannel: RTCDataChannel;
   /** An offer for the game; with `iceRestart`, one that finds a new network path for this same connection. */
   createOffer: (options?: { iceRestart?: boolean }) => Promise<string>;
   setAnswer: (answerSdp: string) => Promise<void>;
@@ -27,7 +29,7 @@ export interface GuestConnection {
   close: () => void;
 }
 
-/** The phone's side of the connection to the game: it opens the data channel the game serves its calls on. */
+/** The phone's side of the connection to the game: it opens the data channels the game serves its calls on. */
 export function createGuestConnection(
   iceServers: RTCIceServer[],
   callbacks: GuestConnectionCallbacks,
@@ -36,6 +38,8 @@ export function createGuestConnection(
   const iceBuffer = createIceCandidateBuffer();
 
   const gameRpcChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.gameRpc);
+  // Its own stream: ordered within itself (a press's down before its up), independent of the main one.
+  const gameControlChannel = createOrderedDataChannel(pc, WEBRTC_CONFIG.channels.gameControl);
   const channelSetup = setupDataChannelHandlers(gameRpcChannel, {
     onOpen: () => callbacks.onChannelOpen(),
     onClose: () => callbacks.onChannelClose(),
@@ -101,9 +105,10 @@ export function createGuestConnection(
     pc.removeEventListener("connectionstatechange", handleConnectionStateChange);
 
     gameRpcChannel.close();
+    gameControlChannel.close();
     pc.close();
     iceBuffer.clear();
   };
 
-  return { pc, gameRpcChannel, createOffer, setAnswer, addIceCandidate, setIceServers, close };
+  return { pc, gameRpcChannel, gameControlChannel, createOffer, setAnswer, addIceCandidate, setIceServers, close };
 }

@@ -27,7 +27,7 @@ export interface HostConnection {
   close: () => void;
 }
 
-/** The game's side of one phone's connection. The phone opens the data channel; the game serves its calls on it. */
+/** The game's side of one phone's connection. The phone opens the data channels; the game serves its calls on them. */
 export function createHostConnection(
   userId: string,
   session: string | undefined,
@@ -37,30 +37,34 @@ export function createHostConnection(
   const pc = new RTCPeerConnection({ iceServers });
   const iceBuffer = createIceCandidateBuffer();
 
-  let gameRpcChannel: RTCDataChannel | null = null;
-  let gameRpcChannelCleanup: (() => void) | null = null;
-  let gameRpcHandlerCleanup: (() => void) | null = null;
+  /** The phone's channels the game serves its calls on, with what ends serving them. */
+  const channels = new Map<RTCDataChannel, () => void>();
+  const servedLabels: string[] = [WEBRTC_CONFIG.channels.gameRpc, WEBRTC_CONFIG.channels.gameControl];
 
   const handleDataChannel = (event: RTCDataChannelEvent) => {
     const channel = event.channel;
     // Older phones also open an unused "app-rpc" channel; it closes with the connection.
-    if (channel.label !== WEBRTC_CONFIG.channels.gameRpc) return;
+    if (!servedLabels.includes(channel.label)) return;
 
-    gameRpcChannel = channel;
+    let stopServing: (() => void) | null = null;
     const setup = setupDataChannelHandlers(channel, {
       onOpen: () => {
         const handler = new RPCHandler<GameRouterContext>(gameRouter);
-        gameRpcHandlerCleanup = handler.upgrade(channel, { context: { userId } });
+        stopServing = handler.upgrade(channel, { context: { userId } });
       },
       onClose: () => {
-        gameRpcHandlerCleanup?.();
-        gameRpcHandlerCleanup = null;
+        stopServing?.();
+        stopServing = null;
       },
       onError: (event) => {
-        console.error(`[WebRTC] game-rpc channel error for user ${userId}:`, event);
+        console.error(`[WebRTC] ${channel.label} channel error for user ${userId}:`, event);
       },
     });
-    gameRpcChannelCleanup = setup.cleanup;
+    channels.set(channel, () => {
+      stopServing?.();
+      setup.cleanup();
+      channel.close();
+    });
   };
 
   const handleIceCandidate = (event: RTCPeerConnectionIceEvent) => {
@@ -114,17 +118,13 @@ export function createHostConnection(
   };
 
   const close = (): void => {
-    gameRpcHandlerCleanup?.();
-    gameRpcHandlerCleanup = null;
-    gameRpcChannelCleanup?.();
-    gameRpcChannelCleanup = null;
+    for (const end of channels.values()) end();
+    channels.clear();
 
     pc.removeEventListener("datachannel", handleDataChannel);
     pc.removeEventListener("icecandidate", handleIceCandidate);
     pc.removeEventListener("connectionstatechange", handleConnectionStateChange);
 
-    gameRpcChannel?.close();
-    gameRpcChannel = null;
     pc.close();
     iceBuffer.clear();
   };

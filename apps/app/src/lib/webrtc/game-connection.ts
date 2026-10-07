@@ -1,13 +1,13 @@
-import type { ClientContext } from "@orpc/client";
 import { createORPCClient } from "@orpc/client";
 import { useQueryClient } from "@tanstack/solid-query";
 import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
-import { RPCLink } from "@tuneperfect/webrtc/orpc/client";
 import { createHeartbeat, WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
 import { type Accessor, createEffect, createMemo, onCleanup } from "solid-js";
 
 import { isSongListCurrent, songsQueryKey } from "~/lib/game-query";
 import { connectionStore } from "~/stores/connection";
+
+import { GameLink } from "./game-link";
 
 /**
  * The RPC client for the game over the lobby's WebRTC connection, or null while it isn't connected.
@@ -16,7 +16,7 @@ import { connectionStore } from "~/stores/connection";
  */
 export function createGameConnection(): Accessor<GameClient | null> {
   const queryClient = useQueryClient();
-  let link: RPCLink<ClientContext> | null = null;
+  let link: GameLink | null = null;
   /** The client the last heartbeat ran for, to tell a new connection from the page coming back. */
   let pingedClient: GameClient | null = null;
 
@@ -32,7 +32,7 @@ export function createGameConnection(): Accessor<GameClient | null> {
       return null;
     }
 
-    link ??= new RPCLink({ channel: connection.gameRpcChannel });
+    link ??= new GameLink({ main: connection.gameRpcChannel, control: connection.gameControlChannel });
     return createORPCClient(link) as GameClient;
   });
 

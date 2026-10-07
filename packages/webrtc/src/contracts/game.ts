@@ -6,6 +6,9 @@ import { remoteContract } from "./remote";
 
 export * from "./remote";
 
+/** Games listing this in `ping` also serve their calls on the `game-control` channel (see `WEBRTC_CONFIG.channels`). */
+export const CONTROL_CHANNEL_FEATURE = "control-channel";
+
 export const SongSummarySchema = v.object({
   hash: v.string(),
   title: v.string(),
