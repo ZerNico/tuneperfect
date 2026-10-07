@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
 import { render } from "solid-js/web";
 
-import { DialogProvider } from "./lib/dialog.tsx";
 import { applyMode } from "./lib/mode";
 
 import "./styles.css";
@@ -46,9 +45,7 @@ if (rootElement) {
   render(
     () => (
       <QueryClientProvider client={queryClient}>
-        <DialogProvider>
-          <RouterProvider router={router} />
-        </DialogProvider>
+        <RouterProvider router={router} />
       </QueryClientProvider>
     ),
     rootElement,

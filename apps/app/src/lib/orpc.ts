@@ -20,7 +20,10 @@ async function attemptTokenRefresh(): Promise<boolean> {
     try {
       const [refreshError] = await safe(client.auth.refreshToken.call());
       if (refreshError) {
-        window.dispatchEvent(new CustomEvent("session:expired"));
+        // Only a rejected refresh ends the session, not a request that never reached the API
+        if (refreshError instanceof ORPCError && refreshError.status === 401) {
+          window.dispatchEvent(new CustomEvent("session:expired"));
+        }
         return false;
       }
       return true;

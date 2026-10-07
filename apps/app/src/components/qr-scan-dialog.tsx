@@ -37,37 +37,50 @@ export default function QrScanDialog(props: QrScanDialogProps) {
   const [cameraFailed, setCameraFailed] = createSignal(false);
   let video: HTMLVideoElement | undefined;
 
-  onMount(async () => {
+  onMount(() => {
     if (!canScan || !video || !BarcodeDetector) return;
 
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    } catch {
-      setCameraFailed(true);
-      return;
-    }
+    // Cleanups must be registered now: after an await, Solid no longer knows whose they are
+    let closed = false;
+    let stream: MediaStream | undefined;
+    let timer: ReturnType<typeof setInterval> | undefined;
     onCleanup(() => {
-      for (const track of stream.getTracks()) track.stop();
+      closed = true;
+      clearInterval(timer);
+      for (const track of stream?.getTracks() ?? []) track.stop();
     });
 
-    video.srcObject = stream;
-    await video.play().catch(() => {});
-
-    const detector = new BarcodeDetector({ formats: ["qr_code"] });
-    const timer = setInterval(async () => {
-      if (!video || video.readyState < 2) return;
-      const codes = await detector.detect(video).catch(() => []);
-      for (const { rawValue } of codes) {
-        const code = codeFromScan(rawValue);
-        if (code) {
-          clearInterval(timer);
-          props.onCode(code);
-          return;
-        }
+    void (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch {
+        setCameraFailed(true);
+        return;
       }
-    }, SCAN_INTERVAL_MS);
-    onCleanup(() => clearInterval(timer));
+      // Closed while the camera prompt was open
+      if (closed) {
+        for (const track of stream.getTracks()) track.stop();
+        return;
+      }
+
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+      if (closed) return;
+
+      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      timer = setInterval(async () => {
+        if (!video || video.readyState < 2) return;
+        const codes = await detector.detect(video).catch(() => []);
+        for (const { rawValue } of codes) {
+          const code = codeFromScan(rawValue);
+          if (code && !closed) {
+            clearInterval(timer);
+            props.onCode(code);
+            return;
+          }
+        }
+      }, SCAN_INTERVAL_MS);
+    })();
   });
 
   return (

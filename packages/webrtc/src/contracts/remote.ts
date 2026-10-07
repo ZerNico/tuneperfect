@@ -15,6 +15,9 @@ import * as v from "valibot";
 /** Whether games answer `remote.*`; phones only offer the controller when `ping` lists it. */
 export const REMOTE_FEATURE = "remote";
 
+/** The longest text a phone may send for a text field, whatever the field allows. */
+export const TEXT_MAX_LENGTH = 500;
+
 const MarkSchema = v.picklist(["x", "o"]);
 
 const SongSchema = v.object({ hash: v.string(), title: v.string(), artist: v.string() });
@@ -191,7 +194,7 @@ export const ActionSchema = v.variant("type", [
   v.object({ type: v.literal("ticTacToe.singerCursor"), index: v.number() }),
   v.object({ type: v.literal("ticTacToe.singerPick"), index: v.number() }),
   // Extras (with full control).
-  v.object({ type: v.literal("text"), surface: v.string(), value: v.pipe(v.string(), v.maxLength(500)) }),
+  v.object({ type: v.literal("text"), surface: v.string(), value: v.pipe(v.string(), v.maxLength(TEXT_MAX_LENGTH)) }),
   v.object({ type: v.literal("songs.sort"), surface: v.string(), sort: v.string() }),
   v.object({ type: v.literal("songs.scope"), surface: v.string(), scope: v.string() }),
   v.object({ type: v.literal("songs.filter"), surface: v.string(), filter: v.string(), value: v.nullable(v.string()) }),

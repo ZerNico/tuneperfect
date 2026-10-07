@@ -16,7 +16,11 @@ export class GameLink implements ClientLink<ClientContext> {
   private readonly control: RPCLink<ClientContext>;
   private controlServed = false;
 
-  constructor(private readonly channels: { main: RTCDataChannel; control: RTCDataChannel }) {
+  constructor(
+    private readonly channels: { main: RTCDataChannel; control: RTCDataChannel },
+    /** Called with the features from every `ping`, so others don't have to ping for them. */
+    private readonly onFeatures?: (features: readonly string[]) => void,
+  ) {
     this.main = new RPCLink({ channel: channels.main });
     this.control = new RPCLink({ channel: channels.control });
   }
@@ -26,8 +30,9 @@ export class GameLink implements ClientLink<ClientContext> {
       this.controlServed && CONTROL_CALLS.has(path[0] ?? "") && this.channels.control.readyState === "open";
     const output = await (useControl ? this.control : this.main).call(path, input, options);
     if (path[0] === "ping") {
-      const features = (output as { features?: string[] } | null)?.features;
-      this.controlServed = features?.includes(CONTROL_CHANNEL_FEATURE) ?? false;
+      const features = (output as { features?: string[] } | null)?.features ?? [];
+      this.controlServed = features.includes(CONTROL_CHANNEL_FEATURE);
+      this.onFeatures?.(features);
     }
     return output;
   }

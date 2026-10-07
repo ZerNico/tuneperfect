@@ -2,7 +2,7 @@ import { safe } from "@orpc/client";
 import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
-import { createSignal, Show } from "solid-js";
+import { createMemo, createSignal, onCleanup, Show } from "solid-js";
 import * as v from "valibot";
 import IconCaretRight from "~icons/ph/caret-right-bold";
 import IconDevices from "~icons/ph/devices-bold";
@@ -129,11 +129,13 @@ function EditProfileComponent() {
     }
   };
 
-  const fileUrl = () => {
+  const fileUrl = createMemo(() => {
     const f = file();
     if (!f) return;
-    return URL.createObjectURL(f);
-  };
+    const url = URL.createObjectURL(f);
+    onCleanup(() => URL.revokeObjectURL(url));
+    return url;
+  });
 
   return (
     <main class="mx-auto flex w-full max-w-md grow flex-col px-6 pt-4 pb-8">

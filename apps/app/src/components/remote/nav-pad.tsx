@@ -1,5 +1,5 @@
 import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
-import { type Component, createMemo, For, type JSX, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, createMemo, For, type JSX, onCleanup, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
 import IconArrowLeft from "~icons/ph/arrow-left-bold";
@@ -89,8 +89,12 @@ export default function NavPad(props: {
       held = false;
       remote.act({ type: "nav", action, state: "up" });
     };
-    // The button going away mid-press (another screen, leaving the page) sends no pointerup.
+    // The button going away mid-press (another screen, leaving the page) sends no pointerup, and a
+    // button that gets disabled under the finger may not either.
     onCleanup(release);
+    createEffect(() => {
+      if (!has(action)) release();
+    });
     return {
       onPointerDown: (event: PointerEvent & { currentTarget: HTMLButtonElement }) => {
         if (event.button !== 0 || !has(action)) return;
