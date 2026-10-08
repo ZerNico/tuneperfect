@@ -33,6 +33,8 @@ const dirOnly = args.includes("--dir");
 
 const version = (process.env.TUNEPERFECT_VERSION ?? packageJson.version).replace(/^v/, "");
 const productName = PRODUCT_NAME;
+/** The binary in `Tune Perfect.app/Contents/MacOS`, named like the Tauri version's. */
+const MAC_EXECUTABLE = "tuneperfect";
 
 /** The Rust target and the addon file the napi build produces for it. */
 const native = (() => {
@@ -176,9 +178,23 @@ const config: Configuration = {
     // this hook: flipping fuses modifies the binary, so it has to happen before signing.
     await context.packager.addElectronFuses(context, fuses);
 
-    // Ad-hoc signature, like the Tauri builds had: required for Apple Silicon to run the app.
     if (context.electronPlatformName === "darwin") {
       const app = path.join(context.appOutDir, `${productName}.app`);
+
+      // The binary inside the bundle keeps the Tauri version's name, which tools like the
+      // USDB Syncer launch directly. electron-builder's `executableName` would rename the
+      // bundle too, so only the binary and Info.plist change. Linux already uses this name.
+      const macosDir = path.join(app, "Contents", "MacOS");
+      fs.renameSync(path.join(macosDir, productName), path.join(macosDir, MAC_EXECUTABLE));
+      execFileSync("plutil", [
+        "-replace",
+        "CFBundleExecutable",
+        "-string",
+        MAC_EXECUTABLE,
+        path.join(app, "Contents", "Info.plist"),
+      ]);
+
+      // Ad-hoc signature, like the Tauri builds had: required for Apple Silicon to run the app.
       execFileSync("codesign", ["--force", "--deep", "--sign", "-", app]);
     }
   },

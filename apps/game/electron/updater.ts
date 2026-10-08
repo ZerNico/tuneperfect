@@ -146,6 +146,18 @@ function installMacos(bundle: string, archive: Uint8Array, workDir: string) {
   }
 }
 
+/**
+ * Starts the installed bundle again. Its binary is read from the new Info.plist, like
+ * Tauri's restart does, since the update may have renamed it (0.5 called it `Tune Perfect`).
+ */
+function relaunchMacos(bundle: string) {
+  const plist = path.join(bundle, "Contents", "Info.plist");
+  const executable = execFileSync("plutil", ["-extract", "CFBundleExecutable", "raw", "-o", "-", plist], {
+    encoding: "utf8",
+  }).trim();
+  app.relaunch({ execPath: path.join(bundle, "Contents", "MacOS", executable), args: process.argv.slice(1) });
+}
+
 function installAppImage(file: string, image: Uint8Array) {
   // Written next to the target so the final rename is atomic.
   const temp = `${file}.update`;
@@ -201,7 +213,7 @@ export async function installUpdate(onProgress: (progress: DownloadProgress) => 
   switch (target.kind) {
     case "macos":
       installMacos(target.bundle, data, workDir);
-      app.relaunch();
+      relaunchMacos(target.bundle);
       app.exit(0);
       return;
     case "appimage":
