@@ -1,7 +1,9 @@
+use std::sync::{Arc, Mutex};
+
 use crate::{
-    audio::{recorder::Recorder, MicrophoneOptions},
+    audio::{processor::Processor, recorder::Recorder, MicrophoneOptions},
     error::AppError,
-    state::state,
+    state::{state, ProcessorMap},
 };
 use futures::future::join_all;
 
@@ -17,11 +19,7 @@ pub fn start_recording(
         .map_err(|_| AppError::RecorderError("Failed to acquire recorder lock".to_string()))?;
 
     if recorder.is_some() {
-        let mut processors = state.processors.write().map_err(|_| {
-            AppError::ProcessorError("Failed to acquire processors lock".to_string())
-        })?;
-        processors.clear();
-
+        clear_processors()?;
         recorder.take();
     }
 
@@ -45,90 +43,99 @@ pub fn stop_recording() -> Result<(), AppError> {
         return Err(AppError::RecorderError("recorder not started".to_string()));
     }
 
-    let mut processors = state
-        .processors
-        .write()
-        .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
-    processors.clear();
-
+    clear_processors()?;
     recorder.take();
     Ok(())
 }
 
-pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
-    let futures = {
-        let processors = state().processors.read().map_err(|_| {
-            AppError::ProcessorError("Failed to acquire processors lock".to_string())
-        })?;
+/// Forgets the running recording's processors. The lock is released before the recorder is
+/// dropped: dropping it joins the analysis worker, which reads the processors, so holding the
+/// lock across the drop would deadlock.
+fn clear_processors() -> Result<(), AppError> {
+    state()
+        .processors
+        .write()
+        .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?
+        .clear();
+    Ok(())
+}
 
-        let mut processor_refs: Vec<_> = Vec::new();
-        let mut index = 0;
-        while let Some(processor) = processors.get(&index) {
-            processor_refs.push((index, processor.clone()));
-            index += 1;
-        }
+/// The processors by mic index, with `None` where a configured mic has none (its device
+/// wasn't found), so the results stay indexed like the mics the game asked for.
+fn processors_by_slot(
+    processors: &ProcessorMap,
+) -> Result<Vec<Option<Arc<Mutex<Processor>>>>, AppError> {
+    let processors = processors
+        .read()
+        .map_err(|_| AppError::ProcessorError("Failed to acquire processors lock".to_string()))?;
+    let slots = processors.keys().max().map_or(0, |max| max + 1);
+    Ok((0..slots)
+        .map(|index| processors.get(&index).cloned())
+        .collect())
+}
 
-        processor_refs
-            .into_iter()
-            .map(|(idx, processor)| {
-                tokio::task::spawn_blocking(move || match processor.lock() {
-                    Ok(mut p) => (idx, p.get_pitch(window_ms)),
-                    Err(poisoned) => {
-                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
-                        (idx, poisoned.into_inner().get_pitch(window_ms))
-                    }
-                })
-            })
-            .collect::<Vec<_>>()
-    };
-
-    let mut results: Vec<(usize, f32)> = join_all(futures)
-        .await
+/// Runs `measure` on every processor in parallel; `missing` for a slot without one.
+async fn per_slot<F>(measure: F, missing: f32) -> Result<Vec<f32>, AppError>
+where
+    F: Fn(&mut Processor) -> f32 + Copy + Send + 'static,
+{
+    let tasks = processors_by_slot(&state().processors)?
         .into_iter()
-        .filter_map(|r: Result<(usize, f32), _>| r.ok())
-        .collect();
+        .map(|slot| async move {
+            let Some(processor) = slot else {
+                return missing;
+            };
+            tokio::task::spawn_blocking(move || {
+                let mut processor = processor
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                measure(&mut processor)
+            })
+            .await
+            .unwrap_or(missing)
+        });
+    Ok(join_all(tasks).await)
+}
 
-    results.sort_by_key(|(idx, _)| *idx);
-    let pitches: Vec<f32> = results.into_iter().map(|(_, pitch)| pitch).collect();
-
-    Ok(pitches)
+pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
+    per_slot(move |processor| processor.get_pitch(window_ms), -1.0).await
 }
 
 pub async fn get_audio_levels() -> Result<Vec<f32>, AppError> {
-    let futures = {
-        let processors = state().processors.read().map_err(|_| {
-            AppError::ProcessorError("Failed to acquire processors lock".to_string())
-        })?;
+    per_slot(|processor| processor.get_level(), 0.0).await
+}
 
-        let mut processor_refs: Vec<_> = Vec::new();
-        let mut index = 0;
-        while let Some(processor) = processors.get(&index) {
-            processor_refs.push((index, processor.clone()));
-            index += 1;
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::sync::RwLock;
 
-        processor_refs
-            .into_iter()
-            .map(|(idx, processor)| {
-                tokio::task::spawn_blocking(move || match processor.lock() {
-                    Ok(mut p) => (idx, p.get_level()),
-                    Err(poisoned) => {
-                        log::warn!("Mutex poisoned for processor {}, attempting recovery", idx);
-                        (idx, poisoned.into_inner().get_level())
-                    }
-                })
-            })
-            .collect::<Vec<_>>()
-    };
+    fn processor() -> Arc<Mutex<Processor>> {
+        let options = MicrophoneOptions {
+            device_id: None,
+            name: "Mic".into(),
+            channel: 0,
+            gain: 1.0,
+            threshold: 1.0,
+            delay: 0.0,
+        };
+        Arc::new(Mutex::new(Processor::new(options, 48_000).0))
+    }
 
-    let mut results: Vec<(usize, f32)> = join_all(futures)
-        .await
-        .into_iter()
-        .filter_map(|r: Result<(usize, f32), _>| r.ok())
-        .collect();
+    #[test]
+    fn a_missing_mic_leaves_a_gap_instead_of_hiding_the_rest() {
+        let map: ProcessorMap = Arc::new(RwLock::new(HashMap::from([
+            (1, processor()),
+            (3, processor()),
+        ])));
+        let slots = processors_by_slot(&map).unwrap();
+        assert_eq!(
+            slots.iter().map(Option::is_some).collect::<Vec<_>>(),
+            vec![false, true, false, true]
+        );
 
-    results.sort_by_key(|(idx, _)| *idx);
-    let levels: Vec<f32> = results.into_iter().map(|(_, level)| level).collect();
-
-    Ok(levels)
+        let empty: ProcessorMap = Arc::new(RwLock::new(HashMap::new()));
+        assert!(processors_by_slot(&empty).unwrap().is_empty());
+    }
 }

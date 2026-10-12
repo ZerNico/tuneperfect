@@ -1,7 +1,11 @@
 use super::{
-    device::DeviceManager, input::InputStreamManager, output::OutputMixer, types::MicrophoneOptions,
+    device::DeviceManager, input::InputStreamManager, output::OutputMixer,
+    types::MicrophoneOptions, worker::AnalysisWorker,
 };
-use crate::{error::AppError, state::ProcessorMap};
+use crate::{
+    error::AppError,
+    state::{state, ProcessorMap},
+};
 use cpal::Stream;
 use std::{
     collections::HashMap,
@@ -109,7 +113,7 @@ impl Recorder {
         let mut streams: Vec<Stream> = InputStreamManager::setup_input_streams(
             input_devices,
             &options,
-            processors,
+            processors.clone(),
             output_producers,
             playback_enabled_atomic,
         )?;
@@ -119,6 +123,9 @@ impl Recorder {
                 mixer.create_output_stream(output_device, output_config, playback_volume)?;
             streams.push(output_stream);
         }
+
+        // Drains the microphones continuously (so their queues never overflow) and streams pitch.
+        let _analysis = AnalysisWorker::start(processors, &state().pitch_sinks);
 
         stop_rx
             .recv()

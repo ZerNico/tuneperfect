@@ -22,6 +22,43 @@ export const nativeErrors = os.middleware(async ({ next, errors }) => {
 });
 
 /**
+ * Turns a callback subscription into an async generator that yields every event in order until
+ * the client stops listening (or `signal` aborts), then unsubscribes.
+ */
+export async function* subscription<E>(
+  signal: AbortSignal | undefined,
+  subscribe: (emit: (event: E) => void) => () => void,
+) {
+  const queue: E[] = [];
+  let wake: (() => void) | undefined;
+  const notify = () => {
+    wake?.();
+    wake = undefined;
+  };
+
+  const unsubscribe = subscribe((event) => {
+    queue.push(event);
+    notify();
+  });
+  // A generator waiting for its next event can't be stopped until one comes, and without a
+  // recording none ever does: the abort wakes it so it ends.
+  signal?.addEventListener("abort", notify, { once: true });
+
+  try {
+    for (;;) {
+      if (signal?.aborted) return;
+      while (queue.length > 0) yield queue.shift() as E;
+      await new Promise<void>((resolve) => {
+        wake = resolve;
+      });
+    }
+  } finally {
+    signal?.removeEventListener("abort", notify);
+    unsubscribe();
+  }
+}
+
+/**
  * Turns a callback-driven call into an async generator: everything the callback receives
  * is yielded in order, followed by `done(result)` (if given) once the call resolves.
  */
