@@ -26,7 +26,7 @@ export interface LyricGeometry {
   gap: number;
 }
 
-/** How far a syllable may slide right of its note to make room, as a share of the note's length. */
+/** How far a syllable may slide off its note's centre to make room, as a share of the note's length. */
 const MAX_PUSH = 0.5;
 /** Syllables and bars this many places back can still be in the way. */
 const LOOKBACK = 24;
@@ -49,8 +49,8 @@ export function syllableText(text: string): string {
 
 /**
  * Lays out the syllables on the scrolling lane, clear of the note bars and of each other: each
- * goes under its note, or above it when that's in the way, sliding right a little if that makes
- * room. When nothing is free (very dense passages), it takes the spot that covers the least; the
+ * goes centred under its note, or above it when that's in the way, sliding a little to either
+ * side if that makes room. When nothing is free (very dense passages), it takes the spot that covers the least; the
  * karaoke bars still show the whole line.
  *
  * Notes must be in time order. Syllables that are only melisma marks get no slot.
@@ -74,7 +74,7 @@ export function layoutLyrics(
     if (text === "") continue;
 
     const width = measure(text);
-    const start = note.startMs * pxPerMs;
+    const centred = ((note.startMs + note.endMs) / 2) * pxPerMs - width / 2;
     const maxPush = (note.endMs - note.startMs) * pxPerMs * MAX_PUSH;
 
     // What could be in the way: recent syllables, and bars from a little back to past the push.
@@ -82,7 +82,7 @@ export function layoutLyrics(
     for (let i = Math.max(0, index - LOOKBACK); i < bars.length; i++) {
       const bar = bars[i];
       if (!bar || i === index) continue;
-      if (bar.left > start + maxPush + width + gap) break;
+      if (bar.left > centred + maxPush + width + gap) break;
       obstacles.push(bar);
     }
 
@@ -92,15 +92,17 @@ export function layoutLyrics(
       return obstacles.reduce((sum, obstacle) => sum + overlap(padded, obstacle), 0);
     };
 
-    // Under the note first, then above it; at the note's start, then slid just past what's in the way.
+    // Under the note first, then above it; centred, then slid just clear of what's in the way,
+    // the smallest slide first.
     let best: { box: Box; covered: number } | undefined;
     for (const y of [note.bottom, note.top - lineHeight]) {
-      const xs = [start];
+      const xs = [centred];
       for (const obstacle of obstacles) {
-        const x = obstacle.right + gap;
-        if (x > start && x <= start + maxPush) xs.push(x);
+        for (const x of [obstacle.right + gap, obstacle.left - gap - width]) {
+          if (Math.abs(x - centred) <= maxPush) xs.push(x);
+        }
       }
-      xs.sort((a, b) => a - b);
+      xs.sort((a, b) => Math.abs(a - centred) - Math.abs(b - centred));
       for (const x of xs) {
         const box = boxAt(x, y);
         const amount = covered(box);

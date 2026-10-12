@@ -24,22 +24,22 @@ const boxes = (notes: LyricNote[]) =>
   }));
 
 describe("layoutLyrics", () => {
-  it("puts syllables under their notes when there's room", () => {
+  it("centres syllables under their notes when there's room", () => {
     expect(layout([note(0, 500, "Sing "), note(600, 1000, " it")])).toEqual([
-      { index: 0, text: "Sing", x: 0, y: 20 },
-      { index: 1, text: "it", x: 60, y: 20 },
+      { index: 0, text: "Sing", x: 5, y: 20 },
+      { index: 1, text: "it", x: 70, y: 20 },
     ]);
   });
 
-  it("slides a syllable right a little to make room", () => {
-    // "Sing" ends at 40 px; the next note starts at 30 px and is 200 px long.
-    const [, second] = layout([note(0, 300, "Sing"), note(300, 2300, "it")]);
-    expect(second).toEqual({ index: 1, text: "it", x: 44, y: 20 });
+  it("slides a syllable a little to make room", () => {
+    // "Sing" ends at 35 px; "long" would start at 30 px, and may slide 20 px.
+    const [, second] = layout([note(0, 300, "Sing"), note(300, 700, "long")]);
+    expect(second).toEqual({ index: 1, text: "long", x: 39, y: 20 });
   });
 
   it("goes above its note when below is taken", () => {
     const [, second] = layout([note(0, 300, "Singing"), note(300, 400, "it")]);
-    expect(second).toEqual({ index: 1, text: "it", x: 30, y: -20 });
+    expect(second).toEqual({ index: 1, text: "it", x: 25, y: -20 });
   });
 
   it("keeps clear of other notes' bars", () => {
