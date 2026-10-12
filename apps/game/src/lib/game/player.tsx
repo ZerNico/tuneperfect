@@ -97,6 +97,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
 
   /** `null` until scoring starts; beats can be negative, so no number works as "not started". */
   let lastScoredBeat: number | null = null;
+  const [scoredBeat, setScoredBeat] = createSignal<number | null>(null);
 
   // Each beat is scored with the pitch stream's frames from its end, once they've arrived: in this
   // mic's delayed time, the voice for a beat comes `delay` ms after it.
@@ -126,6 +127,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
         processBeat(beat, beatPitch(timeline, endMs, beatMs));
         lastScoredBeat = beat;
       }
+      setScoredBeat(lastScoredBeat);
     });
   });
 
@@ -172,6 +174,7 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     micColor,
     delayedBeat,
     processedBeats,
+    scoredBeat,
     maxScore,
     player,
     score,

@@ -116,7 +116,8 @@ export default function ScrollingLane() {
   let grouped: { groups: ProcessedNoteGroup[]; nextBeat: number } = { groups: [], nextBeat: -Infinity };
   const fills = createMemo(
     () => {
-      const upTo = Math.floor(player.delayedBeat());
+      const upTo = player.scoredBeat();
+      if (upTo === null) return grouped.groups;
       let groups = grouped.groups;
       if (grouped.nextBeat === -Infinity) grouped.nextBeat = Math.floor(timeline()?.notes[0]?.note.startBeat ?? 0);
       for (let i = grouped.nextBeat; i <= upTo; i++) {

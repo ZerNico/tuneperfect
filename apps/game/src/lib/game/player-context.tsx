@@ -37,6 +37,8 @@ export interface PlayerContextValue {
   micColor: (shade: ColorShade) => string;
   delayedBeat: Accessor<number>;
   processedBeats: ReactiveMap<number, ProcessedBeat>;
+  /** The last beat scored, `null` before the first. Scoring waits for the voice, so it trails `delayedBeat`. */
+  scoredBeat: Accessor<number | null>;
   score: Accessor<Score>;
   maxScore: Accessor<{ normal: number; golden: number; bonus: number }>;
   player: Accessor<User | null>;
