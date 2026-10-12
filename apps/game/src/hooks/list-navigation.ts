@@ -24,8 +24,12 @@ interface ListNavigationOptions {
   sound?: boolean;
   /** Confirm on the selected item: pressed while the key is down, activated when it's released. */
   onActivate?: (index: number) => void;
-  /** More actions on top of moving and confirming, e.g. back. */
-  actions?: NavigationActions;
+  /**
+   * More actions on top of moving and confirming, e.g. back. Pass a function for actions that
+   * depend on the selected item: it gets the position, which the returned list can't provide
+   * yet while it's being created.
+   */
+  actions?: NavigationActions | ((position: number) => NavigationActions);
 }
 
 /**
@@ -99,7 +103,8 @@ export function createListNavigation(options: ListNavigationOptions) {
   };
 
   useNavigation(() => {
-    const actions: NavigationActions = { ...options.actions };
+    const extra = options.actions;
+    const actions: NavigationActions = { ...(typeof extra === "function" ? extra(position()) : extra) };
     // With one item (or none) there's nowhere to move.
     const movable = options.count > 1;
     for (const [action, step] of steps()) {
