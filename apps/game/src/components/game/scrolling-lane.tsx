@@ -1,6 +1,7 @@
 import { Key } from "@solid-primitives/keyed";
 import { createMemo, createRenderEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
+import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { usePlayer } from "~/lib/game/player-context";
@@ -41,6 +42,11 @@ const CURSOR_TIMEOUT_MS = 150;
 const CURSOR_SPRING_MS = 22;
 /** The cursor follows the median of this many of the newest points, which drops stray frames. */
 const CURSOR_POINTS = 5;
+/** Sparkles drift off the cursor while on the note: how many at most, how long each lives, and
+ *  how often a new one starts (all in song time). */
+const SPARKLES = 24;
+const SPARKLE_LIFE_MS = 550;
+const SPARKLE_EVERY_MS = 30;
 /** The trail fades in this many steps, one path each. */
 const TRAIL_STEPS = 6;
 
@@ -78,7 +84,7 @@ export default function ScrollingLane() {
   // Fixed per round, like the classic lane. More rows than the classic lane's, with slimmer bars:
   // with time running sideways, the tune reads best as a flat line, like Let's Sing's.
   const compact = game.playerCount() > 2;
-  const rows = compact ? 15 : 20;
+  const rows = compact ? 18 : 24;
   const margin = compact ? 2 : 3;
 
   let area!: HTMLDivElement;
@@ -99,8 +105,8 @@ export default function ScrollingLane() {
   const pxPerMs = () => size().width / WINDOW_MS;
   const rowHeight = () => size().height / rows;
   const nowX = () => (size().width * BEHIND_MS) / WINDOW_MS;
-  /** A bar is centred on its pitch and a little taller than a semitone step. */
-  const barHeight = () => rowHeight() * 1.6;
+  /** A bar is centred on its pitch, almost two semitone steps tall (neighbours may overlap). */
+  const barHeight = () => rowHeight() * 1.9;
 
   /** Where a pitch sits vertically in the track (row centres, before the camera's offset). */
   const pitchY = (midi: number) => -midi * rowHeight();
@@ -188,6 +194,11 @@ export default function ScrollingLane() {
   let cursorPitch: Spring | undefined;
   let cursorAt = 0;
   let shownState = "";
+  const sparkleElements: HTMLDivElement[] = [];
+  const sparkles = Array.from({ length: SPARKLES }, () => ({ bornAt: -Infinity, x: 0, y: 0, drift: 0 }));
+  let nextSparkle = 0;
+  let sparkleAt = -Infinity;
+  const effects = effectsEnabled();
   createRenderEffect(() => {
     const now = game.ms();
     const plan = timeline()?.camera;
@@ -272,6 +283,32 @@ export default function ScrollingLane() {
       shownState = state;
       area.dataset.voice = state;
     }
+    // Sparkles start at the cursor and stay where they started on the track, so they trail off
+    // with the notes while they fade.
+    if (effects) {
+      if (state === "on" && (now - sparkleAt >= SPARKLE_EVERY_MS || now < sparkleAt)) {
+        sparkleAt = now;
+        const sparkle = sparkles[nextSparkle]!;
+        nextSparkle = (nextSparkle + 1) % SPARKLES;
+        sparkle.bornAt = now;
+        sparkle.x = now * pxPerMs();
+        sparkle.y = pitchY(cursorPitch.value) + (Math.random() - 0.5) * barHeight() * 0.6;
+        // Up or down, a row or two over its life.
+        sparkle.drift = ((Math.random() - 0.5) * rowHeight() * 3) / SPARKLE_LIFE_MS;
+      }
+      for (const [index, sparkle] of sparkles.entries()) {
+        const element = sparkleElements[index]!;
+        const age = now - sparkle.bornAt;
+        if (age < 0 || age > SPARKLE_LIFE_MS) {
+          if (element.style.opacity !== "0") element.style.opacity = "0";
+          continue;
+        }
+        const life = 1 - age / SPARKLE_LIFE_MS;
+        element.style.opacity = `${life}`;
+        element.style.transform = `translate(${sparkle.x}px, ${sparkle.y + sparkle.drift * age}px) scale(${0.4 + 0.6 * life})`;
+      }
+    }
+
     cursor.style.opacity = live ? "1" : "0.5";
     cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(cursorPitch.value)}px)`;
   });
@@ -387,6 +424,18 @@ export default function ScrollingLane() {
               );
             })}
           </svg>
+
+          <Show when={effects}>
+            {Array.from({ length: SPARKLES }, (_, index) => (
+              <div
+                ref={(element) => (sparkleElements[index] = element)}
+                class="absolute top-0 left-0 -mt-[0.25cqw] -ml-[0.25cqw] size-[0.5cqw] rounded-full opacity-0"
+                style={{
+                  background: `radial-gradient(circle, white 20%, ${player.micColor(300)} 60%, transparent 70%)`,
+                }}
+              />
+            ))}
+          </Show>
         </div>
 
         {/* The now-line with a soft wash behind it while singing, and the voice's cursor on it. */}
