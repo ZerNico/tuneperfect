@@ -66,6 +66,19 @@ export function buildTrail(points: readonly TrailPoint[], now: number, spanMs: n
   return segments;
 }
 
+/**
+ * Carries the newest point on to `now` in steps short enough not to break the trail, so a voice
+ * that's only heard with a delay still reaches the now-line.
+ */
+export function carryToNow(points: TrailPoint[], now: number) {
+  const latest = points.at(-1);
+  if (!latest) return;
+  for (let time = latest.time + MAX_GAP_MS / 2; time < now; time += MAX_GAP_MS / 2) {
+    points.push({ ...latest, time });
+  }
+  if (latest.time < now) points.push({ ...latest, time: now });
+}
+
 /** Median of three neighbours, which drops single-frame octave slips and glitches. */
 export function medianOfThree(values: readonly number[], i: number): number {
   const a = values[i - 1] ?? values[i]!;

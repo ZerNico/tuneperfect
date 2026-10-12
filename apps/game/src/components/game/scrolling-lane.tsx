@@ -10,6 +10,7 @@ import { layoutLyrics, type LyricSlot } from "~/lib/game/scrolling/lyric-slots";
 import { buildLaneTimeline, type LaneNote, visibleRange } from "~/lib/game/scrolling/timeline";
 import {
   buildTrail,
+  carryToNow,
   medianOfThree,
   placeSungPitch,
   type TrailPoint,
@@ -182,10 +183,12 @@ export default function ScrollingLane() {
       points.push({ time, midi: placeSungPitch(midi, target, camera, tolerance), note });
     }
 
-    // The live end: the newest frame reaches the now-line, closing the mic delay's gap.
+    // The voice is only heard `delay` (plus the stream's own latency) after it's sung, so the trail
+    // ends that far behind the now-line. While it's live, its newest pitch is carried on to the
+    // cursor on the line.
     const latest = points.at(-1);
-    const live = latest && latest.time >= now - CURSOR_TIMEOUT_MS;
-    if (latest && live) points.push({ ...latest, time: now });
+    const live = latest !== undefined && latest.time + delay >= now - CURSOR_TIMEOUT_MS;
+    if (latest && live) carryToNow(points, now);
 
     const segments = buildTrail(points, now, TRAIL_MS);
     // Segments that continue one another form one line, so its joins don't show.

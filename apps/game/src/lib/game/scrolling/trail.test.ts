@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTrail, medianOfThree, placeSungPitch, type TrailPoint } from "./trail";
+import { buildTrail, carryToNow, medianOfThree, placeSungPitch, type TrailPoint } from "./trail";
 
 describe("placeSungPitch", () => {
   it("snaps onto the note within tolerance, in any octave", () => {
@@ -53,5 +53,21 @@ describe("medianOfThree", () => {
   it("drops a single-frame slip", () => {
     const values = [60, 60, 72, 60, 60];
     expect(values.map((_, i) => medianOfThree(values, i))).toEqual([60, 60, 60, 60, 60]);
+  });
+});
+
+describe("carryToNow", () => {
+  it("carries the newest pitch to the now-line without breaking the trail", () => {
+    const note = {};
+    const points: TrailPoint[] = [
+      { time: 760, midi: 60, note },
+      { time: 770, midi: 61, note },
+    ];
+    carryToNow(points, 1000);
+
+    expect(points.at(-1)).toEqual({ time: 1000, midi: 61, note });
+    const segments = buildTrail(points, 1000, 600);
+    expect(segments).toHaveLength(points.length - 1);
+    expect(segments.at(-1)?.freshness).toBe(1);
   });
 });
