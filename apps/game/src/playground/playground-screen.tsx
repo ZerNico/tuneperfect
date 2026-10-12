@@ -1,5 +1,6 @@
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 
+import { setSimulatedSinger } from "~/lib/game/simulated-singer";
 import { native } from "~/lib/native/client";
 import { voiceCount } from "~/lib/ultrastar/song";
 import { isDuet } from "~/lib/utils/song";
@@ -8,7 +9,8 @@ import { type PlayerSelection, useRoundActions } from "~/stores/round";
 import { type Microphone, settingsStore, updateSettings } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
-const SINGER_KEY = "tp.simulatedSinger";
+/** The playground's own memory of its singer input; only the playground reads it. */
+const SINGER_KEY = "tp.playground.simulatedSinger";
 const COLORS = ["sky", "red", "green", "yellow"];
 
 /** Stand-ins when fewer microphones are set up than players: they record nothing. */
@@ -47,7 +49,9 @@ export default function PlaygroundScreen() {
     if (value) localStorage.setItem(SINGER_KEY, value);
     else localStorage.removeItem(SINGER_KEY);
     setSinger(value);
+    setSimulatedSinger(value ? Number(value) : undefined);
   };
+  updateSinger(singer());
 
   const start = (song: ReturnType<typeof songs>[number]) => {
     const voices = voiceCount(song);

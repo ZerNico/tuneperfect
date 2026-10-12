@@ -13,15 +13,23 @@ export interface SimulatedSinger {
   hzAt(mic: number, songMs: number): number;
 }
 
-const STORAGE_KEY = "tp.simulatedSinger";
+/**
+ * Set by the dev playground only, in memory: the game shares the playground's origin and storage,
+ * so a stored switch would leak into real rounds.
+ */
+let simulatedAccuracy: number | undefined;
 
-/** The accuracy (0–1) to simulate with, if the simulated singer is on. Development builds only. */
+/** Turns the simulated singer on with an accuracy (0–1), or off. Development builds only. */
+export function setSimulatedSinger(accuracy: number | undefined) {
+  simulatedAccuracy =
+    import.meta.env.DEV && accuracy !== undefined && Number.isFinite(accuracy)
+      ? Math.max(0, Math.min(1, accuracy))
+      : undefined;
+}
+
+/** The accuracy (0–1) to simulate with, if the simulated singer is on. */
 export function simulatedSingerAccuracy(): number | undefined {
-  if (!import.meta.env.DEV) return undefined;
-  const value = globalThis.localStorage?.getItem(STORAGE_KEY);
-  if (!value) return undefined;
-  const accuracy = Number(value);
-  return Number.isFinite(accuracy) ? Math.max(0, Math.min(1, accuracy)) : undefined;
+  return simulatedAccuracy;
 }
 
 /** Gaps up to this long are sung through. */
