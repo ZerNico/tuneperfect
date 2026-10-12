@@ -12,6 +12,7 @@ import { os, stream } from "./base";
 export interface PlatformDependencies {
   stores: JsonStores;
   songPaths: string[] | null;
+  youtubePlayerUrl: string | null;
   log: (level: "warn" | "error", message: string) => void;
 }
 
@@ -22,8 +23,8 @@ const IMAGE_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 };
 
-/** App and OS services: stores, dialogs, the window, updates. */
-export function platformProcedures({ stores, songPaths, log }: PlatformDependencies) {
+/** App and OS services: stores, dialogs, the window, updates, the YouTube embed host. */
+export function platformProcedures({ stores, songPaths, youtubePlayerUrl, log }: PlatformDependencies) {
   return {
     store: {
       read: os.store.read.handler(({ input }) => stores.read(input.file)),
@@ -68,6 +69,9 @@ export function platformProcedures({ stores, songPaths, log }: PlatformDependenc
           installUpdate((progress) => emit({ type: "progress", ...progress })),
         ),
       ),
+    },
+    youtube: {
+      playerUrl: os.youtube.playerUrl.handler(() => youtubePlayerUrl),
     },
     app: {
       songPaths: os.app.songPaths.handler(() => songPaths),

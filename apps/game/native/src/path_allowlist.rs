@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
-use crate::local_server::PathPolicy;
-
 /// Directories the user has granted access to, the replacement for Tauri's fs scope.
 ///
 /// Both sides of a check are canonicalized, so `..` segments and symlinks resolve to where
@@ -41,12 +39,6 @@ impl PathAllowlist {
             .read()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         roots.iter().any(|root| path.starts_with(root))
-    }
-}
-
-impl PathPolicy for PathAllowlist {
-    fn is_allowed(&self, path: &str) -> bool {
-        PathAllowlist::is_allowed(self, path)
     }
 }
 

@@ -1,5 +1,24 @@
-import type { BuildOptions } from "esbuild";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+import type { BuildOptions, Plugin } from "esbuild";
 import * as esbuild from "esbuild";
+
+/** `import text from "./file?raw"` as in Vite: the file's contents as a string. */
+const rawImports: Plugin = {
+  name: "raw-imports",
+  setup(build) {
+    build.onResolve({ filter: /\?raw$/ }, (args) => ({
+      path: path.resolve(args.resolveDir, args.path.slice(0, -"?raw".length)),
+      namespace: "raw",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "raw" }, async (args) => ({
+      contents: await fs.readFile(args.path, "utf8"),
+      loader: "text",
+      watchFiles: [args.path],
+    }));
+  },
+};
 
 /**
  * Bundles the Electron main process and preload script to CommonJS in `dist-electron/`.
@@ -16,6 +35,7 @@ export const electronBuildOptions: BuildOptions = {
   external: ["electron"],
   sourcemap: true,
   logLevel: "info",
+  plugins: [rawImports],
   // Fixed at build time: update configuration (`electron/updater.ts`) and the API origin.
   define: {
     "process.env.TUNEPERFECT_UPDATE_ENDPOINT": JSON.stringify(process.env.TUNEPERFECT_UPDATE_ENDPOINT ?? ""),

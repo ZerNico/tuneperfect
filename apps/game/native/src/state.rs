@@ -1,13 +1,12 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, LazyLock, Mutex, OnceLock, RwLock},
+    sync::{Arc, LazyLock, Mutex, RwLock},
 };
 
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::{
     audio::{processor::Processor, recorder::Recorder},
-    local_server::LocalServerState,
     path_allowlist::PathAllowlist,
     usdb::client::UsdbClient,
 };
@@ -21,8 +20,7 @@ pub struct AppState {
     pub processors: ProcessorMap,
     pub usdb_client: TokioMutex<Option<UsdbClient>>,
     /// Song folders the user granted access to. Gates song parsing and media serving.
-    pub allowlist: Arc<PathAllowlist>,
-    pub local_server: OnceLock<LocalServerState>,
+    pub allowlist: PathAllowlist,
 }
 
 static STATE: LazyLock<AppState> = LazyLock::new(|| {
@@ -32,8 +30,7 @@ static STATE: LazyLock<AppState> = LazyLock::new(|| {
         recorder: RwLock::new(None),
         processors: Arc::new(RwLock::new(HashMap::new())),
         usdb_client: TokioMutex::new(None),
-        allowlist: Arc::new(PathAllowlist::default()),
-        local_server: OnceLock::new(),
+        allowlist: PathAllowlist::default(),
     }
 });
 

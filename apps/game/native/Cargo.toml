@@ -24,12 +24,6 @@ cpal = "0.18.2"
 ringbuf = "0"
 dywapitchtrack = "0.2.0"
 rubato = "5.0"
-hyper = { version = "1", features = ["server", "http1"] }
-hyper-util = { version = "0.1", features = ["tokio"] }
-http-body-util = "0.1"
-tower-http = { version = "0.7", features = ["fs"] }
-tower = "0.5"
-percent-encoding = "2.3"
 log = "0.4"
 md5 = "0.8"
 tokio = { version = "1", features = ["full"] }

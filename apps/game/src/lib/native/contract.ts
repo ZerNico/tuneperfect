@@ -70,8 +70,9 @@ export const contract = {
     /** Parses the given (granted) folders, streaming progress before the result. */
     parse: base.input(v.object({ paths: v.array(v.string()) })).output(eventIterator(type<ParseSongsEvent>())),
   },
-  localServer: {
-    baseUrl: base.output(type<string | null>()),
+  youtube: {
+    /** The loopback page that hosts YouTube embeds, or `null` if its server couldn't start. */
+    playerUrl: base.output(type<string | null>()),
   },
   usdb: {
     login: base.input(v.object({ username: v.string(), password: v.string() })).output(type<boolean>()),

@@ -5,7 +5,7 @@
 - **`@tuneperfect/game`** — Electron desktop karaoke game (SolidJS renderer + Rust native addon)
 - **Frontend**: SolidJS, TanStack Router, TanStack Query, Tailwind CSS v4
 - **Main process**: Electron (`electron/`), talks to the renderer over a typed oRPC contract on a MessagePort
-- **Native**: Rust addon via napi-rs (`native/`) — audio I/O (cpal), pitch detection (dywapitchtrack), UltraStar song parsing, USDB, loopback media server
+- **Native**: Rust addon via napi-rs (`native/`) — audio I/O (cpal), pitch detection (dywapitchtrack), UltraStar song parsing, USDB
 - Connects to API via oRPC, to companion app via WebRTC (host side)
 
 ## Setup & Run
@@ -49,7 +49,9 @@ src/
 src/lib/native/           # oRPC contract, typed client, types generated from Rust (types.gen.ts)
 src/lib/desktop.ts        # platform + app version, provided synchronously by the preload
 electron/
-├── main.ts               # App lifecycle, window, app:// protocol, CSP, permissions
+├── main.ts               # App lifecycle, window, CSP, permissions
+├── protocols/            # Custom schemes: app:// (renderer), media:// (song files, Range-aware), originOf()
+├── youtube-embed/        # Loopback HTTP page hosting YouTube embeds (they need an http(s) parent)
 ├── rpc/                  # Contract implementation: native.ts (addon), platform.ts (stores, dialogs, window, updates)
 ├── updater.ts            # Tauri-style updater: minisign-verified download, per-OS install
 ├── store.ts              # JSON files in the app's data dir (settings.json, local.json, …), read/written whole
@@ -66,7 +68,7 @@ native/
 │   ├── commands/         # Songs, microphones, pitch
 │   ├── ultrastar/        # UltraStar parser + filesystem scanner (Rust)
 │   ├── usdb/             # USDB client
-│   └── local_server.rs   # Local HTTP server: /media/* song files, /embed/* static pages
+│   └── path_allowlist.rs # Granted song folders: gates parsing and media:// serving
 scripts/                  # dev loop, main-process bundling, packaging
 resources/icons/          # App icons for electron-builder
 ```
@@ -103,7 +105,7 @@ resources/icons/          # App icons for electron-builder
 - Rust `log` output and renderer `console.warn/error` go to the log file in Electron's logs dir (`~/Library/Logs/Tune Perfect/Tune Perfect.log` on macOS)
 - Audio pipeline: `native/src/audio/` (cpal device → resampler → processor → pitch)
 - UltraStar song format parsed in both Rust (`native/src/ultrastar/`) and TS (`src/lib/ultrastar/`)
-- Song folders must be granted (dialog pick, `--songpath`, or saved settings) before Rust parses or serves them — see `native/src/path_allowlist.rs`
+- Song folders must be granted (dialog pick, `--songpath`, or saved settings) before Rust parses them or `media://` serves them — see `native/src/path_allowlist.rs`
 
 ### WebRTC (host side)
 
@@ -158,7 +160,8 @@ rg -n "export const use" src/hooks/                                # find hooks
 
 - `src/routeTree.gen.ts` and `native/index.{cjs,d.ts}` are **auto-generated** — never edit them
 - The game uses `VITE_API_URL` and `VITE_APP_URL` env vars (client-side, `VITE_` prefix required)
-- Song files live on-disk, not fetched from the API — served to the renderer by the Rust local server (`http://localhost:240xx/media/...`)
+- Song files live on-disk, not fetched from the API — served to the renderer on `media://local/<encoded path>` by `electron/protocols/media.ts`, which only exists inside the app (no port other programs can reach)
+- In the main process, compare origins with `originOf()` (`electron/protocols/schemes.ts`), never `URL#origin`: Node gives `app://` URLs the opaque origin `"null"`
 - Settings/scores are JSON files in Electron's `userData` dir: `Tune Perfect` for releases, `Tune Perfect Dev` for development (the dev app is named that, so data, logs and the single-instance lock never overlap). Set `TUNEPERFECT_STORE_DIR` to use a copy
 - On first launch the app moves the Tauri version's data (`org.tuneperfect.game`, or `localhost.tuneperfect.game` in dev) into its data dir — running a packaged build without `TUNEPERFECT_STORE_DIR` moves a real Tauri install's data
 - Terminals inside Electron-based editors may export `ELECTRON_RUN_AS_NODE=1`; `scripts/dev.ts` strips it, but clear it when launching a packaged build by hand

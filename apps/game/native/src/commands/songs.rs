@@ -31,16 +31,6 @@ pub struct SongGroup {
     pub songs: Vec<LocalSong>,
 }
 
-/// Base URL that song media files are addressed through: the loopback media server,
-/// which serves them to the webview on every platform.
-fn get_media_base_url() -> Result<String, AppError> {
-    state()
-        .local_server
-        .get()
-        .map(|server| server.get_media_base_url())
-        .ok_or_else(|| AppError::IoError("local media server is not running".to_string()))
-}
-
 /// A scanned library: the songs' metadata, plus all their notes packed into one buffer (as JSON,
 /// a big library's notes don't even fit in one string). `note_ranges` holds an offset and a
 /// length into `notes` per song, in the order of the groups and their songs.
@@ -50,11 +40,13 @@ pub struct ParsedLibrary {
     pub note_ranges: Vec<u32>,
 }
 
+/// `media_base_url` is where the host serves song files from; each song's media URLs are
+/// `{media_base_url}/{percent-encoded absolute path}`.
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
+    media_base_url: String,
     on_event: ParseEventSink,
 ) -> Result<ParsedLibrary, AppError> {
-    let media_base_url = get_media_base_url()?;
     let allowlist = &state().allowlist;
 
     let allowed_paths: Vec<String> = paths

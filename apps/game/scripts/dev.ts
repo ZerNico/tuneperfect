@@ -118,6 +118,7 @@ function restartElectron() {
 context = await esbuild.context({
   ...electronBuildOptions,
   plugins: [
+    ...(electronBuildOptions.plugins ?? []),
     {
       name: "restart-electron",
       setup(build) {
