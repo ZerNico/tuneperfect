@@ -57,15 +57,15 @@ describe("medianOfThree", () => {
 });
 
 describe("carryToNow", () => {
-  it("carries the newest pitch to the now-line without breaking the trail", () => {
+  it("carries the trail on to the cursor without breaking it", () => {
     const note = {};
     const points: TrailPoint[] = [
       { time: 760, midi: 60, note },
       { time: 770, midi: 61, note },
     ];
-    carryToNow(points, 1000);
+    carryToNow(points, 1000, 62);
 
-    expect(points.at(-1)).toEqual({ time: 1000, midi: 61, note });
+    expect(points.at(-1)).toEqual({ time: 1000, midi: 62, note });
     const segments = buildTrail(points, 1000, 600);
     expect(segments).toHaveLength(points.length - 1);
     expect(segments.at(-1)?.freshness).toBe(1);

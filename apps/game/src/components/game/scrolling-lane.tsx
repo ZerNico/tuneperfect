@@ -25,15 +25,19 @@ import NoteBar from "./note-bar";
 import SungFill from "./sung-fill";
 
 /** How far ahead of the now-line notes show, and how long they stay behind it. */
-const AHEAD_MS = 4200;
-const BEHIND_MS = 2100;
+const AHEAD_MS = 3200;
+const BEHIND_MS = 1600;
 const WINDOW_MS = AHEAD_MS + BEHIND_MS;
 /** Notes enter and leave the DOM this far outside the visible window. */
 const OVERSCAN_MS = 400;
 /** How long the trail follows the voice. */
 const TRAIL_MS = 600;
-/** The cursor hides when the voice has been silent this long. */
+/** The cursor dims and the trail stops when the voice has been silent this long. */
 const CURSOR_TIMEOUT_MS = 150;
+/** How quickly the cursor follows the voice (time constant): steady without feeling slow. */
+const CURSOR_SMOOTHING_MS = 45;
+/** The cursor's pitch is the median of this many of the newest frames, which drops glitches. */
+const CURSOR_FRAMES = 5;
 /** The trail fades in this many steps, one path each. */
 const TRAIL_STEPS = 6;
 
@@ -44,6 +48,28 @@ const TRAIL_STEPS = 6;
  * It draws the same note bars and sung fills as the classic lane. Everything per frame happens in
  * one effect that writes transforms and a few path attributes, so frames cost no layout.
  */
+/** The note sung at `time`, if any. */
+function noteAt(notes: LaneNote[], time: number): LaneNote | undefined {
+  const [index] = visibleRange(notes, time, time);
+  const note = notes[index];
+  return note && note.startMs <= time ? note : undefined;
+}
+
+/** The voice's newest pitch: the median of the newest voiced frames (`NaN` marks silence). */
+function recentPitch(midis: readonly number[]): number {
+  const recent: number[] = [];
+  for (let i = midis.length - 1; i >= 0 && recent.length < CURSOR_FRAMES; i--) {
+    const midi = midis[i]!;
+    if (Number.isNaN(midi)) {
+      if (recent.length > 0) break;
+      continue;
+    }
+    recent.push(midi);
+  }
+  recent.sort((a, b) => a - b);
+  return recent[Math.floor(recent.length / 2)]!;
+}
+
 export default function ScrollingLane() {
   const game = useGame();
   const player = usePlayer();
@@ -72,6 +98,9 @@ export default function ScrollingLane() {
   const nowX = () => (size().width * BEHIND_MS) / WINDOW_MS;
   /** A bar spans two rows, centred on its pitch, like the classic lane's. */
   const barHeight = () => rowHeight() * 2;
+
+  /** Where a pitch sits vertically in the track (row centres, before the camera's offset). */
+  const pitchY = (midi: number) => -midi * rowHeight();
 
   const timeline = createMemo(() => {
     const song = game.song();
@@ -106,8 +135,16 @@ export default function ScrollingLane() {
     const style = getComputedStyle(syllableProbe);
     if (context) context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
     const measure = (text: string) => context?.measureText(text).width ?? text.length * 10;
-    const lyrics = notes.map((n) => ({ startMs: n.startMs, endMs: n.endMs, text: n.note.text }));
-    const slots = layoutLyrics(lyrics, scale, measure, parseFloat(style.fontSize) * 0.3);
+    const fontSize = parseFloat(style.fontSize);
+    const lyrics = notes.map((n) => ({
+      startMs: n.startMs,
+      endMs: n.endMs,
+      text: n.note.text,
+      top: pitchY(n.displayMidi) - barHeight() / 2,
+      bottom: pitchY(n.displayMidi) + barHeight() / 2,
+      bar: !n.freestyle,
+    }));
+    const slots = layoutLyrics(lyrics, { pxPerMs: scale, lineHeight: fontSize * 1.2, gap: fontSize * 0.3 }, measure);
     return new Map(slots.map((slot) => [notes[slot.index]!, slot]));
   });
 
@@ -140,13 +177,13 @@ export default function ScrollingLane() {
     return fills().filter((group) => beatToMs(song, group.beat + group.length) >= now - BEHIND_MS - OVERSCAN_MS);
   });
 
-  /** Where a pitch sits vertically in the track (row centres, before the camera's offset). */
-  const pitchY = (midi: number) => -midi * rowHeight();
-
   // Everything that moves each frame.
   const tolerance = getGapTolerance(settingsStore.general().difficulty);
   const midis: number[] = [];
   const points: TrailPoint[] = [];
+  /** The cursor's pitch as shown, easing after the voice; `undefined` until the first frame. */
+  let cursorMidi: number | undefined;
+  let cursorAt = 0;
   createRenderEffect(() => {
     const now = game.ms();
     const plan = timeline()?.camera;
@@ -178,18 +215,25 @@ export default function ScrollingLane() {
       if (Number.isNaN(time)) continue;
       const midi =
         Number.isNaN(midis[i - 1] ?? 0) || Number.isNaN(midis[i + 1] ?? 0) ? midis[i]! : medianOfThree(midis, i);
-      const [index] = visibleRange(notes, time, time);
-      const note = notes[index]?.startMs !== undefined && notes[index]!.startMs <= time ? notes[index] : undefined;
+      const note = noteAt(notes, time);
       const target = note && !note.freestyle ? note.displayMidi : undefined;
       points.push({ time, midi: placeSungPitch(midi, target, camera, tolerance), note });
     }
 
     // The voice is only heard `delay` (plus the stream's own latency) after it's sung, so the trail
-    // ends that far behind the now-line. While it's live, its newest pitch is carried on to the
-    // cursor on the line.
+    // ends that far behind the now-line. While it's live, the cursor on the line shows its newest
+    // pitch, steadied, and the trail bends over to it. In silence the trail stops and the cursor
+    // waits, dimmed, where the voice last was (in the middle before anything was sung).
     const latest = points.at(-1);
     const live = latest !== undefined && latest.time + delay >= now - CURSOR_TIMEOUT_MS;
-    if (latest && live) carryToNow(points, now);
+    const elapsed = now - cursorAt;
+    if (cursorMidi === undefined || elapsed < 0) cursorMidi = camera;
+    if (latest && live) {
+      const target = placeSungPitch(recentPitch(midis), noteAt(notes, now)?.displayMidi, camera, tolerance);
+      cursorMidi = target + (cursorMidi - target) * Math.exp(-Math.max(0, elapsed) / CURSOR_SMOOTHING_MS);
+      carryToNow(points, now, cursorMidi);
+    }
+    cursorAt = now;
 
     const segments = buildTrail(points, now, TRAIL_MS);
     // Segments that continue one another form one line, so its joins don't show.
@@ -205,8 +249,8 @@ export default function ScrollingLane() {
     }
     for (const [step, path] of trailPaths.entries()) path.setAttribute("d", paths[step] ?? "");
 
-    cursor.style.opacity = live ? "1" : "0";
-    if (latest && live) cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(latest.midi)}px)`;
+    cursor.style.opacity = live ? "1" : "0.5";
+    cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(cursorMidi)}px)`;
   });
 
   return (
@@ -242,7 +286,7 @@ export default function ScrollingLane() {
                   <Show when={slot()}>
                     {(slot) => (
                       <span
-                        class="absolute font-bold whitespace-nowrap transition-colors duration-150"
+                        class="absolute leading-[1.2] font-bold whitespace-nowrap transition-colors duration-150"
                         classList={{
                           "text-[1.2cqw]": compact,
                           "text-[1.5cqw]": !compact,
@@ -252,7 +296,7 @@ export default function ScrollingLane() {
                         }}
                         style={{
                           left: `${slot().x}px`,
-                          top: `${pitchY(laneNote.displayMidi) + barHeight() / 2 + slot().line * rowHeight() * 1.6}px`,
+                          top: `${slot().y}px`,
                           color: sung() && !laneNote.freestyle ? player.micColor(500) : undefined,
                         }}
                       >
@@ -323,7 +367,7 @@ export default function ScrollingLane() {
         />
         <div
           ref={cursor}
-          class="absolute top-0 left-0 -mt-[0.7cqw] -ml-[0.7cqw] size-[1.4cqw] rounded-full border-[0.3cqw] bg-white opacity-0"
+          class="absolute top-0 left-0 -mt-[0.7cqw] -ml-[0.7cqw] size-[1.4cqw] rounded-full border-[0.3cqw] bg-white opacity-0 transition-opacity duration-150"
           style={{ "border-color": player.micColor(500) }}
         />
       </div>
