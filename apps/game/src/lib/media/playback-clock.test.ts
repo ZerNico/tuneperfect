@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { PlaybackClock } from "./playback-clock";
+import { PlaybackClock, STEPPED_SOURCE } from "./playback-clock";
 
 function setup() {
   let now = 0;
@@ -100,5 +100,29 @@ describe("PlaybackClock", () => {
     clock.sample(0);
     advance(5000);
     expect(clock.position()).toBe(1);
+  });
+});
+
+describe("PlaybackClock with the stepped-source tuning", () => {
+  it("smooths an audio element's stalls and jumps into an even clock", () => {
+    let now = 0;
+    const clock = new PlaybackClock(() => now, STEPPED_SOURCE);
+    clock.setRunning(true);
+
+    // The element's time stalls for a frame every few frames, then catches up.
+    let source = 0;
+    const positions: number[] = [];
+    for (let frame = 0; frame < 600; frame++) {
+      now += 8;
+      source += frame % 5 === 4 ? 0 : 10;
+      clock.sample(source / 1000);
+      positions.push(clock.position());
+    }
+
+    const steps = positions.slice(100).map((p, i) => p - positions[99 + i]!);
+    // Every frame advances, by close to the real 8 ms, and the clock stays within a few ms of the source.
+    for (const step of steps) expect(step * 1000).toBeGreaterThan(6);
+    for (const step of steps) expect(step * 1000).toBeLessThan(10);
+    expect(Math.abs(positions.at(-1)! * 1000 - source)).toBeLessThan(15);
   });
 });

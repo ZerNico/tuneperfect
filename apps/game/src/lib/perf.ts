@@ -17,6 +17,11 @@ interface CallStats {
 const calls = new Map<string, CallStats>();
 const frameDeltas: number[] = [];
 let lastFrame: number | null = null;
+/** Per frame: how far song time moved minus how far real time did, in ms. */
+const clockErrors: number[] = [];
+let clockBackwards = 0;
+let clockRepeats = 0;
+let lastClock: { songMs: number; at: number } | null = null;
 let longTasks = 0;
 let longTaskTotalMs = 0;
 
@@ -87,9 +92,27 @@ export function recordFrame() {
   lastFrame = now;
 }
 
+/**
+ * Records the song clock once per frame while playing: a smooth clock moves exactly as far as
+ * real time each frame. Steps show as errors, and a scrolling lane shows them as judder.
+ */
+export function recordClock(songMs: number) {
+  if (!enabled) return;
+
+  const at = performance.now();
+  if (lastClock !== null) {
+    const songDelta = songMs - lastClock.songMs;
+    if (songDelta < 0) clockBackwards++;
+    if (songDelta === 0) clockRepeats++;
+    push(clockErrors, songDelta - (at - lastClock.at));
+  }
+  lastClock = { songMs, at };
+}
+
 /** Breaks the frame series, so a pause isn't counted as one very long frame. */
 export function pauseFrames() {
   lastFrame = null;
+  lastClock = null;
 }
 
 export function perfReport() {
@@ -107,6 +130,11 @@ export function perfReport() {
       over33ms: frameDeltas.filter((d) => d > 33).length,
     },
     longTasks: { count: longTasks, totalMs: Math.round(longTaskTotalMs) },
+    clock: {
+      error: summarize(clockErrors.map(Math.abs)),
+      backwards: clockBackwards,
+      repeats: clockRepeats,
+    },
   };
 }
 
@@ -116,6 +144,10 @@ export function resetPerf() {
   lastFrame = null;
   longTasks = 0;
   longTaskTotalMs = 0;
+  clockErrors.length = 0;
+  clockBackwards = 0;
+  clockRepeats = 0;
+  lastClock = null;
 }
 
 /** Logs the report through `console.warn`, which both shells forward to their log output. */

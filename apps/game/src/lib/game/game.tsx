@@ -3,7 +3,7 @@ import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX,
 
 import type { SongPlayerRef } from "~/components/song-player";
 import { native } from "~/lib/native/client";
-import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
+import { logPerfReport, pauseFrames, recordClock, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat, msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
 import { tryCatch } from "~/lib/utils/try-catch";
@@ -189,6 +189,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const outputLatency = settingsStore.general().outputLatency;
     const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
+    recordClock(ms);
 
     batch(() => {
       setMs(ms);

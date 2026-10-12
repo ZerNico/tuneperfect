@@ -1,0 +1,66 @@
+/** One sung pitch on the lane: song time (ms) and midi pitch (fractional), already placed. */
+export interface TrailPoint {
+  time: number;
+  midi: number;
+  /** What it was sung against, to break the trail between notes. */
+  note: unknown;
+}
+
+export interface TrailSegment {
+  fromTime: number;
+  fromMidi: number;
+  toTime: number;
+  toMidi: number;
+  /** 1 at the newest end of the trail, 0 where it ends. */
+  freshness: number;
+}
+
+/** A jump bigger than this, in semitones, breaks the trail instead of drawing a line across. */
+const MAX_STEP = 1.2;
+
+/**
+ * Where a sung pitch is drawn: in the octave nearest the note it's sung against (octaves don't
+ * count when judging), and right on the note when within `tolerance`, like the classic lane on
+ * easy. Without a note it goes in the octave nearest `fallback` (the camera's centre).
+ */
+export function placeSungPitch(
+  midi: number,
+  noteMidi: number | undefined,
+  fallback: number,
+  tolerance: number,
+): number {
+  const reference = noteMidi ?? fallback;
+  const folded = midi - 12 * Math.round((midi - reference) / 12);
+  if (noteMidi !== undefined && Math.abs(folded - noteMidi) <= tolerance) return noteMidi;
+  return folded;
+}
+
+/**
+ * The trail behind the cursor: the last `spanMs` of placed points as short segments that fade
+ * with age. It breaks where nothing was sung, between notes, and on jumps, so it never draws
+ * lines across the lane.
+ */
+export function buildTrail(points: readonly TrailPoint[], now: number, spanMs: number): TrailSegment[] {
+  const segments: TrailSegment[] = [];
+  for (let i = 1; i < points.length; i++) {
+    const from = points[i - 1]!;
+    const to = points[i]!;
+    if (to.time < now - spanMs || to.note !== from.note || Math.abs(to.midi - from.midi) > MAX_STEP) continue;
+    segments.push({
+      fromTime: from.time,
+      fromMidi: from.midi,
+      toTime: to.time,
+      toMidi: to.midi,
+      freshness: Math.max(0, Math.min(1, 1 - (now - to.time) / spanMs)),
+    });
+  }
+  return segments;
+}
+
+/** Median of three neighbours, which drops single-frame octave slips and glitches. */
+export function medianOfThree(values: readonly number[], i: number): number {
+  const a = values[i - 1] ?? values[i]!;
+  const b = values[i]!;
+  const c = values[i + 1] ?? values[i]!;
+  return Math.max(Math.min(a, b), Math.min(Math.max(a, b), c));
+}
