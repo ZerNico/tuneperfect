@@ -435,7 +435,10 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                 items={filteredItems()}
                 getId={props.getId}
                 initialId={state.selectedId() ?? undefined}
-                class="-mx-16 h-80 w-[calc(100%+8cqw)]"
+                // 10cqw past each stage edge, fading out there: wide windows see covers drift into the
+                // letterbox instead of a hard cut. Slots shrink to match so covers stay 12cqw wide.
+                itemSize={0.1}
+                class="-mx-[calc(4rem+10cqw)] h-80 w-[120cqw] [mask-image:linear-gradient(90deg,transparent,black_10cqw,black_calc(100%_-_10cqw),transparent)]"
                 onCenteredItemChange={handleSelectionChange}
                 onConfirm={props.onConfirm}
               >
