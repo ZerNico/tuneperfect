@@ -1,6 +1,5 @@
-import { debounce } from "@solid-primitives/scheduled";
 import { useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, createSignal, on, onCleanup, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import IconF1Key from "~icons/sing/f1-key";
 import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconShiftKey from "~icons/sing/shift-key";
@@ -11,6 +10,7 @@ import { MedleyList } from "~/components/song-select/medley-list";
 import { createSongBrowserState, SongBrowser } from "~/components/song-select/song-browser";
 import KeyGlyph from "~/components/ui/key-glyph";
 import { keyMode, useNavigation } from "~/hooks/navigation";
+import { createPreviewSlots } from "~/hooks/preview-slots";
 import { isDuet } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { playSound } from "~/lib/sound";
@@ -41,58 +41,7 @@ const describeSong = (song: LocalSong) => ({
 
 export default function SingScreen() {
   const navigate = useNavigate();
-  // Double-buffered preview player — two persistent SongPlayer instances that crossfade
-  const [slotASong, setSlotASong] = createSignal<LocalSong | null>(currentSong());
-  const [slotBSong, setSlotBSong] = createSignal<LocalSong | null>(null);
-  const [activeSlot, setActiveSlot] = createSignal<"a" | "b">("a");
-  let cleanupTimeout: ReturnType<typeof setTimeout> | undefined;
-  let pendingSwap = false;
-
-  const clearActiveSlot = () => {
-    clearTimeout(cleanupTimeout);
-    if (activeSlot() === "a") setSlotASong(null);
-    else setSlotBSong(null);
-  };
-
-  const swapToSong = (song: LocalSong | null) => {
-    const current = activeSlot();
-    const playing = current === "a" ? slotASong() : slotBSong();
-    // Already playing it (e.g. the first selection on entry): swapping would restart the song.
-    if (song && playing?.hash === song.hash) return;
-
-    clearTimeout(cleanupTimeout);
-
-    const next = current === "a" ? "b" : "a";
-
-    if (next === "a") setSlotASong(song);
-    else setSlotBSong(song);
-
-    setActiveSlot(next);
-
-    cleanupTimeout = setTimeout(() => {
-      if (current === "a") setSlotASong(null);
-      else setSlotBSong(null);
-    }, 600);
-  };
-
-  onCleanup(() => clearTimeout(cleanupTimeout));
-
-  // oxlint-disable-next-line solid/reactivity
-  const debouncedSwap = debounce((song: LocalSong | null) => {
-    pendingSwap = false;
-    swapToSong(song);
-  }, 200);
-
-  createEffect(
-    on(currentSong, (song) => {
-      // Still scrolling: stop the old preview right away instead of letting it play on.
-      if (pendingSwap) {
-        clearActiveSlot();
-      }
-      pendingSwap = true;
-      debouncedSwap(song);
-    }),
-  );
+  const previews = createPreviewSlots(currentSong, (song) => song.hash);
 
   const isMedley = createMemo(() => medleyStore.songs().length > 0);
 
@@ -220,30 +169,22 @@ export default function SingScreen() {
       )}
       background={
         <div class="relative h-full w-full">
-          <div
-            class="absolute inset-0 z-1 transition-opacity duration-500"
-            style={{ opacity: activeSlot() === "a" && slotASong() ? 1 : 0 }}
-          >
-            <SongPlayer
-              mode="preview"
-              volume={settingsStore.getVolume("preview")}
-              class="h-full w-full opacity-60"
-              playing={activeSlot() === "a" && !!slotASong()}
-              song={slotASong()}
-            />
-          </div>
-          <div
-            class="absolute inset-0 z-1 transition-opacity duration-500"
-            style={{ opacity: activeSlot() === "b" && slotBSong() ? 1 : 0 }}
-          >
-            <SongPlayer
-              mode="preview"
-              volume={settingsStore.getVolume("preview")}
-              class="h-full w-full opacity-60"
-              playing={activeSlot() === "b" && !!slotBSong()}
-              song={slotBSong()}
-            />
-          </div>
+          <For each={previews}>
+            {(preview) => (
+              <div
+                class="absolute inset-0 z-1 transition-opacity duration-500"
+                style={{ opacity: preview.playing() ? 1 : 0 }}
+              >
+                <SongPlayer
+                  mode="preview"
+                  volume={settingsStore.getVolume("preview")}
+                  class="h-full w-full opacity-60"
+                  playing={preview.playing()}
+                  song={preview.item()}
+                />
+              </div>
+            )}
+          </For>
         </div>
       }
     />

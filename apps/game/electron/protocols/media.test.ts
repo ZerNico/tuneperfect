@@ -14,21 +14,35 @@ vi.mock("../native", () => ({
   native: { isPathAllowed: (file: string) => file.startsWith(allowed.root + path.sep) },
 }));
 
-const { MEDIA_BASE_URL, handleMediaProtocol, mediaPath } = await import("./media");
+const { SONG_FILES_BASE_URL, usdbSampleUrl } = await import("../../src/lib/native/media");
+const { handleMediaProtocol, mediaTarget } = await import("./media");
 
-const urlFor = (file: string) => `${MEDIA_BASE_URL}/${encodeURIComponent(file)}`;
+const urlFor = (file: string) => `${SONG_FILES_BASE_URL}/${encodeURIComponent(file)}`;
 
-describe("mediaPath", () => {
-  it("decodes the path the addon encoded", () => {
-    expect(mediaPath(urlFor("/Music/Artist - Title/song (live).mp3"))).toBe("/Music/Artist - Title/song (live).mp3");
-    expect(mediaPath(urlFor("C:\\Songs\\Ärzte\\song.mp3"))).toBe("C:\\Songs\\Ärzte\\song.mp3");
+describe("mediaTarget", () => {
+  it("decodes the song file path the addon encoded", () => {
+    expect(mediaTarget(urlFor("/Music/Artist - Title/song (live).mp3"))).toEqual({
+      kind: "song-file",
+      path: "/Music/Artist - Title/song (live).mp3",
+    });
+    expect(mediaTarget(urlFor("C:\\Songs\\Ärzte\\song.mp3"))).toEqual({
+      kind: "song-file",
+      path: "C:\\Songs\\Ärzte\\song.mp3",
+    });
+  });
+
+  it("decodes the sample URL the renderer encoded", () => {
+    expect(mediaTarget(usdbSampleUrl("\thttps://example.com/a.mp3?x=1&y=2"))).toEqual({
+      kind: "usdb-sample",
+      url: "https://example.com/a.mp3?x=1&y=2",
+    });
   });
 
   it("rejects anything else", () => {
-    expect(mediaPath("media://other/%2Fsong.mp3")).toBeNull();
-    expect(mediaPath("app://tuneperfect/%2Fsong.mp3")).toBeNull();
-    expect(mediaPath(`${MEDIA_BASE_URL}/`)).toBeNull();
-    expect(mediaPath(`${MEDIA_BASE_URL}/%E0%A4%A`)).toBeNull();
+    expect(mediaTarget("media://other/%2Fsong.mp3")).toBeNull();
+    expect(mediaTarget("app://tuneperfect/%2Fsong.mp3")).toBeNull();
+    expect(mediaTarget(`${SONG_FILES_BASE_URL}/`)).toBeNull();
+    expect(mediaTarget(`${SONG_FILES_BASE_URL}/%E0%A4%A`)).toBeNull();
   });
 });
 
@@ -45,7 +59,7 @@ describe("media protocol", () => {
     fs.writeFileSync(song, "song");
     fs.writeFileSync(outside, "secret");
     allowed.root = path.join(dir, "songs");
-    handleMediaProtocol("app://tuneperfect");
+    handleMediaProtocol("app://tuneperfect", () => {});
   });
 
   afterAll(() => {
@@ -64,6 +78,13 @@ describe("media protocol", () => {
 
   it("refuses files outside the granted folders", async () => {
     const response = await handle(urlFor(outside));
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("access-control-allow-origin")).toBe("app://tuneperfect");
+  });
+
+  it("refuses samples off the public internet", async () => {
+    const response = await handle(usdbSampleUrl("https://192.168.178.1/a.mp3"));
 
     expect(response.status).toBe(403);
     expect(response.headers.get("access-control-allow-origin")).toBe("app://tuneperfect");
