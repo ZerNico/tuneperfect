@@ -13,7 +13,6 @@ import { settingsStore } from "~/stores/settings";
 import { GameContext, type GameContextValue } from "./game-context";
 import { createLivePitch, createSimulatedLivePitch } from "./live-pitch";
 import { createSimulatedSinger, simulatedSingerAccuracy } from "./simulated-singer";
-import { singingView } from "./singing-view";
 
 export interface CreateGameOptions {
   songPlayerRef?: SongPlayerRef;
@@ -58,7 +57,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   // The scrolling view draws the voice live, from the pitch stream.
   const livePitch =
-    singingView() !== "scrolling"
+    settingsStore.general().singingView !== "scrolling"
       ? undefined
       : simulatedSinger
         ? createSimulatedLivePitch(simulatedSinger, untrack(delays))

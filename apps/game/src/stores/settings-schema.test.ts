@@ -43,4 +43,12 @@ describe("settingsStoreSchema", () => {
     expect(result.volume.master).toBe(1);
     expect(result.songs.paths).toEqual([]);
   });
+
+  it("keeps the singing view and falls back to classic", () => {
+    expect(v.parse(settingsStoreSchema, {}).general.singingView).toBe("classic");
+    expect(v.parse(settingsStoreSchema, { general: { singingView: "scrolling" } }).general.singingView).toBe(
+      "scrolling",
+    );
+    expect(v.parse(settingsStoreSchema, { general: { singingView: "sideways" } }).general.singingView).toBe("classic");
+  });
 });

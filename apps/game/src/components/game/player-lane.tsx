@@ -1,9 +1,9 @@
-import { createMemo, Show } from "solid-js";
+import { createMemo, Show, untrack } from "solid-js";
 
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
-import { singingView } from "~/lib/game/singing-view";
 import { beatToMs } from "~/lib/ultrastar/bpm";
+import { settingsStore } from "~/stores/settings";
 
 import Avatar from "../ui/avatar";
 import ComboCounter from "./combo-counter";
@@ -25,7 +25,8 @@ export default function PlayerLane(props: PlayerLaneProps) {
   const game = useGame();
   const isCompact = () => game.playerCount() > 2;
   // Chosen once per round; switching mid-song would rebuild the lane.
-  const view = singingView();
+  // Read once: a lane never switches views mid-round.
+  const view = untrack(() => settingsStore.general().singingView);
 
   // Hide the lane during long breaks: more than 20s to the next phrase hides it, 10s before it
   // shows again. Recomputed every frame, but only notifies when the flag flips.

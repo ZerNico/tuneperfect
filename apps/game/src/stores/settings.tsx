@@ -13,6 +13,7 @@ const defaultSettings: SettingsStore = {
     audioMode: "normal",
     micPlaybackEnabled: false,
     songSelectStyle: "coverflow",
+    singingView: "classic",
     outputLatency: 0,
     visualEffects: "full",
   },

@@ -5,10 +5,9 @@ import { voiceCount } from "~/lib/ultrastar/song";
 import { isDuet } from "~/lib/utils/song";
 import { tryCatch } from "~/lib/utils/try-catch";
 import { type PlayerSelection, useRoundActions } from "~/stores/round";
-import { type Microphone, settingsStore } from "~/stores/settings";
+import { type Microphone, settingsStore, updateSettings } from "~/stores/settings";
 import { songsStore } from "~/stores/songs";
 
-const VIEW_KEY = "tp.singingView";
 const SINGER_KEY = "tp.simulatedSinger";
 const COLORS = ["sky", "red", "green", "yellow"];
 
@@ -26,7 +25,6 @@ export default function PlaygroundScreen() {
   const roundActions = useRoundActions();
   const [query, setQuery] = createSignal("");
   const [playerCount, setPlayerCount] = createSignal(1);
-  const [view, setView] = createSignal(localStorage.getItem(VIEW_KEY) ?? "classic");
   const [singer, setSinger] = createSignal(localStorage.getItem(SINGER_KEY) ?? "");
 
   const [loaded] = createResource(async () => {
@@ -43,10 +41,8 @@ export default function PlaygroundScreen() {
       .slice(0, 200);
   });
 
-  const updateView = (value: string) => {
-    localStorage.setItem(VIEW_KEY, value);
-    setView(value);
-  };
+  const view = () => settingsStore.general().singingView;
+  const updateView = (value: "classic" | "scrolling") => updateSettings("general", "singingView", value);
   const updateSinger = (value: string) => {
     if (value) localStorage.setItem(SINGER_KEY, value);
     else localStorage.removeItem(SINGER_KEY);
@@ -87,7 +83,7 @@ export default function PlaygroundScreen() {
         </label>
         <label class="flex items-center gap-2">
           View
-          <For each={["classic", "scrolling"]}>
+          <For each={["classic", "scrolling"] as const}>
             {(value) => (
               <button
                 type="button"

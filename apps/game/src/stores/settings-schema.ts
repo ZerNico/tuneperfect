@@ -42,6 +42,8 @@ export const settingsStoreSchema = v.object({
     audioMode: v.fallback(v.picklist(["normal", "preferInstrumental"]), "normal"),
     micPlaybackEnabled: v.fallback(v.boolean(), false),
     songSelectStyle: v.fallback(v.picklist(["coverflow", "grid"]), "coverflow"),
+    /** Classic pages of notes, or notes scrolling past a now-line. */
+    singingView: v.fallback(v.picklist(["classic", "scrolling"]), "classic"),
     outputLatency: v.fallback(v.number(), 0),
     visualEffects: v.fallback(v.picklist(["full", "reduced"]), "full"),
   }),
