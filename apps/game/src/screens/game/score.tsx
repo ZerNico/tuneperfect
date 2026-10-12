@@ -12,7 +12,7 @@ import { useRoundResults } from "~/lib/game/round-results";
 import { t } from "~/lib/i18n";
 import { playSound, type SoundName } from "~/lib/sound";
 import type { TierId } from "~/lib/utils/score";
-import { roundStore, useRoundActions } from "~/stores/round";
+import { isPartyRound, useRoundActions } from "~/stores/round";
 
 // Reveal timeline
 const FILL_MS = 4000;
@@ -161,7 +161,7 @@ export default function ScoreScreen() {
             loading={done() && round.saving()}
             selected
             size="sm"
-            gradient={roundStore.settings()?.returnTo ? "gradient-party" : "gradient-sing"}
+            gradient={isPartyRound() ? "gradient-party" : "gradient-sing"}
             class="w-[16cqw]"
             onClick={handleContinue}
           >

@@ -21,6 +21,9 @@ import { type UsdbSearchEntry, usdbStore } from "~/stores/usdb";
 
 const ONLINE_SORT_OPTIONS: SortOption[] = ["views", "artist", "title", "year"];
 
+// Module level: search, filters, sort and the selected song survive a round and coming back.
+const browserState = createSongBrowserState("views");
+
 const describeEntry = (entry: UsdbSearchEntry): SongInfo => ({
   id: String(entry.songId),
   artist: entry.artist,
@@ -45,7 +48,6 @@ const describeEntry = (entry: UsdbSearchEntry): SongInfo => ({
 
 export default function OnlineSearchScreen() {
   const navigate = useNavigate();
-  const state = createSongBrowserState("views");
   const [startingGame, setStartingGame] = createSignal(false);
   const [selected, setSelected] = createSignal<UsdbSearchEntry | null>(null);
   // Keyed by URL too: a catalog sync can change a song's sample.
@@ -74,7 +76,7 @@ export default function OnlineSearchScreen() {
   return (
     <SongBrowser
       title={t("online.title")}
-      state={state}
+      state={browserState}
       items={usdbStore.catalog()}
       getId={(entry) => String(entry.songId)}
       describe={describeEntry}

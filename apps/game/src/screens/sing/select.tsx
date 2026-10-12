@@ -17,7 +17,7 @@ import { lobbyQueryOptions } from "~/lib/queries";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import type { GuestUser, User } from "~/lib/types";
-import { type Song, voiceCount } from "~/lib/ultrastar/song";
+import { isUsdbSong, type Song, voiceCount } from "~/lib/ultrastar/song";
 import { getColorVar } from "~/lib/utils/color";
 import { getVoiceName, isDuet } from "~/lib/utils/song";
 import { isGuestUser, isLocalUser } from "~/lib/utils/user";
@@ -128,9 +128,12 @@ export default function PlayerSelectionScreen() {
     });
   };
 
+  // USDB songs were picked in the online browser, so the round and the back button go there.
+  const songList = () => (songs().some(isUsdbSong) ? "/sing/online" : "/sing");
+
   const onBack = () => {
     playSound("confirm");
-    navigate({ to: "/sing" });
+    navigate({ to: songList() });
   };
 
   const hasAnyPlayer = createMemo(() => slotSelections().some((selection) => selection !== undefined));
@@ -163,12 +166,12 @@ export default function PlayerSelectionScreen() {
         }));
         return { song, players: medleyPlayers, mode: "medley" as const, length };
       });
-      roundActions.startRound({ songs: queuedSongs });
+      roundActions.startRound({ songs: queuedSongs, returnTo: songList() });
       medleyStore.clear();
     } else {
       const song = songs()[0];
       if (!song) return;
-      roundActions.startRound({ songs: [{ song, players, mode: "single", length }] });
+      roundActions.startRound({ songs: [{ song, players, mode: "single", length }], returnTo: songList() });
     }
   };
 

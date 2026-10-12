@@ -15,7 +15,7 @@ import { createGame } from "~/lib/game/game";
 import { t } from "~/lib/i18n";
 import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
-import { roundStore, useRoundActions } from "~/stores/round";
+import { isPartyRound, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
 
 export default function GameScreen() {
@@ -134,7 +134,7 @@ export default function GameScreen() {
   };
 
   const gradient = () => {
-    if (roundStore.settings()?.returnTo) {
+    if (isPartyRound()) {
       return "gradient-party";
     }
     return "gradient-sing";
