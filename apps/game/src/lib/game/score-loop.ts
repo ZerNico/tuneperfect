@@ -35,3 +35,17 @@ export const MAX_BEATS_PER_SAMPLE = 2;
 export function isMeasuredBeat(beat: number, lastFinished: number): boolean {
   return lastFinished - beat < MAX_BEATS_PER_SAMPLE;
 }
+
+/**
+ * How long past a beat's end its frames may take to arrive. A mic without frames (no device, or
+ * stuck) must not hold scoring up: its beats count as silent after this.
+ */
+export const STREAM_TIMEOUT_MS = 200;
+
+/**
+ * Whether a beat ending at `endMs` (song time, shifted by the mic's delay) can be scored: the
+ * stream has delivered frames up to its end, or they're overdue.
+ */
+export function isBeatCovered(endMs: number, latestFrameMs: number | undefined, nowMs: number): boolean {
+  return (latestFrameMs !== undefined && latestFrameMs >= endMs) || nowMs >= endMs + STREAM_TIMEOUT_MS;
+}

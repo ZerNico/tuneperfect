@@ -1,16 +1,18 @@
 import { ReactiveMap } from "@solid-primitives/map";
-import { type Accessor, createEffect, createMemo, createSignal, type JSX, on, untrack } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, type JSX, on, onCleanup, untrack } from "solid-js";
 
 import { roundStore } from "~/stores/round";
 import { type Microphone, settingsStore } from "~/stores/settings";
 
-import { msToBeatWithoutGap } from "../ultrastar/bpm";
+import { beatToMs, beatToMsWithoutGap, msToBeatWithoutGap } from "../ultrastar/bpm";
 import { type ColorShade, getColorVar } from "../utils/color";
 import { getMaxScore, type PhraseRating } from "../utils/score";
+import { beatPitch } from "./beat-pitch";
 import { useGame } from "./game";
 import { type NoteEvent, PlayerContext, type PlayerContextValue, type ProcessedBeat } from "./player-context";
-import { beatsToProcess, isMeasuredBeat, lastFinishedBeat } from "./score-loop";
+import { beatsToProcess, isBeatCovered, isMeasuredBeat, lastFinishedBeat } from "./score-loop";
 import { ScoringSession } from "./scoring";
+import { compareScoringEnabled, createScoringComparison } from "./scoring-comparison";
 import { createVoiceTracker } from "./voice-tracker";
 
 interface CreatePlayerOptions {
@@ -67,59 +69,97 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   );
   let phraseRatingId = 0;
 
+  const difficulty = untrack(() => settingsStore.general().difficulty);
+  const comparison = compareScoringEnabled() ? createScoringComparison(untrack(options).index) : undefined;
+  onCleanup(() => comparison?.report());
+
   const scoring = createMemo(() => {
-    const session: ScoringSession = new ScoringSession(
-      voice(),
-      untrack(() => settingsStore.general().difficulty),
-      {
-        score: (type, value) => game.addScore(options().index, type, value),
-        beat: (beat, processed) => processedBeats.set(beat, processed),
-        note: (outcome) => {
-          setCombo(outcome.combo);
-          setNoteEvent({ id: noteEventId++, ...outcome });
-          game.setPlayerStats(options().index, session.stats());
-        },
-        phrase: (rating, bonus) => {
-          setPhraseRating({ id: phraseRatingId++, rating, bonus });
-          game.setPlayerStats(options().index, session.stats());
-        },
+    const session: ScoringSession = new ScoringSession(voice(), difficulty, {
+      score: (type, value) => {
+        game.addScore(options().index, type, value);
+        comparison?.score("stream", value);
       },
-    );
+      beat: (beat, processed) => processedBeats.set(beat, processed),
+      note: (outcome) => {
+        setCombo(outcome.combo);
+        setNoteEvent({ id: noteEventId++, ...outcome });
+        game.setPlayerStats(options().index, session.stats());
+      },
+      phrase: (rating, bonus) => {
+        setPhraseRating({ id: phraseRatingId++, rating, bonus });
+        game.setPlayerStats(options().index, session.stats());
+      },
+    });
     return session;
   });
-  const processBeat = (beat: number, hz: number) => untrack(scoring).scoreBeat(beat, hz);
+  const processBeat = (beat: number, hz: number) =>
+    comparison?.beat("stream", beat, untrack(scoring).scoreBeat(beat, hz));
 
-  /** `null` until the first pitch update; beats can be negative, so no number works as "not started". */
-  let lastProcessedBeat: number | null = null;
+  /** `null` until scoring starts; beats can be negative, so no number works as "not started". */
+  let lastScoredBeat: number | null = null;
 
-  createEffect(
-    on(
-      () => game.pitches(),
-      (allPitches) => {
-        // The sample describes the audio just before it was taken, shifted by this mic's delay:
-        // score the beats that have finished in delayed time.
-        // Once the song is over and its delay tail has been waited out, the beat in progress at
-        // the end counts too.
-        const ending = game.finishing?.() ?? false;
-        const lastFinished = ending ? Math.floor(game.beat()) : finishedBeat();
+  // Each beat is scored with the pitch stream's frames from its end, once they've arrived: in this
+  // mic's delayed time, the voice for a beat comes `delay` ms after it.
+  createEffect(() => {
+    const nowMs = game.ms();
+    const song = game.song();
+    if (!song || !game.started()) return;
 
-        // First update: start at the current beat instead of back-filling from
-        // the song start (e.g. when a player joins mid-song).
-        const from = lastProcessedBeat ?? lastFinished - 1;
-        if (lastFinished <= from) {
-          return;
-        }
+    // Once the song is over and its delay tail has been waited out, the beat in progress at the
+    // end counts too.
+    const ending = game.finishing?.() ?? false;
+    const target = ending ? Math.floor(game.beat()) : finishedBeat();
+    // Start at the current beat instead of back-filling from the song start (e.g. a player
+    // joining mid-song). Nothing is scored twice after a seek back.
+    const from = lastScoredBeat ?? target - 1;
+    if (target <= from) return;
+    lastScoredBeat = from;
 
-        const pitch = allPitches[options().index] ?? -1;
+    untrack(() => {
+      const timeline = game.pitchTimeline?.(options().index);
+      const latest = timeline?.latest()?.time;
+      const delay = microphone().delay;
+      const beatMs = beatToMsWithoutGap(song, 1);
+      for (let beat = from + 1; beat <= target; beat++) {
+        const endMs = beatToMs(song, beat + 1) + delay;
+        if (!ending && !isBeatCovered(endMs, latest, nowMs)) break;
+        processBeat(beat, beatPitch(timeline, endMs, beatMs));
+        lastScoredBeat = beat;
+      }
+    });
+  });
 
-        for (const beatNumber of beatsToProcess(from, lastFinished)) {
-          processBeat(beatNumber, ending || isMeasuredBeat(beatNumber, lastFinished) ? pitch : -1);
-        }
+  if (comparison) {
+    // The per-beat pitch requests scoring used before, on the side.
+    const legacy = createMemo(
+      () =>
+        new ScoringSession(voice(), difficulty, {
+          score: (_type, value) => comparison.score("legacy", value),
+          beat: () => {},
+          note: () => {},
+          phrase: () => {},
+        }),
+    );
+    let lastProcessedBeat: number | null = null;
+    createEffect(
+      on(
+        () => game.pitches(),
+        (allPitches) => {
+          const ending = game.finishing?.() ?? false;
+          const lastFinished = ending ? Math.floor(game.beat()) : finishedBeat();
+          const from = lastProcessedBeat ?? lastFinished - 1;
+          if (lastFinished <= from) return;
 
-        lastProcessedBeat = lastFinished;
-      },
-    ),
-  );
+          const pitch = allPitches[options().index] ?? -1;
+          for (const beat of beatsToProcess(from, lastFinished)) {
+            const hz = ending || isMeasuredBeat(beat, lastFinished) ? pitch : -1;
+            comparison.beat("legacy", beat, untrack(legacy).scoreBeat(beat, hz));
+          }
+          lastProcessedBeat = lastFinished;
+        },
+      ),
+    );
+  }
 
   const score = () => game.scores()[options().index] ?? { normal: 0, golden: 0, bonus: 0 };
   const player = () => roundSong()?.players[options().index]?.player ?? null;

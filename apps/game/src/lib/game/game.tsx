@@ -12,6 +12,8 @@ import { settingsStore } from "~/stores/settings";
 
 import { GameContext, type GameContextValue } from "./game-context";
 import { createLivePitch, createSimulatedLivePitch } from "./live-pitch";
+import { STREAM_TIMEOUT_MS } from "./score-loop";
+import { compareScoringEnabled } from "./scoring-comparison";
 import { createSimulatedSinger, simulatedSingerAccuracy } from "./simulated-singer";
 
 export interface CreateGameOptions {
@@ -55,14 +57,11 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   });
   const delays = () => players().map((p) => p?.microphone.delay ?? 0);
 
-  // The scrolling view draws the voice live, from the pitch stream.
-  const livePitch =
-    settingsStore.general().singingView !== "scrolling"
-      ? undefined
-      : simulatedSinger
-        ? createSimulatedLivePitch(simulatedSinger, untrack(delays))
-        : createLivePitch();
-  onCleanup(() => livePitch?.dispose());
+  // The voice, live from the pitch stream: scoring and the scrolling view read it.
+  const livePitch = simulatedSinger ? createSimulatedLivePitch(simulatedSinger, untrack(delays)) : createLivePitch();
+  onCleanup(() => livePitch.dispose());
+  // Development: the per-beat pitch requests scoring used before, scored on the side to compare.
+  const comparingScoring = compareScoringEnabled();
 
   // Recording is started and stopped across the Electron boundary, so the screen can leave while
   // `start` is still in flight. Only `stop` tears down: it waits for the start and stops the
@@ -118,12 +117,15 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const current = untrack(song);
     if (!current || !untrack(started) || untrack(finishing)) return;
 
-    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + 50;
+    // The stream's frames arrive a little after they were sung, so that's waited for too.
+    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + STREAM_TIMEOUT_MS;
     await new Promise((resolve) => setTimeout(resolve, tailMs));
-    const [error, result] = await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }));
+    const last = comparingScoring
+      ? await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }))
+      : undefined;
     batch(() => {
       setFinishing(true);
-      if (!error) setPitches(result);
+      if (last && !last[0]) setPitches(last[1]);
     });
   };
 
@@ -216,7 +218,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
     recordClock(ms);
-    livePitch?.frame(performance.now(), ms, true);
+    livePitch.frame(performance.now(), ms, true);
 
     batch(() => {
       setMs(ms);
@@ -251,7 +253,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   createEffect(() => {
     pitchTick();
-    if (!started() || !playing()) return;
+    if (!comparingScoring || !started() || !playing()) return;
 
     const current = untrack(song);
     if (!current) return;
@@ -263,7 +265,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     void (async () => {
       try {
         const result = simulatedSinger
-          ? untrack(delays).map((delay, mic) => simulatedSinger.hzAt(mic, untrack(ms) - delay))
+          ? // The analysis covers the beat that just ended, so the singer is asked about its middle.
+            untrack(delays).map((delay, mic) => simulatedSinger.hzAt(mic, untrack(ms) - delay - windowMs / 2))
           : await timeCall("getPitches", () => native.pitch.get({ windowMs }));
         if (request < appliedPitchRequest) return;
         appliedPitchRequest = request;
@@ -284,7 +287,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     } else {
       stopLoop();
       pauseFrames();
-      livePitch?.frame(performance.now(), untrack(ms), false);
+      livePitch.frame(performance.now(), untrack(ms), false);
     }
   });
 
@@ -340,7 +343,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     pitches,
     playerCount,
     finishing,
-    pitchTimeline: livePitch?.timeline,
+    pitchTimeline: livePitch.timeline,
   };
 
   const Provider = (props: { children: JSX.Element }) => (

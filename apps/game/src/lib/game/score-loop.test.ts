@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { beatsToProcess, isMeasuredBeat, lastFinishedBeat } from "./score-loop";
+import { beatsToProcess, isBeatCovered, isMeasuredBeat, lastFinishedBeat, STREAM_TIMEOUT_MS } from "./score-loop";
 
 describe("beatsToProcess", () => {
   it("returns the single starting beat from the initial -1 state", () => {
@@ -40,5 +40,17 @@ describe("isMeasuredBeat", () => {
   it("treats older beats after a stall as unmeasured", () => {
     expect(isMeasuredBeat(7, 9)).toBe(false);
     expect(isMeasuredBeat(-100, 9)).toBe(false);
+  });
+});
+
+describe("isBeatCovered", () => {
+  it("waits for frames up to the beat's end", () => {
+    expect(isBeatCovered(1000, 990, 1010)).toBe(false);
+    expect(isBeatCovered(1000, 1000, 1010)).toBe(true);
+  });
+
+  it("gives up waiting after the timeout", () => {
+    expect(isBeatCovered(1000, undefined, 1000 + STREAM_TIMEOUT_MS - 1)).toBe(false);
+    expect(isBeatCovered(1000, undefined, 1000 + STREAM_TIMEOUT_MS)).toBe(true);
   });
 });

@@ -66,6 +66,9 @@ const router = createRouter({
   history: createMemoryHistory({ initialEntries: ["/"] }),
 });
 
+// For driving the playground over CDP, e.g. `playgroundRouter.navigate({ to: "/" })` to end a round.
+Object.assign(globalThis, { playgroundRouter: router });
+
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 const rootElement = document.getElementById("app");
