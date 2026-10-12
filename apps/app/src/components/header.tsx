@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { Link } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import IconDe from "~icons/circle-flags/de";
@@ -14,7 +14,7 @@ import NavItems from "./nav-items";
 import Avatar from "./ui/avatar";
 import DropdownMenu from "./ui/dropdown-menu";
 export default function Header() {
-  const sessionQuery = createQuery(() => sessionQueryOptions());
+  const sessionQuery = useQuery(() => sessionQueryOptions());
   // Transparent at the top (the aurora shows through), a solid bar once content scrolls under it.
   const scrolled = useScrolled();
 

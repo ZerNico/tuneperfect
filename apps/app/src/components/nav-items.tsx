@@ -1,7 +1,7 @@
+import { dynamic, type JSX } from "@solidjs/web";
 import { useQuery } from "@tanstack/solid-query";
 import { Link, type LinkProps, useLocation } from "@tanstack/solid-router";
-import { type Component, For, type JSX } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { type Component, For } from "solid-js";
 import IconMicrophone from "~icons/ph/microphone-stage-fill";
 import IconUserCircle from "~icons/ph/user-circle-fill";
 import IconUsersThree from "~icons/ph/users-three-fill";
@@ -68,6 +68,7 @@ interface NavItemProps {
 }
 
 function NavItem(props: NavItemProps) {
+  const Icon = dynamic(() => props.icon);
   return (
     <Link
       draggable={false}
@@ -76,18 +77,22 @@ function NavItem(props: NavItemProps) {
       class="group flex flex-col items-center gap-1 px-2 py-1 select-none md:flex-row md:gap-2"
     >
       <span
-        class="flex h-8 w-14 items-center justify-center rounded-[10px] text-[22px] transition-colors md:h-9 md:w-auto md:gap-2 md:px-3 md:text-xl"
-        classList={{
-          "gradient-accent text-white": props.active,
-          "text-white/45 group-hover:text-white/80": !props.active,
-        }}
+        class={[
+          "flex h-8 w-14 items-center justify-center rounded-[10px] text-[22px] transition-colors md:h-9 md:w-auto md:gap-2 md:px-3 md:text-xl",
+          {
+            "gradient-accent text-white": props.active,
+            "text-white/45 group-hover:text-white/80": !props.active,
+          },
+        ]}
       >
-        <Dynamic component={props.icon} />
+        <Icon />
         <span class="hidden text-base font-bold md:inline">{props.children}</span>
       </span>
       <span
-        class="text-[11px] font-bold whitespace-nowrap md:hidden"
-        classList={{ "text-white": props.active, "text-white/45": !props.active }}
+        class={[
+          "text-[11px] font-bold whitespace-nowrap md:hidden",
+          { "text-white": props.active, "text-white/45": !props.active },
+        ]}
       >
         {props.children}
       </span>

@@ -1,5 +1,6 @@
+import type { JSX } from "@solidjs/web";
 import { REMOTE_FEATURE, type RemoteAction, type RemoteState } from "@tuneperfect/webrtc/contracts/game";
-import { type Accessor, createContext, createEffect, createSignal, type JSX, onCleanup, useContext } from "solid-js";
+import { type Accessor, createContext, createEffect, createSignal, useContext } from "solid-js";
 
 import type { GameConnection } from "~/lib/webrtc/game-connection";
 import { connectionStore } from "~/stores/connection";
@@ -29,34 +30,40 @@ export function createRemote(connection: GameConnection): Remote {
   /** Bumped to follow the game again after the stream broke off while connected. */
   const [attempt, setAttempt] = createSignal(0);
 
-  createEffect(() => {
-    // oxlint-disable-next-line solid/reactivity
-    const game = client();
-    if (!game || connectionStore.status() !== "connected") {
-      setState(null);
-      return;
-    }
-    // In the background the state just stops updating; coming back subscribes again and gets it fresh.
-    if (!connectionStore.visible() || !supported()) return;
-    attempt();
-
-    const controller = new AbortController();
-    const { signal } = controller;
-    void (async () => {
-      try {
-        for await (const next of await game.remote.watch(undefined, { signal })) setState(next);
-      } catch (error) {
-        if (signal.aborted) return;
-        console.warn("[Remote] Stopped following the game:", error);
+  createEffect(
+    () => {
+      const game = client();
+      if (!game || connectionStore.status() !== "connected") return { game: null, follow: false };
+      // In the background the state just stops updating; coming back subscribes again and gets it fresh.
+      const follow = connectionStore.visible() && !!supported();
+      if (follow) attempt();
+      return { game, follow };
+    },
+    ({ game, follow }) => {
+      if (!game) {
+        setState(null);
+        return;
       }
-      // A dropped connection runs this effect again once it's back. A stream that broke off or simply
-      // ended while still connected is followed again in a moment, so the controls don't freeze.
-      if (signal.aborted) return;
-      const retry = setTimeout(() => setAttempt((current) => current + 1), RETRY_MS);
-      signal.addEventListener("abort", () => clearTimeout(retry));
-    })();
-    onCleanup(() => controller.abort());
-  });
+      if (!follow) return;
+
+      const controller = new AbortController();
+      const { signal } = controller;
+      void (async () => {
+        try {
+          for await (const next of await game.remote.watch(undefined, { signal })) setState(next);
+        } catch (error) {
+          if (signal.aborted) return;
+          console.warn("[Remote] Stopped following the game:", error);
+        }
+        // A dropped connection runs this effect again once it's back. A stream that broke off or simply
+        // ended while still connected is followed again in a moment, so the controls don't freeze.
+        if (signal.aborted) return;
+        const retry = setTimeout(() => setAttempt((current) => current + 1), RETRY_MS);
+        signal.addEventListener("abort", () => clearTimeout(retry));
+      })();
+      return () => controller.abort();
+    },
+  );
 
   const act = async (action: RemoteAction) => {
     const game = client();
@@ -77,12 +84,10 @@ export function createRemote(connection: GameConnection): Remote {
 const RemoteContext = createContext<Remote>();
 
 export function RemoteProvider(props: { remote: Remote; children: JSX.Element }) {
-  // oxlint-disable-next-line solid/reactivity
-  return <RemoteContext.Provider value={props.remote}>{props.children}</RemoteContext.Provider>;
+  return <RemoteContext value={props.remote}>{props.children}</RemoteContext>;
 }
 
+/** Throws outside `RemoteProvider`. */
 export function useRemote() {
-  const context = useContext(RemoteContext);
-  if (!context) throw new Error("useRemote must be used within RemoteProvider");
-  return context;
+  return useContext(RemoteContext);
 }

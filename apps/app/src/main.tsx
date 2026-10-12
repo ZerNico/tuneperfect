@@ -1,6 +1,6 @@
+import { render } from "@solidjs/web";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { createRouter, RouterProvider } from "@tanstack/solid-router";
-import { render } from "solid-js/web";
 
 import { applyMode } from "./lib/mode";
 

@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX } from "@solidjs/web";
 
 interface CardProps {
   children: JSX.Element;
@@ -6,14 +6,5 @@ interface CardProps {
 }
 
 export default function Card(props: CardProps) {
-  return (
-    <div
-      class="rounded-[20px] bg-white/6 p-6 text-white"
-      classList={{
-        [props.class || ""]: true,
-      }}
-    >
-      {props.children}
-    </div>
-  );
+  return <div class={["rounded-[20px] bg-white/6 p-6 text-white", props.class]}>{props.children}</div>;
 }

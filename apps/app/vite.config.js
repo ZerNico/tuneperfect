@@ -1,9 +1,9 @@
 import importMetaEnv from "@import-meta-env/unplugin";
+import solidPlugin from "@solidjs/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
-import solidPlugin from "vite-plugin-solid";
 
 // https://vitejs.dev/config/
 export default defineConfig({

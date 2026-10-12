@@ -1,5 +1,4 @@
 import { safe } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link } from "@tanstack/solid-router";
 import { createMemo, createSignal, onCleanup, Show } from "solid-js";
@@ -18,6 +17,7 @@ import ImageCrop from "~/components/ui/image-crop";
 import Input from "~/components/ui/input";
 import { useSignOut } from "~/hooks/use-sign-out";
 import { sessionQueryOptions } from "~/lib/auth";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -159,7 +159,7 @@ function EditProfileComponent() {
             accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={handleFileChange}
             aria-hidden="true"
-            tabIndex={-1}
+            tabindex={-1}
             class="hidden"
           />
           <Show

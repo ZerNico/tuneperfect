@@ -337,6 +337,7 @@ const de: Dict = {
     retry: "Erneut versuchen",
     refresh: "Songs neu laden",
     noSongs: "Das Spiel hat noch keine Songs geteilt",
+    loadFailed: "Die Songs konnten nicht vom Spiel geladen werden",
     noResults: "Keine Songs passen zu deiner Suche",
     searchPlaceholder: "Songs suchen",
     clearSearch: "Suche leeren",

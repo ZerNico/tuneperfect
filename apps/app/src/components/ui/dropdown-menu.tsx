@@ -1,46 +1,48 @@
-import { DropdownMenu as KDropdownMenu } from "@kobalte/core/dropdown-menu";
-import type { JSX } from "solid-js";
+import { Menu } from "base-ui-solid/menu";
+import type { Element } from "solid-js";
 
 interface DropdownMenuProps {
-  children: JSX.Element;
-  trigger: JSX.Element;
+  children: Element;
+  trigger: Element;
 }
 
 function DropdownMenuRoot(props: DropdownMenuProps) {
   return (
-    <KDropdownMenu gutter={8} placement="bottom-end" modal={false}>
+    <Menu.Root modal={false}>
       {props.trigger}
-      <KDropdownMenu.Portal>
-        <KDropdownMenu.Content class="z-20 min-w-44 rounded-[14px] surface-raised p-1.5 text-white focus:outline-none">
-          {props.children}
-        </KDropdownMenu.Content>
-      </KDropdownMenu.Portal>
-    </KDropdownMenu>
+      <Menu.Portal>
+        <Menu.Positioner class="z-20 outline-none" side="bottom" align="end" sideOffset={8}>
+          <Menu.Popup class="min-w-44 origin-(--transform-origin) rounded-[14px] surface-raised p-1.5 text-white transition-[scale,opacity] duration-100 ease-out outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+            {props.children}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }
 
 interface DropdownMenuItemProps {
-  children: JSX.Element;
+  children: Element;
   onSelect?: () => void;
   class?: string;
 }
 
 function DropdownMenuItem(props: DropdownMenuItemProps) {
   return (
-    <KDropdownMenu.Item
-      class="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-semibold transition-colors hover:bg-white/10 focus:outline-none data-[highlighted]:bg-white/10"
-      classList={{
-        [props.class ?? ""]: true,
-      }}
-      onSelect={props.onSelect}
+    <Menu.Item
+      class={[
+        "flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-semibold transition-colors outline-none hover:bg-white/10 data-highlighted:bg-white/10",
+        props.class,
+      ]}
+      onClick={() => props.onSelect?.()}
     >
       {props.children}
-    </KDropdownMenu.Item>
+    </Menu.Item>
   );
 }
 
 const DropdownMenu = Object.assign(DropdownMenuRoot, {
-  Trigger: KDropdownMenu.Trigger,
+  Trigger: Menu.Trigger,
   Item: DropdownMenuItem,
 });
 

@@ -1,8 +1,7 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { createWindowVirtualizer } from "@tanstack/solid-virtual";
 import type { GameClient, SongSummary } from "@tuneperfect/webrtc/contracts/game";
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Loading, onSettled, Show } from "solid-js";
 import IconArrowClockwise from "~icons/ph/arrow-clockwise-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -10,11 +9,13 @@ import IconX from "~icons/ph/x-bold";
 
 import PageHeader from "~/components/page-header";
 import SongCover from "~/components/song-cover";
+import Button from "~/components/ui/button";
 import { useGameClient } from "~/contexts/game-client";
 import { useSongSearch } from "~/hooks/use-song-search";
 import { songsQueryOptions } from "~/lib/game-query";
 import { t } from "~/lib/i18n";
 import { HEADER_HEIGHT, setStuckBarHeight } from "~/lib/top-bar";
+import { createWindowVirtualizer } from "~/lib/virtual";
 
 export const Route = createFileRoute("/_auth/_lobby/_connected/songs")({
   component: SongsComponent,
@@ -40,7 +41,7 @@ const COMPARE: Record<SortOption, (a: SongSummary, b: SongSummary) => number> = 
 /** The game's song library; the game client comes from the connected layout. */
 function SongsComponent() {
   const gameClient = useGameClient();
-  const songsQuery = createQuery(() => songsQueryOptions(gameClient));
+  const songsQuery = useQuery(() => songsQueryOptions(gameClient));
 
   const [searchQuery, setSearchQuery] = createSignal("");
   // Remembered on this phone across visits.
@@ -53,15 +54,13 @@ function SongsComponent() {
     localStorage.setItem(SORT_STORAGE_KEY, option);
   };
 
-  // oxlint-disable-next-line unicorn/no-array-sort -- sorts a fresh copy
-  const sortedSongs = createMemo(() => [...(songsQuery.data ?? [])].sort(COMPARE[sort()]));
   // While the search bar is stuck under the header, the header's backdrop grows to cover it (one layer,
   // no seam). A marker just above the bar leaves the area under the header exactly when the bar sticks.
   const [marker, setMarker] = createSignal<HTMLDivElement>();
   const [bar, setBar] = createSignal<HTMLDivElement>();
   const [stuck, setStuck] = createSignal(false);
   const [barHeight, setBarHeight] = createSignal(0);
-  onMount(() => {
+  onSettled(() => {
     const markerElement = marker();
     const barElement = bar();
     if (!markerElement || !barElement) return;
@@ -74,23 +73,21 @@ function SongsComponent() {
     const resize = new ResizeObserver(() => setBarHeight(barElement.offsetHeight));
     resize.observe(barElement);
 
-    onCleanup(() => {
+    return () => {
       intersection.disconnect();
       resize.disconnect();
       setStuckBarHeight(0);
-    });
+    };
   });
-  createEffect(() => setStuckBarHeight(stuck() ? barHeight() : 0));
-
-  // Searching ranks by relevance; browsing uses the chosen order.
-  const { filteredSongs } = useSongSearch({ songs: sortedSongs, searchQuery });
+  createEffect(() => (stuck() ? barHeight() : 0), setStuckBarHeight);
 
   return (
     <main class="mx-auto flex w-full max-w-md grow flex-col px-6 pt-4">
       <PageHeader
         back={{ to: "/", label: t("lobby.title") }}
         title={t("songs.title")}
-        tag={songsQuery.data ? String(songsQuery.data.length) : undefined}
+        // Only once loaded: reading the list before would hold the whole page back.
+        tag={songsQuery.isSuccess ? String(songsQuery.data.length) : undefined}
         action={
           <button
             type="button"
@@ -99,7 +96,7 @@ function SongsComponent() {
             disabled={songsQuery.isFetching}
             onClick={() => void songsQuery.refetch()}
           >
-            <IconArrowClockwise classList={{ "animate-spin": songsQuery.isFetching }} />
+            <IconArrowClockwise class={{ "animate-spin": songsQuery.isFetching }} />
           </button>
         }
       />
@@ -135,12 +132,14 @@ function SongsComponent() {
               {(option) => (
                 <button
                   type="button"
-                  aria-pressed={sort() === option}
-                  class="cursor-pointer rounded-[8px] px-3 py-1.5 text-sm font-bold transition-colors"
-                  classList={{
-                    "gradient-accent text-white": sort() === option,
-                    "bg-white/7 text-white/60 hover:text-white": sort() !== option,
-                  }}
+                  aria-pressed={sort() === option ? "true" : "false"}
+                  class={[
+                    "cursor-pointer rounded-[8px] px-3 py-1.5 text-sm font-bold transition-colors",
+                    {
+                      "gradient-accent text-white": sort() === option,
+                      "bg-white/7 text-white/60 hover:text-white": sort() !== option,
+                    },
+                  ]}
                   onClick={() => setSort(option)}
                 >
                   {t(`songs.sort.${option}`)}
@@ -152,19 +151,52 @@ function SongsComponent() {
       </div>
 
       <Show
-        when={filteredSongs().length > 0}
+        when={!songsQuery.isError}
         fallback={
-          <div class="flex flex-col items-center gap-2 py-12 text-center text-white/50">
-            <IconMusicNotes class="text-4xl" />
-            <Show when={songsQuery.data?.length} fallback={<p>{t("songs.noSongs")}</p>}>
-              <p>{t("songs.noResults")}</p>
-            </Show>
+          <div class="flex flex-col items-center gap-3 rounded-[12px] bg-white/7 px-4 py-6 text-center">
+            <p class="text-white/70">{t("songs.loadFailed")}</p>
+            <Button onClick={() => void songsQuery.refetch()}>{t("error.retry")}</Button>
           </div>
         }
       >
-        <SongList songs={filteredSongs()} client={gameClient} />
+        {/* Its own boundary: the list suspends until the game sent it, the search bar stays usable. */}
+        <Loading fallback={<SongListPlaceholder />}>
+          <SongResults songs={songsQuery.data} sort={sort()} searchQuery={searchQuery()} client={gameClient} />
+        </Loading>
       </Show>
     </main>
+  );
+}
+
+/** The sorted or searched songs. Under the page's loading boundary, so it only sets up once the list is there. */
+function SongResults(props: { songs: SongSummary[]; sort: SortOption; searchQuery: string; client: GameClient }) {
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts a fresh copy
+  const sortedSongs = createMemo(() => [...props.songs].sort(COMPARE[props.sort]));
+  // Searching ranks by relevance; browsing uses the chosen order.
+  const { filteredSongs } = useSongSearch({ songs: sortedSongs, searchQuery: () => props.searchQuery });
+
+  return (
+    <Show
+      when={filteredSongs().length > 0}
+      fallback={
+        <div class="flex flex-col items-center gap-2 py-12 text-center text-white/50">
+          <IconMusicNotes class="text-4xl" />
+          <Show when={props.songs.length} fallback={<p>{t("songs.noSongs")}</p>}>
+            <p>{t("songs.noResults")}</p>
+          </Show>
+        </div>
+      }
+    >
+      <SongList songs={filteredSongs()} client={props.client} />
+    </Show>
+  );
+}
+
+function SongListPlaceholder() {
+  return (
+    <div class="flex flex-col gap-1">
+      <For each={[0, 1, 2, 3, 4, 5]}>{() => <div class="h-16 animate-pulse rounded-[12px] bg-white/6" />}</For>
+    </div>
   );
 }
 
@@ -180,38 +212,34 @@ function SongList(props: { songs: SongSummary[]; client: GameClient }) {
   // Where the list starts in the page; the virtualizer works in page coordinates.
   const [offset, setOffset] = createSignal(0);
 
-  const virtualizer = createWindowVirtualizer({
-    get count() {
-      return props.songs.length;
-    },
+  const virtualizer = createWindowVirtualizer(() => ({
+    count: props.songs.length,
     estimateSize: () => ROW_HEIGHT,
     overscan: 10,
-    get scrollMargin() {
-      return offset();
-    },
-  });
+    scrollMargin: offset(),
+  }));
 
   const measureOffset = () => {
     if (list) setOffset(list.getBoundingClientRect().top + window.scrollY);
   };
-  onMount(() => {
+  onSettled(() => {
     measureOffset();
     // Content above the list changes height (the sort chips hide while searching).
     const observer = new ResizeObserver(measureOffset);
     if (list?.parentElement) observer.observe(list.parentElement);
-    onCleanup(() => observer.disconnect());
+    return () => observer.disconnect();
   });
 
   const positions = createMemo(() => new Map(props.songs.map((song, index) => [song.hash, index])));
   const visible = createMemo(() =>
     virtualizer
-      .getVirtualItems()
+      .items()
       .map((item) => props.songs[item.index]?.hash)
       .filter((hash): hash is string => !!hash),
   );
 
   return (
-    <ul ref={list} class="relative mb-4" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+    <ul ref={list} class="relative mb-4" style={{ height: `${virtualizer.totalSize()}px` }}>
       <For each={visible()}>
         {(hash) => {
           const index = () => positions().get(hash) ?? 0;

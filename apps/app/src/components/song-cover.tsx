@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/solid-query";
 import type { GameClient } from "@tuneperfect/webrtc/contracts/game";
-import { createSignal, Show, Suspense } from "solid-js";
+import { createSignal, Show, Loading } from "solid-js";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
 
 import { useInView } from "~/hooks/use-in-view";
@@ -33,11 +33,11 @@ export default function SongCover(props: SongCoverProps) {
         Own Suspense boundary: reading a loading query suspends the nearest one, and without this that is the
         page's, which blanks the whole list (and resets the scroll) every time a cover starts loading.
       */}
-      <Suspense fallback={<Placeholder />}>
+      <Loading fallback={<Placeholder />}>
         <Show when={cover.data} fallback={<Placeholder />}>
           {(src) => <img src={src()} alt="" class="size-full object-cover" />}
         </Show>
-      </Suspense>
+      </Loading>
     </div>
   );
 }

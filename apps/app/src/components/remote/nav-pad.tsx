@@ -1,6 +1,6 @@
+import { dynamic, type JSX } from "@solidjs/web";
 import type { NavAction } from "@tuneperfect/webrtc/contracts/game";
-import { type Component, createEffect, createMemo, For, type JSX, onCleanup, Show } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { type Component, createEffect, createMemo, For, onCleanup, Show } from "solid-js";
 import IconArrowFatLeft from "~icons/ph/arrow-fat-left-fill";
 import IconArrowLeft from "~icons/ph/arrow-left-bold";
 import IconCaretDown from "~icons/ph/caret-down-bold";
@@ -92,9 +92,12 @@ export default function NavPad(props: {
     // The button going away mid-press (another screen, leaving the page) sends no pointerup, and a
     // button that gets disabled under the finger may not either.
     onCleanup(release);
-    createEffect(() => {
-      if (!has(action)) release();
-    });
+    createEffect(
+      () => has(action),
+      (enabled) => {
+        if (!enabled) release();
+      },
+    );
     return {
       onPointerDown: (event: PointerEvent & { currentTarget: HTMLButtonElement }) => {
         if (event.button !== 0 || !has(action)) return;
@@ -123,7 +126,7 @@ export default function NavPad(props: {
       disabled={!has(extra.action)}
       {...hold(extra.action)}
     >
-      <Dynamic component={extra.icon} class="shrink-0" />
+      <extra.icon class="shrink-0" />
       <span class="truncate">{extra.label()}</span>
     </button>
   );
@@ -133,7 +136,8 @@ export default function NavPad(props: {
       when={hasPad() || shows("back") || extras().length > 0}
       fallback={<p class="text-center text-white/50">{t("remote.pad.nothing")}</p>}
     >
-      <div class="flex flex-col items-center gap-5">
+      {/* Held buttons: a finger sliding off one must not start dragging a surrounding sheet closed. */}
+      <div class="flex flex-col items-center gap-5" data-base-ui-swipe-ignore>
         <Show when={hasPad()}>
           {/* Missing directions keep their place, so the pad doesn't jump around between screens. */}
           <div class="grid grid-cols-3 gap-2">
@@ -203,6 +207,7 @@ function Arrow(props: {
   enabled: boolean;
   hold: (action: NavAction) => JSX.HTMLAttributes<HTMLButtonElement>;
 }) {
+  const ArrowIcon = dynamic(() => props.icon);
   return (
     <button
       type="button"
@@ -211,7 +216,7 @@ function Arrow(props: {
       disabled={!props.enabled}
       {...props.hold(props.action)}
     >
-      <Dynamic component={props.icon} />
+      <ArrowIcon />
     </button>
   );
 }

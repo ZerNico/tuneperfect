@@ -1,5 +1,6 @@
+import type { JSX } from "@solidjs/web";
 import type { Panel } from "@tuneperfect/webrtc/contracts/game";
-import { createEffect, createMemo, createSignal, For, Index, type JSX, Match, on, Show, Switch } from "solid-js";
+import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js";
 import IconDice from "~icons/ph/dice-five-fill";
 import IconMonitor from "~icons/ph/monitor-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -150,7 +151,7 @@ function VersusPanel(props: { panel: PanelOf<"versus"> }) {
         <Show
           when={props.panel.maxJokers <= MAX_DICE}
           fallback={
-            <span class="flex items-center gap-1.5 font-black" classList={{ "opacity-40": props.panel.jokers === 0 }}>
+            <span class={["flex items-center gap-1.5 font-black", { "opacity-40": props.panel.jokers === 0 }]}>
               <IconDice class="text-2xl" />×{props.panel.jokers}
             </span>
           }
@@ -159,11 +160,13 @@ function VersusPanel(props: { panel: PanelOf<"versus"> }) {
             <For each={Array.from({ length: props.panel.maxJokers }, (_, i) => i)}>
               {(i) => (
                 <IconDice
-                  class="text-2xl transition-[color,scale] duration-300"
-                  classList={{
-                    "text-white": i < props.panel.jokers,
-                    "scale-75 text-white/20": i >= props.panel.jokers,
-                  }}
+                  class={[
+                    "text-2xl transition-[color,scale] duration-300",
+                    {
+                      "text-white": i < props.panel.jokers,
+                      "scale-75 text-white/20": i >= props.panel.jokers,
+                    },
+                  ]}
                 />
               )}
             </For>
@@ -197,16 +200,15 @@ function VersusWatchPanel(props: { panel: PanelOf<"versus.watch"> }) {
 const markLabel = (mark: "x" | "o") => mark.toUpperCase();
 
 /**
- * The game's cursor, or the one just tapped until the game's answer arrives: confirming right
- * after a tap picks what was tapped, not what the game showed a moment ago.
- */
-/**
  * The highlighted entry: the one just tapped, until the game's cursor follows. If the game turns the
  * tap down, its cursor stays where it was, so the highlight goes back there.
  */
 function createCursor(fromGame: () => number, act: (index: number) => Promise<boolean>) {
-  const [tapped, setTapped] = createSignal<number | null>(null);
-  createEffect(on(fromGame, () => setTapped(null), { defer: true }));
+  // Starts over whenever the game's cursor moves.
+  const [tapped, setTapped] = createSignal<number | null>(() => {
+    fromGame();
+    return null;
+  });
   const cursor = () => tapped() ?? fromGame();
   const tap = async (index: number) => {
     setTapped(index);
@@ -235,19 +237,21 @@ function BoardPanel(props: { panel: PanelOf<"ticTacToe.board">; titled: boolean 
       </Show>
 
       <div class="grid gap-1.5" style={{ "grid-template-columns": `repeat(${props.panel.size}, minmax(0, 1fr))` }}>
-        <Index each={props.panel.cells}>
+        <For each={props.panel.cells} keyed={false}>
           {(cell, index) => (
             <button
               type="button"
-              class="relative aspect-square overflow-hidden rounded-[10px] bg-white/8 transition-[scale,translate] duration-200 active:scale-95 disabled:active:scale-100"
               // Like the game's board: the selected cell lifts a little with a white outline around it.
-              classList={{
-                "z-10 -translate-y-0.5 scale-105 outline-3 outline-white":
-                  yourTurn() && index === cursor() && cell().owner === null,
-              }}
+              class={[
+                "relative aspect-square overflow-hidden rounded-[10px] bg-white/8 transition-[scale,translate] duration-200 active:scale-95 disabled:active:scale-100",
+                {
+                  "z-10 -translate-y-0.5 scale-105 outline-3 outline-white":
+                    yourTurn() && index === cursor() && cell().owner === null,
+                },
+              ]}
               disabled={!yourTurn() || cell().owner !== null}
               aria-label={cell().song?.title ?? t("remote.ticTacToe.taken")}
-              aria-pressed={yourTurn() && cell().owner === null ? index === cursor() : undefined}
+              aria-pressed={yourTurn() && cell().owner === null ? (index === cursor() ? "true" : "false") : undefined}
               onClick={() => void tapCursor(index)}
             >
               <Show when={cell().song}>
@@ -265,7 +269,7 @@ function BoardPanel(props: { panel: PanelOf<"ticTacToe.board">; titled: boolean 
               </Show>
             </button>
           )}
-        </Index>
+        </For>
       </div>
 
       <Show when={yourTurn()}>
@@ -302,10 +306,12 @@ function SingerPanel(props: { panel: PanelOf<"ticTacToe.singer">; titled: boolea
           {(player, index) => (
             <button
               type="button"
-              class="flex min-h-12 cursor-pointer items-center rounded-[12px] px-4 text-start font-bold transition-colors"
-              classList={{ "bg-white/8 hover:bg-white/12": index() !== cursor() }}
+              class={[
+                "flex min-h-12 cursor-pointer items-center rounded-[12px] px-4 text-start font-bold transition-colors",
+                { "bg-white/8 hover:bg-white/12": index() !== cursor() },
+              ]}
               style={index() === cursor() ? { "background-color": colorVar(props.panel.color, 600) } : undefined}
-              aria-pressed={index() === cursor()}
+              aria-pressed={index() === cursor() ? "true" : "false"}
               onClick={() => void tapCursor(index())}
             >
               {player.name}

@@ -1,5 +1,6 @@
+import type { JSX } from "@solidjs/web";
 import { type Extras, TEXT_MAX_LENGTH } from "@tuneperfect/webrtc/contracts/game";
-import { createEffect, createSignal, For, type JSX, on, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import IconCheck from "~icons/ph/check-bold";
 import IconMagnifyingGlass from "~icons/ph/magnifying-glass-bold";
 import IconMusicNotes from "~icons/ph/music-notes-fill";
@@ -46,15 +47,13 @@ export function TextExtraField(props: {
 
   // Another field on the TV: what was typed for the last one stays there (a password never shows here).
   createEffect(
-    on(
-      () => props.text.surface,
-      () => {
-        clearTimeout(timer);
-        timer = undefined;
-        setDraft(props.text.value);
-      },
-      { defer: true },
-    ),
+    () => props.text.surface,
+    () => {
+      clearTimeout(timer);
+      timer = undefined;
+      setDraft(props.text.value);
+    },
+    { defer: true },
   );
 
   return (
@@ -74,7 +73,7 @@ export function TextExtraField(props: {
           class="min-w-0 grow bg-transparent text-white outline-none placeholder:text-white/40"
           value={value()}
           // The game's limit, but never more than an action may carry
-          maxLength={Math.min(props.text.maxLength ?? TEXT_MAX_LENGTH, TEXT_MAX_LENGTH)}
+          maxlength={Math.min(props.text.maxLength ?? TEXT_MAX_LENGTH, TEXT_MAX_LENGTH)}
           autocomplete="off"
           enterkeyhint={props.search ? "search" : "done"}
           onFocus={() => {
@@ -288,8 +287,10 @@ function OptionSheet(props: {
           {(option) => (
             <button
               type="button"
-              class="flex min-h-12 shrink-0 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-start font-bold transition-colors hover:bg-white/8"
-              classList={{ "bg-white/10": option.value === props.value }}
+              class={[
+                "flex min-h-12 shrink-0 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-start font-bold transition-colors hover:bg-white/8",
+                { "bg-white/10": option.value === props.value },
+              ]}
               onClick={() => {
                 props.onPick(option.value);
                 props.onClose();
@@ -373,8 +374,10 @@ function Chip(props: { active?: boolean; onClick: () => void; children: JSX.Elem
   return (
     <button
       type="button"
-      class="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 text-sm font-bold transition-colors"
-      classList={{ "bg-white text-slate-900": props.active, "bg-white/8 hover:bg-white/12": !props.active }}
+      class={[
+        "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 text-sm font-bold transition-colors",
+        { "bg-white text-slate-900": props.active, "bg-white/8 hover:bg-white/12": !props.active },
+      ]}
       onClick={() => props.onClick()}
     >
       {props.children}

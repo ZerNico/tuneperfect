@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/solid-router";
 import { WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { type Accessor, createEffect, createMemo, createRoot, createSignal, onCleanup, Show } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, Show, TimeoutError, until } from "solid-js";
 import IconCircleNotch from "~icons/ph/circle-notch-bold";
 
 import {
@@ -14,35 +14,16 @@ import { t } from "~/lib/i18n";
 import { connectionStore } from "~/stores/connection";
 
 async function waitForChannelsReady() {
-  return new Promise<void>((resolve, reject) => {
-    if (connectionStore.status() === "connected") {
-      resolve();
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      cleanup();
-      reject(new Error("Connection timeout"));
-    }, WEBRTC_CONFIG.connectionTimeout + 5000);
-
-    const cleanup = createRoot((dispose) => {
-      createEffect(() => {
-        const status = connectionStore.status();
-
-        if (status === "connected") {
-          clearTimeout(timeoutId);
-          dispose();
-          resolve();
-        } else if (status === "failed") {
-          clearTimeout(timeoutId);
-          dispose();
-          reject(new Error(connectionStore.error() ?? "Connection failed"));
-        }
-      });
-
-      return dispose;
-    });
+  const status = await until(
+    () => {
+      const status = connectionStore.status();
+      return (status === "connected" || status === "failed") && status;
+    },
+    { timeout: WEBRTC_CONFIG.connectionTimeout + 5000 },
+  ).catch((error: unknown) => {
+    throw error instanceof TimeoutError ? new Error("Connection timeout") : error;
   });
+  if (status === "failed") throw new Error(connectionStore.error() ?? "Connection failed");
 }
 
 const OVERLAY_DELAY = 1_500;
@@ -51,13 +32,13 @@ const TROUBLE_DELAY = 10_000;
 /** True once `when` has been true for `delay` ms in a row; false again as soon as it isn't. */
 function createDelayed(when: Accessor<boolean>, delay: number) {
   const [delayed, setDelayed] = createSignal(false);
-  createEffect(() => {
-    if (!when()) {
+  createEffect(when, (on) => {
+    if (!on) {
       setDelayed(false);
       return;
     }
     const timer = setTimeout(() => setDelayed(true), delay);
-    onCleanup(() => clearTimeout(timer));
+    return () => clearTimeout(timer);
   });
   return delayed;
 }

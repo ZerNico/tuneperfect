@@ -26,6 +26,8 @@ export function createGameConnection(): GameConnection {
   const [features, setFeatures] = createSignal<readonly string[] | undefined>(undefined, {
     // Every heartbeat reports them: only a real change should reach the screens
     equals: (a, b) => a?.join() === b?.join(),
+    // Cleared when the link closes, which happens while `client` below recomputes
+    ownedWrite: true,
   });
   let link: GameLink | null = null;
   /** The client the last heartbeat ran for, to tell a new connection from the page coming back. */
@@ -52,38 +54,42 @@ export function createGameConnection(): GameConnection {
   // so a heartbeat that failed while the connection was down doesn't stay stopped. In the background
   // the phone may be frozen mid-ping, and that ping's timeout would fire on coming back although
   // nothing is wrong, so it pauses there and pings right away on coming back.
-  createEffect(() => {
-    // This run's client: the effect runs again (with a new heartbeat) whenever the client changes.
-    // oxlint-disable-next-line solid/reactivity
-    const game = client();
-    if (!game || connectionStore.status() !== "connected" || !connectionStore.visible()) return;
+  createEffect(
+    () => {
+      // This run's client: the effect runs again (with a new heartbeat) whenever the client changes.
+      const game = client();
+      return game && connectionStore.status() === "connected" && connectionStore.visible() ? game : null;
+    },
+    (game) => {
+      if (!game) return;
 
-    // The song list is only fetched again when the game's library changed (a game restarted with
-    // other songs, a folder added), not every time the phone comes back to the tab.
-    let firstPing = game !== pingedClient;
-    pingedClient = game;
-    const ping = async () => {
-      const { libraryVersion } = await game.ping();
-      // Nothing cached yet: the first fetch is still coming and brings its own version.
-      const cached = queryClient.getQueryData(songsQueryKey) !== undefined;
-      if (cached && !isSongListCurrent(libraryVersion, firstPing)) {
-        void queryClient.invalidateQueries({ queryKey: songsQueryKey });
-      }
-      firstPing = false;
-    };
+      // The song list is only fetched again when the game's library changed (a game restarted with
+      // other songs, a folder added), not every time the phone comes back to the tab.
+      let firstPing = game !== pingedClient;
+      pingedClient = game;
+      const ping = async () => {
+        const { libraryVersion } = await game.ping();
+        // Nothing cached yet: the first fetch is still coming and brings its own version.
+        const cached = queryClient.getQueryData(songsQueryKey) !== undefined;
+        if (cached && !isSongListCurrent(libraryVersion, firstPing)) {
+          void queryClient.invalidateQueries({ queryKey: songsQueryKey });
+        }
+        firstPing = false;
+      };
 
-    void ping().catch(() => {});
-    const heartbeat = createHeartbeat(ping, {
-      interval: WEBRTC_CONFIG.heartbeat.interval,
-      timeout: WEBRTC_CONFIG.heartbeat.timeout,
-      onFailure: () => {
-        console.warn("[WebRTC] Heartbeat failed, reconnecting");
-        connectionStore.reportConnectionLost();
-      },
-    });
-    heartbeat.start();
-    onCleanup(() => heartbeat.stop());
-  });
+      void ping().catch(() => {});
+      const heartbeat = createHeartbeat(ping, {
+        interval: WEBRTC_CONFIG.heartbeat.interval,
+        timeout: WEBRTC_CONFIG.heartbeat.timeout,
+        onFailure: () => {
+          console.warn("[WebRTC] Heartbeat failed, reconnecting");
+          connectionStore.reportConnectionLost();
+        },
+      });
+      heartbeat.start();
+      return () => heartbeat.stop();
+    },
+  );
 
   onCleanup(closeLink);
 

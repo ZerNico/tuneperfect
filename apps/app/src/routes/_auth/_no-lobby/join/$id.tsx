@@ -1,6 +1,6 @@
 import { safe } from "@orpc/client";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { onMount } from "solid-js";
+import { onSettled } from "solid-js";
 
 import { sessionQueryOptions } from "~/lib/auth";
 import { t } from "~/lib/i18n";
@@ -44,9 +44,7 @@ function RouteComponent() {
     await navigate({ to: "/" });
   };
 
-  onMount(() => {
-    join();
-  });
+  onSettled(() => void join());
 
   return <div />;
 }

@@ -30,7 +30,7 @@ Local dev uses Caddy as reverse proxy with mkcert TLS:
 - **RPC**: oRPC for API client/server and WebRTC peer-to-peer communication
 - **Routing**: TanStack Router (SolidJS) with file-based routes in all frontends
 - **Styling**: Tailwind CSS v4 with `cva` for component variants
-- **UI primitives**: Kobalte (headless SolidJS components)
+- **UI primitives**: Kobalte (headless SolidJS components) in game and web; base-ui-solid in app (Solid 2)
 - **Icons**: `unplugin-icons` with Lucide + custom SVG collections
 - **i18n**: `@solid-primitives/i18n` with flat dictionary pattern (app & game)
 - **Tests**: `bun:test` unit tests in `apps/api` (colocated `src/**/*.test.ts`, preload mocks in `apps/api/test/setup.ts`) — run via `bun run test` (turbo) or `bun test` inside `apps/api`; frontends have no tests yet

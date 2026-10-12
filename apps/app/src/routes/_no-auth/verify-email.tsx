@@ -1,5 +1,4 @@
 import { safe } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute } from "@tanstack/solid-router";
 import { Show } from "solid-js";
 import * as v from "valibot";
@@ -9,6 +8,7 @@ import AuthScreen from "~/components/auth-screen";
 import Button from "~/components/ui/button";
 import Input from "~/components/ui/input";
 import { emailVerifiedUrl } from "~/lib/auth";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";

@@ -3,7 +3,8 @@
 ## Package Identity
 
 - **`@tuneperfect/app`** — Companion web app for the karaoke game (mobile-friendly SPA)
-- **Stack**: SolidJS, TanStack Router, TanStack Query + oRPC, Tailwind CSS v4, Valibot
+- **Stack**: Solid 2 (release candidate), TanStack Router, TanStack Query + oRPC, base-ui-solid, Tailwind CSS v4, Valibot
+- The only app on Solid 2; the game and web stay on Solid 1. See "Solid 2" below before writing reactive code
 - Connects to API via oRPC (HTTP) and to game client via WebRTC (guest side)
 - Features: auth, lobby management, clubs, song browsing, profile editing
 
@@ -48,10 +49,21 @@ Routes use TanStack Router layout prefixes:
 ### Component patterns
 
 - ✅ **DO**: Use functional components with `cva` variants — see `src/components/ui/button.tsx`
-- ✅ **DO**: Use Kobalte for accessible primitives — see `src/components/ui/dialog.tsx`
+- ✅ **DO**: Use base-ui-solid for accessible primitives — see `src/components/ui/dialog.tsx`, `sheet.tsx` (Drawer)
 - ✅ **DO**: Use `~/` path alias for imports
-- ✅ **DO**: Use TanStack Form for forms with Valibot validation
+- ✅ **DO**: Use TanStack Form for forms with Valibot validation, through the local adapter `~/lib/form` (same API as `@tanstack/solid-form`, which has no Solid 2 version yet)
 - ✅ **DO**: Handle errors with `tryCatch` utility — see `src/lib/utils/try-catch.ts`
+
+### Solid 2
+
+Versions are pinned to the rc.13 set base-ui-solid is tested with (root `overrides` pin `@solidjs/signals` and the compiler). Upgrade them together with base-ui-solid.
+
+- **Batching**: a setter's new value is only readable after the batch flushes. Code that writes and then reads back in the same handler needs a plain variable (see `createState` in `src/stores/connection.ts`)
+- **Effects** are split: `createEffect(() => tracked, (value) => sideEffect)`. Return cleanups from the second function; writing signals in the first one throws
+- **Async**: reading query data that's still loading suspends to the nearest `<Loading>`. Give lists their own `<Loading>` (see `routes/_auth/devices.tsx`) and set up code that reads the data under it (see `SongResults` in `songs.tsx`), or the whole page waits. Check `query.isError` before reading `data` of a query that can fail
+- **Dev diagnostics**: Solid 2 logs `[CODE]` warnings with repair guides in the console. The router devtools and base-ui-solid cause a few on their own
+- `onMount` → `onSettled`, `classList` → `class={[..., { cond }]}`, `<Context.Provider>` → `<Context>`, `<Dynamic>` → `dynamic()`, `Index` → `<For keyed={false}>`, HTML attributes are lowercase (`maxlength`, `tabindex`) and `aria-*` take strings
+- `@tanstack/solid-virtual` has no Solid 2 version either: use `~/lib/virtual`
 
 ### oRPC client
 
@@ -83,20 +95,21 @@ Routes use TanStack Router layout prefixes:
 
 ## Key Files
 
-| File                           | Purpose                                         |
-| ------------------------------ | ----------------------------------------------- |
-| `src/main.tsx`                 | App entry — QueryClient, Router, DialogProvider |
-| `src/lib/orpc.ts`              | oRPC client with auto-refresh                   |
-| `src/lib/auth.ts`              | Session query options                           |
-| `src/lib/i18n.ts`              | i18n setup                                      |
-| `src/lib/config.ts`            | Runtime config from env vars                    |
-| `src/lib/toast.tsx`            | Toast notification system                       |
-| `src/lib/dialog.tsx`           | Confirmation dialog system                      |
-| `src/stores/connection.ts`     | WebRTC connection store (guest)                 |
-| `src/contexts/game-client.tsx` | Game client context (WebRTC)                    |
-| `src/routes/_auth.tsx`         | Auth layout (session guard)                     |
-| `src/routes/_no-auth.tsx`      | Public layout                                   |
-| `src/i18n/en.ts`               | English dictionary (source of truth for keys)   |
+| File                           | Purpose                                           |
+| ------------------------------ | ------------------------------------------------- |
+| `src/main.tsx`                 | App entry — QueryClient, Router, DialogProvider   |
+| `src/lib/orpc.ts`              | oRPC client with auto-refresh                     |
+| `src/lib/auth.ts`              | Session query options                             |
+| `src/lib/i18n.ts`              | i18n setup                                        |
+| `src/lib/config.ts`            | Runtime config from env vars                      |
+| `src/lib/toast.ts`             | Toast notification system (base-ui toast manager) |
+| `src/lib/form.tsx`             | TanStack Form adapter for Solid 2                 |
+| `src/lib/dialog.tsx`           | Confirmation dialog system                        |
+| `src/stores/connection.ts`     | WebRTC connection store (guest)                   |
+| `src/contexts/game-client.tsx` | Game client context (WebRTC)                      |
+| `src/routes/_auth.tsx`         | Auth layout (session guard)                       |
+| `src/routes/_no-auth.tsx`      | Public layout                                     |
+| `src/i18n/en.ts`               | English dictionary (source of truth for keys)     |
 
 ## JIT Index Hints
 
@@ -114,7 +127,8 @@ rg -n "export const use" src/hooks/                                # find hooks
 - Env vars must use `VITE_` prefix for client-side access
 - The `fetch` wrapper in oRPC includes `credentials: "include"` for cookies — don't remove
 - WebRTC reconnection has exponential backoff — config from `@tuneperfect/webrtc/utils`
-- Toast/dialog systems are SolidJS-native (not DOM libraries) — see `src/lib/toast.tsx`
+- Toast/dialog systems are SolidJS-native (not DOM libraries) — see `src/lib/toast.ts`
+- `tsconfig.json` maps `@tanstack/query-core` to Solid Query's own copy (the game's newer one sits at the root)
 
 ## Pre-PR Checks
 

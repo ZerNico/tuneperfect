@@ -25,17 +25,21 @@ function JoinComponent() {
   const [error, setError] = createSignal<string>();
   const [joining, setJoining] = createSignal(false);
   const [scanning, setScanning] = createSignal(false);
+  /** Read back right away: a completed code and the submit can arrive together, before `joining` shows. */
+  let inFlight = false;
 
   const join = async (lobbyCode: string) => {
-    if (joining()) return;
+    if (inFlight) return;
     if (lobbyCode.length !== LOBBY_CODE_LENGTH) {
       setError(t("join.codeLength"));
       return;
     }
 
+    inFlight = true;
     setJoining(true);
     setError(undefined);
     const [joinError, _data, isDefined] = await safe(client.lobby.joinLobby.call({ lobbyId: lobbyCode }));
+    inFlight = false;
     setJoining(false);
 
     if (joinError) {

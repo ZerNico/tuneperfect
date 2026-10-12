@@ -1,8 +1,9 @@
 import { isDefinedError } from "@orpc/client";
 import { Key } from "@solid-primitives/keyed";
+import type { JSX } from "@solidjs/web";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, type JSX, Match, Show, Suspense, Switch } from "solid-js";
+import { createMemo, createSignal, For, Match, Show, Loading, Switch } from "solid-js";
 import IconArrowClockwise from "~icons/ph/arrow-clockwise-bold";
 import IconCaretRight from "~icons/ph/caret-right-bold";
 import IconCheckCircle from "~icons/ph/check-circle-fill";
@@ -70,9 +71,9 @@ function LobbyComponent() {
 
       <div class="flex flex-col gap-6">
         {/* Its own boundary, so loading the song list doesn't blank the whole lobby screen. */}
-        <Suspense fallback={<BrowseSongsPlaceholder />}>
+        <Loading fallback={<BrowseSongsPlaceholder />}>
           <BrowseSongs />
-        </Suspense>
+        </Loading>
         <Controller />
         <Players />
       </div>
@@ -349,13 +350,15 @@ function Players() {
                     return (
                       <button
                         type="button"
-                        aria-pressed={selected()}
+                        aria-pressed={selected() ? "true" : "false"}
                         aria-label={club.name}
-                        class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-[12px] p-3 text-start transition-colors"
-                        classList={{
-                          "bg-white/14 ring-2 ring-white/60 ring-inset": selected(),
-                          "bg-white/6 hover:bg-white/10": !selected(),
-                        }}
+                        class={[
+                          "flex w-full cursor-pointer items-center justify-between gap-3 rounded-[12px] p-3 text-start transition-colors",
+                          {
+                            "bg-white/14 ring-2 ring-white/60 ring-inset": selected(),
+                            "bg-white/6 hover:bg-white/10": !selected(),
+                          },
+                        ]}
                         onClick={() => setSelectedClubId(club.id)}
                       >
                         <span class="flex flex-col">
@@ -367,8 +370,10 @@ function Players() {
                           </span>
                         </span>
                         <span
-                          class="flex size-5 shrink-0 items-center justify-center rounded-full border-2"
-                          classList={{ "border-white bg-white": selected(), "border-white/30": !selected() }}
+                          class={[
+                            "flex size-5 shrink-0 items-center justify-center rounded-full border-2",
+                            { "border-white bg-white": selected(), "border-white/30": !selected() },
+                          ]}
                         >
                           <Show when={selected()}>
                             <span class="size-2 rounded-full bg-slate-900" />

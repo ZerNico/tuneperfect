@@ -30,7 +30,7 @@ export default function CodeInput(props: CodeInputProps) {
   };
 
   return (
-    <div class="relative" classList={{ "opacity-50": props.disabled }}>
+    <div class={["relative", { "opacity-50": props.disabled }]}>
       <div class="grid grid-cols-8 gap-1.5" aria-hidden="true">
         <For each={Array.from({ length: LOBBY_CODE_LENGTH }, (_, index) => index)}>
           {(index) => {
@@ -58,7 +58,7 @@ export default function CodeInput(props: CodeInputProps) {
         value={props.value}
         disabled={props.disabled}
         autofocus={props.autofocus}
-        maxLength={LOBBY_CODE_LENGTH}
+        maxlength={LOBBY_CODE_LENGTH}
         autocomplete="off"
         autocapitalize="characters"
         autocorrect="off"

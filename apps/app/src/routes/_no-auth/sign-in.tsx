@@ -1,7 +1,6 @@
 import { safe } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
-import { onMount, Show } from "solid-js";
+import { onSettled, Show } from "solid-js";
 import { joinURL } from "ufo";
 import * as v from "valibot";
 import IconCheckCircle from "~icons/ph/check-circle-fill";
@@ -13,6 +12,7 @@ import GoogleLogin from "~/components/google-login";
 import Button from "~/components/ui/button";
 import Divider from "~/components/ui/divider";
 import Input from "~/components/ui/input";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -37,7 +37,7 @@ function SignInComponent() {
     search().redirect ? joinURL(window.location.origin, search().redirect || "/") : window.location.origin;
 
   // Check for OAuth error on mount
-  onMount(() => {
+  onSettled(() => {
     const message = {
       unverified_email_exists: t("signIn.oauthUnverifiedEmailExists"),
       oauth_cancelled: t("signIn.oauthCancelled"),

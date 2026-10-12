@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute } from "@tanstack/solid-router";
-import { For, Show, Suspense } from "solid-js";
+import { For, Show, Loading } from "solid-js";
 import IconDesktop from "~icons/ph/desktop-bold";
 import IconDeviceMobile from "~icons/ph/device-mobile-bold";
 import IconSignOut from "~icons/ph/sign-out-bold";
@@ -93,7 +93,7 @@ function DevicesComponent() {
       />
 
       {/* Its own boundary: reading the list suspends, which would otherwise blank the whole page. */}
-      <Suspense
+      <Loading
         fallback={
           <div class="flex flex-col gap-2">
             <div class="h-20 animate-pulse rounded-[12px] bg-white/7" />
@@ -172,7 +172,7 @@ function DevicesComponent() {
             </button>
           </Show>
         </Show>
-      </Suspense>
+      </Loading>
 
       <p class="mt-4 text-center text-sm text-white/45">{t("devices.delayNote")}</p>
     </main>

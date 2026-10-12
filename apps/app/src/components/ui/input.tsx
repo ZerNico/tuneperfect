@@ -1,4 +1,5 @@
-import { createSignal, type JSX, Show } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import { createSignal, Show } from "solid-js";
 import Eye from "~icons/ph/eye-bold";
 import EyeOff from "~icons/ph/eye-slash-bold";
 
@@ -37,8 +38,10 @@ export default function Input(props: InputProps) {
         )}
       </Show>
       <div
-        class="flex h-12 items-center gap-1 rounded-[12px] bg-white/8 pr-1 pl-4 transition-shadow focus-within:ring-2 focus-within:ring-white/40"
-        classList={{ "ring-2 ring-red-400/70": !!props.errorMessage, "opacity-50": props.disabled }}
+        class={[
+          "flex h-12 items-center gap-1 rounded-[12px] bg-white/8 pr-1 pl-4 transition-shadow focus-within:ring-2 focus-within:ring-white/40",
+          { "ring-2 ring-red-400/70": !!props.errorMessage, "opacity-50": props.disabled },
+        ]}
       >
         <input
           id={props.name}
@@ -50,14 +53,14 @@ export default function Input(props: InputProps) {
           onChange={(event) => props.onChange?.(event)}
           onBlur={(event) => props.onBlur?.(event)}
           autocomplete={props.autocomplete}
-          maxLength={props.maxLength}
+          maxlength={props.maxLength}
           type={type()}
           onInput={(event) => props.onInput?.(event)}
           aria-label={props.label}
-          class="block h-full w-full grow bg-transparent text-white placeholder:text-white/35 focus:outline-none"
-          classList={{
-            [props.inputClass || ""]: true,
-          }}
+          class={[
+            "block h-full w-full grow bg-transparent text-white placeholder:text-white/35 focus:outline-none",
+            props.inputClass,
+          ]}
           aria-invalid={props.errorMessage ? "true" : "false"}
           aria-describedby={props.errorMessage ? `${props.name}-error` : undefined}
         />

@@ -1,5 +1,6 @@
+import type { JSX } from "@solidjs/web";
 import { Link, type LinkProps } from "@tanstack/solid-router";
-import { type JSX, Show } from "solid-js";
+import { Show } from "solid-js";
 import IconCaretLeft from "~icons/ph/caret-left-bold";
 
 import Tag from "./ui/tag";

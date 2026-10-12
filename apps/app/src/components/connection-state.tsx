@@ -1,7 +1,7 @@
 import { createEventListener } from "@solid-primitives/event-listener";
+import { dynamic, type JSX } from "@solidjs/web";
 import { useNavigate, useRouter } from "@tanstack/solid-router";
-import { type Component, type JSX, Show } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { type Component, Show } from "solid-js";
 import IconCircleNotch from "~icons/ph/circle-notch-bold";
 import IconWifiSlash from "~icons/ph/wifi-slash-bold";
 
@@ -96,13 +96,16 @@ export function ConnectionState(props: {
   spinning?: boolean;
   failed?: boolean;
 }) {
+  const Icon = dynamic(() => props.icon);
   return (
     <div class="flex w-full max-w-sm flex-col items-center gap-3 text-center">
       <span
-        class="mb-1 flex size-14 items-center justify-center rounded-[16px] text-3xl"
-        classList={{ "gradient-accent": !props.failed, "bg-red-500/20 text-red-300": props.failed }}
+        class={[
+          "mb-1 flex size-14 items-center justify-center rounded-[16px] text-3xl",
+          { "gradient-accent": !props.failed, "bg-red-500/20 text-red-300": props.failed },
+        ]}
       >
-        <Dynamic component={props.icon} class={props.spinning ? "animate-spin" : undefined} />
+        <Icon class={props.spinning ? "animate-spin" : undefined} />
       </span>
       <h2 class="text-xl font-bold">{props.title}</h2>
       <Show when={props.children}>

@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, on } from "solid-js";
+import { createEffect, createMemo, createSignal } from "solid-js";
 import IconMinus from "~icons/ph/minus-bold";
 import IconPlus from "~icons/ph/plus-bold";
 
@@ -14,30 +14,25 @@ interface ImageCropProps {
   class?: string;
 }
 
-type GestureType = "none" | "drag" | "pinch";
-
 interface CropState {
   scale: number;
   offsetX: number;
   offsetY: number;
-  gesture: GestureType;
-  lastPointer: { x: number; y: number } | null;
-  lastPinch: { distance: number; center: { x: number; y: number } } | null;
 }
+
+/** The gesture in progress. Not reactive: only the crop it produces is drawn. */
+type Gesture =
+  | { type: "none" }
+  | { type: "drag"; lastPointer: { x: number; y: number } }
+  | { type: "pinch"; lastPinch: { distance: number; center: { x: number; y: number } } };
 
 export default function ImageCrop(props: ImageCropProps) {
   const canvasSize = () => props.resolution ?? 1024;
   let canvasRef: HTMLCanvasElement | undefined;
   let imageRef: HTMLImageElement | undefined;
 
-  const [cropState, setCropState] = createSignal<CropState>({
-    scale: 1,
-    offsetX: 0,
-    offsetY: 0,
-    gesture: "none",
-    lastPointer: null,
-    lastPinch: null,
-  });
+  const [cropState, setCropState] = createSignal<CropState>({ scale: 1, offsetX: 0, offsetY: 0 });
+  let gesture: Gesture = { type: "none" };
 
   const getDisplayRatio = () => {
     if (!canvasRef) return 2;
@@ -90,7 +85,6 @@ export default function ImageCrop(props: ImageCropProps) {
       const constrained = constrainMovement(newOffsetX, newOffsetY, constrainedScale);
       return { ...prev, scale: constrainedScale, ...constrained };
     });
-    drawImage();
   };
 
   const applyDrag = (deltaX: number, deltaY: number) => {
@@ -101,7 +95,6 @@ export default function ImageCrop(props: ImageCropProps) {
       const constrained = constrainMovement(newOffsetX, newOffsetY, prev.scale);
       return { ...prev, ...constrained };
     });
-    drawImage();
   };
 
   const getPointerPos = (event: PointerEvent | MouseEvent) => {
@@ -130,70 +123,45 @@ export default function ImageCrop(props: ImageCropProps) {
     if (!canvasRef) return;
 
     canvasRef.setPointerCapture(event.pointerId);
-    setCropState((prev) => ({
-      ...prev,
-      gesture: "drag",
-      lastPointer: getPointerPos(event),
-      lastPinch: null,
-    }));
+    gesture = { type: "drag", lastPointer: getPointerPos(event) };
   };
 
   const handlePointerMove = (event: PointerEvent) => {
-    const state = cropState();
-    if (state.gesture !== "drag" || !state.lastPointer) return;
+    if (gesture.type !== "drag") return;
 
     event.preventDefault();
     const pointer = getPointerPos(event);
-    applyDrag(pointer.x - state.lastPointer.x, pointer.y - state.lastPointer.y);
-    setCropState((prev) => ({ ...prev, lastPointer: pointer }));
+    applyDrag(pointer.x - gesture.lastPointer.x, pointer.y - gesture.lastPointer.y);
+    gesture.lastPointer = pointer;
   };
 
   const handlePointerEnd = (event: PointerEvent) => {
     if (!canvasRef) return;
 
     canvasRef.releasePointerCapture(event.pointerId);
-    setCropState((prev) => ({
-      ...prev,
-      gesture: "none",
-      lastPointer: null,
-      lastPinch: null,
-    }));
+    gesture = { type: "none" };
   };
 
   // Touch event handlers for pinch-to-zoom
   const handleTouchStart = (event: TouchEvent) => {
     if (event.touches.length === 2) {
       event.preventDefault();
-      const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
-      setCropState((prev) => ({
-        ...prev,
-        gesture: "pinch",
-        lastPointer: null,
-        lastPinch: pinchInfo,
-      }));
+      gesture = { type: "pinch", lastPinch: getPinchInfo(event.touches[0], event.touches[1]) };
     }
   };
 
   const handleTouchMove = (event: TouchEvent) => {
-    const state = cropState();
-    if (state.gesture !== "pinch" || !state.lastPinch || event.touches.length !== 2) return;
+    if (gesture.type !== "pinch" || event.touches.length !== 2) return;
 
     event.preventDefault();
     const pinchInfo = getPinchInfo(event.touches[0], event.touches[1]);
-    const scaleChange = pinchInfo.distance / state.lastPinch.distance;
-    applyZoom(state.scale * scaleChange, pinchInfo.center.x, pinchInfo.center.y);
-    setCropState((prev) => ({ ...prev, lastPinch: pinchInfo }));
+    const scaleChange = pinchInfo.distance / gesture.lastPinch.distance;
+    applyZoom(cropState().scale * scaleChange, pinchInfo.center.x, pinchInfo.center.y);
+    gesture.lastPinch = pinchInfo;
   };
 
   const handleTouchEnd = (event: TouchEvent) => {
-    if (event.touches.length < 2) {
-      setCropState((prev) => ({
-        ...prev,
-        gesture: "none",
-        lastPointer: null,
-        lastPinch: null,
-      }));
-    }
+    if (event.touches.length < 2) gesture = { type: "none" };
   };
 
   const handleWheel = (event: WheelEvent) => {
@@ -214,12 +182,11 @@ export default function ImageCrop(props: ImageCropProps) {
     applyZoom(newScale, rect.width / 2, rect.height / 2);
   };
 
-  const drawImage = () => {
-    if (!canvasRef || !imageRef) return;
+  const drawImage = (state: CropState) => {
+    if (!canvasRef || !imageRef?.complete) return;
     const ctx = canvasRef.getContext("2d");
     if (!ctx) return;
 
-    const state = cropState();
     const size = canvasSize();
     ctx.clearRect(0, 0, size, size);
     ctx.drawImage(
@@ -231,7 +198,7 @@ export default function ImageCrop(props: ImageCropProps) {
     );
   };
 
-  const loadImage = () => {
+  const loadImage = (url: string) => {
     if (!imageRef) return;
     imageRef.onload = () => {
       if (!imageRef) return;
@@ -245,13 +212,9 @@ export default function ImageCrop(props: ImageCropProps) {
         scale: initialScale,
         offsetX: (canvasSize() - imageRef.naturalWidth * initialScale) / 2,
         offsetY: (canvasSize() - imageRef.naturalHeight * initialScale) / 2,
-        gesture: "none",
-        lastPointer: null,
-        lastPinch: null,
       });
-      drawImage();
     };
-    imageRef.src = props.imageUrl;
+    imageRef.src = url;
   };
 
   const handleZoom = (direction: "in" | "out" | number, centerX?: number, centerY?: number) => {
@@ -288,18 +251,17 @@ export default function ImageCrop(props: ImageCropProps) {
     cropCanvas.toBlob((blob) => blob && onCrop(blob), "image/webp", 1.0);
   };
 
-  createEffect(() => {
-    if (props.imageUrl) {
-      imageRef = new Image();
-      loadImage();
-    }
-  });
-
   createEffect(
-    on(cropState, () => {
-      if (imageRef?.complete) drawImage();
-    }),
+    () => props.imageUrl,
+    (url) => {
+      if (!url) return;
+      imageRef = new Image();
+      loadImage(url);
+    },
   );
+
+  // Every change to the crop shows right away: zoom, drag and the initial fit once the image loaded.
+  createEffect(cropState, drawImage);
 
   const currentScale = createMemo(() => cropState().scale);
   const minScale = createMemo(() => getMinimumScale());

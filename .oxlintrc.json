@@ -58,6 +58,12 @@
         "solid/self-closing-comp": "warn",
         "solid/style-prop": "warn"
       }
+    },
+    {
+      "files": ["apps/app/src/**/*.{ts,tsx}"],
+      "rules": {
+        "solid/reactivity": "off"
+      }
     }
   ]
 }

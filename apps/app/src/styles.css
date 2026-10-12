@@ -145,19 +145,7 @@
   --color-slate-900: oklch(0.208 0.042 265.755);
   --color-slate-950: oklch(0.129 0.042 264.695);
 
-  --animate-hide: hide 0.1s ease-in;
   --animate-aurora: aurora 18s ease-in-out infinite alternate;
-  --animate-slide-in: slideIn 0.15s ease-out;
-  --animate-swipe-out: swipeOut 0.1s ease-in;
-
-  @keyframes hide {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
 
   /* Background: slow drift of the aurora glows */
   @keyframes aurora {
@@ -166,24 +154,6 @@
     }
     to {
       transform: translate(8%, 10%) scale(1.15);
-    }
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes swipeOut {
-    from {
-      transform: translateX(var(--kb-toast-swipe-end-x));
-    }
-    to {
-      transform: translateX(100%);
     }
   }
 }

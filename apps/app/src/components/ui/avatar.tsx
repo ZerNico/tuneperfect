@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from "cva";
-import { createEffect, createSignal, on, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { joinURL } from "ufo";
 
 import { config } from "~/lib/config";
@@ -43,16 +43,11 @@ export function fallbackGradient(name: string) {
 }
 
 export default function Avatar(props: AvatarProps) {
-  const [error, setError] = createSignal(false);
-
-  createEffect(
-    on(
-      () => props.user,
-      () => {
-        setError(false);
-      },
-    ),
-  );
+  // Starts over for every user: a broken picture of one says nothing about the next.
+  const [error, setError] = createSignal(() => {
+    void props.user;
+    return false;
+  });
 
   const fallback = () => props.user?.username?.at(0) || "?";
 
@@ -65,12 +60,7 @@ export default function Avatar(props: AvatarProps) {
   };
 
   return (
-    <div
-      classList={{
-        [avatar({ size: props.size })]: true,
-        [props.class || ""]: !!props.class,
-      }}
-    >
+    <div class={[avatar({ size: props.size }), props.class]}>
       <div
         class={`col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full bg-linear-to-b font-black text-white uppercase ${fallbackGradient(props.user?.username ?? "")}`}
       >
@@ -82,7 +72,7 @@ export default function Avatar(props: AvatarProps) {
           src={pictureUrl()}
           alt={props.user?.username ?? ""}
           class="col-start-1 row-start-1 block h-full w-full rounded-full object-cover"
-          referrerPolicy="no-referrer"
+          referrerpolicy="no-referrer"
         />
       </Show>
     </div>

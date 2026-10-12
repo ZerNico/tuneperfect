@@ -1,4 +1,3 @@
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
@@ -15,6 +14,7 @@ import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
 import Input from "~/components/ui/input";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -131,7 +131,7 @@ function ClubsIndexComponent() {
                   <Button
                     type="button"
                     loading={
-                      declineInviteMutation.isPending && declineInviteMutation.variables.clubId === invite.club?.id
+                      declineInviteMutation.isPending && declineInviteMutation.variables?.clubId === invite.club?.id
                     }
                     onClick={() => handleDeclineInvite(invite.club?.id || "")}
                   >
@@ -142,7 +142,7 @@ function ClubsIndexComponent() {
                     type="button"
                     intent="gradient"
                     loading={
-                      acceptInviteMutation.isPending && acceptInviteMutation.variables.clubId === invite.club?.id
+                      acceptInviteMutation.isPending && acceptInviteMutation.variables?.clubId === invite.club?.id
                     }
                     onClick={() => handleAcceptInvite(invite.club?.id || "")}
                   >

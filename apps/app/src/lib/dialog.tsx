@@ -1,4 +1,5 @@
-import { createContext, createSignal, type JSX, Show, useContext } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import { createContext, createSignal, Show, useContext } from "solid-js";
 
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
@@ -6,7 +7,8 @@ import { t } from "~/lib/i18n";
 
 interface DialogOptions {
   title: string;
-  description: JSX.Element;
+  /** Plain text: the dialog is usually opened from an event handler, where JSX would have no owner. */
+  description: string;
   intent?: "delete" | "confirm";
   /** Label of the confirm button; "Confirm" by default. */
   confirmLabel?: string;
@@ -40,7 +42,7 @@ export function DialogProvider(props: { children: JSX.Element }) {
   };
 
   return (
-    <DialogContext.Provider value={{ showDialog }}>
+    <DialogContext value={{ showDialog }}>
       {props.children}
       <Show when={dialogOptions()}>
         {(dialogOptions) => (
@@ -58,14 +60,11 @@ export function DialogProvider(props: { children: JSX.Element }) {
           </Dialog>
         )}
       </Show>
-    </DialogContext.Provider>
+    </DialogContext>
   );
 }
 
+/** Throws outside `DialogProvider`. */
 export function useDialog() {
-  const context = useContext(DialogContext);
-  if (!context) {
-    throw new Error("useDialog must be used within a DialogProvider");
-  }
-  return context;
+  return useContext(DialogContext);
 }

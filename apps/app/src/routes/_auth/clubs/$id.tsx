@@ -1,5 +1,4 @@
 import { isDefinedError } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal, For, Show } from "solid-js";
@@ -25,6 +24,7 @@ import Input from "~/components/ui/input";
 import Tag from "~/components/ui/tag";
 import { sessionQueryOptions } from "~/lib/auth";
 import { useDialog } from "~/lib/dialog";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";
@@ -103,11 +103,10 @@ function MemberActions(props: {
     changeRole: (userId: string, username: string, role: "admin" | "member") => void;
   };
 }) {
-  // oxlint-disable-next-line solid/reactivity
-  const menuItems = getMemberMenuItems(props.member, props.currentUserRole, props.handlers);
+  const menuItems = () => getMemberMenuItems(props.member, props.currentUserRole, props.handlers);
 
   return (
-    <Show when={menuItems.length > 0}>
+    <Show when={menuItems().length > 0}>
       <DropdownMenu
         trigger={
           <DropdownMenu.Trigger
@@ -118,7 +117,7 @@ function MemberActions(props: {
           </DropdownMenu.Trigger>
         }
       >
-        <For each={menuItems}>
+        <For each={menuItems()}>
           {(item) => (
             <DropdownMenu.Item class={item.class} onSelect={item.onSelect}>
               <item.icon /> {item.label}
@@ -261,7 +260,7 @@ function ClubDetailComponent() {
   const handleDeleteClub = async () => {
     const confirmed = await showDialog({
       title: t("clubs.detail.delete"),
-      description: <p>{t("clubs.detail.deleteConfirmation")}</p>,
+      description: t("clubs.detail.deleteConfirmation"),
       intent: "delete",
       confirmLabel: t("clubs.detail.delete"),
     });
@@ -274,7 +273,7 @@ function ClubDetailComponent() {
   const handleRemoveMember = async (userId: string, username: string) => {
     const confirmed = await showDialog({
       title: t("clubs.detail.removeMember"),
-      description: <p>{t("clubs.detail.removeMemberConfirmation", { username })}</p>,
+      description: t("clubs.detail.removeMemberConfirmation", { username }),
       intent: "delete",
       confirmLabel: t("clubs.detail.removeMember"),
     });
@@ -287,7 +286,7 @@ function ClubDetailComponent() {
   const handleTransferOwnership = async (userId: string, username: string) => {
     const confirmed = await showDialog({
       title: t("clubs.detail.transferOwnership"),
-      description: <p>{t("clubs.detail.transferOwnershipConfirmation", { username })}</p>,
+      description: t("clubs.detail.transferOwnershipConfirmation", { username }),
       intent: "delete",
       confirmLabel: t("clubs.detail.transferOwnership"),
     });
@@ -300,14 +299,10 @@ function ClubDetailComponent() {
   const handleChangeRole = async (userId: string, username: string, newRole: "admin" | "member") => {
     const confirmed = await showDialog({
       title: t("clubs.detail.changeRole"),
-      description: (
-        <p>
-          {t("clubs.detail.changeRoleConfirmation", {
-            username,
-            role: newRole === "admin" ? t("clubs.detail.roleAdmin") : t("clubs.detail.roleMember"),
-          })}
-        </p>
-      ),
+      description: t("clubs.detail.changeRoleConfirmation", {
+        username,
+        role: newRole === "admin" ? t("clubs.detail.roleAdmin") : t("clubs.detail.roleMember"),
+      }),
       intent: "confirm",
       confirmLabel: t("clubs.detail.changeRole"),
     });
@@ -326,7 +321,7 @@ function ClubDetailComponent() {
   const handleLeaveClub = async () => {
     const confirmed = await showDialog({
       title: t("clubs.detail.leave"),
-      description: <p>{t("clubs.detail.leaveConfirmation")}</p>,
+      description: t("clubs.detail.leaveConfirmation"),
       intent: "delete",
       confirmLabel: t("clubs.detail.leave"),
     });

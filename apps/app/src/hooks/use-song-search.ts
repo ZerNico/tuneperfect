@@ -32,13 +32,13 @@ export function useSongSearch(options: UseSongSearchOptions): UseSongSearchResul
     setDebouncedSearchQuery(query);
   }, 300);
 
-  createEffect(() => {
-    if (shouldDebounce()) {
-      debouncedSetQuery(options.searchQuery());
-    } else {
-      setDebouncedSearchQuery(options.searchQuery());
-    }
-  });
+  createEffect(
+    () => ({ query: options.searchQuery(), debounced: shouldDebounce() }),
+    ({ query, debounced }) => {
+      if (debounced) debouncedSetQuery(query);
+      else setDebouncedSearchQuery(query);
+    },
+  );
 
   // Create MiniSearch index when songs change
   const miniSearchInstance = createMemo(() => {

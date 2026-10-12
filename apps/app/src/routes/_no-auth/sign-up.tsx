@@ -1,5 +1,4 @@
 import { safe } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router";
 import { joinURL } from "ufo";
 import * as v from "valibot";
@@ -13,6 +12,7 @@ import Divider from "~/components/ui/divider";
 import Input from "~/components/ui/input";
 import { emailVerifiedUrl } from "~/lib/auth";
 import { config } from "~/lib/config";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";

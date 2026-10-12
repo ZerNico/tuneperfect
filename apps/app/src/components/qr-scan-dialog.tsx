@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 import IconCamera from "~icons/ph/camera-bold";
 
 import Dialog from "~/components/ui/dialog";
@@ -35,20 +35,15 @@ interface QrScanDialogProps {
 export default function QrScanDialog(props: QrScanDialogProps) {
   const canScan = typeof BarcodeDetector !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
   const [cameraFailed, setCameraFailed] = createSignal(false);
-  let video: HTMLVideoElement | undefined;
+  // A signal, not a plain ref: the dialog renders its content in a portal, after this component set up.
+  const [video, setVideo] = createSignal<HTMLVideoElement>();
 
-  onMount(() => {
+  createEffect(video, (video) => {
     if (!canScan || !video || !BarcodeDetector) return;
 
-    // Cleanups must be registered now: after an await, Solid no longer knows whose they are
     let closed = false;
     let stream: MediaStream | undefined;
     let timer: ReturnType<typeof setInterval> | undefined;
-    onCleanup(() => {
-      closed = true;
-      clearInterval(timer);
-      for (const track of stream?.getTracks() ?? []) track.stop();
-    });
 
     void (async () => {
       try {
@@ -81,6 +76,12 @@ export default function QrScanDialog(props: QrScanDialogProps) {
         }
       }, SCAN_INTERVAL_MS);
     })();
+
+    return () => {
+      closed = true;
+      clearInterval(timer);
+      for (const track of stream?.getTracks() ?? []) track.stop();
+    };
   });
 
   return (
@@ -98,7 +99,7 @@ export default function QrScanDialog(props: QrScanDialogProps) {
       >
         <div class="flex flex-col gap-3">
           <div class="relative aspect-square overflow-hidden rounded-[16px] bg-black">
-            <video ref={video} class="size-full object-cover" muted playsinline />
+            <video ref={setVideo} class="size-full object-cover" muted playsinline />
             {/* Frame to aim with */}
             <div class="absolute inset-[18%] rounded-[16px] ring-4 ring-white/80" />
           </div>

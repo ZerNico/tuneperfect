@@ -1,6 +1,7 @@
+import type { JSX } from "@solidjs/web";
 import { Link, type LinkProps as TanstackLinkProps } from "@tanstack/solid-router";
 import { cva, type VariantProps } from "cva";
-import { type JSX, Show } from "solid-js";
+import { Show } from "solid-js";
 import LoaderCircle from "~icons/ph/circle-notch-bold";
 
 interface ButtonProps extends BaseProps {
@@ -39,21 +40,18 @@ const button = cva({
 });
 
 export default function Button(props: ButtonProps | LinkProps) {
-  const classes = () => ({
-    [button({ intent: props.intent })]: true,
-    [props.class || ""]: true,
-  });
+  const classes = () => [button({ intent: props.intent }), props.class];
 
   // oxlint-disable-next-line solid/components-return-once
   return "to" in props ? (
-    <Link to={props.to} classList={classes()} ref={props.ref}>
+    <Link to={props.to} class={classes()} ref={props.ref}>
       <ButtonContent loading={props.loading}>{props.children}</ButtonContent>
     </Link>
   ) : (
     <button
       type={props.type || "button"}
       onClick={() => props.onClick?.()}
-      classList={classes()}
+      class={classes()}
       disabled={props.disabled}
       ref={props.ref}
     >
@@ -65,12 +63,7 @@ export default function Button(props: ButtonProps | LinkProps) {
 function ButtonContent(props: { children: JSX.Element; loading?: boolean }) {
   return (
     <>
-      <span
-        class="col-start-1 row-start-1 flex items-center justify-center gap-2"
-        classList={{
-          "opacity-0": props.loading,
-        }}
-      >
+      <span class={["col-start-1 row-start-1 flex items-center justify-center gap-2", { "opacity-0": props.loading }]}>
         {props.children}
       </span>
       <Show when={props.loading}>

@@ -1,5 +1,5 @@
 import { WEBRTC_CONFIG } from "@tuneperfect/webrtc/utils";
-import { createSignal, untrack } from "solid-js";
+import { type Accessor, createSignal } from "solid-js";
 
 import { t } from "~/lib/i18n";
 import { orpcClient } from "~/lib/orpc";
@@ -35,14 +35,32 @@ interface Attempt {
   disconnectedTimer?: ReturnType<typeof setTimeout>;
 }
 
+/**
+ * A value the store's own logic reads back right after writing it, plus a signal showing it to the screens.
+ * Solid batches writes, so a signal alone would still read the old value until the batch is through.
+ */
+function createState<T>(initial: T): [now: () => T, set: (value: T) => void, signal: Accessor<T>] {
+  let current = initial;
+  // Written from WebRTC and DOM callbacks, which may run while Solid is updating. Boxed, as `T` is generic.
+  const [signal, setSignal] = createSignal(
+    { value: initial },
+    { ownedWrite: true, equals: (a, b) => a.value === b.value },
+  );
+  const set = (value: T) => {
+    current = value;
+    setSignal({ value });
+  };
+  return [() => current, set, () => signal().value];
+}
+
 function createConnectionStore() {
-  const [connection, setConnection] = createSignal<GuestConnection | null>(null);
-  const [status, setStatus] = createSignal<ConnectionStatus>("idle");
-  const [channelsReady, setChannelsReady] = createSignal(false);
-  const [error, setError] = createSignal<string | null>(null);
-  const [reconnectAttempts, setReconnectAttempts] = createSignal(0);
-  const [currentUserId, setCurrentUserId] = createSignal<string | null>(null);
-  const [visible, setVisible] = createSignal(document.visibilityState === "visible");
+  const [, setConnection, connection] = createState<GuestConnection | null>(null);
+  const [status, setStatus, statusSignal] = createState<ConnectionStatus>("idle");
+  const [channelsReady, setChannelsReady, channelsReadySignal] = createState(false);
+  const [, setError, error] = createState<string | null>(null);
+  const [reconnectAttempts, setReconnectAttempts, reconnectAttemptsSignal] = createState(0);
+  const [currentUserId, setCurrentUserId] = createState<string | null>(null);
+  const [visible, setVisible, visibleSignal] = createState(document.visibilityState === "visible");
 
   let attempt: Attempt | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
@@ -102,7 +120,7 @@ function createConnectionStore() {
     const delay = Math.min(WEBRTC_CONFIG.reconnect.initialDelay * 2 ** attempts, WEBRTC_CONFIG.reconnect.maxDelay);
     clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
-      setReconnectAttempts((n) => n + 1);
+      setReconnectAttempts(reconnectAttempts() + 1);
       void connect(userId);
     }, delay);
   };
@@ -244,55 +262,47 @@ function createConnectionStore() {
     }
   }
 
-  // The lifecycle functions read the store's signals; called from an effect (the auth layout does),
-  // that effect must not start depending on the connection's status, or giving up would restart it.
+  // The store's own logic reads plain values (not signals), so the effects calling these functions
+  // (the auth layout does) don't start depending on the connection's status.
 
   /** Connects to the lobby's game as `userId`; does nothing if that's already under way or done. */
   function startConnection(userId: string) {
-    untrack(() => {
-      if (currentUserId() === userId && status() !== "idle" && status() !== "failed") return;
-      setCurrentUserId(userId);
-      setReconnectAttempts(0);
-      void connect(userId);
-    });
+    if (currentUserId() === userId && status() !== "idle" && status() !== "failed") return;
+    setCurrentUserId(userId);
+    setReconnectAttempts(0);
+    void connect(userId);
   }
 
   /** Starts over after the phone gave up (or right away while waiting for the next attempt). */
   function retryConnection() {
-    untrack(() => {
-      const userId = currentUserId();
-      if (!userId) return;
-      setReconnectAttempts(0);
-      void connect(userId);
-    });
+    const userId = currentUserId();
+    if (!userId) return;
+    setReconnectAttempts(0);
+    void connect(userId);
   }
 
   /** Disconnects right away; the game is told so (best effort) to free the connection at once. */
   function stopConnection() {
-    untrack(() => {
-      const current = attempt;
-      if (current && status() === "connected") {
-        orpcClient.signaling
-          .sendSignal(
-            { signal: { type: "goodbye", from: current.userId, reason: "user_left", session: current.session } },
-            { signal: AbortSignal.timeout(5_000) },
-          )
-          .catch(() => {});
-      }
-      clearTimeout(reconnectTimer);
-      setCurrentUserId(null);
-      setReconnectAttempts(0);
-      endAttempt();
-      setError(null);
-      setStatus("idle");
-    });
+    const current = attempt;
+    if (current && status() === "connected") {
+      orpcClient.signaling
+        .sendSignal(
+          { signal: { type: "goodbye", from: current.userId, reason: "user_left", session: current.session } },
+          { signal: AbortSignal.timeout(5_000) },
+        )
+        .catch(() => {});
+    }
+    clearTimeout(reconnectTimer);
+    setCurrentUserId(null);
+    setReconnectAttempts(0);
+    endAttempt();
+    setError(null);
+    setStatus("idle");
   }
 
   /** The game stopped answering calls (see the heartbeat) although the connection looks up. */
   function reportConnectionLost() {
-    untrack(() => {
-      if (attempt && status() === "connected") fail(attempt, "Heartbeat timed out");
-    });
+    if (attempt && status() === "connected") fail(attempt, "Heartbeat timed out");
   }
 
   // Coming back to the phone (screen unlocked, app switched back) or back online: don't wait out the
@@ -308,12 +318,12 @@ function createConnectionStore() {
 
   return {
     connection,
-    status,
-    channelsReady,
+    status: statusSignal,
+    channelsReady: channelsReadySignal,
     error,
-    reconnectAttempts,
+    reconnectAttempts: reconnectAttemptsSignal,
     /** Whether the page is in the foreground; the phone doesn't retry or check the connection in the background. */
-    visible,
+    visible: visibleSignal,
     startConnection,
     stopConnection,
     retryConnection,

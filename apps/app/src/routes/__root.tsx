@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/solid-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
-import { Suspense } from "solid-js";
+import { Loading } from "solid-js";
 
 import Footer from "~/components/footer";
 import Header from "~/components/header";
@@ -22,9 +22,9 @@ function RootComponent() {
       <div class="gradient-bg-primary relative isolate flex min-h-[100dvh] flex-col overflow-x-clip pb-24 text-white md:pb-0">
         <Aurora />
         <Header />
-        <Suspense>
+        <Loading>
           <Outlet />
-        </Suspense>
+        </Loading>
         <Footer />
         <TanStackRouterDevtools />
         <ToastRegion />

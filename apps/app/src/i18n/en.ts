@@ -333,6 +333,7 @@ const en = {
     retry: "Retry",
     refresh: "Reload songs",
     noSongs: "The game hasn't shared any songs yet",
+    loadFailed: "Couldn't load the songs from the game",
     noResults: "No songs match your search",
     searchPlaceholder: "Search songs",
     clearSearch: "Clear search",

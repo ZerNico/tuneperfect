@@ -1,4 +1,4 @@
-import { type Accessor, createSignal, onCleanup, onMount } from "solid-js";
+import { type Accessor, createEffect, createSignal } from "solid-js";
 
 /**
  * Becomes true once the element has stayed near the viewport for `delay` ms, and then stays true.
@@ -10,9 +10,8 @@ export function useInView(
 ): Accessor<boolean> {
   const [inView, setInView] = createSignal(false);
 
-  onMount(() => {
-    const target = element();
-    if (!target) return;
+  createEffect(element, (target) => {
+    if (!target || inView()) return;
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new IntersectionObserver(
@@ -28,10 +27,10 @@ export function useInView(
       { rootMargin },
     );
     observer.observe(target);
-    onCleanup(() => {
+    return () => {
       clearTimeout(timer);
       observer.disconnect();
-    });
+    };
   });
 
   return inView;

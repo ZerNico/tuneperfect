@@ -1,11 +1,11 @@
 import { safe } from "@orpc/client";
-import { createForm, revalidateLogic } from "@tanstack/solid-form";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import * as v from "valibot";
 
 import PageHeader from "~/components/page-header";
 import Button from "~/components/ui/button";
 import Input from "~/components/ui/input";
+import { createForm, revalidateLogic } from "~/lib/form";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { notify } from "~/lib/toast";

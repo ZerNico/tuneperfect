@@ -3,12 +3,16 @@
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@solidjs/web",
     "module": "ESNext",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "unplugin-icons/types/solid"],
+    "types": ["vite/client"],
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      // Solid Query 6 (for Solid 2) pins its own query-core, while @orpc/tanstack-query resolves the newer copy the
+      // game hoists to the root. Both have to agree on the types (QueryClient has private fields), so point at the
+      // Solid Query copy. Drop this once Solid Query and the game use the same query-core again.
+      "@tanstack/query-core": ["../../node_modules/@tanstack/solid-query/node_modules/@tanstack/query-core"]
     },
 
     /* Bundler mode */

@@ -1,5 +1,5 @@
-import { type Component, type JSX, Show } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { dynamic, type JSX } from "@solidjs/web";
+import { type Component, Show } from "solid-js";
 
 interface AuthScreenProps {
   title: JSX.Element;
@@ -14,11 +14,14 @@ export default function AuthScreen(props: AuthScreenProps) {
   return (
     <main class="mx-auto flex w-full max-w-sm grow flex-col px-6 pt-6 pb-8">
       <Show when={props.icon}>
-        {(icon) => (
-          <span class="gradient-accent mb-5 flex size-14 items-center justify-center rounded-[16px] text-3xl">
-            <Dynamic component={icon()} />
-          </span>
-        )}
+        {(icon) => {
+          const Icon = dynamic(icon);
+          return (
+            <span class="gradient-accent mb-5 flex size-14 items-center justify-center rounded-[16px] text-3xl">
+              <Icon />
+            </span>
+          );
+        }}
       </Show>
       <h1 class="text-[32px] leading-tight font-bold">{props.title}</h1>
       <Show when={props.subtitle}>

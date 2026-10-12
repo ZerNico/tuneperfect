@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/solid-router";
-import { createEffect, createSignal, on, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 
 import Sheet from "~/components/ui/sheet";
 import { t } from "~/lib/i18n";
@@ -21,28 +21,29 @@ export default function RemoteSheet() {
   let announced = false;
 
   createEffect(
-    on(
-      () => remote.state()?.attention,
-      (attention) => {
-        // Not connected right now: a reconnect brings back the same move, which was announced already
-        if (attention === undefined) return;
-        if (!attention) {
-          announced = false;
-          setOpen(false);
-          return;
-        }
-        if (announced) return;
-        announced = true;
-        if (location().pathname === "/controller") return;
-        setOpen(true);
-        navigator.vibrate?.([40, 60, 40]);
-      },
-    ),
+    () => remote.state()?.attention,
+    (attention) => {
+      // Not connected right now: a reconnect brings back the same move, which was announced already
+      if (attention === undefined) return;
+      if (!attention) {
+        announced = false;
+        setOpen(false);
+        return;
+      }
+      if (announced) return;
+      announced = true;
+      if (location().pathname === "/controller") return;
+      setOpen(true);
+      navigator.vibrate?.([40, 60, 40]);
+    },
   );
   // Went to the controller: the same controls are right there.
-  createEffect(() => {
-    if (location().pathname === "/controller") setOpen(false);
-  });
+  createEffect(
+    () => location().pathname === "/controller",
+    (onController) => {
+      if (onController) setOpen(false);
+    },
+  );
 
   return (
     <Sheet

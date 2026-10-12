@@ -1,4 +1,4 @@
-import type { JSX } from "solid-js";
+import type { JSX } from "@solidjs/web";
 
 /** A thin line with a label in the middle, e.g. "or" between two ways to do something. */
 export default function Divider(props: { children: JSX.Element; class?: string }) {

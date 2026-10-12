@@ -1,7 +1,7 @@
 import { createEventListener } from "@solid-primitives/event-listener";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/solid-router";
-import { createEffect, createMemo, on, onCleanup } from "solid-js";
+import { createEffect, createMemo, onCleanup } from "solid-js";
 import * as v from "valibot";
 
 import { OfflineErrorUI } from "~/components/connection-state";
@@ -54,18 +54,15 @@ function AuthLayout() {
     const userId = session.data?.id;
     return userId && session.data?.lobbyId ? `${userId}\n${session.data.lobbyId}` : null;
   });
-  createEffect(
-    on(lobbyMember, (member, previous) => {
-      const userId = session.data?.id;
-      // A different lobby is a different game: start over (the first run continues `beforeLoad`'s start).
-      if (previous && previous !== member) stopConnection();
-      if (member && userId) {
-        startConnection(userId);
-      } else {
-        stopConnection();
-      }
-    }),
-  );
+  createEffect(lobbyMember, (member, previous) => {
+    // A different lobby is a different game: start over (the first run continues `beforeLoad`'s start).
+    if (previous && previous !== member) stopConnection();
+    if (member) {
+      startConnection(member.split("\n")[0]);
+    } else {
+      stopConnection();
+    }
+  });
 
   onCleanup(() => {
     stopConnection();
