@@ -66,6 +66,7 @@ interface Result {
 
 export interface RoundSettings {
   songs: QueuedSong[];
+  /** The screen the round goes back to when it ends: the one that started it. */
   returnTo?: LinkProps["to"];
 }
 
@@ -88,6 +89,16 @@ function createRoundStore() {
 }
 
 export const roundStore = createRoundStore();
+
+/** Where the current round goes back to when it ends. */
+export function roundReturnTo(): LinkProps["to"] {
+  return roundStore.settings()?.returnTo ?? "/sing";
+}
+
+/** A party mode's round (versus, tic-tac-toe): styled like the party screens. */
+export function isPartyRound(): boolean {
+  return roundReturnTo()?.startsWith("/party") ?? false;
+}
 
 export function useRoundActions() {
   const navigate = useNavigate();
@@ -114,7 +125,7 @@ export function useRoundActions() {
   /** Leaves a round that never got going (e.g. the microphones didn't start) without a result, so
    * party modes don't count it as an unplayable song. */
   const abortRound = () => {
-    navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
+    navigate({ to: roundReturnTo() });
   };
 
   const endRound = (scores: Score[], stats: PlayerStats[]) => {
@@ -145,7 +156,7 @@ export function useRoundActions() {
   };
 
   const returnRound = () => {
-    navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
+    navigate({ to: roundReturnTo() });
   };
 
   // The current song could not be played (e.g. unsupported media). Record an empty-score
@@ -156,7 +167,7 @@ export function useRoundActions() {
     if (song) {
       roundStore.setResults((prev) => [...prev, { scores: [], stats: [], song }]);
     }
-    navigate({ to: roundStore.settings()?.returnTo ?? "/sing" });
+    navigate({ to: roundReturnTo() });
   };
 
   return {

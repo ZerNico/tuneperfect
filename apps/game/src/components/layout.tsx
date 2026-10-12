@@ -2,7 +2,7 @@ import { useLocation } from "@tanstack/solid-router";
 import { type JSX, Show, Suspense, untrack } from "solid-js";
 
 import { effectsEnabled } from "~/lib/fx";
-import { roundStore } from "~/stores/round";
+import { isPartyRound } from "~/stores/round";
 
 interface LayoutProps {
   children?: JSX.Element;
@@ -32,7 +32,7 @@ function modeForPath(pathname: string): LayoutMode {
   if (pathname.startsWith("/party")) return "party";
   if (pathname.startsWith("/lobby")) return "lobby";
   if (pathname.startsWith("/settings")) return "settings";
-  if (pathname.startsWith("/game")) return roundStore.settings()?.returnTo ? "party" : "sing";
+  if (pathname.startsWith("/game")) return isPartyRound() ? "party" : "sing";
   return "neutral";
 }
 

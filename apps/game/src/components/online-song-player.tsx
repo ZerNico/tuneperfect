@@ -1,6 +1,7 @@
 import { createEffect, createSignal, on, onCleanup, onMount, type Ref } from "solid-js";
 
 import type { SongPlayerRef } from "~/components/song-player";
+import { PlaybackClock } from "~/lib/media/playback-clock";
 import { native } from "~/lib/native/client";
 import { createRefContent } from "~/lib/utils/ref";
 
@@ -21,8 +22,8 @@ interface HostMessage {
   [key: string]: unknown;
 }
 
-/** Beyond this the host page has likely stopped answering, so stop extrapolating. */
-const MAX_INTERPOLATION_MS = 1000;
+/** `YT.PlayerState.PLAYING`: the video is actually advancing, not just asked to. */
+const YT_PLAYING = 1;
 
 /**
  * Remote-controls a YouTube embed that lives inside an HTTP-hosted child frame.
@@ -38,7 +39,6 @@ class RemoteYTPlayer {
   private onMessage: (event: MessageEvent) => void;
 
   /** Latest values pushed by the host page. */
-  time = 0;
   duration = 0;
   state: number | null = null;
   destroyed = false;
@@ -66,6 +66,7 @@ class RemoteYTPlayer {
 
   reportFailure(code: number) {
     this.playing = false;
+    this.syncClock();
     if (this.failureHandler) {
       this.failureHandler(code);
     } else {
@@ -73,25 +74,20 @@ class RemoteYTPlayer {
     }
   }
 
-  /**
-   * `performance.now()` when `time` arrived. The host only posts when YouTube's clock actually
-   * advances, so pairing the two gives interpolation a correct anchor. Re-sampling this on a
-   * separate interval would misattribute the timestamp and make playback drift, then snap back.
-   */
-  timeReceivedAt = 0;
+  private clock = new PlaybackClock();
+
+  /** The clock runs while the app wants playback and YouTube reports it's really playing. */
+  syncClock() {
+    this.clock.setRunning(this.playing && this.state === YT_PLAYING);
+  }
 
   /** Interpolated playback position, smooth between the host's ~4Hz updates. */
   currentTime(): number {
-    if (!this.playing) return this.time;
-    const elapsedMs = performance.now() - this.timeReceivedAt;
-    return this.time + Math.min(elapsedMs, MAX_INTERPOLATION_MS) / 1000;
+    return this.clock.position();
   }
 
   applyUpdate(data: HostMessage) {
-    if (typeof data.time === "number") {
-      this.time = data.time;
-      this.timeReceivedAt = performance.now();
-    }
+    if (typeof data.time === "number") this.clock.sample(data.time);
     if (typeof data.duration === "number" && data.duration > 0) {
       this.duration = data.duration;
     }
@@ -168,10 +164,10 @@ class RemoteYTPlayer {
               player.applyUpdate(data);
               player.state = (data.state as number) ?? null;
               // YT.PlayerState.ENDED === 0
-              if (player.state === 0) {
-                player.playing = false;
-                player.onEnded?.();
-              }
+              if (player.state === 0) player.playing = false;
+              // Starting from the time sampled just above, where YouTube began advancing.
+              player.syncClock();
+              if (player.state === 0) player.onEnded?.();
             }
             break;
           }
@@ -193,23 +189,21 @@ class RemoteYTPlayer {
   }
 
   play() {
-    // Re-anchor so interpolation starts now, not from the last update before the pause.
-    this.timeReceivedAt = performance.now();
+    // The clock waits for YouTube to report playing (see `syncClock`).
     this.playing = true;
+    this.syncClock();
     this.send({ type: "play" });
   }
 
   pause() {
-    // Freeze at the interpolated position; the last raw sample can be ~250ms stale.
-    this.time = this.currentTime();
-    this.timeReceivedAt = performance.now();
+    // Freezes at the interpolated position; the last raw sample can be ~250ms stale.
     this.playing = false;
+    this.syncClock();
     this.send({ type: "pause" });
   }
 
   seekTo(time: number) {
-    this.time = time;
-    this.timeReceivedAt = performance.now();
+    this.clock.seek(time);
     this.send({ type: "seek", time });
   }
 
@@ -221,6 +215,7 @@ class RemoteYTPlayer {
     this.send({ type: "destroy" });
     this.destroyed = true;
     this.playing = false;
+    this.syncClock();
     window.removeEventListener("message", this.onMessage);
     this.frame.remove();
   }
