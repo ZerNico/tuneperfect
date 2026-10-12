@@ -42,6 +42,15 @@ export default function SongCover(props: SongCoverProps) {
   );
 }
 
+/** Stands in for a cover where there is no song yet, looking like a cover that is still loading. */
+export function SongCoverPlaceholder(props: { class?: string }) {
+  return (
+    <div class={`relative shrink-0 overflow-hidden bg-white/8 ${props.class ?? ""}`} aria-hidden="true">
+      <Placeholder />
+    </div>
+  );
+}
+
 function Placeholder() {
   return <IconMusicNotes class="absolute inset-0 m-auto size-[40%] text-white/25" />;
 }

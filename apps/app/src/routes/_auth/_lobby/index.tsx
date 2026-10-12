@@ -13,7 +13,7 @@ import IconUserPlus from "~icons/ph/user-plus-bold";
 import IconWarningCircle from "~icons/ph/warning-circle-fill";
 
 import PageHeader from "~/components/page-header";
-import SongCover from "~/components/song-cover";
+import SongCover, { SongCoverPlaceholder } from "~/components/song-cover";
 import Avatar from "~/components/ui/avatar";
 import Button from "~/components/ui/button";
 import Dialog from "~/components/ui/dialog";
@@ -145,9 +145,14 @@ function BrowseSongs() {
   const content = (): JSX.Element => (
     <>
       <div class="flex -space-x-3">
+        {/* Three stand-ins until the covers are there, so the card doesn't change shape on connecting */}
         <Show
           when={preview().length > 0}
-          fallback={<span class="size-11 rounded-[8px] bg-white/15 ring-2 ring-black/20" />}
+          fallback={
+            <For each={[0, 1, 2]}>
+              {() => <SongCoverPlaceholder class="size-11 rounded-[8px] ring-2 ring-black/20" />}
+            </For>
+          }
         >
           <For each={preview()}>
             {(song) => (
@@ -188,27 +193,51 @@ function BrowseSongs() {
   );
 }
 
-/** The way into the controller, once the game offers it. */
+/**
+ * The way into the controller, once the game offers it. Shown dimmed until the game said whether it does, like
+ * the song list, so it doesn't pop in after connecting; only a game without the controller hides it.
+ */
 function Controller() {
   const remote = useRemote();
   const fullControl = () => remote.state()?.control === "full";
 
-  return (
-    <Show when={remote.supported()}>
-      <Link
-        to="/controller"
-        class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
-      >
-        <span class="flex size-11 shrink-0 items-center justify-center rounded-[8px] bg-black/20 text-2xl">
-          <IconGameController />
+  const content = (): JSX.Element => (
+    <>
+      <span class="flex size-11 shrink-0 items-center justify-center rounded-[8px] bg-black/20 text-2xl">
+        <IconGameController />
+      </span>
+      <div class="flex min-w-0 grow flex-col">
+        <span class="text-[17px] font-black">{t("remote.title")}</span>
+        <span class="truncate text-sm text-white/80">
+          <Switch fallback={t("remote.card")}>
+            <Match when={remote.supported() === undefined}>{t("songs.connecting")}</Match>
+            <Match when={fullControl()}>{t("remote.cardFull")}</Match>
+          </Switch>
         </span>
-        <div class="flex min-w-0 grow flex-col">
-          <span class="text-[17px] font-black">{t("remote.title")}</span>
-          <span class="truncate text-sm text-white/80">{fullControl() ? t("remote.cardFull") : t("remote.card")}</span>
+      </div>
+      <IconCaretRight class="shrink-0 text-lg" />
+    </>
+  );
+
+  return (
+    <Switch>
+      <Match when={remote.supported() === undefined}>
+        <div
+          class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 opacity-50"
+          aria-disabled="true"
+        >
+          {content()}
         </div>
-        <IconCaretRight class="shrink-0 text-lg" />
-      </Link>
-    </Show>
+      </Match>
+      <Match when={remote.supported()}>
+        <Link
+          to="/controller"
+          class="gradient-party flex items-center gap-3 rounded-[14px] bg-linear-to-r p-3 transition-transform active:scale-[0.98]"
+        >
+          {content()}
+        </Link>
+      </Match>
+    </Switch>
   );
 }
 
