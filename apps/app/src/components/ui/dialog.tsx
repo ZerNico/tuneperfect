@@ -15,8 +15,10 @@ function DialogRoot(props: DialogProps) {
       <KDialog.Portal>
         <KDialog.Overlay class="fixed inset-0 z-15 bg-black/35" />
         <div class="fixed inset-0 z-16 flex items-center justify-center">
-          <KDialog.Content class="m-4 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-auto rounded-[20px] surface-raised text-white outline-none">
-            <div class="flex flex-col gap-4 p-6">
+          {/* Scroll on the inner div, not Content: Kobalte puts 1px focus-trap sentinels in Content, which
+              would otherwise make it scroll by a pixel */}
+          <KDialog.Content class="m-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col rounded-[20px] surface-raised text-white outline-none">
+            <div class="flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain p-6">
               <div class="flex items-center justify-between">
                 <KDialog.Title class="text-xl font-bold">{props.title}</KDialog.Title>
                 <KDialog.CloseButton class="flex size-9 cursor-pointer items-center justify-center rounded-[10px] text-white/70 transition-colors hover:bg-white/10 hover:text-white">
