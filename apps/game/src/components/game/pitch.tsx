@@ -3,6 +3,7 @@ import { createMemo, For, Show } from "solid-js";
 
 import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
+import { noteRow, sungNoteRow } from "~/lib/game/note-rows";
 import { getGapTolerance } from "~/lib/game/pitch";
 import { type ProcessedBeat, usePlayer } from "~/lib/game/player-context";
 import { addProcessedBeat, type ProcessedNoteGroup } from "~/lib/game/processed-notes";
@@ -47,44 +48,9 @@ export default function Pitch() {
     return lastNote.startBeat + lastNote.length - firstNote.startBeat;
   });
 
-  const getNoteRow = (note: number) => {
-    let wrappedMidiNote: number = note;
-
-    const minNoteRowMidiNote = Math.floor(averageNote() - ROW_COUNT / 2);
-    const maxNoteRowMidiNote = minNoteRowMidiNote + ROW_COUNT - 1;
-
-    // move by octave to fit on screen
-    while (wrappedMidiNote > maxNoteRowMidiNote && wrappedMidiNote > 0) wrappedMidiNote -= 12;
-    while (wrappedMidiNote < minNoteRowMidiNote && wrappedMidiNote < 127) wrappedMidiNote += 12;
-
-    const offset: number = wrappedMidiNote - averageNote();
-    let noteRow = Math.ceil(ROW_COUNT / 2 + offset);
-    noteRow = Math.abs(noteRow - ROW_COUNT) - 1;
-
-    return noteRow;
-  };
-
-  const getProcessedBeatRow = (beat: ProcessedBeat) => {
-    const correctNoteRow = getNoteRow(beat.note.midiNote);
-    const sungNoteRow = getNoteRow(beat.midiNote);
-
-    const possibleRows = [sungNoteRow, sungNoteRow - 12, sungNoteRow + 12];
-
-    let closestRow = sungNoteRow;
-    let minDistance = Math.abs(correctNoteRow - sungNoteRow);
-
-    for (const row of possibleRows) {
-      if (row >= 0 && row < ROW_COUNT) {
-        const distance = Math.abs(correctNoteRow - row);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestRow = row;
-        }
-      }
-    }
-
-    return closestRow;
-  };
+  const getNoteRow = (midiNote: number) => noteRow(midiNote, averageNote(), ROW_COUNT);
+  const getProcessedBeatRow = (beat: ProcessedBeat) =>
+    sungNoteRow(beat.midiNote, beat.note.midiNote, averageNote(), ROW_COUNT);
 
   const notes = createMemo(() => {
     const phrase = player.phrase();
