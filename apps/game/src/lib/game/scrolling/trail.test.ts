@@ -19,7 +19,7 @@ describe("placeSungPitch", () => {
     expect(placeSungPitch(61, 60, 60, 0.5)).toBe(61);
   });
 
-  it("uses the camera's octave between notes", () => {
+  it("uses the fallback's octave without a note", () => {
     expect(placeSungPitch(50, undefined, 61, 2)).toBe(62);
   });
 });

@@ -23,7 +23,7 @@ const MAX_GAP_MS = 35;
 /**
  * Where a sung pitch is drawn: in the octave nearest the note it's sung against (octaves don't
  * count when judging), and right on the note when within `tolerance`, like the classic lane on
- * easy. Without a note it goes in the octave nearest `fallback` (the camera's centre).
+ * easy. Without a note it goes in the octave nearest `fallback` (e.g. the closest note's pitch).
  */
 export function placeSungPitch(
   midi: number,

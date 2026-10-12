@@ -92,8 +92,11 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
     });
     return session;
   });
-  const processBeat = (beat: number, hz: number) =>
-    comparison?.beat("stream", beat, untrack(scoring).scoreBeat(beat, hz));
+  const processBeat = (beat: number, hz: number) => {
+    // Scored first: `comparison?.beat(…)` wouldn't evaluate its arguments without a comparison.
+    const correct = untrack(scoring).scoreBeat(beat, hz);
+    comparison?.beat("stream", beat, correct);
+  };
 
   /** `null` until scoring starts; beats can be negative, so no number works as "not started". */
   let lastScoredBeat: number | null = null;

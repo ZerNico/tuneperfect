@@ -46,11 +46,14 @@ const TRAIL_STEPS = 6;
  * It draws the same note bars and sung fills as the classic lane. Everything per frame happens in
  * one effect that writes transforms and a few path attributes, so frames cost no layout.
  */
-/** The note sung at `time`, if any. */
-function noteAt(notes: LaneNote[], time: number): LaneNote | undefined {
+/** The note sung at `time` if any, and otherwise the one closest in time. */
+function noteNear(notes: LaneNote[], time: number): { note: LaneNote | undefined; on: boolean } {
   const [index] = visibleRange(notes, time, time);
-  const note = notes[index];
-  return note && note.startMs <= time ? note : undefined;
+  const next = notes[index];
+  if (next && next.startMs <= time) return { note: next, on: true };
+  const previous = notes[index - 1];
+  if (!previous || (next && next.startMs - time < time - previous.endMs)) return { note: next, on: false };
+  return { note: previous, on: false };
 }
 
 export default function ScrollingLane() {
@@ -177,38 +180,41 @@ export default function ScrollingLane() {
     const trackY = (camera - Math.floor(rows / 2) + rows - 0.5) * rowHeight();
     track.style.transform = `translate3d(${nowX() - now * pxPerMs()}px, ${trackY}px, 0)`;
 
-    // The voice: frames are in capture time; shifted by the mic delay they line up with the notes.
+    // The voice, drawn when the mic heard it, so the trail always ends at the cursor on the line.
+    // Scoring shifts it back by the mic's delay instead; drawn that way, the trail would end the
+    // delay behind the line and leap to the cursor whenever singing starts.
     const pitch = game.pitchTimeline?.(player.index());
-    const delay = player.microphone().delay;
     const notes = timeline()?.notes ?? [];
     midis.length = 0;
     points.length = 0;
     const times: number[] = [];
-    pitch?.forEachInRange(now + delay - TRAIL_MS, now + delay, (time, hz) => {
+    pitch?.forEachInRange(now - TRAIL_MS, now, (time, hz) => {
       if (hz <= 0) {
         // Silence: a break in the trail.
         times.push(Number.NaN);
         midis.push(Number.NaN);
         return;
       }
-      times.push(time - delay);
+      times.push(time);
       midis.push(frequencyToMidi(hz));
     });
     for (let i = 0; i < times.length; i++) {
       const time = times[i]!;
       if (Number.isNaN(time)) continue;
       const midi = steadyPitch(midis, i);
-      const note = noteAt(notes, time);
-      const target = note && !note.freestyle ? note.displayMidi : undefined;
-      points.push({ time, midi: placeSungPitch(midi, target, camera, tolerance), note });
+      // On a note it's drawn against that note; between notes, in the octave of the nearest one
+      // (each phrase is drawn in its own octave).
+      const { note, on } = noteNear(notes, time);
+      const target = on && note && !note.freestyle ? note.displayMidi : undefined;
+      const placed = placeSungPitch(midi, target, note?.displayMidi ?? camera, tolerance);
+      points.push({ time, midi: placed, note: on ? note : undefined });
     }
 
-    // The voice is only heard `delay` (plus the stream's own latency) after it's sung, so the trail
-    // ends that far behind the now-line. While it's live, the cursor on the line eases after the
-    // trail's newest pitch and the trail runs on to it. In silence the trail stops and the cursor
-    // waits, dimmed, where the voice last was (in the middle before anything was sung).
+    // While the voice is live, the cursor on the line eases after the trail's newest pitch and the
+    // trail runs on to it (frames arrive a few tens of ms late). In silence the trail stops and the
+    // cursor waits, dimmed, where the voice last was (in the middle before anything was sung).
     const latest = points.at(-1);
-    const live = latest !== undefined && latest.time + delay >= now - CURSOR_TIMEOUT_MS;
+    const live = latest !== undefined && latest.time >= now - CURSOR_TIMEOUT_MS;
     const elapsed = now - cursorAt;
     if (cursorMidi === undefined || elapsed < 0) cursorMidi = camera;
     if (latest && live) {
