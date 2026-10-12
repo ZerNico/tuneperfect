@@ -2,6 +2,8 @@
 export interface TrailPoint {
   time: number;
   midi: number;
+  /** Whether it's on the note it's sung against (within the tolerance). */
+  on?: boolean;
 }
 
 export interface TrailSegment {
@@ -11,6 +13,8 @@ export interface TrailSegment {
   toMidi: number;
   /** 1 at the newest end of the trail, 0 where it ends. */
   freshness: number;
+  /** Both ends are on the note. */
+  on: boolean;
 }
 
 /** A jump bigger than this, in semitones, breaks the trail instead of drawing a line across. */
@@ -60,6 +64,7 @@ export function buildTrail(points: readonly TrailPoint[], now: number, spanMs: n
       toTime: to.time,
       toMidi: to.midi,
       freshness: Math.max(0, Math.min(1, 1 - (now - to.time) / spanMs)),
+      on: from.on === true && to.on === true,
     });
   }
   return segments;

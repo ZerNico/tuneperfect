@@ -26,7 +26,7 @@ import SungFill from "./sung-fill";
 
 /** How far ahead of the now-line notes show, and how long they stay behind it. */
 const AHEAD_MS = 3200;
-const BEHIND_MS = 1600;
+const BEHIND_MS = 1000;
 const WINDOW_MS = AHEAD_MS + BEHIND_MS;
 /** Notes enter and leave the DOM this far outside the visible window. */
 const OVERSCAN_MS = 400;
@@ -171,6 +171,7 @@ export default function ScrollingLane() {
   /** The cursor's pitch as shown, easing after the voice; `undefined` until the first frame. */
   let cursorMidi: number | undefined;
   let cursorAt = 0;
+  let shownState = "";
   createRenderEffect(() => {
     const now = game.ms();
     const plan = timeline()?.camera;
@@ -208,7 +209,7 @@ export default function ScrollingLane() {
       const { note, on } = noteNear(notes, time);
       const target = on && note && !note.freestyle ? note.displayMidi : undefined;
       const placed = placeSungPitch(midi, target, note?.displayMidi ?? camera, tolerance);
-      points.push({ time, midi: placed });
+      points.push({ time, midi: placed, on: target !== undefined && placed === target });
     }
 
     // While the voice is live, the cursor on the line eases after the trail's newest pitch and the
@@ -225,20 +226,29 @@ export default function ScrollingLane() {
     }
     cursorAt = now;
 
+    // On the note the trail is drawn as a bar filling it, otherwise as a thin line. Segments that
+    // continue one another form one path, so its joins don't show.
     const segments = buildTrail(points, now, TRAIL_MS);
-    // Segments that continue one another form one line, so its joins don't show.
-    const paths = Array.from({ length: TRAIL_STEPS }, () => "");
+    const paths = trailPaths.map(() => "");
     const ends: (TrailSegment | undefined)[] = [];
     for (const segment of segments) {
       const step = Math.min(TRAIL_STEPS - 1, Math.floor(segment.freshness * TRAIL_STEPS));
-      const previous = ends[step];
+      const index = (segment.on ? TRAIL_STEPS : 0) + step;
+      const previous = ends[index];
       const continues = previous?.toTime === segment.fromTime && previous.toMidi === segment.fromMidi;
-      if (!continues) paths[step] += `M${segment.fromTime * pxPerMs()} ${pitchY(segment.fromMidi)}`;
-      paths[step] += `L${segment.toTime * pxPerMs()} ${pitchY(segment.toMidi)}`;
-      ends[step] = segment;
+      if (!continues) paths[index] += `M${segment.fromTime * pxPerMs()} ${pitchY(segment.fromMidi)}`;
+      paths[index] += `L${segment.toTime * pxPerMs()} ${pitchY(segment.toMidi)}`;
+      ends[index] = segment;
     }
-    for (const [step, path] of trailPaths.entries()) path.setAttribute("d", paths[step] ?? "");
+    for (const [index, path] of trailPaths.entries()) path.setAttribute("d", paths[index] ?? "");
 
+    // Singing shows at the line: the cursor and line glow while on the note, and a soft wash
+    // behind the line is there while the voice is live.
+    const state = !live ? "silent" : latest?.on ? "on" : "live";
+    if (state !== shownState) {
+      shownState = state;
+      area.dataset.voice = state;
+    }
     cursor.style.opacity = live ? "1" : "0.5";
     cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(cursorMidi)}px)`;
   });
@@ -251,8 +261,9 @@ export default function ScrollingLane() {
         class="invisible absolute font-bold"
         classList={{ "text-[1.1cqw]": compact, "text-[1.3cqw]": !compact }}
       />
-      {/* Inset like the classic lane, clear of the name plate and score; notes fade in and out at the sides. */}
-      <div ref={area} class="relative h-full w-full overflow-x-clip mask-x-from-95% mask-x-to-100%">
+      {/* Inset like the classic lane, clear of the name plate and score. Passed notes fade out on
+          the left, upcoming ones fade in on the right. */}
+      <div ref={area} class="group relative h-full w-full overflow-x-clip mask-r-from-95% mask-l-from-85%">
         <div ref={track} class="absolute top-0 left-0 will-change-transform">
           <For each={shownNotes()}>
             {(laneNote) => {
@@ -333,34 +344,44 @@ export default function ScrollingLane() {
           </Key>
 
           <svg class="pointer-events-none absolute top-0 left-0 overflow-visible" aria-hidden="true">
-            {Array.from({ length: TRAIL_STEPS }, (_, step) => {
+            {Array.from({ length: TRAIL_STEPS * 2 }, (_, index) => {
+              const on = index >= TRAIL_STEPS;
+              const step = index % TRAIL_STEPS;
               const freshness = (step + 1) / TRAIL_STEPS;
               return (
                 <path
-                  ref={(path) => (trailPaths[step] = path)}
+                  ref={(path) => (trailPaths[index] = path)}
                   fill="none"
                   stroke={player.micColor(500)}
                   // Round ends only on the newest part: semi-transparent caps overlapping the
                   // next part would show as beads.
                   stroke-linecap={step === TRAIL_STEPS - 1 ? "round" : "butt"}
                   stroke-linejoin="round"
-                  stroke-opacity={0.15 + 0.85 * freshness}
-                  stroke-width={rowHeight() * (0.25 + 0.45 * freshness)}
+                  stroke-opacity={on ? 0.3 + 0.7 * freshness : 0.15 + 0.85 * freshness}
+                  // On the note, as thick as the sung fill that follows it.
+                  stroke-width={on ? barHeight() * 0.7 : rowHeight() * (0.25 + 0.45 * freshness)}
                 />
               );
             })}
           </svg>
         </div>
 
-        {/* The now-line, and the voice's cursor on it. */}
+        {/* The now-line with a soft wash behind it while singing, and the voice's cursor on it. */}
         <div
-          class="absolute inset-y-0 w-[0.22cqw] -translate-x-1/2 rounded-full bg-white/70"
-          style={{ left: `${nowX()}px` }}
+          class="pointer-events-none absolute inset-y-0 w-[5cqw] -translate-x-full opacity-0 transition-opacity duration-200 group-data-[voice=live]:opacity-40 group-data-[voice=on]:opacity-100"
+          style={{
+            left: `${nowX()}px`,
+            "background-image": `linear-gradient(to left, color-mix(in srgb, ${player.micColor(500)} 30%, transparent), transparent)`,
+          }}
+        />
+        <div
+          class="absolute inset-y-0 w-[0.22cqw] -translate-x-1/2 rounded-full bg-white/70 transition-shadow duration-200 group-data-[voice=on]:shadow-[0_0_0.8cqw_var(--glow)]"
+          style={{ left: `${nowX()}px`, "--glow": player.micColor(500) }}
         />
         <div
           ref={cursor}
-          class="absolute top-0 left-0 -mt-[0.7cqw] -ml-[0.7cqw] size-[1.4cqw] rounded-full border-[0.3cqw] bg-white opacity-0 transition-opacity duration-150"
-          style={{ "border-color": player.micColor(500) }}
+          class="absolute top-0 left-0 -mt-[0.7cqw] -ml-[0.7cqw] size-[1.4cqw] rounded-full border-[0.3cqw] bg-white opacity-0 transition-[opacity,box-shadow] duration-200 group-data-[voice=on]:shadow-[0_0_1cqw_var(--glow)]"
+          style={{ "border-color": player.micColor(500), "--glow": player.micColor(500) }}
         />
       </div>
     </div>

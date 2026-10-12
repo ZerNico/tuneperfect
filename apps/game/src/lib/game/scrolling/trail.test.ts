@@ -46,6 +46,12 @@ describe("buildTrail", () => {
     expect(trail.map((s) => s.fromTime)).toEqual([0, 200]);
   });
 
+  it("marks the parts sung on the note", () => {
+    const on = (time: number): TrailPoint => ({ time, midi: 60, on: true });
+    const trail = buildTrail([point(0, 60), on(10), on(20)], 20, 600);
+    expect(trail.map((s) => s.on)).toEqual([false, true]);
+  });
+
   it("breaks on jumps", () => {
     const trail = buildTrail([point(0, 60), point(10, 60), point(20, 64), point(30, 64)], 30, 600);
     expect(trail.map((s) => s.fromTime)).toEqual([0, 20]);
