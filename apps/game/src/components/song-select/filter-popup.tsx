@@ -157,8 +157,10 @@ export function FilterPopup(props: FilterPopupProps) {
     },
     layer: 1,
     // What left, right and confirm do depends on the row.
-    get actions(): NavigationActions {
-      const row = rows()[list.position()];
+    actions: (position): NavigationActions => {
+      // Runs inside the navigation's memo, which calls it again whenever the rows change.
+      // oxlint-disable-next-line solid/reactivity
+      const row = rows()[position];
       const left = row?.onLeft;
       const right = row?.onRight;
       const step = (change: () => void) => () => {

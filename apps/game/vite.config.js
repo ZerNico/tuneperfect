@@ -28,5 +28,8 @@ export default defineConfig({
   },
   build: {
     target: "esnext",
+    // Unminified, so errors players send in (the error screen shows the stack) name the real
+    // functions and point at readable lines. The game loads from disk, so size barely matters.
+    minify: false,
   },
 });

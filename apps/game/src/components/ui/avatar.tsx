@@ -45,10 +45,13 @@ export default function Avatar(props: AvatarProps) {
   };
 
   return (
-    <div class={twMerge("grid h-10 w-10 rounded-full", props.class)} classList={props.classList}>
+    // The picture lies on the fallback, both pinned to the avatar's own size. A one-cell grid
+    // stacked them before, but in a centred column flexbox it sized the cell from the 256px
+    // picture and the picture never painted.
+    <div class={twMerge("relative h-10 w-10 shrink-0 rounded-full", props.class)} classList={props.classList}>
       <div
         class={twMerge(
-          "col-start-1 row-start-1 flex h-full w-full items-center justify-center rounded-full leading-none text-white [container-type:size]",
+          "absolute inset-0 flex items-center justify-center rounded-full leading-none text-white [container-type:size]",
           props.fallbackClass,
         )}
         style={
@@ -66,7 +69,7 @@ export default function Avatar(props: AvatarProps) {
           onError={() => setError(true)}
           src={pictureUrl()}
           alt={props.user?.username || "Avatar"}
-          class="col-start-1 row-start-1 block h-full w-full rounded-full"
+          class="absolute inset-0 block h-full w-full rounded-full object-cover"
           referrerPolicy="no-referrer"
         />
       </Show>

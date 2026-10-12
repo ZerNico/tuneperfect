@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use reqwest::{cookie::Jar, Client};
+use reqwest::{cookie::Jar, Client, RequestBuilder};
 
 use crate::error::AppError;
 use crate::ultrastar::parser::parse_ultrastar_txt;
@@ -15,20 +15,23 @@ const MAX_SONG_ID: u32 = 100_000;
 /// Progress-bar estimate; the real total is unknown until pagination finishes.
 const ESTIMATED_CATALOG_SIZE: u32 = 27_000;
 
+/// What USDB shows instead of the page when the session is gone.
+const LOGGED_OUT_MARKER: &str = "You are not logged in";
+
+/// Kept in memory only, to log in again when USDB ends the session.
+struct Credentials {
+    username: String,
+    password: String,
+}
+
+/// Cheap to clone: the HTTP client, cookie jar and credentials are shared, so a session
+/// renewed through one clone is renewed for all of them.
+#[derive(Clone)]
 pub struct UsdbClient {
     client: Client,
     cookie_jar: Arc<Jar>,
     logged_in: bool,
-}
-
-impl Clone for UsdbClient {
-    fn clone(&self) -> Self {
-        Self {
-            client: self.client.clone(), // reqwest::Client is Arc-wrapped, cheap clone
-            cookie_jar: self.cookie_jar.clone(),
-            logged_in: self.logged_in,
-        }
-    }
+    credentials: Option<Arc<Credentials>>,
 }
 
 impl UsdbClient {
@@ -45,10 +48,24 @@ impl UsdbClient {
             client,
             cookie_jar,
             logged_in: false,
+            credentials: None,
         }
     }
 
     pub async fn login(&mut self, username: &str, password: &str) -> Result<bool, AppError> {
+        let success = self.submit_login(username, password).await?;
+        self.logged_in = success;
+        self.credentials = success.then(|| {
+            Arc::new(Credentials {
+                username: username.to_string(),
+                password: password.to_string(),
+            })
+        });
+        Ok(success)
+    }
+
+    /// Posts the login form; the session cookie lands in the shared jar.
+    async fn submit_login(&self, username: &str, password: &str) -> Result<bool, AppError> {
         let url = format!("{}/", BASE_URL);
         let params = [("user", username), ("pass", password), ("login", "Login")];
 
@@ -65,13 +82,51 @@ impl UsdbClient {
             .await
             .map_err(|e| AppError::UsdbError(format!("Failed to read login response: {}", e)))?;
 
-        if body.contains("Login or Password invalid, please try again.") {
-            self.logged_in = false;
-            return Ok(false);
+        Ok(!body.contains("Login or Password invalid, please try again."))
+    }
+
+    /// Fetches a page that needs the session. USDB ends idle sessions on its own, so if the
+    /// page says the session is gone, logs in again with the stored credentials and retries
+    /// once. `request` builds the request anew for the retry.
+    async fn session_page(
+        &self,
+        request: impl Fn() -> RequestBuilder,
+        what: &str,
+    ) -> Result<String, AppError> {
+        let body = self.fetch_page(request(), what).await?;
+        if !body.contains(LOGGED_OUT_MARKER) {
+            return Ok(body);
         }
 
-        self.logged_in = true;
-        Ok(true)
+        let Some(credentials) = &self.credentials else {
+            return Err(session_expired());
+        };
+        log::info!("USDB session expired, logging in again");
+        if !self
+            .submit_login(&credentials.username, &credentials.password)
+            .await?
+        {
+            return Err(AppError::UsdbError(
+                "USDB rejected the saved login, please log in again".to_string(),
+            ));
+        }
+
+        let body = self.fetch_page(request(), what).await?;
+        if body.contains(LOGGED_OUT_MARKER) {
+            return Err(session_expired());
+        }
+        Ok(body)
+    }
+
+    async fn fetch_page(&self, request: RequestBuilder, what: &str) -> Result<String, AppError> {
+        let response = request
+            .send()
+            .await
+            .map_err(|e| AppError::UsdbError(format!("{} failed: {}", what, e)))?;
+        response
+            .text()
+            .await
+            .map_err(|e| AppError::UsdbError(format!("Failed to read {}: {}", what, e)))
     }
 
     pub async fn is_logged_in(&self) -> Result<bool, AppError> {
@@ -92,7 +147,7 @@ impl UsdbClient {
             .await
             .map_err(|e| AppError::UsdbError(format!("Failed to read profile response: {}", e)))?;
 
-        Ok(!body.contains("You are not logged in"))
+        Ok(!body.contains(LOGGED_OUT_MARKER))
     }
 
     pub async fn logout(&mut self) -> Result<(), AppError> {
@@ -105,6 +160,7 @@ impl UsdbClient {
             .map_err(|e| AppError::UsdbError(format!("Logout request failed: {}", e)))?;
 
         self.logged_in = false;
+        self.credentials = None;
 
         let cookie_jar = Arc::new(Jar::default());
         let client = Client::builder()
@@ -142,24 +198,13 @@ impl UsdbClient {
                 ("details", "1"),
             ];
 
-            let response = self
-                .client
-                .post(&url)
-                .form(&params)
-                .send()
-                .await
-                .map_err(|e| {
-                    AppError::UsdbError(format!("Catalog fetch failed at offset {}: {}", start, e))
-                })?;
-
-            let body = response.text().await.map_err(|e| {
-                AppError::UsdbError(format!(
-                    "Failed to read catalog page at offset {}: {}",
-                    start, e
-                ))
-            })?;
-
-            self.check_login_error(&body)?;
+            let body = self
+                .session_page(
+                    || self.client.post(&url).form(&params),
+                    &format!("catalog page at offset {}", start),
+                )
+                .await?;
+            self.check_page_error(&body)?;
 
             let batch = parser::parse_song_list(&body);
             let batch_len = batch.len();
@@ -210,27 +255,13 @@ impl UsdbClient {
                 ("details", "1"),
             ];
 
-            let response = self
-                .client
-                .post(&url)
-                .form(&params)
-                .send()
-                .await
-                .map_err(|e| {
-                    AppError::UsdbError(format!(
-                        "Incremental fetch failed at offset {}: {}",
-                        start, e
-                    ))
-                })?;
-
-            let body = response.text().await.map_err(|e| {
-                AppError::UsdbError(format!(
-                    "Failed to read incremental page at offset {}: {}",
-                    start, e
-                ))
-            })?;
-
-            self.check_login_error(&body)?;
+            let body = self
+                .session_page(
+                    || self.client.post(&url).form(&params),
+                    &format!("incremental catalog page at offset {}", start),
+                )
+                .await?;
+            self.check_page_error(&body)?;
 
             let batch = parser::parse_song_list(&body);
             let batch_len = batch.len();
@@ -393,21 +424,18 @@ impl UsdbClient {
 
         let url = format!("{}/index.php?link=gettxt&id={}", BASE_URL, song_id);
 
-        let response = self
-            .client
-            .post(&url)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body("wd=1")
-            .send()
-            .await
-            .map_err(|e| AppError::UsdbError(format!("Get txt request failed: {}", e)))?;
-
-        let body = response
-            .text()
-            .await
-            .map_err(|e| AppError::UsdbError(format!("Failed to read txt response: {}", e)))?;
-
-        self.check_login_error(&body)?;
+        let body = self
+            .session_page(
+                || {
+                    self.client
+                        .post(&url)
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .body("wd=1")
+                },
+                "song txt",
+            )
+            .await?;
+        self.check_page_error(&body)?;
 
         parser::parse_song_txt(&body)
             .ok_or_else(|| AppError::UsdbError("Could not find song txt in response".to_string()))
@@ -420,17 +448,16 @@ impl UsdbClient {
         Ok(())
     }
 
-    fn check_login_error(&self, body: &str) -> Result<(), AppError> {
-        if body.contains("You are not logged in") {
-            return Err(AppError::UsdbError(
-                "Session expired, please log in again".to_string(),
-            ));
-        }
+    fn check_page_error(&self, body: &str) -> Result<(), AppError> {
         if body.contains("Datensatz nicht gefunden") {
             return Err(AppError::UsdbError("Song not found".to_string()));
         }
         Ok(())
     }
+}
+
+fn session_expired() -> AppError {
+    AppError::UsdbError("Session expired, please log in again".to_string())
 }
 
 fn extract_youtube_from_video_tag(value: &str) -> (Option<String>, Option<String>) {
