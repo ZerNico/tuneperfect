@@ -12,7 +12,7 @@ import {
   buildTrail,
   carryToNow,
   placeSungPitch,
-  steadyPitch,
+  steadyPitches,
   type TrailPoint,
   type TrailSegment,
 } from "~/lib/game/scrolling/trail";
@@ -198,16 +198,17 @@ export default function ScrollingLane() {
       times.push(time);
       midis.push(frequencyToMidi(hz));
     });
+    const steady = steadyPitches(midis);
     for (let i = 0; i < times.length; i++) {
       const time = times[i]!;
       if (Number.isNaN(time)) continue;
-      const midi = steadyPitch(midis, i);
+      const midi = steady[i]!;
       // On a note it's drawn against that note; between notes, in the octave of the nearest one
       // (each phrase is drawn in its own octave).
       const { note, on } = noteNear(notes, time);
       const target = on && note && !note.freestyle ? note.displayMidi : undefined;
       const placed = placeSungPitch(midi, target, note?.displayMidi ?? camera, tolerance);
-      points.push({ time, midi: placed, note: on ? note : undefined });
+      points.push({ time, midi: placed });
     }
 
     // While the voice is live, the cursor on the line eases after the trail's newest pitch and the
@@ -275,13 +276,15 @@ export default function ScrollingLane() {
                   <Show when={slot()}>
                     {(slot) => (
                       <span
-                        class="absolute leading-[1.2] font-bold whitespace-nowrap transition-colors duration-150"
+                        class="absolute leading-[1.2] font-bold whitespace-nowrap transition-colors duration-150 [text-shadow:0_0_0.5cqw_rgb(0_0_0/0.55)]"
                         classList={{
                           "text-[1.1cqw]": compact,
                           "text-[1.3cqw]": !compact,
                           italic: laneNote.freestyle,
                           "text-white/90": !sung() && !laneNote.freestyle,
-                          "text-white/45": laneNote.freestyle,
+                          // Freestyle has no bar and isn't scored, but is still sung: readable, then dimmed.
+                          "text-white/80": laneNote.freestyle && !sung(),
+                          "text-white/50": laneNote.freestyle && sung(),
                         }}
                         style={{
                           left: `${slot().x}px`,

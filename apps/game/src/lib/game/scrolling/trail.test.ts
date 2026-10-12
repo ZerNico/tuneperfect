@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTrail, carryToNow, placeSungPitch, steadyPitch, type TrailPoint } from "./trail";
+import { buildTrail, carryToNow, placeSungPitch, steadyPitches, type TrailPoint } from "./trail";
 
 describe("placeSungPitch", () => {
   it("snaps onto the note within tolerance, in any octave", () => {
@@ -15,6 +15,11 @@ describe("placeSungPitch", () => {
     expect(placeSungPitch(56 - 12, 60, 60, 2)).toBe(56);
   });
 
+  it("eases off the note just outside the tolerance", () => {
+    expect(placeSungPitch(63, 60, 60, 2)).toBe(61.5);
+    expect(placeSungPitch(64, 60, 60, 2)).toBe(64);
+  });
+
   it("follows the tolerance of the difficulty", () => {
     expect(placeSungPitch(61, 60, 60, 0.5)).toBe(61);
   });
@@ -25,9 +30,7 @@ describe("placeSungPitch", () => {
 });
 
 describe("buildTrail", () => {
-  const noteA = {};
-  const noteB = {};
-  const point = (time: number, midi: number, note: unknown = noteA): TrailPoint => ({ time, midi, note });
+  const point = (time: number, midi: number): TrailPoint => ({ time, midi });
 
   it("fades with age and keeps only the last span", () => {
     const points = Array.from({ length: 61 }, (_, i) => point(i * 10, 60));
@@ -43,33 +46,39 @@ describe("buildTrail", () => {
     expect(trail.map((s) => s.fromTime)).toEqual([0, 200]);
   });
 
-  it("breaks between notes and on jumps", () => {
-    const trail = buildTrail([point(0, 60), point(10, 60, noteB), point(20, 60, noteB), point(30, 64, noteB)], 30, 600);
-    expect(trail.map((s) => s.fromTime)).toEqual([10]);
+  it("breaks on jumps", () => {
+    const trail = buildTrail([point(0, 60), point(10, 60), point(20, 64), point(30, 64)], 30, 600);
+    expect(trail.map((s) => s.fromTime)).toEqual([0, 20]);
   });
 });
 
-describe("steadyPitch", () => {
-  it("drops glitches and octave slips, on the nearest semitone", () => {
-    const values = [60.2, 72, 59.9, 60.4, 47.8, 60.1];
-    expect(values.map((_, i) => steadyPitch(values, i))).toEqual([60, 60, 60, 60, 60, 60]);
+describe("steadyPitches", () => {
+  it("drops glitches and octave slips", () => {
+    const steady = steadyPitches([60, 72, 60, 60, 47.8, 60]);
+    for (const value of steady) expect(value).toBeCloseTo(60);
+  });
+
+  it("keeps the values in between, so slides stay smooth", () => {
+    const slide = Array.from({ length: 11 }, (_, i) => 60 + i * 0.2);
+    const steady = steadyPitches(slide);
+    expect(steady[5]).toBeCloseTo(61);
+    for (let i = 1; i < steady.length; i++) expect(steady[i]!).toBeGreaterThan(steady[i - 1]!);
   });
 
   it("doesn't reach across silence", () => {
-    expect(steadyPitch([64, 64, Number.NaN, 60, 61.6, 61], 3)).toBe(61);
+    expect(steadyPitches([64, 64, Number.NaN, 60, 61, 62])[3]).toBeCloseTo(61);
   });
 });
 
 describe("carryToNow", () => {
   it("carries the trail on to the cursor without breaking it", () => {
-    const note = {};
     const points: TrailPoint[] = [
-      { time: 760, midi: 60, note },
-      { time: 770, midi: 61, note },
+      { time: 760, midi: 60 },
+      { time: 770, midi: 61 },
     ];
     carryToNow(points, 1000, 62);
 
-    expect(points.at(-1)).toEqual({ time: 1000, midi: 62, note });
+    expect(points.at(-1)).toEqual({ time: 1000, midi: 62 });
     const segments = buildTrail(points, 1000, 600);
     expect(segments).toHaveLength(points.length - 1);
     expect(segments.at(-1)?.freshness).toBe(1);
