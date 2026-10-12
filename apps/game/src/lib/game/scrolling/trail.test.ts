@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTrail, carryToNow, placeSungPitch, steadyPitches, type TrailPoint } from "./trail";
+import { buildTrail, carryToNow, placeSungPitch, springTowards, steadyPitches, type TrailPoint } from "./trail";
 
 describe("placeSungPitch", () => {
   it("snaps onto the note within tolerance, in any octave", () => {
@@ -18,6 +18,11 @@ describe("placeSungPitch", () => {
   it("eases off the note just outside the tolerance", () => {
     expect(placeSungPitch(63, 60, 60, 2)).toBe(61.5);
     expect(placeSungPitch(64, 60, 60, 2)).toBe(64);
+  });
+
+  it("lets a voice already on the note stray a little further", () => {
+    expect(placeSungPitch(62.3, 60, 60, 2)).not.toBe(60);
+    expect(placeSungPitch(62.3, 60, 60, 2, true)).toBe(60);
   });
 
   it("follows the tolerance of the difficulty", () => {
@@ -88,5 +93,19 @@ describe("carryToNow", () => {
     const segments = buildTrail(points, 1000, 600);
     expect(segments).toHaveLength(points.length - 1);
     expect(segments.at(-1)?.freshness).toBe(1);
+  });
+});
+
+describe("springTowards", () => {
+  it("glides to the target without overshooting", () => {
+    const spring = { value: 60, velocity: 0 };
+    const values: number[] = [];
+    for (let frame = 0; frame < 40; frame++) {
+      springTowards(spring, 64, 16, 25);
+      values.push(spring.value);
+    }
+    for (let i = 1; i < values.length; i++) expect(values[i]!).toBeGreaterThanOrEqual(values[i - 1]!);
+    expect(Math.max(...values)).toBeLessThanOrEqual(64);
+    expect(values.at(-1)).toBeCloseTo(64, 1);
   });
 });

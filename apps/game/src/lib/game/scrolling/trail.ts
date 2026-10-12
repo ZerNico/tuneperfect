@@ -17,25 +17,31 @@ export interface TrailSegment {
   on: boolean;
 }
 
+/** How much further (semitones) a voice on a note may stray before it counts as off it. */
+const HOLD_MARGIN = 0.5;
 /** A jump bigger than this, in semitones, breaks the trail instead of drawing a line across. */
 const MAX_STEP = 1.2;
 /** Points further apart than this, in ms, had silence between them (frames come every 10 ms). */
-const MAX_GAP_MS = 35;
+export const MAX_GAP_MS = 35;
 
 /**
  * Where a sung pitch is drawn: in the octave nearest the note it's sung against (octaves don't
  * count when judging), and right on the note when within `tolerance`, like the classic lane on
- * easy, easing off it just outside. Without a note it goes in the octave nearest `fallback` (e.g. the closest note's pitch).
+ * easy, easing off it just outside. A voice already `held` on the note gets a little more room
+ * before it leaves, so it doesn't flicker on and off at the edge. Without a note it goes in the
+ * octave nearest `fallback` (e.g. the previous point's pitch).
  */
 export function placeSungPitch(
   midi: number,
   noteMidi: number | undefined,
   fallback: number,
-  tolerance: number,
+  baseTolerance: number,
+  held = false,
 ): number {
   const reference = noteMidi ?? fallback;
   const folded = midi - 12 * Math.round((midi - reference) / 12);
   if (noteMidi === undefined) return folded;
+  const tolerance = baseTolerance + (held ? HOLD_MARGIN : 0);
   // Within the tolerance it sits on the note; just outside, it eases off it, so crossing the
   // edge doesn't jump.
   const off = folded - noteMidi;
@@ -118,4 +124,26 @@ export function steadyPitches(values: readonly number[]): number[] {
     const window = voicedAround(medians, i);
     return window.reduce((sum, v) => sum + v, 0) / window.length;
   });
+}
+
+/** A value following a target smoothly: where it is and how fast it's moving (per ms). */
+export interface Spring {
+  value: number;
+  velocity: number;
+}
+
+/**
+ * Moves `spring` towards `target` over `elapsedMs` as a critically damped spring: it glides into
+ * place without overshooting, and changes direction smoothly, unlike a plain ease that jumps
+ * with every new target. Settles in about `4 × timeMs`.
+ */
+export function springTowards(spring: Spring, target: number, elapsedMs: number, timeMs: number) {
+  const omega = 1 / timeMs;
+  // Small steps keep the integration stable for long frames.
+  for (let left = elapsedMs; left > 0; left -= 4) {
+    const dt = Math.min(4, left);
+    const acceleration = omega * omega * (target - spring.value) - 2 * omega * spring.velocity;
+    spring.velocity += acceleration * dt;
+    spring.value += spring.velocity * dt;
+  }
 }

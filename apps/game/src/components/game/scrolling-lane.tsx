@@ -11,7 +11,10 @@ import { buildLaneTimeline, type LaneNote, visibleRange } from "~/lib/game/scrol
 import {
   buildTrail,
   carryToNow,
+  MAX_GAP_MS,
   placeSungPitch,
+  springTowards,
+  type Spring,
   steadyPitches,
   type TrailPoint,
   type TrailSegment,
@@ -34,8 +37,10 @@ const OVERSCAN_MS = 400;
 const TRAIL_MS = 600;
 /** The cursor dims and the trail stops when the voice has been silent this long. */
 const CURSOR_TIMEOUT_MS = 150;
-/** How quickly the cursor follows the voice (time constant): steady without feeling slow. */
-const CURSOR_SMOOTHING_MS = 45;
+/** How quickly the cursor follows the voice (spring time; it settles in about four times this). */
+const CURSOR_SPRING_MS = 22;
+/** The cursor follows the median of this many of the newest points, which drops stray frames. */
+const CURSOR_POINTS = 5;
 /** The trail fades in this many steps, one path each. */
 const TRAIL_STEPS = 6;
 
@@ -46,6 +51,17 @@ const TRAIL_STEPS = 6;
  * It draws the same note bars and sung fills as the classic lane. Everything per frame happens in
  * one effect that writes transforms and a few path attributes, so frames cost no layout.
  */
+/** The voice's newest pitch for the cursor: the median of the newest points, since it last started. */
+function recentPitch(points: readonly TrailPoint[]): number {
+  const recent = [points.at(-1)!.midi];
+  for (let i = points.length - 2; i >= 0 && recent.length < CURSOR_POINTS; i--) {
+    if (points[i + 1]!.time - points[i]!.time > MAX_GAP_MS) break;
+    recent.push(points[i]!.midi);
+  }
+  recent.sort((a, b) => a - b);
+  return recent[Math.floor(recent.length / 2)]!;
+}
+
 /** The note sung at `time` if any, and otherwise the one closest in time. */
 function noteNear(notes: LaneNote[], time: number): { note: LaneNote | undefined; on: boolean } {
   const [index] = visibleRange(notes, time, time);
@@ -169,7 +185,7 @@ export default function ScrollingLane() {
   const midis: number[] = [];
   const points: TrailPoint[] = [];
   /** The cursor's pitch as shown, easing after the voice; `undefined` until the first frame. */
-  let cursorMidi: number | undefined;
+  let cursorPitch: Spring | undefined;
   let cursorAt = 0;
   let shownState = "";
   createRenderEffect(() => {
@@ -200,29 +216,36 @@ export default function ScrollingLane() {
       midis.push(frequencyToMidi(hz));
     });
     const steady = steadyPitches(midis);
+    let previous: TrailPoint | undefined;
     for (let i = 0; i < times.length; i++) {
       const time = times[i]!;
-      if (Number.isNaN(time)) continue;
-      const midi = steady[i]!;
-      // On a note it's drawn against that note; between notes, in the octave of the nearest one
-      // (each phrase is drawn in its own octave).
+      if (Number.isNaN(time)) {
+        previous = undefined;
+        continue;
+      }
+      // On a note it's drawn against that note. Between notes it stays in the octave it was in,
+      // or starts in the nearest note's (each phrase is drawn in its own octave).
       const { note, on } = noteNear(notes, time);
       const target = on && note && !note.freestyle ? note.displayMidi : undefined;
-      const placed = placeSungPitch(midi, target, note?.displayMidi ?? camera, tolerance);
-      points.push({ time, midi: placed, on: target !== undefined && placed === target });
+      const fallback = previous?.midi ?? note?.displayMidi ?? camera;
+      const held = previous?.on === true && previous.midi === target;
+      const placed = placeSungPitch(steady[i]!, target, fallback, tolerance, held);
+      previous = { time, midi: placed, on: target !== undefined && placed === target };
+      points.push(previous);
     }
 
-    // While the voice is live, the cursor on the line eases after the trail's newest pitch and the
+    // While the voice is live, the cursor on the line glides after the newest pitches (a spring) and the
     // trail runs on to it (frames arrive a few tens of ms late). In silence the trail stops and the
     // cursor waits, dimmed, where the voice last was (in the middle before anything was sung).
     const latest = points.at(-1);
     const live = latest !== undefined && latest.time >= now - CURSOR_TIMEOUT_MS;
     const elapsed = now - cursorAt;
-    if (cursorMidi === undefined || elapsed < 0) cursorMidi = camera;
+    if (!cursorPitch || elapsed < 0) cursorPitch = { value: camera, velocity: 0 };
     if (latest && live) {
-      const target = latest.midi;
-      cursorMidi = target + (cursorMidi - target) * Math.exp(-Math.max(0, elapsed) / CURSOR_SMOOTHING_MS);
-      carryToNow(points, now, cursorMidi);
+      springTowards(cursorPitch, recentPitch(points), Math.min(elapsed, 100), CURSOR_SPRING_MS);
+      carryToNow(points, now, cursorPitch.value);
+    } else {
+      cursorPitch.velocity = 0;
     }
     cursorAt = now;
 
@@ -250,7 +273,7 @@ export default function ScrollingLane() {
       area.dataset.voice = state;
     }
     cursor.style.opacity = live ? "1" : "0.5";
-    cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(cursorMidi)}px)`;
+    cursor.style.transform = `translate(${nowX()}px, ${trackY + pitchY(cursorPitch.value)}px)`;
   });
 
   return (
