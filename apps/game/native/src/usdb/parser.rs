@@ -62,12 +62,15 @@ pub fn parse_song_list(html: &str) -> Vec<UsdbSearchEntry> {
             .select(&source_selector)
             .next()
             .and_then(|s| s.value().attr("src"))
-            .map(|s| s.to_string());
+            // Some entries carry stray whitespace around the URL.
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
 
         let cover_url = tds[1]
             .select(&img_selector)
             .next()
             .and_then(|img| img.value().attr("src"))
+            .map(str::trim)
             .map(|src| {
                 if src.starts_with("http") {
                     src.to_string()

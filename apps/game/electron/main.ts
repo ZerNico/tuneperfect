@@ -153,7 +153,7 @@ async function start() {
 
   if (devServerUrl) applyDevelopmentCsp(appOrigin);
   else handleRendererProtocol(rendererDir, CONTENT_SECURITY_POLICY);
-  handleMediaProtocol(appOrigin);
+  handleMediaProtocol(appOrigin, (message) => logger.write("WARN", "media", message));
 
   const rpc = createRpcHandler({
     stores,

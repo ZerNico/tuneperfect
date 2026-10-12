@@ -4,15 +4,19 @@ import { twMerge } from "tailwind-merge";
 import IconStar from "~icons/ph/star-fill";
 import IconStarHalf from "~icons/ph/star-half-fill";
 
+import SamplePlayer from "~/components/sample-player";
 import { createSongBrowserState, SongBrowser } from "~/components/song-select/song-browser";
 import { CHIP, type SongInfo } from "~/components/song-select/song-title";
+import { createPreviewSlots } from "~/hooks/preview-slots";
 import type { SortOption } from "~/hooks/use-song-filter";
 import { t } from "~/lib/i18n";
 import { native, safe } from "~/lib/native/client";
+import { usdbSampleUrl } from "~/lib/native/media";
 import { playSound } from "~/lib/sound";
 import { notify } from "~/lib/toast";
 import { firstFacetValue } from "~/lib/utils/song-facets";
 import { selectionStore } from "~/stores/selection";
+import { settingsStore } from "~/stores/settings";
 import { type UsdbSearchEntry, usdbStore } from "~/stores/usdb";
 
 const ONLINE_SORT_OPTIONS: SortOption[] = ["views", "artist", "title", "year"];
@@ -44,6 +48,11 @@ export default function OnlineSearchScreen() {
   const state = createSongBrowserState("views");
   const [startingGame, setStartingGame] = createSignal(false);
   const [selected, setSelected] = createSignal<UsdbSearchEntry | null>(null);
+  // Keyed by URL too: a catalog sync can change a song's sample.
+  const samples = createPreviewSlots(
+    () => (selected()?.sampleUrl ? selected() : null),
+    (entry) => `${entry.songId}:${entry.sampleUrl}`,
+  );
 
   const play = async (entry: UsdbSearchEntry) => {
     if (startingGame()) return;
@@ -83,14 +92,26 @@ export default function OnlineSearchScreen() {
       onConfirm={play}
       onSelectedChange={setSelected}
       background={
-        <Show when={selected()?.coverUrl} keyed>
-          {(url) => (
-            // Blurred cover of the selected song; "hide" played in reverse fades it in.
-            <div class="absolute inset-0 animate-[hide_0.4s_ease-out_reverse_both] overflow-hidden">
-              <img class="h-full w-full scale-110 object-cover opacity-40 blur-2xl" src={url} alt="" />
-            </div>
-          )}
-        </Show>
+        <>
+          <Show when={selected()?.coverUrl} keyed>
+            {(url) => (
+              // Blurred cover of the selected song; "hide" played in reverse fades it in.
+              <div class="absolute inset-0 animate-[hide_0.4s_ease-out_reverse_both] overflow-hidden">
+                <img class="h-full w-full scale-110 object-cover opacity-40 blur-2xl" src={url} alt="" />
+              </div>
+            )}
+          </Show>
+          <For each={samples}>
+            {(sample) => (
+              <SamplePlayer
+                url={sample.item()?.sampleUrl ? usdbSampleUrl(sample.item()!.sampleUrl!) : null}
+                // Quiet while the chosen song loads, so the confirm sound plays on its own.
+                playing={sample.playing() && !startingGame()}
+                volume={settingsStore.getVolume("preview")}
+              />
+            )}
+          </For>
+        </>
       }
     />
   );

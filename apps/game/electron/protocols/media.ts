@@ -1,49 +1,61 @@
 import { protocol } from "electron";
 
+import { MEDIA_SCHEME, SONG_FILES_HOST, USDB_SAMPLE_HOST } from "../../src/lib/native/media";
 import { native } from "../native";
 import { fileResponse } from "./file-response";
-import { MEDIA_SCHEME } from "./schemes";
+import { usdbSampleResponse } from "./usdb-sample";
 
-/**
- * Song media URLs are `media://local/<percent-encoded absolute path>`. The addon builds
- * them while parsing songs, below this base.
- */
-const MEDIA_HOST = "local";
-export const MEDIA_BASE_URL = `${MEDIA_SCHEME}://${MEDIA_HOST}`;
+/** What a `media://` URL asks for (see `src/lib/native/media.ts` for the URL shapes). */
+export type MediaTarget = { kind: "song-file"; path: string } | { kind: "usdb-sample"; url: string };
 
-/** The file a `media://` URL points to, or `null` if it doesn't name one. */
-export function mediaPath(url: string): string | null {
+export function mediaTarget(url: string): MediaTarget | null {
   const parsed = URL.parse(url);
   // Node's URL gives schemes it doesn't know an opaque origin, so compare the parts.
-  if (parsed?.protocol !== `${MEDIA_SCHEME}:` || parsed.host !== MEDIA_HOST) return null;
+  if (parsed?.protocol !== `${MEDIA_SCHEME}:`) return null;
+
+  let value: string;
   try {
-    return decodeURIComponent(parsed.pathname.slice(1)) || null;
+    value = decodeURIComponent(parsed.pathname.slice(1));
   } catch {
     return null;
   }
+  if (!value) return null;
+
+  if (parsed.host === SONG_FILES_HOST) return { kind: "song-file", path: value };
+  if (parsed.host === USDB_SAMPLE_HOST) return { kind: "usdb-sample", url: value };
+  return null;
 }
 
 /**
- * Serves files from the granted song folders on `media://`.
+ * Serves `media://`: files from the granted song folders, and USDB samples streamed from
+ * their upstream hosts.
  *
  * The scheme only exists inside the app's session: unlike a loopback HTTP server, other
- * browsers, websites and local processes can't reach it at all. The allowlist still checks
- * every request, so the renderer can't read outside the granted folders either.
+ * browsers, websites and local processes can't reach it at all. Every request is still
+ * checked, so the renderer can't read outside the granted folders or make the app fetch
+ * anything but public media either.
  */
-export function handleMediaProtocol(appOrigin: string) {
-  protocol.handle(MEDIA_SCHEME, (request) => {
+export function handleMediaProtocol(appOrigin: string, warn: (message: string) => void) {
+  protocol.handle(MEDIA_SCHEME, async (request) => {
     // Media loaded with `crossorigin` (see `schemes.ts`) needs CORS, but only ever from the app.
-    const headers = { "Access-Control-Allow-Origin": appOrigin };
+    const cors = { "Access-Control-Allow-Origin": appOrigin };
 
     if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response(null, { status: 405, headers: { ...headers, Allow: "GET, HEAD" } });
+      return new Response(null, { status: 405, headers: { ...cors, Allow: "GET, HEAD" } });
     }
 
-    const filePath = mediaPath(request.url);
-    if (!filePath || !native.isPathAllowed(filePath)) {
-      return new Response(null, { status: 403, headers });
+    const target = mediaTarget(request.url);
+    switch (target?.kind) {
+      case "song-file":
+        if (!native.isPathAllowed(target.path)) return new Response(null, { status: 403, headers: cors });
+        return fileResponse(request, target.path, cors);
+      case "usdb-sample": {
+        const response = await usdbSampleResponse(request, target.url, { warn });
+        response.headers.set("Access-Control-Allow-Origin", appOrigin);
+        return response;
+      }
+      default:
+        return new Response(null, { status: 404, headers: cors });
     }
-
-    return fileResponse(request, filePath, headers);
   });
 }

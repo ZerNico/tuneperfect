@@ -1,11 +1,10 @@
 import { protocol } from "electron";
 
+import { MEDIA_SCHEME } from "../../src/lib/native/media";
+
 /** The bundled renderer (`renderer.ts`). Development loads it from the Vite server instead. */
 export const APP_SCHEME = "app";
 export const APP_ORIGIN = `${APP_SCHEME}://tuneperfect`;
-
-/** Files from the granted song folders (`media.ts`). */
-export const MEDIA_SCHEME = "media";
 
 /** Registered as `standard` below, so their URLs have a host and a real origin. */
 const STANDARD_SCHEMES = new Set([`${APP_SCHEME}:`, `${MEDIA_SCHEME}:`]);
