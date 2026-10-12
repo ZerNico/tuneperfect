@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTrail, carryToNow, medianOfThree, placeSungPitch, type TrailPoint } from "./trail";
+import { buildTrail, carryToNow, placeSungPitch, steadyPitch, type TrailPoint } from "./trail";
 
 describe("placeSungPitch", () => {
   it("snaps onto the note within tolerance, in any octave", () => {
@@ -49,10 +49,14 @@ describe("buildTrail", () => {
   });
 });
 
-describe("medianOfThree", () => {
-  it("drops a single-frame slip", () => {
-    const values = [60, 60, 72, 60, 60];
-    expect(values.map((_, i) => medianOfThree(values, i))).toEqual([60, 60, 60, 60, 60]);
+describe("steadyPitch", () => {
+  it("drops glitches and octave slips, on the nearest semitone", () => {
+    const values = [60.2, 72, 59.9, 60.4, 47.8, 60.1];
+    expect(values.map((_, i) => steadyPitch(values, i))).toEqual([60, 60, 60, 60, 60, 60]);
+  });
+
+  it("doesn't reach across silence", () => {
+    expect(steadyPitch([64, 64, Number.NaN, 60, 61.6, 61], 3)).toBe(61);
   });
 });
 

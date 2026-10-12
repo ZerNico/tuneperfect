@@ -11,8 +11,8 @@ import { buildLaneTimeline, type LaneNote, visibleRange } from "~/lib/game/scrol
 import {
   buildTrail,
   carryToNow,
-  medianOfThree,
   placeSungPitch,
+  steadyPitch,
   type TrailPoint,
   type TrailSegment,
 } from "~/lib/game/scrolling/trail";
@@ -36,8 +36,6 @@ const TRAIL_MS = 600;
 const CURSOR_TIMEOUT_MS = 150;
 /** How quickly the cursor follows the voice (time constant): steady without feeling slow. */
 const CURSOR_SMOOTHING_MS = 45;
-/** The cursor's pitch is the median of this many of the newest frames, which drops glitches. */
-const CURSOR_FRAMES = 5;
 /** The trail fades in this many steps, one path each. */
 const TRAIL_STEPS = 6;
 
@@ -55,28 +53,14 @@ function noteAt(notes: LaneNote[], time: number): LaneNote | undefined {
   return note && note.startMs <= time ? note : undefined;
 }
 
-/** The voice's newest pitch: the median of the newest voiced frames (`NaN` marks silence). */
-function recentPitch(midis: readonly number[]): number {
-  const recent: number[] = [];
-  for (let i = midis.length - 1; i >= 0 && recent.length < CURSOR_FRAMES; i--) {
-    const midi = midis[i]!;
-    if (Number.isNaN(midi)) {
-      if (recent.length > 0) break;
-      continue;
-    }
-    recent.push(midi);
-  }
-  recent.sort((a, b) => a - b);
-  return recent[Math.floor(recent.length / 2)]!;
-}
-
 export default function ScrollingLane() {
   const game = useGame();
   const player = usePlayer();
-  // Fixed per round, like the classic lane.
+  // Fixed per round, like the classic lane. More rows than the classic lane's, with slimmer bars:
+  // with time running sideways, the tune reads best as a flat line, like Let's Sing's.
   const compact = game.playerCount() > 2;
-  const rows = compact ? 12 : 16;
-  const margin = compact ? 1 : 2;
+  const rows = compact ? 15 : 20;
+  const margin = compact ? 2 : 3;
 
   let area!: HTMLDivElement;
   let track!: HTMLDivElement;
@@ -96,8 +80,8 @@ export default function ScrollingLane() {
   const pxPerMs = () => size().width / WINDOW_MS;
   const rowHeight = () => size().height / rows;
   const nowX = () => (size().width * BEHIND_MS) / WINDOW_MS;
-  /** A bar spans two rows, centred on its pitch, like the classic lane's. */
-  const barHeight = () => rowHeight() * 2;
+  /** A bar is centred on its pitch and a little taller than a semitone step. */
+  const barHeight = () => rowHeight() * 1.6;
 
   /** Where a pitch sits vertically in the track (row centres, before the camera's offset). */
   const pitchY = (midi: number) => -midi * rowHeight();
@@ -213,23 +197,22 @@ export default function ScrollingLane() {
     for (let i = 0; i < times.length; i++) {
       const time = times[i]!;
       if (Number.isNaN(time)) continue;
-      const midi =
-        Number.isNaN(midis[i - 1] ?? 0) || Number.isNaN(midis[i + 1] ?? 0) ? midis[i]! : medianOfThree(midis, i);
+      const midi = steadyPitch(midis, i);
       const note = noteAt(notes, time);
       const target = note && !note.freestyle ? note.displayMidi : undefined;
       points.push({ time, midi: placeSungPitch(midi, target, camera, tolerance), note });
     }
 
     // The voice is only heard `delay` (plus the stream's own latency) after it's sung, so the trail
-    // ends that far behind the now-line. While it's live, the cursor on the line shows its newest
-    // pitch, steadied, and the trail bends over to it. In silence the trail stops and the cursor
+    // ends that far behind the now-line. While it's live, the cursor on the line eases after the
+    // trail's newest pitch and the trail runs on to it. In silence the trail stops and the cursor
     // waits, dimmed, where the voice last was (in the middle before anything was sung).
     const latest = points.at(-1);
     const live = latest !== undefined && latest.time + delay >= now - CURSOR_TIMEOUT_MS;
     const elapsed = now - cursorAt;
     if (cursorMidi === undefined || elapsed < 0) cursorMidi = camera;
     if (latest && live) {
-      const target = placeSungPitch(recentPitch(midis), noteAt(notes, now)?.displayMidi, camera, tolerance);
+      const target = latest.midi;
       cursorMidi = target + (cursorMidi - target) * Math.exp(-Math.max(0, elapsed) / CURSOR_SMOOTHING_MS);
       carryToNow(points, now, cursorMidi);
     }
@@ -259,7 +242,7 @@ export default function ScrollingLane() {
       <span
         ref={syllableProbe}
         class="invisible absolute font-bold"
-        classList={{ "text-[1.2cqw]": compact, "text-[1.5cqw]": !compact }}
+        classList={{ "text-[1.1cqw]": compact, "text-[1.3cqw]": !compact }}
       />
       {/* Inset like the classic lane, clear of the name plate and score; notes fade in and out at the sides. */}
       <div ref={area} class="relative h-full w-full overflow-x-clip mask-x-from-95% mask-x-to-100%">
@@ -288,8 +271,8 @@ export default function ScrollingLane() {
                       <span
                         class="absolute leading-[1.2] font-bold whitespace-nowrap transition-colors duration-150"
                         classList={{
-                          "text-[1.2cqw]": compact,
-                          "text-[1.5cqw]": !compact,
+                          "text-[1.1cqw]": compact,
+                          "text-[1.3cqw]": !compact,
                           italic: laneNote.freestyle,
                           "text-white/90": !sung() && !laneNote.freestyle,
                           "text-white/45": laneNote.freestyle,

@@ -84,10 +84,20 @@ export function carryToNow(points: TrailPoint[], now: number, midi: number) {
   }
 }
 
-/** Median of three neighbours, which drops single-frame octave slips and glitches. */
-export function medianOfThree(values: readonly number[], i: number): number {
-  const a = values[i - 1] ?? values[i]!;
-  const b = values[i]!;
-  const c = values[i + 1] ?? values[i]!;
-  return Math.max(Math.min(a, b), Math.min(Math.max(a, b), c));
+/** How many neighbours on each side steady a sung pitch. */
+const STEADY_RADIUS = 2;
+
+/**
+ * The sung pitch at `i`, steadied for drawing: the median of it and its voiced neighbours (up to
+ * two each side, not across silence, marked `NaN`), on the nearest semitone. Glitches, octave
+ * slips and vibrato drop out, so the trail runs flat like the notes it follows.
+ */
+export function steadyPitch(values: readonly number[], i: number): number {
+  const window = [values[i]!];
+  for (let j = i - 1; j >= i - STEADY_RADIUS && j >= 0 && !Number.isNaN(values[j]!); j--) window.push(values[j]!);
+  for (let j = i + 1; j <= i + STEADY_RADIUS && j < values.length && !Number.isNaN(values[j]!); j++) {
+    window.push(values[j]!);
+  }
+  window.sort((a, b) => a - b);
+  return Math.round(window[Math.floor(window.length / 2)]!);
 }
