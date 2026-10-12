@@ -368,9 +368,9 @@ pub fn parse_local_txt_file(
     let create_url_from_file =
         |file_entry: Option<&FileEntry>| -> Result<Option<String>, AppError> {
             if let Some(file_entry) = file_entry {
-                // The path as found below the (absolute) song folder; the media server resolves
-                // and checks it on every request, so resolving it here too only cost a realpath
-                // per file, and a failure rejected the whole song.
+                // The path as found below the (absolute) song folder; the `media://` handler
+                // resolves and checks it on every request, so resolving it here too only cost a
+                // realpath per file, and a failure rejected the whole song.
                 let encoded = urlencoding::encode(&file_entry.path);
                 Ok(Some(format!("{}/{}", media_base_url, encoded)))
             } else {

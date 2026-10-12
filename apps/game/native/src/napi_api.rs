@@ -17,7 +17,6 @@ use serde_json::Value;
 use crate::audio::MicrophoneOptions;
 use crate::commands::{microphones, pitch, songs};
 use crate::error::AppError;
-use crate::local_server;
 use crate::state::state;
 use crate::usdb::commands as usdb;
 
@@ -78,33 +77,16 @@ pub fn export_typescript_types(path: String) -> Result<()> {
     crate::typescript::export(std::path::Path::new(&path)).map_err(Error::from_reason)
 }
 
-/// Starts the loopback media server and returns its origin. Idempotent.
-#[napi]
-pub async fn start_local_server(frame_ancestors: Vec<String>) -> Result<String> {
-    let state = state();
-    if let Some(server) = state.local_server.get() {
-        return Ok(server.get_base_url());
-    }
-
-    let server = local_server::start(frame_ancestors, state.allowlist.clone())
-        .map_err(|e| Error::from(AppError::IoError(e)))?;
-    let base_url = server.get_base_url();
-    let _ = state.local_server.set(server);
-    Ok(base_url)
-}
-
-#[napi]
-pub fn get_local_server_base_url() -> Option<String> {
-    state()
-        .local_server
-        .get()
-        .map(|server| server.get_base_url())
-}
-
 /// Grants the app access to a song folder. Returns `false` if it doesn't exist.
 #[napi]
 pub fn allow_directory(path: String) -> bool {
     state().allowlist.allow_directory(&path)
+}
+
+/// Whether `path` lies inside a granted song folder, after resolving `..` and symlinks.
+#[napi]
+pub fn is_path_allowed(path: String) -> bool {
+    state().allowlist.is_allowed(&path)
 }
 
 #[napi]
@@ -148,11 +130,13 @@ pub struct ParsedSongs {
     pub note_ranges: Uint32Array,
 }
 
-/// Parses every song below the given (allowed) folders. `on_event` receives
+/// Parses every song below the given (allowed) folders, addressing their media files below
+/// `media_base_url`. `on_event` receives
 /// `{type: "start", total}` once, then `{type: "progress", song, done}` as files are parsed.
 #[napi]
 pub async fn parse_songs_from_paths(
     paths: Vec<String>,
+    media_base_url: String,
     #[napi(
         ts_arg_type = "(event: { type: \"start\"; total: number } | { type: \"progress\"; song: string; done: number }) => void"
     )]
@@ -165,7 +149,7 @@ pub async fn parse_songs_from_paths(
         }
     });
 
-    let library = songs::parse_songs_from_paths(paths, sink).await?;
+    let library = songs::parse_songs_from_paths(paths, media_base_url, sink).await?;
     Ok(ParsedSongs {
         groups: to_json(library.groups)?,
         notes: Uint8Array::new(library.notes),

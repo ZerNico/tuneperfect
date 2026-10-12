@@ -1,27 +1,27 @@
-import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
-import { app, BrowserWindow, net, protocol, session, shell, webContents } from "electron";
+import { app, BrowserWindow, session, shell, webContents } from "electron";
 
 import { CONTENT_SECURITY_POLICY } from "./csp";
 import { PRODUCT_NAME } from "./identity";
 import { createLogger } from "./logger";
 import { attachContextMenu, setApplicationMenu } from "./menu";
 import { native } from "./native";
+import { handleMediaProtocol } from "./protocols/media";
+import { handleRendererProtocol } from "./protocols/renderer";
+import { APP_ORIGIN, originOf, registerSchemes } from "./protocols/schemes";
 import { createRpcHandler, listenForRpc } from "./rpc";
 import { grantSongFolders } from "./song-folders";
 import { JsonStores } from "./store";
 import { cleanUpAfterTauri, migrateFromTauri } from "./tauri-migration";
 import { loadWindowState, saveWindowState } from "./window-state";
+import { startYoutubeEmbedServer } from "./youtube-embed/server";
 
 /** Set by the dev script; packaged and preview builds load the bundled frontend instead. */
 const devServerUrl = process.env.TUNEPERFECT_DEV_SERVER_URL;
 
-const APP_SCHEME = "app";
-const APP_ORIGIN = `${APP_SCHEME}://tuneperfect`;
 const appUrl = devServerUrl ?? `${APP_ORIGIN}/`;
-const appOrigin = new URL(appUrl).origin;
+const appOrigin = devServerUrl ? new URL(devServerUrl).origin : APP_ORIGIN;
 
 const rendererDir = path.join(__dirname, "../dist");
 
@@ -35,9 +35,7 @@ app.enableSandbox();
 // and the macOS "Now Playing" widget could then pause songs. The Tauri webview didn't.
 app.commandLine.appendSwitch("disable-features", "HardwareMediaKeyHandling,MediaSessionService");
 
-protocol.registerSchemesAsPrivileged([
-  { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
-]);
+registerSchemes();
 
 const logger = createLogger(app.getPath("logs"));
 
@@ -58,24 +56,6 @@ function songPathArgs(argv: string[]): string[] | null {
     }
   }
   return paths.length > 0 ? paths : null;
-}
-
-/** Serves the built frontend from `dist/`, falling back to `index.html` for client-side routes. */
-function serveRenderer() {
-  protocol.handle(APP_SCHEME, async (request) => {
-    const { pathname } = new URL(request.url);
-    const requested = path.normalize(path.join(rendererDir, decodeURIComponent(pathname)));
-    const insideRenderer = requested.startsWith(rendererDir + path.sep);
-    const file =
-      insideRenderer && fs.statSync(requested, { throwIfNoEntry: false })?.isFile()
-        ? requested
-        : path.join(rendererDir, "index.html");
-
-    const response = await net.fetch(pathToFileURL(file).toString());
-    const headers = new Headers(response.headers);
-    headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
-    return new Response(response.body, { status: response.status, headers });
-  });
 }
 
 /** Applies the same CSP to pages from the Vite dev server, so problems show up in development. */
@@ -131,7 +111,7 @@ function createWindow(): BrowserWindow {
     return { action: "deny" };
   });
   window.webContents.on("will-navigate", (event, url) => {
-    if (new URL(url).origin !== appOrigin) event.preventDefault();
+    if (originOf(url) !== appOrigin) event.preventDefault();
   });
 
   void window.loadURL(appUrl);
@@ -153,15 +133,17 @@ async function start() {
   const songPaths = songPathArgs(process.argv);
   await grantSongFolders(stores, songPaths ?? []);
 
-  // The embed page on the media server may only be framed by the app itself.
-  await native.startLocalServer([appOrigin]);
+  // Without it YouTube songs can't play, but everything else still works.
+  const youtubeEmbed = await startYoutubeEmbedServer([appOrigin]).catch((error: unknown) => {
+    logger.write("ERROR", "tuneperfect", `YouTube embed server failed to start: ${String(error)}`);
+    return null;
+  });
 
   // The only web permissions the game uses; everything else is denied, for requests and
   // for the synchronous checks behind APIs like navigator.permissions. Writing the clipboard
   // (copying error details) is allowed, reading it isn't.
   const permissions = new Set(["fullscreen", "screen-wake-lock", "clipboard-sanitized-write"]);
-  const allowed = (url: string, permission: string) =>
-    URL.parse(url)?.origin === appOrigin && permissions.has(permission);
+  const allowed = (url: string, permission: string) => originOf(url) === appOrigin && permissions.has(permission);
   session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
     callback(allowed(contents.getURL(), permission));
   });
@@ -170,11 +152,13 @@ async function start() {
   );
 
   if (devServerUrl) applyDevelopmentCsp(appOrigin);
-  else serveRenderer();
+  else handleRendererProtocol(rendererDir, CONTENT_SECURITY_POLICY);
+  handleMediaProtocol(appOrigin);
 
   const rpc = createRpcHandler({
     stores,
     songPaths,
+    youtubePlayerUrl: youtubeEmbed?.playerUrl ?? null,
     log: (level, message) => logger.write(level.toUpperCase(), "webview", message),
   });
   listenForRpc(rpc, appOrigin, (id) => {

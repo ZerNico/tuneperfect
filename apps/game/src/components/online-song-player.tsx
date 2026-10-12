@@ -27,10 +27,10 @@ const MAX_INTERPOLATION_MS = 1000;
 /**
  * Remote-controls a YouTube embed that lives inside an HTTP-hosted child frame.
  *
- * The app document is served from `tauri://localhost`. macOS WKWebView will not attach a
- * `Referer` to a cross-origin subframe whose parent uses a non-HTTP scheme, so YouTube
- * rejects the embed with error 153. Serving the embed from the media server gives it an
- * HTTP parent, at the cost of every command crossing a postMessage boundary.
+ * The app document is served from `app://tuneperfect`. A subframe whose parent uses a
+ * non-HTTP scheme gets no usable `Referer`, so YouTube rejects the embed with error 153.
+ * Hosting the embed on a loopback page (`electron/youtube-embed`) gives it an HTTP parent,
+ * at the cost of every command crossing a postMessage boundary.
  */
 class RemoteYTPlayer {
   private frame: HTMLIFrameElement;
@@ -105,17 +105,17 @@ class RemoteYTPlayer {
 
   static create(
     container: HTMLElement,
-    baseUrl: string,
+    playerUrl: string,
     videoId: string,
     opts?: { muted?: boolean },
   ): Promise<RemoteYTPlayer> {
     return new Promise((resolve, reject) => {
-      const origin = new URL(baseUrl).origin;
+      const origin = new URL(playerUrl).origin;
       const frame = document.createElement("iframe");
       frame.allow = "autoplay; encrypted-media";
       frame.style.cssText = "border:none;display:block;width:100%;height:100%";
       // The host page addresses its replies to this origin instead of broadcasting them.
-      frame.src = `${baseUrl}/embed/youtube?parentOrigin=${encodeURIComponent(window.location.origin)}`;
+      frame.src = `${playerUrl}?parentOrigin=${encodeURIComponent(window.location.origin)}`;
       container.appendChild(frame);
 
       const timeout = setTimeout(() => {
@@ -256,10 +256,10 @@ export default function OnlineSongPlayer(props: OnlineSongPlayerProps) {
     hasSeparateVideo = !!(audioId && videoId && audioId !== videoId);
 
     try {
-      const baseUrl = await native.localServer.baseUrl();
+      const playerUrl = await native.youtube.playerUrl();
 
-      if (!baseUrl) {
-        throw new Error("Local server unavailable for YouTube playback");
+      if (!playerUrl) {
+        throw new Error("YouTube player page unavailable");
       }
 
       if (hasSeparateVideo) {
@@ -269,8 +269,8 @@ export default function OnlineSongPlayer(props: OnlineSongPlayerProps) {
         containerRef.appendChild(audioContainer);
 
         const [audio, video] = await Promise.all([
-          RemoteYTPlayer.create(audioContainer, baseUrl, audioId!, { muted: false }),
-          RemoteYTPlayer.create(containerRef, baseUrl, videoId!, { muted: true }),
+          RemoteYTPlayer.create(audioContainer, playerUrl, audioId!, { muted: false }),
+          RemoteYTPlayer.create(containerRef, playerUrl, videoId!, { muted: true }),
         ]);
 
         audioPlayer = audio;
@@ -282,7 +282,7 @@ export default function OnlineSongPlayer(props: OnlineSongPlayerProps) {
           props.onError?.();
           return;
         }
-        audioPlayer = await RemoteYTPlayer.create(containerRef, baseUrl, id);
+        audioPlayer = await RemoteYTPlayer.create(containerRef, playerUrl, id);
       }
 
       // Invoked from the message handler, i.e. an event context.

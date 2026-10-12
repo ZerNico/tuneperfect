@@ -1,6 +1,6 @@
 // Exercises the addon from plain Node, without Electron:
 //   bun run native:build && node native/examples/smoke.cjs [songFolder]
-// Lists microphones, parses a song folder through the media server, then records from
+// Lists microphones, parses a song folder and checks its media paths, then records from
 // the first microphone for a few seconds while printing levels and pitches. The terminal
 // running this needs microphone access, or the levels stay at zero.
 const native = require("../index.cjs");
@@ -11,15 +11,14 @@ async function main() {
   const microphones = await native.getMicrophones();
   console.log("microphones:", microphones);
 
-  const baseUrl = await native.startLocalServer([]);
-  console.log("media server:", baseUrl);
-
   const folder = process.argv[2];
   if (folder) {
     console.log("allowDirectory:", native.allowDirectory(folder));
     let progress = 0;
     const started = performance.now();
-    const groups = await native.parseSongsFromPaths([folder], (event) => {
+    // What `electron/protocols/media.ts` serves song files under.
+    const mediaBaseUrl = "media://local";
+    const { groups } = await native.parseSongsFromPaths([folder], mediaBaseUrl, (event) => {
       if (event.type === "start") console.log("parsing", event.total, "files");
       else progress++;
     });
@@ -30,8 +29,8 @@ async function main() {
 
     const audioUrl = songs.find((song) => song.audioUrl)?.audioUrl;
     if (audioUrl) {
-      const response = await fetch(audioUrl, { headers: { Range: "bytes=0-1023" } });
-      console.log("media fetch:", response.status, response.headers.get("content-range"));
+      const audioPath = decodeURIComponent(audioUrl.slice(`${mediaBaseUrl}/`.length));
+      console.log("audio:", audioPath, "allowed:", native.isPathAllowed(audioPath));
     }
   }
 

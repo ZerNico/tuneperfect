@@ -2,6 +2,7 @@ import { RPCHandler } from "@orpc/server/message-port";
 import { type BrowserWindow, ipcMain } from "electron";
 
 import { RPC_CONNECT_CHANNEL } from "../../src/lib/native/channel";
+import { originOf } from "../protocols/schemes";
 import { nativeErrors, os } from "./base";
 import { nativeProcedures } from "./native";
 import { type PlatformDependencies, platformProcedures } from "./platform";
@@ -32,7 +33,7 @@ export function listenForRpc(
   ipcMain.on(RPC_CONNECT_CHANNEL, (event) => {
     // Only the app's own top-level page may connect.
     const frame = event.senderFrame;
-    if (!frame || frame.parent || URL.parse(frame.url)?.origin !== appOrigin) return;
+    if (!frame || frame.parent || originOf(frame.url) !== appOrigin) return;
 
     const [port] = event.ports;
     if (!port) return;
