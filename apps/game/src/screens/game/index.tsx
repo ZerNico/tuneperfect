@@ -12,6 +12,7 @@ import type { SongPlayerRef } from "~/components/song-player";
 import SongPlayer from "~/components/song-player";
 import { useNavigation } from "~/hooks/navigation";
 import { createGame } from "~/lib/game/game";
+import { singingView } from "~/lib/game/singing-view";
 import { t } from "~/lib/i18n";
 import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
@@ -186,6 +187,7 @@ export default function GameScreen() {
                     when={isOnline()}
                     fallback={
                       <SongPlayer
+                        smoothTime={singingView() === "scrolling"}
                         volume={settingsStore.getVolume("game")}
                         onCanPlayThrough={() => setCanPlayThrough(true)}
                         ref={setSongPlayerRef}

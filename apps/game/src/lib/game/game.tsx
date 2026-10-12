@@ -1,5 +1,5 @@
 import createRAF from "@solid-primitives/raf";
-import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX, untrack } from "solid-js";
+import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX, onCleanup, untrack } from "solid-js";
 
 import type { SongPlayerRef } from "~/components/song-player";
 import { native } from "~/lib/native/client";
@@ -11,6 +11,9 @@ import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/st
 import { settingsStore } from "~/stores/settings";
 
 import { GameContext, type GameContextValue } from "./game-context";
+import { createLivePitch, createSimulatedLivePitch } from "./live-pitch";
+import { createSimulatedSinger, simulatedSingerAccuracy } from "./simulated-singer";
+import { singingView } from "./singing-view";
 
 export interface CreateGameOptions {
   songPlayerRef?: SongPlayerRef;
@@ -37,6 +40,30 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [pitches, setPitches] = createSignal<(number | null)[]>([]);
 
   const [finishing, setFinishing] = createSignal(false);
+
+  const players = () => roundStore.settings()?.songs[0]?.players ?? [];
+
+  // Development: a fake singer instead of the microphones (the dev playground turns it on).
+  const simulatedSinger = untrack(() => {
+    const accuracy = simulatedSingerAccuracy();
+    const current = options().song;
+    if (accuracy === undefined || !current) return undefined;
+    return createSimulatedSinger(
+      current,
+      players().map((p) => current.voices[p?.voice ?? 0]),
+      accuracy,
+    );
+  });
+  const delays = () => players().map((p) => p?.microphone.delay ?? 0);
+
+  // The scrolling view draws the voice live, from the pitch stream.
+  const livePitch =
+    singingView() !== "scrolling"
+      ? undefined
+      : simulatedSinger
+        ? createSimulatedLivePitch(simulatedSinger, untrack(delays))
+        : createLivePitch();
+  onCleanup(() => livePitch?.dispose());
 
   // Recording is started and stopped across the Electron boundary, so the screen can leave while
   // `start` is still in flight. Only `stop` tears down: it waits for the start and stops the
@@ -190,6 +217,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
     recordClock(ms);
+    livePitch?.frame(performance.now(), ms, true);
 
     batch(() => {
       setMs(ms);
@@ -235,7 +263,9 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const request = ++latestPitchRequest;
     void (async () => {
       try {
-        const result = await timeCall("getPitches", () => native.pitch.get({ windowMs }));
+        const result = simulatedSinger
+          ? untrack(delays).map((delay, mic) => simulatedSinger.hzAt(mic, untrack(ms) - delay))
+          : await timeCall("getPitches", () => native.pitch.get({ windowMs }));
         if (request < appliedPitchRequest) return;
         appliedPitchRequest = request;
         setPitches(result);
@@ -255,6 +285,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     } else {
       stopLoop();
       pauseFrames();
+      livePitch?.frame(performance.now(), untrack(ms), false);
     }
   });
 
@@ -310,6 +341,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     pitches,
     playerCount,
     finishing,
+    pitchTimeline: livePitch?.timeline,
   };
 
   const Provider = (props: { children: JSX.Element }) => (

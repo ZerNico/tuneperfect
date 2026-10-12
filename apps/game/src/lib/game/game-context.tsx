@@ -1,5 +1,6 @@
 import { type Accessor, createContext, type Setter, useContext } from "solid-js";
 
+import type { PitchTimeline } from "~/lib/audio/pitch-timeline";
 import type { Song } from "~/lib/ultrastar/song";
 import type { PlayerStats, Score } from "~/stores/round";
 
@@ -26,6 +27,8 @@ export interface GameContextValue {
   playerCount: Accessor<number>;
   /** True once the song ended and the last pitch sample is in: players score what's left of it. */
   finishing?: Accessor<boolean>;
+  /** The live pitch of a mic (by player slot) in song time, in the scrolling view. */
+  pitchTimeline?: (mic: number) => PitchTimeline | undefined;
 }
 
 export const GameContext = createContext<GameContextValue>();

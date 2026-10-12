@@ -242,6 +242,8 @@ export function createPlayer(options: Accessor<CreatePlayerOptions>) {
   const player = () => roundSong()?.players[options().index]?.player ?? null;
 
   const values: PlayerContextValue = {
+    index: () => options().index,
+    voice,
     phrase,
     microphone,
     micColor,

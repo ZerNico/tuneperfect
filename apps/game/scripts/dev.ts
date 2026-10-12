@@ -12,9 +12,12 @@ import { electronBuildOptions } from "./build-electron";
  * Development loop: starts Vite, bundles the main process in watch mode, rebuilds the native
  * addon when its Rust sources change (regenerating `src/lib/native/types.gen.ts` too), and
  * (re)starts Electron whenever the main process or the addon changed. Arguments are passed
- * on to the app, e.g. `-- --songpath <dir>`.
+ * on to the app, e.g. `-- --songpath <dir>`. `--playground` opens the dev playground
+ * (`playground.html`) instead of the game.
  */
 const DEV_SERVER_URL = "http://localhost:1420";
+const playground = process.argv.includes("--playground");
+const appArgs = process.argv.slice(2).filter((arg) => arg !== "--playground");
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nativeDir = path.join(root, "native");
@@ -94,10 +97,10 @@ function startElectron() {
   // Terminals inside Electron-based editors can leak this, which would start Electron as
   // plain Node instead of the app.
   const { ELECTRON_RUN_AS_NODE: _, ...env } = process.env;
-  electron = spawn(electronPath as unknown as string, [".", ...process.argv.slice(2)], {
+  electron = spawn(electronPath as unknown as string, [".", ...appArgs], {
     cwd: root,
     stdio: "inherit",
-    env: { ...env, TUNEPERFECT_DEV_SERVER_URL: DEV_SERVER_URL },
+    env: { ...env, TUNEPERFECT_DEV_SERVER_URL: playground ? `${DEV_SERVER_URL}/playground.html` : DEV_SERVER_URL },
   });
   electron.on("exit", (code) => {
     if (!restarting) shutdown(code ?? 0);

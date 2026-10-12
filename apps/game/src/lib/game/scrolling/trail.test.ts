@@ -30,12 +30,17 @@ describe("buildTrail", () => {
   const point = (time: number, midi: number, note: unknown = noteA): TrailPoint => ({ time, midi, note });
 
   it("fades with age and keeps only the last span", () => {
-    const trail = buildTrail([point(0, 60), point(300, 60), point(600, 60)], 600, 600);
-    expect(trail.map((s) => [s.fromTime, s.toTime, s.freshness])).toEqual([
-      [0, 300, 0.5],
-      [300, 600, 1],
-    ]);
+    const points = Array.from({ length: 61 }, (_, i) => point(i * 10, 60));
+    const trail = buildTrail(points, 600, 600);
+    expect(trail).toHaveLength(60);
+    expect(trail[0]?.freshness).toBeCloseTo(1 / 60);
+    expect(trail.at(-1)?.freshness).toBe(1);
     expect(buildTrail([point(0, 60), point(10, 60)], 1000, 600)).toEqual([]);
+  });
+
+  it("breaks where nothing was sung", () => {
+    const trail = buildTrail([point(0, 60), point(10, 60), point(200, 60), point(210, 60)], 210, 600);
+    expect(trail.map((s) => s.fromTime)).toEqual([0, 200]);
   });
 
   it("breaks between notes and on jumps", () => {

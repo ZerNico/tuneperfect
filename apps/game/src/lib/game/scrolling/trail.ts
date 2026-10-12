@@ -17,6 +17,8 @@ export interface TrailSegment {
 
 /** A jump bigger than this, in semitones, breaks the trail instead of drawing a line across. */
 const MAX_STEP = 1.2;
+/** Points further apart than this, in ms, had silence between them (frames come every 10 ms). */
+const MAX_GAP_MS = 35;
 
 /**
  * Where a sung pitch is drawn: in the octave nearest the note it's sung against (octaves don't
@@ -45,7 +47,14 @@ export function buildTrail(points: readonly TrailPoint[], now: number, spanMs: n
   for (let i = 1; i < points.length; i++) {
     const from = points[i - 1]!;
     const to = points[i]!;
-    if (to.time < now - spanMs || to.note !== from.note || Math.abs(to.midi - from.midi) > MAX_STEP) continue;
+    if (
+      to.time < now - spanMs ||
+      to.time - from.time > MAX_GAP_MS ||
+      to.note !== from.note ||
+      Math.abs(to.midi - from.midi) > MAX_STEP
+    ) {
+      continue;
+    }
     segments.push({
       fromTime: from.time,
       fromMidi: from.midi,

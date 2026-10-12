@@ -2,6 +2,7 @@ import type { ReactiveMap } from "@solid-primitives/map";
 import { type Accessor, createContext, useContext } from "solid-js";
 
 import type { Phrase } from "~/lib/ultrastar/phrase";
+import type { Voice } from "~/lib/ultrastar/voice";
 import type { Score } from "~/stores/round";
 import type { Microphone } from "~/stores/settings";
 
@@ -27,6 +28,9 @@ export interface ProcessedBeat {
 }
 
 export interface PlayerContextValue {
+  /** The player's slot in the round, which is also their mic's index. */
+  index: Accessor<number>;
+  voice: Accessor<Voice | undefined>;
   phrase: Accessor<Phrase | undefined>;
   microphone: Accessor<Microphone>;
   /** The mic's colour as a CSS variable. */
