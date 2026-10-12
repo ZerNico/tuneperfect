@@ -1,57 +1,102 @@
 import { createEffect, on, onCleanup } from "solid-js";
 
+import { getAudioContext } from "~/lib/audio/context";
+import { normalizationGain } from "~/lib/audio/loudness";
+import { createLoudnessMeter } from "~/lib/audio/loudness-meter";
+
 /** Fade in when a sample starts, out when it's deselected. */
-const FADE_MS = 300;
+const FADE_S = 0.3;
+/**
+ * Where an unmeasured sample starts: the median ReplayGain of songs downloaded from USDB,
+ * whose samples are mastered just as loud.
+ */
+const DEFAULT_GAIN = 10 ** (-8 / 20);
+const BLOCK_MS = 100;
+/** Measured long enough to correct the starting gain (2 s)… */
+const FIRST_ESTIMATE_BLOCKS = 20;
+/** …and to settle on it (6 s). */
+const FINAL_BLOCKS = 60;
+/** Glides to a new estimate instead of jumping, so the correction is hard to hear. */
+const GLIDE_TIME_CONSTANT_S = 0.6;
+
+/** Gains measured this session, by sample URL, so a revisited sample starts right away. */
+const measuredGains = new Map<string, number>();
 
 interface SamplePlayerProps {
   url: string | null;
   playing: boolean;
-  /** 0–1, before the fade. */
+  /** 0–1. */
   volume: number;
 }
 
 /**
- * Plays a short audio sample, fading it in and out, once through. Renders nothing: the
- * audio element doesn't need to be in the document.
+ * Plays a short audio sample once through, fading it in and out. Renders nothing: the audio
+ * element doesn't need to be in the document.
  *
- * Volume goes straight to the element rather than through Web Audio, so the sample needs no
- * CORS and the element can be dropped without leaking a media source node.
+ * Samples are normalized like the local songs' ReplayGain, but measured while they stream:
+ * the sample starts at a typical gain, and glides to its own once a few seconds are measured.
  */
 export default function SamplePlayer(props: SamplePlayerProps) {
+  const context = getAudioContext();
   const audio = new Audio();
   audio.preload = "auto";
+  // Web Audio only hears cross-origin media loaded with CORS; `media://` allows the app.
+  audio.crossOrigin = "anonymous";
   // Dead links are routine in the catalog; the main process logs why a sample was refused.
   audio.addEventListener("error", () => console.debug("Sample failed to load:", audio.error?.message));
 
-  let fade = 0;
-  let frame: number | undefined;
+  const source = context.createMediaElementSource(audio);
+  const normalization = new GainNode(context, { gain: DEFAULT_GAIN });
+  const fade = new GainNode(context, { gain: 0 });
+  // Set by the volume effect below.
+  const volume = new GainNode(context, { gain: 0 });
+  source.connect(normalization).connect(fade).connect(volume).connect(context.destination);
+  // Measures before any gain, so neither the fades nor the volume setting skew it.
+  const meter = createLoudnessMeter(context, source);
 
-  const applyVolume = () => {
-    audio.volume = Math.min(1, Math.max(0, props.volume * fade));
+  let measuring: ReturnType<typeof setInterval> | undefined;
+  let fadeDone: ReturnType<typeof setTimeout> | undefined;
+
+  const stopMeasuring = () => {
+    clearInterval(measuring);
+    measuring = undefined;
   };
 
-  const rampTo = (target: number, then?: () => void) => {
-    if (frame !== undefined) cancelAnimationFrame(frame);
-    const from = fade;
-    const start = performance.now();
-    const step = (now: number) => {
-      const progress = Math.min(1, (now - start) / FADE_MS);
-      fade = from + (target - from) * progress;
-      applyVolume();
-      if (progress < 1) {
-        frame = requestAnimationFrame(step);
-      } else {
-        frame = undefined;
-        then?.();
+  const measure = (url: string) => {
+    stopMeasuring();
+    if (measuredGains.has(url)) return;
+    meter.reset();
+    measuring = setInterval(() => {
+      if (audio.paused) return;
+      meter.sample();
+      // Re-estimated every half second until it settles.
+      if (meter.blocks < FIRST_ESTIMATE_BLOCKS || meter.blocks % 5 !== 0) return;
+      const lufs = meter.loudness();
+      if (lufs === null) return;
+
+      const gain = normalizationGain(lufs);
+      normalization.gain.setTargetAtTime(gain, context.currentTime, GLIDE_TIME_CONSTANT_S);
+      if (meter.blocks >= FINAL_BLOCKS) {
+        measuredGains.set(url, gain);
+        stopMeasuring();
       }
-    };
-    frame = requestAnimationFrame(step);
+    }, BLOCK_MS);
+  };
+
+  const fadeTo = (target: number, then?: () => void) => {
+    const now = context.currentTime;
+    fade.gain.cancelScheduledValues(now);
+    fade.gain.setValueAtTime(fade.gain.value, now);
+    fade.gain.linearRampToValueAtTime(target, now + FADE_S);
+    clearTimeout(fadeDone);
+    if (then) fadeDone = setTimeout(then, FADE_S * 1000);
   };
 
   const unload = () => {
-    if (frame !== undefined) cancelAnimationFrame(frame);
-    frame = undefined;
-    fade = 0;
+    clearTimeout(fadeDone);
+    stopMeasuring();
+    fade.gain.cancelScheduledValues(context.currentTime);
+    fade.gain.value = 0;
     audio.pause();
     // Clearing the source ends the request, which closes the upstream connection.
     audio.removeAttribute("src");
@@ -63,34 +108,47 @@ export default function SamplePlayer(props: SamplePlayerProps) {
       () => props.url,
       (url) => {
         unload();
-        if (url) audio.src = url;
+        if (!url) return;
+        normalization.gain.cancelScheduledValues(context.currentTime);
+        normalization.gain.value = measuredGains.get(url) ?? DEFAULT_GAIN;
+        audio.src = url;
       },
     ),
   );
 
   createEffect(
     on(
-      () => props.playing && !!props.url,
-      (playing) => {
-        if (playing) {
-          fade = 0;
-          applyVolume();
+      () => (props.playing ? props.url : null),
+      (url) => {
+        if (url) {
           // Resolves once audio is flowing, so the fade starts with the sound.
           audio.play().then(
-            () => rampTo(1),
+            () => {
+              fadeTo(1);
+              measure(url);
+            },
             // A newer source or a pause got in first.
             () => {},
           );
         } else if (!audio.paused) {
-          rampTo(0, () => audio.pause());
+          fadeTo(0, () => audio.pause());
         }
       },
     ),
   );
 
-  createEffect(on(() => props.volume, applyVolume));
+  createEffect(
+    on(
+      () => props.volume,
+      (value) => volume.gain.setTargetAtTime(value, context.currentTime, 0.02),
+    ),
+  );
 
-  onCleanup(unload);
+  onCleanup(() => {
+    unload();
+    meter.dispose();
+    for (const node of [source, normalization, fade, volume]) node.disconnect();
+  });
 
   return null;
 }
