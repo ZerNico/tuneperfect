@@ -34,7 +34,6 @@ export const nativeProcedures = {
   },
   pitch: {
     get: os.pitch.get.handler(({ input }) => native.getPitches(input.windowMs)),
-    levels: os.pitch.levels.handler(() => native.getAudioLevels()),
     stream: os.pitch.stream.handler(({ signal }) =>
       subscription<Float64Array>(signal, (emit) => {
         const id = native.subscribePitchFrames(emit);

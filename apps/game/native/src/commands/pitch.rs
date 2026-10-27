@@ -101,10 +101,6 @@ pub async fn get_pitches(window_ms: f32) -> Result<Vec<f32>, AppError> {
     per_slot(move |processor| processor.get_pitch(window_ms), -1.0).await
 }
 
-pub async fn get_audio_levels() -> Result<Vec<f32>, AppError> {
-    per_slot(|processor| processor.get_level(), 0.0).await
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -27,19 +27,34 @@ export function decodePitchBatch(batch: Float64Array): PitchBatch {
   return { sentAt: batch[0] ?? 0, frames };
 }
 
+/** How long to wait before subscribing again after the stream broke off, growing up to the max. */
+const RETRY_MS = 100;
+const MAX_RETRY_MS = 2000;
+
 /**
  * Receives the pitch stream until the returned function is called. Frames only come while a
- * recording runs, and the subscription carries over when it restarts.
+ * recording runs, and the subscription carries over when it restarts. If the stream breaks off,
+ * it's subscribed again: without it every beat would score as silence.
  */
 export function subscribePitchStream(onBatch: (batch: PitchBatch, receivedAt: number) => void): () => void {
   const controller = new AbortController();
+  const { signal } = controller;
 
   void (async () => {
-    try {
-      const stream = await native.pitch.stream(undefined, { signal: controller.signal });
-      for await (const batch of stream) onBatch(decodePitchBatch(batch), performance.now());
-    } catch (error) {
-      if (!controller.signal.aborted) console.warn("Pitch stream ended:", error);
+    let retryMs = RETRY_MS;
+    while (!signal.aborted) {
+      try {
+        const stream = await native.pitch.stream(undefined, { signal });
+        for await (const batch of stream) {
+          onBatch(decodePitchBatch(batch), performance.now());
+          retryMs = RETRY_MS;
+        }
+      } catch (error) {
+        if (signal.aborted) return;
+        console.warn("Pitch stream broke off, subscribing again:", error);
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryMs));
+      retryMs = Math.min(retryMs * 2, MAX_RETRY_MS);
     }
   })();
 

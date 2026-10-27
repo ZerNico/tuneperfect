@@ -31,6 +31,15 @@ describe("buildLaneTimeline", () => {
     ]);
   });
 
+  it("skips phrases without notes", () => {
+    const { notes, camera } = buildLaneTimeline(song, voice([], [note(0, 2, 60)], [], [note(8, 2, 62)]), {
+      rows: 16,
+      margin: 2,
+    });
+    expect(notes.map((n) => n.phrase)).toEqual([0, 1]);
+    expect(camera.centres.every(Number.isFinite)).toBe(true);
+  });
+
   it("draws a phrase an octave up or down when that's nearer the camera", () => {
     const { notes } = buildLaneTimeline(
       song,

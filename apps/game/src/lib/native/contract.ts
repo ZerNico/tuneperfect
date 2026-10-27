@@ -64,7 +64,6 @@ export const contract = {
   pitch: {
     /** Pitch in Hz per microphone over the last `windowMs`; `-1` where there is none. */
     get: base.input(v.object({ windowMs: v.number() })).output(type<number[]>()),
-    levels: base.output(type<number[]>()),
     /**
      * Pitch frames while recording, about every 18 ms: `[sentMs, count, (mic, timeMs, hz, level) × count]`,
      * times on the audio clock, `hz` -1 without a pitch. Decode with `~/lib/audio/pitch-stream`.

@@ -27,9 +27,10 @@ export function createSimulatedLivePitch(singer: SimulatedSinger, delays: number
   return {
     timeline: (mic) => timelines[mic],
     frame: (_perfMs, songMs, playing) => {
-      if (!playing || last === undefined || songMs < last || songMs - last > 1000) {
+      if (!playing) return;
+      if (last === undefined || songMs < last || songMs - last > 1000) {
         for (const timeline of timelines) timeline.clear();
-        last = playing ? songMs : undefined;
+        last = songMs;
         return;
       }
       for (let time = last + SIMULATED_FRAME_MS; time <= songMs; time += SIMULATED_FRAME_MS) {
@@ -45,8 +46,8 @@ export function createSimulatedLivePitch(singer: SimulatedSinger, delays: number
 
 /**
  * The live pitch stream, placed in song time: each frame lands where it was sung (its capture
- * time, through the delivery clock and the song clock). A seek or a pause starts the timelines
- * over, since frames from before it would land in the wrong place.
+ * time, through the delivery clock and the song clock). A seek starts the timelines over, since
+ * frames from before it would land in the wrong place.
  */
 export function createLivePitch(): LivePitch {
   const songClock = new SongClock();

@@ -8,7 +8,7 @@ import { type CameraPlan, planCamera, visiblePitches } from "./camera";
 /** A note placed on the scrolling lane. */
 export interface LaneNote {
   note: Note;
-  /** Index of the phrase it belongs to. */
+  /** Index of the phrase it belongs to, among the phrases with notes. */
   phrase: number;
   startMs: number;
   endMs: number;
@@ -30,7 +30,9 @@ export interface LaneTimeline {
  * phrases outside the medley just never come into view.
  */
 export function buildLaneTimeline(song: Song, voice: Voice, options: { rows: number; margin: number }): LaneTimeline {
-  const placed = voice.phrases.map((phrase) =>
+  // A line break with no notes before it makes an empty phrase, which has no place or pitch.
+  const phrases = voice.phrases.filter((phrase) => phrase.notes.length > 0);
+  const placed = phrases.map((phrase) =>
     phrase.notes.map((note) => ({
       note,
       startMs: beatToMs(song, note.startBeat),
@@ -44,8 +46,8 @@ export function buildLaneTimeline(song: Song, voice: Voice, options: { rows: num
     const drawn = notes.some((n) => !n.freestyle) ? notes.filter((n) => !n.freestyle) : notes;
     const pitches = drawn.map((n) => n.note.midiNote);
     return {
-      startMs: notes[0]?.startMs ?? 0,
-      endMs: notes.at(-1)?.endMs ?? 0,
+      startMs: notes[0]!.startMs,
+      endMs: notes.at(-1)!.endMs,
       low: Math.min(...pitches),
       high: Math.max(...pitches),
     };

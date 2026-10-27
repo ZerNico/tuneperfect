@@ -179,12 +179,24 @@ export default function ScrollingLane() {
     [],
     { equals: (a, b) => a === b },
   );
-  const shownFills = createMemo(() => {
+  // Groups are in beat order, so the ones still on screen are a tail of them: only a new first
+  // one or a new group changes what's shown, not every frame.
+  const firstShownFill = createMemo(() => {
     const song = game.song();
-    if (!song) return [];
-    const now = game.ms();
-    return fills().filter((group) => beatToMs(song, group.beat + group.length) >= now - BEHIND_MS - OVERSCAN_MS);
+    if (!song) return 0;
+    const from = game.ms() - BEHIND_MS - OVERSCAN_MS;
+    const groups = fills();
+    let low = 0;
+    let high = groups.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      const group = groups[mid]!;
+      if (beatToMs(song, group.beat + group.length) >= from) high = mid;
+      else low = mid + 1;
+    }
+    return low;
   });
+  const shownFills = createMemo(() => fills().slice(firstShownFill()));
 
   // Everything that moves each frame.
   const tolerance = getGapTolerance(settingsStore.general().difficulty);

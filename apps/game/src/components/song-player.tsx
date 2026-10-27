@@ -31,8 +31,8 @@ interface SongPlayerProps {
   useFades?: boolean;
   preferInstrumental?: boolean;
   /**
-   * Report a smoothed time: an audio element's position stalls for a frame and then jumps,
-   * which a scrolling lane shows as judder.
+   * Report a smoothed time: an audio element's position stalls for a frame and then jumps, which a
+   * scrolling lane shows as judder and which would place pitch frames unevenly in song time.
    */
   smoothTime?: boolean;
 }

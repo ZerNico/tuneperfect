@@ -49,8 +49,7 @@ async function main() {
     const started = performance.now();
     const pitches = await native.getPitches(100);
     timings.push(performance.now() - started);
-    const levels = await native.getAudioLevels();
-    console.log(`level ${levels[0]?.toFixed(4)}  pitch ${pitches[0]?.toFixed(1)} Hz`);
+    console.log(`pitch ${pitches[0]?.toFixed(1)} Hz`);
   }
   await native.stopRecording();
 

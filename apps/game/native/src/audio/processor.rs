@@ -35,12 +35,13 @@ pub struct AudioInput {
 
 impl AudioInput {
     pub fn push_audio_data(&mut self, data: &[f32]) {
+        // Stamped before the samples go in: whoever drains them sees this time or a later one.
+        self.last_push_ns.store(now_ns(), Ordering::Release);
         for &sample in data {
             let _ = self
                 .producer
                 .try_push((sample * self.gain).clamp(-1.0, 1.0));
         }
-        self.last_push_ns.store(now_ns(), Ordering::Release);
     }
 }
 
@@ -115,9 +116,6 @@ impl Processor {
     /// Move newly captured samples from the queue into the sliding window,
     /// dropping the oldest beyond `capacity`, and into the continuous analysis.
     fn drain_into_window(&mut self) {
-        // Read before draining: samples pushed meanwhile only make the frames look a
-        // callback older than they are, never newer.
-        let newest_ns = self.last_push_ns.load(Ordering::Acquire);
         let mut tmp = [0.0f32; 1024];
         loop {
             let n = self.consumer.pop_slice(&mut tmp);
@@ -128,7 +126,10 @@ impl Processor {
             self.analyzer.push(&tmp[..n], &mut self.new_frames);
         }
 
-        // Everything drained had arrived by `newest_ns`.
+        // Read after draining: everything drained had arrived by then. Samples pushed meanwhile
+        // only make the estimate later than the truth, which the sample clock ignores (it keeps
+        // the earliest), never earlier, which it would keep.
+        let newest_ns = self.last_push_ns.load(Ordering::Acquire);
         let total = self.analyzer.total();
         if total > 0 {
             self.sample_clock
@@ -219,20 +220,6 @@ impl Processor {
         }
 
         median(&mut pitches)
-    }
-
-    /// Peak level of the most recent window, for the audio-level meter.
-    pub fn get_level(&mut self) -> f32 {
-        self.drain_into_window();
-
-        let window_size = MAX_PITCH_SAMPLES.min(self.window.len());
-        if window_size == 0 {
-            return 0.0;
-        }
-        let start = self.window.len() - window_size;
-        self.window[start..]
-            .iter()
-            .fold(0.0f32, |max, &s| max.max(s.abs()))
     }
 
     fn window_samples(&self, window_ms: f32) -> usize {

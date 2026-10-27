@@ -117,11 +117,6 @@ pub async fn get_pitches(window_ms: f64) -> Result<Vec<f64>> {
     Ok(widen(pitch::get_pitches(window_ms as f32).await?))
 }
 
-#[napi]
-pub async fn get_audio_levels() -> Result<Vec<f64>> {
-    Ok(widen(pitch::get_audio_levels().await?))
-}
-
 /// Streams pitch frames while recording: `on_batch` receives
 /// `[sentMs, count, (mic, timeMs, hz, level) × count]` about every 18 ms, times on the audio
 /// clock (hz is -1 without a pitch). Returns an id for `unsubscribePitchFrames`.
