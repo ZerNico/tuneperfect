@@ -1,20 +1,15 @@
 import { Key } from "@solid-primitives/keyed";
-import { createMemo, For, Show } from "solid-js";
+import { createMemo, For } from "solid-js";
 
-import { effectsEnabled } from "~/lib/fx";
 import { useGame } from "~/lib/game/game-context";
 import { noteRow, sungNoteRow } from "~/lib/game/note-rows";
-import { getGapTolerance } from "~/lib/game/pitch";
 import { type ProcessedBeat, usePlayer } from "~/lib/game/player-context";
 import { addProcessedBeat, type ProcessedNoteGroup } from "~/lib/game/processed-notes";
-import { t } from "~/lib/i18n";
-import { isGolden, isRap, type Note } from "~/lib/ultrastar/note";
+import type { Note } from "~/lib/ultrastar/note";
 import type { Phrase } from "~/lib/ultrastar/phrase";
-import { clamp } from "~/lib/utils/math";
-import { settingsStore } from "~/stores/settings";
 
-/** Clip for a completely filled bar. */
-const FULL_FILL = "none";
+import NoteBar from "./note-bar";
+import SungFill from "./sung-fill";
 
 export default function Pitch() {
   const game = useGame();
@@ -156,46 +151,7 @@ interface PitchNoteProps {
   column: number;
 }
 
-function SparkleParticles(props: { length: number }) {
-  // Scale particles based on note length: base 4 particles + 2 per beat, capped at 16
-  const particleCount = createMemo(() => Math.min(4 + Math.floor(props.length * 2), 16));
-
-  // Generate random particles with different delays and positions
-  // oxlint-disable-next-line solid/reactivity
-  const particles = Array.from({ length: particleCount() }, (_, i) => ({
-    id: i,
-    delay: Math.random() * 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 0.3 + 0.2, // 0.2 to 0.5
-    duration: Math.random() * 1.5 + 1.5, // 1.5 to 3 seconds
-  }));
-
-  return (
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <For each={particles}>
-        {(particle) => (
-          <div
-            class="absolute animate-sparkle rounded-full bg-yellow-300 opacity-0"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              width: `${particle.size}cqw`,
-              height: `${particle.size}cqw`,
-              "animation-delay": `${particle.delay}s`,
-              "animation-duration": `${particle.duration}s`,
-              "box-shadow": "0 0 0.2cqw rgba(251, 191, 36, 0.8)",
-            }}
-          />
-        )}
-      </For>
-    </div>
-  );
-}
-
 function PitchNote(props: PitchNoteProps) {
-  const golden = () => isGolden(props.note);
-
   return (
     <div
       class="relative"
@@ -205,19 +161,7 @@ function PitchNote(props: PitchNoteProps) {
       }}
     >
       <div class="relative h-2/1 w-full -translate-y-1/4 transform">
-        {/* One outline, no shadow (a blurred one turns into a grey haze on light videos). */}
-        <div
-          class="relative h-full w-full overflow-hidden rounded-full border-[0.22cqw] transition-opacity duration-300"
-          classList={{
-            "border-yellow-300 bg-yellow-300/25": golden(),
-            "border-white bg-black/35": !golden(),
-            "border-dashed": isRap(props.note),
-          }}
-        >
-          <Show when={golden() && effectsEnabled()}>
-            <SparkleParticles length={props.note.length} />
-          </Show>
-        </div>
+        <NoteBar note={props.note} />
       </div>
     </div>
   );
@@ -236,97 +180,6 @@ interface ProcessedNoteProps {
 }
 
 function ProcessedNote(props: ProcessedNoteProps) {
-  // The initial delayed beat acts as the fixed start reference for this note fill animation.
-  // oxlint-disable-next-line solid/reactivity
-  const firstBeat = props.delayedBeat;
-
-  // How much of the bar is filled, as a clip-path so it repaints without layout. The first beat
-  // grows with a flat edge, then the rounded end follows. A full bar stops following the beat
-  // until it grows by another beat.
-  let fillLength = 0;
-  const fillClip = createMemo((previous: string) => {
-    const length = props.length;
-    if (previous === FULL_FILL && length === fillLength) {
-      return previous;
-    }
-    fillLength = length;
-
-    const elapsed = props.delayedBeat - firstBeat;
-    const filled = clamp((elapsed / length) * 100, 0, 100);
-
-    if (elapsed <= 1) {
-      // One beat's width, revealed by the share filled so far.
-      const visible = filled / length;
-      return visible >= 100 ? FULL_FILL : `inset(0 ${100 - visible}% 0 0)`;
-    }
-
-    return filled >= 100 ? FULL_FILL : `inset(0 ${100 - filled}% 0 0 round 9999px)`;
-  }, "");
-
-  const calculateAccuracyPosition = (rawMidi: number, targetMidi: number): number => {
-    const tolerance = getGapTolerance(settingsStore.general().difficulty);
-
-    let adjustedRawMidi = rawMidi;
-
-    while (adjustedRawMidi > targetMidi + 6) {
-      adjustedRawMidi -= 12;
-    }
-    while (adjustedRawMidi < targetMidi - 6) {
-      adjustedRawMidi += 12;
-    }
-
-    const diff = adjustedRawMidi - targetMidi;
-
-    const normalized = clamp(diff / tolerance, -1, 1);
-
-    return 50 - normalized * 50;
-  };
-
-  const points = createMemo(() => {
-    if (!isRap(props.note) && props.sungMidiNote !== props.note.midiNote) {
-      return [];
-    }
-
-    const targetMidi = props.note.midiNote;
-
-    return props.rawMidiNotes.map((rawMidi, i) => ({
-      x: i + 0.5,
-      y: calculateAccuracyPosition(rawMidi, targetMidi),
-    }));
-  });
-
-  const accuracyLine = createMemo(() => {
-    const currentPoints = points();
-    if (currentPoints.length === 0) return null;
-
-    const first = currentPoints[0];
-    if (!first) return null;
-
-    let d = `M 0 ${first.y} L ${first.x} ${first.y}`;
-
-    for (let i = 1; i < currentPoints.length; i++) {
-      const p0 = currentPoints[i - 1];
-      const p1 = currentPoints[i];
-
-      if (!p0 || !p1) continue;
-
-      const midX = (p0.x + p1.x) / 2;
-      const cp1x = midX;
-      const cp1y = p0.y;
-      const cp2x = midX;
-      const cp2y = p1.y;
-
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
-    }
-
-    const last = currentPoints.at(-1);
-    if (last) {
-      d += ` L ${props.rawMidiNotes.length} ${last.y}`;
-    }
-
-    return d;
-  });
-
   return (
     <div
       class="relative min-w-0"
@@ -335,38 +188,15 @@ function ProcessedNote(props: ProcessedNoteProps) {
         "grid-column": `${props.column} / span ${props.length}`,
       }}
     >
-      {/* Outline (0.22cqw) + a 0.2cqw gap before the sung fill. */}
-      <div class="absolute h-2/1 w-full -translate-y-1/4 transform p-[0.42cqw]">
-        <div class="relative h-full w-full">
-          <div
-            style={{
-              "clip-path": fillClip(),
-              "background-color": props.micColor,
-            }}
-            class="relative h-full w-full overflow-hidden rounded-full"
-          >
-            <Show when={accuracyLine()}>
-              {(accuracyLine) => (
-                <svg
-                  class="absolute top-0 left-0 h-full w-full overflow-visible"
-                  viewBox={`0 0 ${props.length} 100`}
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <title>{t("game.pitchAccuracy")}</title>
-                  <path
-                    d={accuracyLine()}
-                    stroke="white"
-                    stroke-width="2"
-                    fill="none"
-                    opacity="0.4"
-                    vector-effect="non-scaling-stroke"
-                  />
-                </svg>
-              )}
-            </Show>
-          </div>
-        </div>
+      <div class="absolute h-2/1 w-full -translate-y-1/4 transform">
+        <SungFill
+          note={props.note}
+          length={props.length}
+          delayedBeat={props.delayedBeat}
+          micColor={props.micColor}
+          rawMidiNotes={props.rawMidiNotes}
+          sungMidiNote={props.sungMidiNote}
+        />
       </div>
     </div>
   );

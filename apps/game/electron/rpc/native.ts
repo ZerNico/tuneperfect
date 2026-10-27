@@ -5,7 +5,7 @@ import type { ParseSongsEvent, UsdbCatalogEvent } from "../../src/lib/native/con
 import { SONG_FILES_BASE_URL } from "../../src/lib/native/media";
 import type { SongGroup, UsdbSearchEntry } from "../../src/lib/native/types.gen";
 import { native } from "../native";
-import { os, stream } from "./base";
+import { os, stream, subscription } from "./base";
 
 /**
  * macOS attributes microphone access to the app bundle. Asking explicitly shows the
@@ -34,7 +34,12 @@ export const nativeProcedures = {
   },
   pitch: {
     get: os.pitch.get.handler(({ input }) => native.getPitches(input.windowMs)),
-    levels: os.pitch.levels.handler(() => native.getAudioLevels()),
+    stream: os.pitch.stream.handler(({ signal }) =>
+      subscription<Float64Array>(signal, (emit) => {
+        const id = native.subscribePitchFrames(emit);
+        return () => native.unsubscribePitchFrames(id);
+      }),
+    ),
   },
   songs: {
     parse: os.songs.parse.handler(({ input }) =>

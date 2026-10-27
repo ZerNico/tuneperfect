@@ -219,6 +219,11 @@ const en = {
           coverflow: "Coverflow",
           grid: "Grid",
         },
+        singingView: "Singing View",
+        singingViewOptions: {
+          classic: "Classic",
+          scrolling: "Scrolling",
+        },
         visualEffects: "Visual Effects",
         visualEffectsOptions: {
           full: "Full",

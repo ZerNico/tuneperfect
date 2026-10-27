@@ -1,9 +1,14 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
+
 use dywapitchtrack::DywaPitchTracker;
 use ringbuf::{
     traits::{Consumer, Producer, Split},
     HeapCons, HeapProd, HeapRb,
 };
 
+use super::analysis::{Analyzer, Frame};
+use super::clock::{now_ns, SampleClock};
 use super::types::MicrophoneOptions;
 
 /// Window size for a single pitch computation, decoupled from song BPM.
@@ -24,16 +29,28 @@ const WINDOW_HEADROOM_SAMPLES: usize = 4096;
 pub struct AudioInput {
     producer: HeapProd<f32>,
     gain: f32,
+    /// When the newest samples arrived ([`now_ns`]), for timing the frames made from them.
+    last_push_ns: Arc<AtomicU64>,
 }
 
 impl AudioInput {
     pub fn push_audio_data(&mut self, data: &[f32]) {
+        // Stamped before the samples go in: whoever drains them sees this time or a later one.
+        self.last_push_ns.store(now_ns(), Ordering::Release);
         for &sample in data {
             let _ = self
                 .producer
                 .try_push((sample * self.gain).clamp(-1.0, 1.0));
         }
     }
+}
+
+/// A [`Frame`] placed in time: when its last sample was captured, on the [`now_ns`] clock.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TimedFrame {
+    pub time_ns: u64,
+    pub hz: f32,
+    pub level: f32,
 }
 
 pub struct Processor {
@@ -44,6 +61,15 @@ pub struct Processor {
     pitchtracker: DywaPitchTracker,
     options: MicrophoneOptions,
     sample_rate: u32,
+    /// Analyses everything drained, continuously (see [`Processor::take_frames`]).
+    analyzer: Analyzer,
+    frames: Vec<TimedFrame>,
+    last_push_ns: Arc<AtomicU64>,
+    /// Times the frames from the sample count, smoothing out callback jitter.
+    sample_clock: SampleClock,
+    last_frame_ns: u64,
+    /// Scratch for the frames one drain completes.
+    new_frames: Vec<Frame>,
 }
 
 impl Processor {
@@ -61,23 +87,34 @@ impl Processor {
         pitchtracker.sample_rate_hz = sample_rate as i32;
 
         let gain = options.gain;
+        let last_push_ns = Arc::new(AtomicU64::new(now_ns()));
 
         let processor = Self {
             consumer,
             window: Vec::with_capacity(capacity),
             capacity,
             pitchtracker,
+            analyzer: Analyzer::new(sample_rate, options.threshold),
             options,
             sample_rate,
+            frames: Vec::new(),
+            last_push_ns: last_push_ns.clone(),
+            sample_clock: SampleClock::default(),
+            last_frame_ns: 0,
+            new_frames: Vec::new(),
         };
 
-        let input = AudioInput { producer, gain };
+        let input = AudioInput {
+            producer,
+            gain,
+            last_push_ns,
+        };
 
         (processor, input)
     }
 
     /// Move newly captured samples from the queue into the sliding window,
-    /// dropping the oldest beyond `capacity`.
+    /// dropping the oldest beyond `capacity`, and into the continuous analysis.
     fn drain_into_window(&mut self) {
         let mut tmp = [0.0f32; 1024];
         loop {
@@ -86,12 +123,43 @@ impl Processor {
                 break;
             }
             self.window.extend_from_slice(&tmp[..n]);
+            self.analyzer.push(&tmp[..n], &mut self.new_frames);
+        }
+
+        // Read after draining: everything drained had arrived by then. Samples pushed meanwhile
+        // only make the estimate later than the truth, which the sample clock ignores (it keeps
+        // the earliest), never earlier, which it would keep.
+        let newest_ns = self.last_push_ns.load(Ordering::Acquire);
+        let total = self.analyzer.total();
+        if total > 0 {
+            self.sample_clock
+                .observe(newest_ns, total, self.sample_rate);
+        }
+        for frame in self.new_frames.drain(..) {
+            // The estimate only ever moves earlier by a little; never let a frame go back in time.
+            let time_ns = self
+                .sample_clock
+                .time_of(frame.end_sample, self.sample_rate)
+                .max(self.last_frame_ns + 1);
+            self.last_frame_ns = time_ns;
+            self.frames.push(TimedFrame {
+                time_ns,
+                hz: frame.hz,
+                level: frame.level,
+            });
         }
 
         if self.window.len() > self.capacity {
             let excess = self.window.len() - self.capacity;
             self.window.drain(0..excess);
         }
+    }
+
+    /// Frames analysed since the last call, oldest first. Called regularly by the analysis
+    /// worker, which also keeps the queue from overflowing between beats.
+    pub fn take_frames(&mut self, out: &mut Vec<TimedFrame>) {
+        self.drain_into_window();
+        out.append(&mut self.frames);
     }
 
     /// Median detected frequency (Hz) over the last `window_ms`, or `-1.0` if
@@ -152,20 +220,6 @@ impl Processor {
         }
 
         median(&mut pitches)
-    }
-
-    /// Peak level of the most recent window, for the audio-level meter.
-    pub fn get_level(&mut self) -> f32 {
-        self.drain_into_window();
-
-        let window_size = MAX_PITCH_SAMPLES.min(self.window.len());
-        if window_size == 0 {
-            return 0.0;
-        }
-        let start = self.window.len() - window_size;
-        self.window[start..]
-            .iter()
-            .fold(0.0f32, |max, &s| max.max(s.abs()))
     }
 
     fn window_samples(&self, window_ms: f32) -> usize {

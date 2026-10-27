@@ -1,11 +1,27 @@
 /** Without a new sample for this long, the source has likely stopped answering: stop extrapolating. */
 const MAX_INTERPOLATION_MS = 1000;
-/** Further off than this, the clock jumps to the sample (a seek, a stall): drifting there would take too long. */
-const SNAP_S = 0.3;
-/** Smaller differences are worked off over about this long… */
-const CORRECTION_S = 0.5;
-/** …running at most this much faster or slower than real time, which nobody notices. */
-const MAX_RATE_CHANGE = 0.25;
+
+export interface PlaybackClockTuning {
+  /** Further off than this, in s, the clock jumps to the sample (a seek, a stall): drifting there would take too long. */
+  snapS: number;
+  /** Smaller differences are worked off over about this long, in s… */
+  correctionS: number;
+  /** …running at most this much faster or slower than real time. */
+  maxRateChange: number;
+}
+
+/**
+ * For a source that reports a few times a second and unevenly at first, like the YouTube embed:
+ * generous, since the samples themselves are rough.
+ */
+export const SPARSE_SOURCE: PlaybackClockTuning = { snapS: 0.3, correctionS: 0.5, maxRateChange: 0.25 };
+
+/**
+ * For a source read every frame whose time advances in small steps, like an audio element
+ * (whose position stalls for a frame and then jumps by up to ~10 ms): tight, so the clock stays
+ * within a few ms of it and only the steps are smoothed away.
+ */
+export const STEPPED_SOURCE: PlaybackClockTuning = { snapS: 0.12, correctionS: 0.3, maxRateChange: 0.05 };
 
 /**
  * The position of a player that only reports it now and then (the YouTube embed, about 4 times
@@ -24,7 +40,10 @@ export class PlaybackClock {
   /** When the source last reported, to stop extrapolating when it goes quiet. */
   private sampledAt = 0;
 
-  constructor(private readonly now: () => number = () => performance.now()) {}
+  constructor(
+    private readonly now: () => number = () => performance.now(),
+    private readonly tuning: PlaybackClockTuning = SPARSE_SOURCE,
+  ) {}
 
   /** A position the source just reported. Samples are posted when its clock advanced, so they're current. */
   sample(time: number) {
@@ -32,12 +51,15 @@ export class PlaybackClock {
     this.sampledAt = now;
 
     const error = time - this.position();
-    if (!this.running || Math.abs(error) > SNAP_S) {
+    if (!this.running || Math.abs(error) > this.tuning.snapS) {
       this.rebase(time, 1);
       return;
     }
 
-    const change = Math.max(-MAX_RATE_CHANGE, Math.min(MAX_RATE_CHANGE, error / CORRECTION_S));
+    const change = Math.max(
+      -this.tuning.maxRateChange,
+      Math.min(this.tuning.maxRateChange, error / this.tuning.correctionS),
+    );
     this.rebase(this.position(), 1 + change);
   }
 

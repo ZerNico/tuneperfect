@@ -117,9 +117,33 @@ pub async fn get_pitches(window_ms: f64) -> Result<Vec<f64>> {
     Ok(widen(pitch::get_pitches(window_ms as f32).await?))
 }
 
+/// Streams pitch frames while recording: `on_batch` receives
+/// `[sentMs, count, (mic, timeMs, hz, level) × count]` about every 18 ms, times on the audio
+/// clock (hz is -1 without a pitch). Returns an id for `unsubscribePitchFrames`.
 #[napi]
-pub async fn get_audio_levels() -> Result<Vec<f64>> {
-    Ok(widen(pitch::get_audio_levels().await?))
+pub fn subscribe_pitch_frames(
+    #[napi(ts_arg_type = "(batch: Float64Array) => void")] on_batch: ThreadsafeFunction<
+        Float64Array,
+        (),
+        Float64Array,
+        Status,
+        false,
+        true,
+    >,
+) -> u32 {
+    state()
+        .pitch_sinks
+        .subscribe(Arc::new(move |batch: Vec<f64>| {
+            on_batch.call(
+                Float64Array::new(batch),
+                ThreadsafeFunctionCallMode::NonBlocking,
+            );
+        }))
+}
+
+#[napi]
+pub fn unsubscribe_pitch_frames(id: u32) {
+    state().pitch_sinks.unsubscribe(id);
 }
 
 /// A scanned library (see `songs::ParsedLibrary`). `groups` are `SongGroup`s.

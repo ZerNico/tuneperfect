@@ -1,9 +1,9 @@
 import createRAF from "@solid-primitives/raf";
-import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX, untrack } from "solid-js";
+import { type Accessor, batch, createEffect, createMemo, createSignal, type JSX, onCleanup, untrack } from "solid-js";
 
 import type { SongPlayerRef } from "~/components/song-player";
 import { native } from "~/lib/native/client";
-import { logPerfReport, pauseFrames, recordFrame, timeCall } from "~/lib/perf";
+import { logPerfReport, pauseFrames, recordClock, recordFrame, timeCall } from "~/lib/perf";
 import { beatToMs, beatToMsWithoutGap, msToBeat, msToBeatWithoutGap } from "~/lib/ultrastar/bpm";
 import type { Song } from "~/lib/ultrastar/song";
 import { tryCatch } from "~/lib/utils/try-catch";
@@ -11,6 +11,10 @@ import { createEmptyStats, type PlayerStats, roundStore, type Score } from "~/st
 import { settingsStore } from "~/stores/settings";
 
 import { GameContext, type GameContextValue } from "./game-context";
+import { createLivePitch, createSimulatedLivePitch } from "./live-pitch";
+import { STREAM_TIMEOUT_MS } from "./score-loop";
+import { compareScoringEnabled } from "./scoring-comparison";
+import { createSimulatedSinger, simulatedSingerAccuracy } from "./simulated-singer";
 
 export interface CreateGameOptions {
   songPlayerRef?: SongPlayerRef;
@@ -37,6 +41,27 @@ export function createGame(options: Accessor<CreateGameOptions>) {
   const [pitches, setPitches] = createSignal<(number | null)[]>([]);
 
   const [finishing, setFinishing] = createSignal(false);
+
+  const players = () => roundStore.settings()?.songs[0]?.players ?? [];
+
+  // Development: a fake singer instead of the microphones (the dev playground turns it on).
+  const simulatedSinger = untrack(() => {
+    const accuracy = simulatedSingerAccuracy();
+    const current = options().song;
+    if (accuracy === undefined || !current) return undefined;
+    return createSimulatedSinger(
+      current,
+      players().map((p) => current.voices[p?.voice ?? 0]),
+      accuracy,
+    );
+  });
+  const delays = () => players().map((p) => p?.microphone.delay ?? 0);
+
+  // The voice, live from the pitch stream: scoring and the scrolling view read it.
+  const livePitch = simulatedSinger ? createSimulatedLivePitch(simulatedSinger, untrack(delays)) : createLivePitch();
+  onCleanup(() => livePitch.dispose());
+  // Development: the per-beat pitch requests scoring used before, scored on the side to compare.
+  const comparingScoring = compareScoringEnabled();
 
   // Recording is started and stopped across the Electron boundary, so the screen can leave while
   // `start` is still in flight. Only `stop` tears down: it waits for the start and stops the
@@ -92,12 +117,15 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const current = untrack(song);
     if (!current || !untrack(started) || untrack(finishing)) return;
 
-    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + 50;
+    // The stream's frames arrive a little after they were sung, so that's waited for too.
+    const tailMs = Math.max(0, ...untrack(micDelays)) + beatToMsWithoutGap(current, 1) + STREAM_TIMEOUT_MS;
     await new Promise((resolve) => setTimeout(resolve, tailMs));
-    const [error, result] = await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }));
+    const last = comparingScoring
+      ? await tryCatch(native.pitch.get({ windowMs: beatToMsWithoutGap(current, 1) }))
+      : undefined;
     batch(() => {
       setFinishing(true);
-      if (!error) setPitches(result);
+      if (last && !last[0]) setPitches(last[1]);
     });
   };
 
@@ -189,6 +217,8 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     const outputLatency = settingsStore.general().outputLatency;
     const ms = currentTime * 1000 - outputLatency;
     const beat = msToBeat(opts.song, ms);
+    recordClock(ms);
+    livePitch.frame(performance.now(), ms, true);
 
     batch(() => {
       setMs(ms);
@@ -200,49 +230,55 @@ export function createGame(options: Accessor<CreateGameOptions>) {
 
   const song = createMemo(() => options().song);
 
-  // Each player scores a beat once it has finished in their mic's delayed time, so a pitch is
-  // requested whenever one of those delayed beats ticks over: once per beat when all mics share a
-  // delay, instead of once per frame. Summing the floored beats changes whenever any of them does.
+  /** The players' distinct mic delays. */
   const micDelays = createMemo(
     () => [...new Set(roundStore.settings()?.songs[0]?.players.map((p) => p?.microphone.delay ?? 0) ?? [0])],
     [],
     { equals: (a, b) => a.length === b.length && a.every((delay, i) => delay === b[i]) },
   );
-  const pitchTick = createMemo(() => {
-    const s = song();
-    if (!s) return 0;
-    const b = beat();
-    let tick = 0;
-    for (const delay of micDelays()) tick += Math.floor(b - msToBeatWithoutGap(s, delay));
-    return tick;
-  });
+  if (comparingScoring) {
+    // The per-beat path, for comparison: each player scores a beat once it has finished in their
+    // mic's delayed time, so a pitch is requested whenever one of those delayed beats ticks over.
+    // Summing the floored beats changes whenever any of them does.
+    const pitchTick = createMemo(() => {
+      const s = song();
+      if (!s) return 0;
+      const b = beat();
+      let tick = 0;
+      for (const delay of micDelays()) tick += Math.floor(b - msToBeatWithoutGap(s, delay));
+      return tick;
+    });
 
-  // A slow response must not overwrite a newer one.
-  let latestPitchRequest = 0;
-  let appliedPitchRequest = 0;
+    // A slow response must not overwrite a newer one.
+    let latestPitchRequest = 0;
+    let appliedPitchRequest = 0;
 
-  createEffect(() => {
-    pitchTick();
-    if (!started() || !playing()) return;
+    createEffect(() => {
+      pitchTick();
+      if (!started() || !playing()) return;
 
-    const current = untrack(song);
-    if (!current) return;
+      const current = untrack(song);
+      if (!current) return;
 
-    // One beat as the analysis window; Rust converts to samples and clamps it.
-    const windowMs = beatToMsWithoutGap(current, 1);
+      // One beat as the analysis window; Rust converts to samples and clamps it.
+      const windowMs = beatToMsWithoutGap(current, 1);
 
-    const request = ++latestPitchRequest;
-    void (async () => {
-      try {
-        const result = await timeCall("getPitches", () => native.pitch.get({ windowMs }));
-        if (request < appliedPitchRequest) return;
-        appliedPitchRequest = request;
-        setPitches(result);
-      } catch (error) {
-        console.error("Failed to get pitches:", error);
-      }
-    })();
-  });
+      const request = ++latestPitchRequest;
+      void (async () => {
+        try {
+          const result = simulatedSinger
+            ? // The analysis covers the beat that just ended, so the singer is asked about its middle.
+              untrack(delays).map((delay, mic) => simulatedSinger.hzAt(mic, untrack(ms) - delay - windowMs / 2))
+            : await timeCall("getPitches", () => native.pitch.get({ windowMs }));
+          if (request < appliedPitchRequest) return;
+          appliedPitchRequest = request;
+          setPitches(result);
+        } catch (error) {
+          console.error("Failed to get pitches:", error);
+        }
+      })();
+    });
+  }
 
   createEffect(() => {
     if (!started()) {
@@ -254,6 +290,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     } else {
       stopLoop();
       pauseFrames();
+      livePitch.frame(performance.now(), untrack(ms), false);
     }
   });
 
@@ -309,6 +346,7 @@ export function createGame(options: Accessor<CreateGameOptions>) {
     pitches,
     playerCount,
     finishing,
+    pitchTimeline: livePitch.timeline,
   };
 
   const Provider = (props: { children: JSX.Element }) => (

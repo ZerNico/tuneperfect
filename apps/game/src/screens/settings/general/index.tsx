@@ -77,6 +77,13 @@ export default function GeneralSettingsScreen() {
       renderValue: (value) => t(`settings.sections.general.songSelectStyleOptions.${value as "coverflow" | "grid"}`),
     }),
     select({
+      label: t("settings.sections.general.singingView"),
+      value: () => general().singingView,
+      options: ["classic", "scrolling"],
+      onChange: (value) => setGeneral({ ...general(), singingView: value as "classic" | "scrolling" }),
+      renderValue: (value) => t(`settings.sections.general.singingViewOptions.${value as "classic" | "scrolling"}`),
+    }),
+    select({
       label: t("settings.sections.general.visualEffects"),
       value: () => general().visualEffects,
       options: ["full", "reduced"],

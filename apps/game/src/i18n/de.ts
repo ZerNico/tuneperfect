@@ -221,6 +221,11 @@ const de = {
           coverflow: "Coverflow",
           grid: "Raster",
         },
+        singingView: "Gesangsansicht",
+        singingViewOptions: {
+          classic: "Klassisch",
+          scrolling: "Scrollend",
+        },
         visualEffects: "Visuelle Effekte",
         visualEffectsOptions: {
           full: "Voll",

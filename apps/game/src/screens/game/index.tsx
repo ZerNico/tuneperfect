@@ -186,6 +186,7 @@ export default function GameScreen() {
                     when={isOnline()}
                     fallback={
                       <SongPlayer
+                        smoothTime
                         volume={settingsStore.getVolume("game")}
                         onCanPlayThrough={() => setCanPlayThrough(true)}
                         ref={setSongPlayerRef}

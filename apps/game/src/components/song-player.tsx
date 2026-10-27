@@ -4,6 +4,7 @@ import { createEffect, createMemo, createSignal, type JSX, on, onCleanup, onMoun
 import { getAudioContext } from "~/lib/audio/context";
 import { platform } from "~/lib/desktop";
 import { t } from "~/lib/i18n";
+import { PlaybackClock, STEPPED_SOURCE } from "~/lib/media/playback-clock";
 import { beatToMs } from "~/lib/ultrastar/bpm";
 import { findSmartPreviewPosition } from "~/lib/ultrastar/preview";
 import type { LocalSong } from "~/lib/ultrastar/song";
@@ -29,6 +30,11 @@ interface SongPlayerProps {
   mode?: "play" | "preview";
   useFades?: boolean;
   preferInstrumental?: boolean;
+  /**
+   * Report a smoothed time: an audio element's position stalls for a frame and then jumps, which a
+   * scrolling lane shows as judder and which would place pitch frames unevenly in song time.
+   */
+  smoothTime?: boolean;
 }
 
 const getMediaErrorMessage = (element: HTMLMediaElement): string => {
@@ -563,6 +569,9 @@ export default function SongPlayer(props: SongPlayerProps) {
     props.onError?.();
   };
 
+  const smoothClock = new PlaybackClock(undefined, STEPPED_SOURCE);
+  let lastRawTime = Number.NaN;
+
   createRefContent(
     () => props.ref,
     () => ({
@@ -570,7 +579,16 @@ export default function SongPlayer(props: SongPlayerProps) {
         const preserved = preservedTime();
         if (preserved !== undefined) return preserved;
 
-        return timeSource()?.currentTime ?? 0;
+        const source = timeSource();
+        const raw = source?.currentTime ?? 0;
+        if (!props.smoothTime) return raw;
+
+        smoothClock.setRunning(!!source && !source.paused);
+        if (raw !== lastRawTime) {
+          lastRawTime = raw;
+          smoothClock.sample(raw);
+        }
+        return smoothClock.position();
       },
       getDuration: () => {
         return timeSource()?.duration ?? 0;
@@ -583,6 +601,7 @@ export default function SongPlayer(props: SongPlayerProps) {
           setPreservedTime(time);
         }
 
+        smoothClock.seek(time);
         const hasVideo = videoActive();
 
         if (currentAudioUrl() && hasVideo) {

@@ -6,7 +6,7 @@ use std::{
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::{
-    audio::{processor::Processor, recorder::Recorder},
+    audio::{processor::Processor, recorder::Recorder, worker::PitchSinks},
     path_allowlist::PathAllowlist,
     usdb::client::UsdbClient,
 };
@@ -21,6 +21,8 @@ pub struct AppState {
     pub usdb_client: TokioMutex<Option<UsdbClient>>,
     /// Song folders the user granted access to. Gates song parsing and media serving.
     pub allowlist: PathAllowlist,
+    /// Subscribers to the live pitch stream (`subscribePitchFrames`).
+    pub pitch_sinks: PitchSinks,
 }
 
 static STATE: LazyLock<AppState> = LazyLock::new(|| {
@@ -31,6 +33,7 @@ static STATE: LazyLock<AppState> = LazyLock::new(|| {
         processors: Arc::new(RwLock::new(HashMap::new())),
         usdb_client: TokioMutex::new(None),
         allowlist: PathAllowlist::default(),
+        pitch_sinks: PitchSinks::default(),
     }
 });
 

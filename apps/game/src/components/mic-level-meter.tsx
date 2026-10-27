@@ -1,9 +1,9 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { createEffect, createSignal, on, onCleanup } from "solid-js";
 
+import { subscribePitchStream } from "~/lib/audio/pitch-stream";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
-import { timeCall } from "~/lib/perf";
 
 interface MicLevelMeterProps {
   /** Stable device ID. Preferred over `name` for selecting the device. */
@@ -109,24 +109,28 @@ export default function MicLevelMeter(props: MicLevelMeterProps) {
     return Math.max(0, Math.min(1, (db - minDb) / -minDb));
   };
 
-  // Smooth out the meter — jumps up instantly but falls off gradually
+  // Smooth out the meter: jumps up instantly but falls off gradually, by 15% every 50 ms.
   let peakHold = 0;
-  const decay = 0.85;
+  let lastBatchAt = 0;
+  const DECAY_PER_50_MS = 0.85;
 
+  // Levels come with the pitch stream, a batch about every 18 ms while recording.
   createEffect(() => {
     if (!active()) return;
 
-    const interval = setInterval(async () => {
-      const levels = await timeCall("getAudioLevels", () => native.pitch.levels()).catch(() => []);
-      const value = levels[0];
-      if (value !== undefined) {
-        const meter = ampToMeter(value);
-        peakHold = meter >= peakHold ? meter : peakHold * decay;
-        setLevel(peakHold);
-      }
-    }, 50);
+    const unsubscribe = subscribePitchStream((batch, receivedAt) => {
+      let peak = -1;
+      for (const frame of batch.frames) if (frame.mic === 0) peak = Math.max(peak, frame.level);
+      if (peak < 0) return;
 
-    onCleanup(() => clearInterval(interval));
+      const meter = ampToMeter(peak);
+      const decay = DECAY_PER_50_MS ** ((receivedAt - (lastBatchAt || receivedAt)) / 50);
+      lastBatchAt = receivedAt;
+      peakHold = meter >= peakHold ? meter : peakHold * decay;
+      setLevel(peakHold);
+    });
+
+    onCleanup(unsubscribe);
   });
 
   onCleanup(() => {

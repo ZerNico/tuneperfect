@@ -1,14 +1,16 @@
-import { createMemo, Show } from "solid-js";
+import { createMemo, Show, untrack } from "solid-js";
 
 import { useGame } from "~/lib/game/game-context";
 import { createPlayer } from "~/lib/game/player";
 import { beatToMs } from "~/lib/ultrastar/bpm";
+import { settingsStore } from "~/stores/settings";
 
 import Avatar from "../ui/avatar";
 import ComboCounter from "./combo-counter";
 import PhraseRating from "./phrase-rating";
 import Pitch from "./pitch";
 import Score from "./score";
+import ScrollingLane from "./scrolling-lane";
 
 interface PlayerLaneProps {
   index: number;
@@ -22,6 +24,9 @@ export default function PlayerLane(props: PlayerLaneProps) {
   const { PlayerProvider, player, phrase } = playerState;
   const game = useGame();
   const isCompact = () => game.playerCount() > 2;
+  // Chosen once per round; switching mid-song would rebuild the lane.
+  // Read once: a lane never switches views mid-round.
+  const view = untrack(() => settingsStore.general().singingView);
 
   // Hide the lane during long breaks: more than 20s to the next phrase hides it, 10s before it
   // shows again. Recomputed every frame, but only notifies when the flag flips.
@@ -58,7 +63,7 @@ export default function PlayerLane(props: PlayerLaneProps) {
             "transition-opacity duration-2000": !shouldHide(),
           }}
         >
-          <Pitch />
+          {view === "scrolling" ? <ScrollingLane /> : <Pitch />}
         </div>
         <div class="pointer-events-none absolute top-1/2 right-[3cqw] -translate-y-1/2">
           <PhraseRating />
