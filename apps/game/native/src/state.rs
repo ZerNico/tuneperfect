@@ -7,6 +7,7 @@ use tokio::sync::Mutex as TokioMutex;
 
 use crate::{
     audio::{processor::Processor, recorder::Recorder, worker::PitchSinks},
+    commands::songs::KnownSongDirs,
     path_allowlist::PathAllowlist,
     usdb::client::UsdbClient,
 };
@@ -23,6 +24,8 @@ pub struct AppState {
     pub allowlist: PathAllowlist,
     /// Subscribers to the live pitch stream (`subscribePitchFrames`).
     pub pitch_sinks: PitchSinks,
+    /// What the last song parse or rescan found, and the lock that runs them one at a time.
+    pub song_dirs: TokioMutex<KnownSongDirs>,
 }
 
 static STATE: LazyLock<AppState> = LazyLock::new(|| {
@@ -34,6 +37,7 @@ static STATE: LazyLock<AppState> = LazyLock::new(|| {
         usdb_client: TokioMutex::new(None),
         allowlist: PathAllowlist::default(),
         pitch_sinks: PitchSinks::default(),
+        song_dirs: TokioMutex::new(HashMap::new()),
     }
 });
 

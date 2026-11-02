@@ -4,6 +4,7 @@ import * as v from "valibot";
 import type {
   Microphone,
   ParseEvent,
+  SongDirGroup,
   SongGroup,
   UsdbSearchEntry,
   UsdbSong,
@@ -41,6 +42,20 @@ export type ParseSongsEvent =
   | ParseEvent
   | { type: "done"; groups: SongGroup[]; notes: Uint8Array; noteRanges: Uint32Array };
 
+/**
+ * The song folders that changed since the last parse or rescan, each replacing everything its
+ * folder had before (no songs: the folder is gone). Notes are packed like `ParseSongsEvent`'s.
+ * `missingRoots` are parsed folders that are gone right now (e.g. an unplugged drive); `pending`
+ * means some folders were still being written to and a later rescan picks them up.
+ */
+export type RescannedSongs = {
+  groups: SongDirGroup[];
+  notes: Uint8Array;
+  noteRanges: Uint32Array;
+  missingRoots: string[];
+  pending: boolean;
+};
+
 export type UsdbCatalogEvent =
   | ({ type: "progress" } & UsdbSyncProgressEvent)
   | { type: "done"; catalog: UsdbSearchEntry[] };
@@ -73,6 +88,11 @@ export const contract = {
   songs: {
     /** Parses the given (granted) folders, streaming progress before the result. */
     parse: base.input(v.object({ paths: v.array(v.string()) })).output(eventIterator(type<ParseSongsEvent>())),
+    /**
+     * Re-parses what changed below the already parsed folders among `paths`; pass all of the
+     * library's folders (folders left out are forgotten, unparsed ones are left to `parse`).
+     */
+    rescan: base.input(v.object({ paths: v.array(v.string()) })).output(type<RescannedSongs>()),
   },
   youtube: {
     /** The loopback page that hosts YouTube embeds, or `null` if its server couldn't start. */

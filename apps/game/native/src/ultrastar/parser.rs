@@ -442,6 +442,7 @@ pub fn parse_local_txt_file(
     Ok(LocalSong {
         voice_count: song.voices.len() as u32,
         song,
+        txt_path: txt.to_string(),
         audio_url,
         instrumental_url,
         video_url,

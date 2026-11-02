@@ -3,7 +3,7 @@ import { systemPreferences } from "electron";
 import type { ParsedSongs } from "../../native/index";
 import type { ParseSongsEvent, UsdbCatalogEvent } from "../../src/lib/native/contract";
 import { SONG_FILES_BASE_URL } from "../../src/lib/native/media";
-import type { SongGroup, UsdbSearchEntry } from "../../src/lib/native/types.gen";
+import type { SongDirGroup, SongGroup, UsdbSearchEntry } from "../../src/lib/native/types.gen";
 import { native } from "../native";
 import { os, stream, subscription } from "./base";
 
@@ -48,6 +48,10 @@ export const nativeProcedures = {
         ({ groups, notes, noteRanges }) => ({ type: "done", groups: groups as SongGroup[], notes, noteRanges }),
       ),
     ),
+    rescan: os.songs.rescan.handler(async ({ input }) => {
+      const rescan = await native.rescanSongs(input.paths, SONG_FILES_BASE_URL);
+      return { ...rescan, groups: rescan.groups as SongDirGroup[] };
+    }),
   },
   usdb: {
     login: os.usdb.login.handler(({ input }) => native.usdbLogin(input.username, input.password)),
