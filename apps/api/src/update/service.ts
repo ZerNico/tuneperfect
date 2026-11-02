@@ -8,6 +8,13 @@ export interface UpdateManifest {
 
 const SIGNATURE_TIMEOUT_MS = 5000;
 
+/**
+ * Oldest game version still meant to go online; older games are asked to update or play
+ * offline (`null` = no minimum). Raise it in the commit that breaks older games, e.g. one
+ * that changes the API's RPC protocol, and only to a version that's already released.
+ */
+export const MIN_GAME_VERSION: string | null = null;
+
 export class UpdateService {
   /**
    * The update a client on `currentVersion` should install to reach `releaseVersion`, in the
@@ -34,6 +41,21 @@ export class UpdateService {
     if (!signature) return null;
 
     return { version: releaseVersion.version, url, signature };
+  }
+
+  /**
+   * Whether a game on `currentVersion` is still meant to go online. The minimum never goes
+   * above the current release, so a typo can't tell every game to update to a version that
+   * doesn't exist. Unparseable versions are let through: this only ever asks, never blocks.
+   */
+  isGameSupported(options: { currentVersion: string; minVersion: string | null; releaseVersion: string }) {
+    const current = semver.coerce(options.currentVersion);
+    const minimum = options.minVersion ? semver.coerce(options.minVersion) : null;
+    if (!current || !minimum) return true;
+
+    const release = semver.coerce(options.releaseVersion);
+    const required = release && semver.lt(release, minimum) ? release : minimum;
+    return semver.gte(current, required);
   }
 
   async getReleaseName(target: string, arch: string, version: string) {

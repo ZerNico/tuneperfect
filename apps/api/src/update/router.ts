@@ -3,7 +3,7 @@ import * as v from "valibot";
 
 import { base } from "../base";
 import { env } from "../config/env";
-import { updateService } from "./service";
+import { MIN_GAME_VERSION, updateService } from "./service";
 
 const updateInput = v.object({
   target: v.string(),
@@ -44,6 +44,23 @@ export const updateRouter = os.prefix("/updates").router({
       const enabled = env.TAURI_MIGRATION_ENABLED;
       return { enabled: enabled.includes("all") || enabled.includes(input.target.toLowerCase()) };
     }),
+
+  /**
+   * Asked by the Electron app at startup and when going online fails. Plain REST on purpose:
+   * it must keep answering games that speak an older RPC protocol, since raising the minimum
+   * is how they're told to update. Keep the path and the response shape stable.
+   */
+  getGameSupport: base
+    .route({ path: "/game-support/{currentVersion}", method: "GET" })
+    .input(v.object({ currentVersion: v.string() }))
+    .output(v.object({ supported: v.boolean() }))
+    .handler(({ input }) => ({
+      supported: updateService.isGameSupported({
+        currentVersion: input.currentVersion,
+        minVersion: MIN_GAME_VERSION,
+        releaseVersion: env.VERSION,
+      }),
+    })),
 
   /** Polled by the Electron app. */
   getElectronUpdate: base

@@ -122,6 +122,7 @@ rg -n "Cron\|setupJobs" src/                   # find scheduled jobs
 - The API exposes **two** handler paths: `/rpc` (typed oRPC) and `/v1.0` (OpenAPI REST)
 - CORS is restricted to `APP_URL` + the game's origins (Vite dev server, Electron `app://tuneperfect`, and the Tauri origins of older installs) — update `allowedOrigins` in `src/index.ts` if adding new clients
 - Rate limiting is configured per-route via `$meta` — see `src/lib/orpc/rate-limit.ts`
+- `MIN_GAME_VERSION` (constant in `src/update/service.ts`, bumped in the commit that breaks older games): games below it are asked to update or play offline. They learn it from `GET /v1.0/updates/game-support/{version}` (`src/update/`), plain REST so it still answers games on an older RPC protocol. Nothing is blocked server-side. Paths and response shapes of the update routes are pinned in `src/update/http.test.ts`: released games depend on them
 - File uploads (user images) are stored on disk at `UPLOADS_PATH`, resized to 256x256 webp via Sharp
 
 ## Pre-PR Checks

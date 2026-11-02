@@ -54,6 +54,10 @@ const en = {
     installFailed: "Failed to install update",
     retry: "Retry",
     continue: "Continue",
+    outdated: "This version can no longer play online",
+    packageManager: "Update through your package manager to play online",
+    updateToPlay: "Update the game to play online",
+    playOffline: "Play Offline",
   },
   createLobby: {
     creating: "Creating lobby...",

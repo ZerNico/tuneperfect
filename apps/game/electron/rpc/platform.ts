@@ -6,7 +6,7 @@ import { app, dialog } from "electron";
 import type { UpdateInstallEvent } from "../../src/lib/native/contract";
 import { native } from "../native";
 import type { JsonStores } from "../store";
-import { checkForUpdate, installUpdate } from "../updater";
+import { checkForUpdate, checkGameSupport, installUpdate } from "../updater";
 import { os, stream } from "./base";
 
 export interface PlatformDependencies {
@@ -64,6 +64,7 @@ export function platformProcedures({ stores, songPaths, youtubePlayerUrl, log }:
         const update = await checkForUpdate();
         return update ? { version: update.version } : null;
       }),
+      gameSupport: os.updates.gameSupport.handler(() => checkGameSupport()),
       install: os.updates.install.handler(() =>
         stream<UpdateInstallEvent, void>((emit) =>
           installUpdate((progress) => emit({ type: "progress", ...progress })),

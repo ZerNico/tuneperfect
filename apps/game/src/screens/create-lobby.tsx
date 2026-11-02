@@ -1,13 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/solid-query";
 import { useNavigate } from "@tanstack/solid-router";
 import { differenceInDays } from "date-fns";
-import { Match, onMount, Switch } from "solid-js";
+import { createSignal, Match, onMount, Switch } from "solid-js";
 
 import KeyHints from "~/components/key-hints";
 import Layout from "~/components/layout";
 import LoadingPanel from "~/components/loading-panel";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import OutdatedGame from "~/components/outdated-game";
+import {
+  gameSupportQueryOptions,
+  playOfflineThisSession,
+  sessionOffline,
+  updateCheckQueryOptions,
+} from "~/lib/game-version";
 import { t } from "~/lib/i18n";
 import { client } from "~/lib/orpc";
 import { lobbyStore } from "~/stores/lobby";
@@ -17,19 +24,33 @@ export default function IndexScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Set when going online failed because this version may no longer: asked again here, since
+  // the startup check can miss it (flaky network then, or the minimum raised while running).
+  const [outdated, setOutdated] = createSignal<{ packageManager: boolean } | null>(null);
+
   const createLobbyMutation = useMutation(() =>
     client.lobby.createLobby.mutationOptions({
       onSuccess: (data) => {
         lobbyStore.setLobby({ token: data.token, lobby: { id: data.lobbyId }, createdAt: Date.now() });
         goToLoading();
       },
+      onError: async () => {
+        const support = await queryClient.fetchQuery({ ...gameSupportQueryOptions(), staleTime: 0 }).catch(() => null);
+        setOutdated(support?.supported === false ? support : null);
+      },
     }),
   );
+
+  const playOffline = () => {
+    playOfflineThisSession();
+    lobbyStore.clearLobby();
+    goToLoading();
+  };
 
   const goToLoading = () => navigate({ to: "/loading", search: { redirect: "/home" } });
 
   onMount(async () => {
-    if (settingsStore.general().forceOfflineMode) {
+    if (settingsStore.general().forceOfflineMode || sessionOffline()) {
       lobbyStore.clearLobby();
       goToLoading();
       return;
@@ -77,6 +98,17 @@ export default function IndexScreen() {
           <div class="flex grow items-center justify-center">
             <LoadingPanel title={t("lobby.title")} progress={null} detail={t("createLobby.creating")} />
           </div>
+        </Match>
+        <Match when={createLobbyMutation.isError && outdated()}>
+          {(support) => (
+            <OutdatedGame
+              packageManager={support().packageManager}
+              update={queryClient.getQueryData(updateCheckQueryOptions().queryKey)}
+              // The startup screen installs it.
+              onInstall={() => navigate({ to: "/" })}
+              onPlayOffline={playOffline}
+            />
+          )}
         </Match>
         <Match when={createLobbyMutation.isError}>
           <div class="flex w-full grow flex-col justify-center">

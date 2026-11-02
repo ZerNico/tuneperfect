@@ -8,18 +8,18 @@ import Layout from "~/components/layout";
 import LoadingPanel from "~/components/loading-panel";
 import type { MenuItem } from "~/components/menu";
 import Menu from "~/components/menu";
+import OutdatedGame from "~/components/outdated-game";
 import { platform } from "~/lib/desktop";
+import { gameSupportQueryOptions, playOfflineThisSession, updateCheckQueryOptions } from "~/lib/game-version";
 import { t } from "~/lib/i18n";
 import { native } from "~/lib/native/client";
 
 export default function RouteScreen() {
   const navigate = useNavigate();
 
-  const checkUpdateQuery = useQuery(() => ({
-    queryKey: ["checkUpdate"],
-    queryFn: () => native.updates.check(),
-    retry: false,
-  }));
+  const checkUpdateQuery = useQuery(() => updateCheckQueryOptions());
+  const gameSupportQuery = useQuery(() => gameSupportQueryOptions());
+  const outdated = () => gameSupportQuery.data?.supported === false;
 
   const askForMicrophonePermission = async () => {
     try {
@@ -42,13 +42,15 @@ export default function RouteScreen() {
     },
   }));
 
+  // An outdated version can't go online, so going on without the update means offline.
   const skipUpdate = async () => {
+    if (outdated()) playOfflineThisSession();
     await askForMicrophonePermission();
     navigate({ to: "/create-lobby" });
   };
 
   createEffect(() => {
-    if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data) {
+    if (checkUpdateQuery.isSuccess && !checkUpdateQuery.data && gameSupportQuery.isSuccess && !outdated()) {
       void skipUpdate();
     }
   });
@@ -108,7 +110,7 @@ export default function RouteScreen() {
   return (
     <Layout intent="primary" footer={<KeyHints hints={["navigate", "confirm"]} />}>
       <Switch>
-        <Match when={checkUpdateQuery.isPending}>
+        <Match when={checkUpdateQuery.isPending || gameSupportQuery.isPending}>
           <div class="flex grow items-center justify-center">
             <LoadingPanel title="Tune Perfect" progress={null} detail={t("update.checking")} />
           </div>
@@ -120,17 +122,26 @@ export default function RouteScreen() {
           </div>
         </Match>
 
-        <Match when={checkUpdateQuery.isError}>
-          <div class="flex w-full grow flex-col justify-center">
-            <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("update.checkFailed")}</h1>
-            <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
-          </div>
-        </Match>
-
         <Match when={installUpdateMutation.isError}>
           <div class="flex w-full grow flex-col justify-center">
             <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("update.installFailed")}</h1>
             <Menu items={installFailedMenuItems} gradient="gradient-settings" class="h-min grow-0" />
+          </div>
+        </Match>
+
+        <Match when={outdated()}>
+          <OutdatedGame
+            packageManager={gameSupportQuery.data?.packageManager ?? false}
+            update={checkUpdateQuery.data}
+            onInstall={installUpdate}
+            onPlayOffline={skipUpdate}
+          />
+        </Match>
+
+        <Match when={checkUpdateQuery.isError}>
+          <div class="flex w-full grow flex-col justify-center">
+            <h1 class="mb-[10cqh] text-center text-5xl font-bold">{t("update.checkFailed")}</h1>
+            <Menu items={errorMenuItems} gradient="gradient-settings" class="h-min grow-0" />
           </div>
         </Match>
 

@@ -106,6 +106,8 @@ export const contract = {
   updates: {
     /** The newer version this installation can update itself to, if there is one. */
     check: base.output(type<{ version: string } | null>()),
+    /** Whether this version may still go online, and whether only a package manager can update it. */
+    gameSupport: base.output(type<{ supported: boolean; packageManager: boolean }>()),
     /** Downloads, verifies and installs the update from the last check, then restarts. */
     install: base.output(eventIterator(type<UpdateInstallEvent>())),
   },

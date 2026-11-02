@@ -20,6 +20,8 @@ const CHECK_TIMEOUT_MS = 5000;
  */
 const ENDPOINT = process.env.TUNEPERFECT_UPDATE_ENDPOINT ?? "";
 const PUBLIC_KEY = process.env.TUNEPERFECT_UPDATE_PUBKEY ?? "";
+/** The renderer's `VITE_API_URL` at build time (see `scripts/build-electron.ts`). */
+const API_URL = process.env.TUNEPERFECT_API_URL ?? "";
 
 export interface UpdateInfo {
   version: string;
@@ -64,6 +66,36 @@ function compareVersions(a: string, b: string): number {
     if (diff !== 0) return Math.sign(diff);
   }
   return 0;
+}
+
+export interface GameSupport {
+  /** Whether this version is still meant to go online (the API's `MIN_GAME_VERSION`). */
+  supported: boolean;
+  /** A deb/rpm install: only the system's package manager can update it. */
+  packageManager: boolean;
+}
+
+/**
+ * Asks the API whether this version may still go online. Plain REST from here rather than
+ * the renderer's RPC client, so it keeps working for games on an older RPC protocol. When
+ * the API can't be reached the answer is "supported": this only ever asks, never blocks.
+ */
+export async function checkGameSupport(): Promise<GameSupport> {
+  const packageManager = process.platform === "linux" && installation().kind === "unsupported";
+  if (!API_URL) return { supported: true, packageManager };
+
+  try {
+    const url = new URL(
+      `v1.0/updates/game-support/${encodeURIComponent(app.getVersion())}`,
+      `${API_URL.replace(/\/+$/, "")}/`,
+    );
+    const response = await fetch(url, { signal: AbortSignal.timeout(CHECK_TIMEOUT_MS) });
+    if (!response.ok) return { supported: true, packageManager };
+    const { supported } = (await response.json()) as { supported?: unknown };
+    return { supported: supported !== false, packageManager };
+  } catch {
+    return { supported: true, packageManager };
+  }
 }
 
 let pending: UpdateInfo | null = null;

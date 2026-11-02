@@ -72,3 +72,28 @@ describe("resolveUpdate", () => {
     download.mockRestore();
   });
 });
+
+describe("isGameSupported", () => {
+  const check = (currentVersion: string, minVersion: string | null, releaseVersion = "v0.8.0") =>
+    updateService.isGameSupported({ currentVersion, minVersion, releaseVersion });
+
+  it("supports every version without a minimum", () => {
+    expect(check("0.1.0", null)).toBe(true);
+  });
+
+  it("supports the minimum and newer, not older", () => {
+    expect(check("0.5.9", "0.6.0")).toBe(false);
+    expect(check("0.6.0", "0.6.0")).toBe(true);
+    expect(check("0.7.0-beta.1", "0.6.0")).toBe(true);
+  });
+
+  it("never asks for more than the current release", () => {
+    expect(check("0.8.0", "0.9.0")).toBe(true);
+    expect(check("0.7.0", "0.9.0")).toBe(false);
+  });
+
+  it("lets unparseable versions through", () => {
+    expect(check("nonsense", "0.6.0")).toBe(true);
+    expect(check("0.1.0", "nonsense")).toBe(true);
+  });
+});

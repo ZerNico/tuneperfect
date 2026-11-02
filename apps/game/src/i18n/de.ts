@@ -56,6 +56,10 @@ const de = {
     installFailed: "Fehler beim Installieren des Updates",
     retry: "Wiederholen",
     continue: "Fortfahren",
+    outdated: "Diese Version kann nicht mehr online spielen",
+    packageManager: "Aktualisiere über deinen Paketmanager, um online zu spielen",
+    updateToPlay: "Aktualisiere das Spiel, um online zu spielen",
+    playOffline: "Offline spielen",
   },
   createLobby: {
     creating: "Lobby wird erstellt...",
