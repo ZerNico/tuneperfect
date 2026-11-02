@@ -17,6 +17,7 @@ import { notify } from "~/lib/toast";
 import { isLocalSong, isUsdbSong } from "~/lib/ultrastar/song";
 import { isPartyRound, roundStore, useRoundActions } from "~/stores/round";
 import { settingsStore } from "~/stores/settings";
+import { songsStore } from "~/stores/songs";
 
 export default function GameScreen() {
   const navigate = useNavigate();
@@ -24,6 +25,9 @@ export default function GameScreen() {
   const [ready, setReady] = createSignal(false);
   const [canPlayThrough, setCanPlayThrough] = createSignal(false);
   const roundActions = useRoundActions();
+  // Library changes found while singing wait until the song is over: rebuilding the song list
+  // costs frames.
+  onCleanup(songsStore.hold());
 
   const roundSong = () => roundStore.settings()?.songs[0];
   const isOnline = createMemo(() => {

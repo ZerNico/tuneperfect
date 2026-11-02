@@ -39,6 +39,7 @@ import {
 import { t } from "~/lib/i18n";
 import { OK, STALE, useRemoteExtras } from "~/lib/remote";
 import { playSound } from "~/lib/sound";
+import { nearestSurvivorIndex } from "~/lib/utils/array";
 import { formatDecade, getFacets, typeLabel } from "~/lib/utils/song-facets";
 import { settingsStore } from "~/stores/settings";
 
@@ -135,13 +136,25 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
     filters: state.filters,
   });
 
-  // Falls back to the first result like the grid and coverflow do, so a selected song
+  // Falls back like the grid and coverflow do (see `fallbackIndex`), so a selected song
   // dropping out of the results switches straight to the new one (no null in between).
   // Built once per result list, so moving through the songs is a lookup instead of a search.
   const itemsById = createMemo(() => new Map(filteredItems().map((item) => [props.getId(item), item])));
+  // A selected song that left the library (not just the results) hands the selection to its
+  // neighbour; one the search or filters hide goes to the first result like before.
+  const fallbackIndex = (previous: T[] | undefined, items: T[], missingId: string) => {
+    if (!previous || untrack(() => props.items).some((item) => props.getId(item) === missingId)) return 0;
+    return nearestSurvivorIndex(previous, items, missingId, props.getId);
+  };
+
+  let previousItems: T[] | undefined;
   const selected = createMemo(() => {
     const id = state.selectedId();
-    return (id === null ? undefined : itemsById().get(id)) ?? filteredItems()[0] ?? null;
+    const items = filteredItems();
+    const found = id === null ? undefined : itemsById().get(id);
+    const fallback = found || id === null ? 0 : untrack(() => fallbackIndex(previousItems, items, id));
+    previousItems = items;
+    return found ?? items[fallback] ?? items[0] ?? null;
   });
   const selectedInfo = createMemo(() => {
     const item = selected();
@@ -279,7 +292,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
           return OK;
         },
         filters: filterOptions().map((filter) => ({ ...filter, value: filterValue(filters, filter.id) })),
-        song: item && info ? { hash: props.getId(item), title: info.title, artist: info.artist } : null,
+        song: item && info ? { hash: info.id, title: info.title, artist: info.artist } : null,
         setSort: (sort) => {
           const option = props.sortOptions.find((candidate) => candidate === sort);
           if (!option) return STALE;
@@ -401,6 +414,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                   items={filteredItems()}
                   getId={props.getId}
                   initialId={state.selectedId() ?? undefined}
+                  fallbackIndex={fallbackIndex}
                   class="absolute inset-0"
                   renderCard={(item, isSelected) => (
                     <SongGridCard
@@ -435,6 +449,7 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
                 items={filteredItems()}
                 getId={props.getId}
                 initialId={state.selectedId() ?? undefined}
+                fallbackIndex={fallbackIndex}
                 // 10cqw past each stage edge, fading out there: wide windows see covers drift into the
                 // letterbox instead of a hard cut. Slots shrink to match so covers stay 12cqw wide.
                 itemSize={0.1}

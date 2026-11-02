@@ -34,6 +34,8 @@ interface SongGridProps<T> {
   items: T[];
   getId: (item: T) => string;
   initialId?: string;
+  /** Where to go when the selected item leaves the list (`previous` is the list before); first item by default. */
+  fallbackIndex?: (previous: T[] | undefined, items: T[], missingId: string) => number;
   /** Called once per card; `selected` is reactive so the card only updates its highlight. */
   renderCard: (item: T, selected: Accessor<boolean>) => JSX.Element;
   onSelectedItemChange?: (item: T | null, index: number) => void;
@@ -120,7 +122,7 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   createEffect(
     on(
       () => props.items,
-      (items) => {
+      (items, previous) => {
         // Skip if not initialized yet - let the initialization effect handle it
         if (!hasInitialized()) return;
 
@@ -136,11 +138,14 @@ export function SongGrid<T>(props: SongGridProps<T>) {
           }
         }
 
-        setSelectedIndex(0);
-        const firstSong = items[0];
-        if (firstSong) {
-          setSelectedHash(props.getId(firstSong));
-          props.onSelectedItemChange?.(firstSong, 0);
+        const fallback = currentHash ? (props.fallbackIndex?.(previous, items, currentHash) ?? 0) : 0;
+        const item = items[fallback] ?? items[0];
+        const index = items[fallback] ? fallback : 0;
+        setSelectedIndex(index);
+        if (item) {
+          setSelectedHash(props.getId(item));
+          if (index !== 0) scrollToIndex(index, false);
+          props.onSelectedItemChange?.(item, index);
         }
       },
     ),

@@ -46,6 +46,8 @@ interface SongScrollerProps<T> {
   items: T[];
   getId: (item: T) => string;
   initialId?: string;
+  /** Where to go when the centered item leaves the list (`previous` is the list before); first item by default. */
+  fallbackIndex?: (previous: T[] | undefined, items: T[], missingId: string) => number;
   children: (item: T, index: number, state: Accessor<ScrollerItemState>) => JSX.Element;
   onCenteredItemChange?: (item: T | null, index: number) => void;
   onConfirm?: (item: T) => void;
@@ -116,31 +118,36 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
   createEffect(
     on(
       () => props.items,
-      (items) => {
+      (items, previous) => {
         // Skip if not initialized yet - let the initialization effect handle it
         if (!hasInitialized()) return;
 
         const id = currentItemId();
-
-        if (!id) {
+        const goToFirst = () => {
           const firstSong = items[0];
           if (firstSong) {
             setCurrentItemId(props.getId(firstSong));
             setOffset(0);
             props.onCenteredItemChange?.(firstSong, 0);
           }
+        };
+
+        if (!id) {
+          goToFirst();
           return;
         }
 
-        const newSongIndex = items.findIndex((item) => props.getId(item) === id);
+        let newSongIndex = items.findIndex((item) => props.getId(item) === id);
         if (newSongIndex === -1) {
-          const firstSong = items[0];
-          if (firstSong) {
-            setCurrentItemId(props.getId(firstSong));
-            setOffset(0);
-            props.onCenteredItemChange?.(firstSong, 0);
+          const fallback = props.fallbackIndex?.(previous, items, id) ?? 0;
+          const item = items[fallback];
+          if (fallback === 0 || !item) {
+            goToFirst();
+            return;
           }
-          return;
+          newSongIndex = fallback;
+          setCurrentItemId(props.getId(item));
+          props.onCenteredItemChange?.(item, fallback);
         }
 
         // Preserve the current "cycle" in infinite scroll
