@@ -348,6 +348,7 @@ fn read_txt(txt: &str) -> Result<String, AppError> {
 
 pub fn parse_local_txt_file(
     txt: &str,
+    song_dir: &str,
     files: &Vec<FileEntry>,
     media_base_url: &str,
 ) -> Result<LocalSong, AppError> {
@@ -443,6 +444,7 @@ pub fn parse_local_txt_file(
         voice_count: song.voices.len() as u32,
         song,
         txt_path: txt.to_string(),
+        song_dir: song_dir.to_string(),
         audio_url,
         instrumental_url,
         video_url,

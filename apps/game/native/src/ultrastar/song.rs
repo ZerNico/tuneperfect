@@ -83,6 +83,9 @@ pub struct LocalSong {
     /// its hash), so it's what tells the same song apart across rescans.
     #[serde(rename = "txtPath")]
     pub txt_path: String,
+    /// The folder the song file is in, exactly as rescans name it (`SongDirGroup::dir`).
+    #[serde(rename = "songDir")]
+    pub song_dir: String,
     #[serde(rename = "audioUrl")]
     pub audio_url: Option<String>,
     #[serde(rename = "instrumentalUrl")]

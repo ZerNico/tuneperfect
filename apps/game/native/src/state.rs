@@ -37,7 +37,7 @@ static STATE: LazyLock<AppState> = LazyLock::new(|| {
         usdb_client: TokioMutex::new(None),
         allowlist: PathAllowlist::default(),
         pitch_sinks: PitchSinks::default(),
-        song_dirs: TokioMutex::new(HashMap::new()),
+        song_dirs: TokioMutex::new(KnownSongDirs::default()),
     }
 });
 

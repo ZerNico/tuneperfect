@@ -1,17 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { applyFolderChanges, songDir, uniqueSongs } from "./library-changes";
+import { applyFolderChanges, uniqueSongs } from "./library-changes";
 import type { LocalSong } from "./song";
 
-const song = (txtPath: string, hash = txtPath) => ({ txtPath, hash }) as LocalSong;
+const song = (txtPath: string, hash = txtPath) =>
+  ({ txtPath, songDir: txtPath.slice(0, txtPath.lastIndexOf("/")), hash }) as LocalSong;
 const paths = (songs: LocalSong[] | undefined) => songs?.map((s) => s.txtPath);
-
-describe("songDir", () => {
-  it("strips the file name with either separator", () => {
-    expect(songDir("/music/A - B/song.txt")).toBe("/music/A - B");
-    expect(songDir("C:\\Music\\A - B\\song.txt")).toBe("C:\\Music\\A - B");
-  });
-});
 
 describe("applyFolderChanges", () => {
   const library = new Map([

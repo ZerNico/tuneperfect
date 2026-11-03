@@ -119,7 +119,8 @@ export default function SingScreen() {
       title={t("sing.songs")}
       state={browserState}
       items={songsStore.songs()}
-      // By song file rather than hash: editing the focused song changes its hash, not its file.
+      // By song file rather than hash: editing the focused song changes its hash, not its file. The
+      // search index (songsStore.searchIndex) is keyed the same way.
       getId={(song) => song.txtPath}
       describe={describeSong}
       coverOf={(song) => song.coverUrl}

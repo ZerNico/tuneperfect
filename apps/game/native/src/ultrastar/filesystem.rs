@@ -4,7 +4,7 @@ use std::{
     hash::{DefaultHasher, Hash, Hasher},
     path::{Path, PathBuf},
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::UNIX_EPOCH,
 };
 
 #[derive(Debug, Clone)]
@@ -21,8 +21,6 @@ pub struct SongDir {
     pub files: Arc<Vec<FileEntry>>,
     /// Changes whenever a file in the folder is added, removed, renamed, resized or rewritten.
     pub fingerprint: u64,
-    /// The newest modification time of its files, to tell a folder that is still being copied.
-    pub newest_change: Option<SystemTime>,
 }
 
 /// One root's song folders, in the order they were found.
@@ -34,6 +32,8 @@ pub struct RootScan {
     pub unreadable: Vec<String>,
     /// The root itself doesn't exist or can't be read (e.g. an unplugged drive).
     pub missing: bool,
+    /// The root is an empty folder, like the mount point of an unmounted drive on Linux.
+    pub empty: bool,
 }
 
 /// The song folders below each root, in the order the roots were given.
@@ -58,10 +58,12 @@ pub fn scan_roots(roots: &[String]) -> Vec<RootScan> {
             let path = Path::new(root);
             if path.is_dir() {
                 let own = fs::canonicalize(path).ok();
-                if own.is_none() || fs::read_dir(path).is_err() {
-                    scan.missing = true;
-                } else {
-                    collect(path, own.as_deref(), &root_dirs, &mut visited, &mut scan);
+                match (own.as_deref(), fs::read_dir(path)) {
+                    (Some(own), Ok(mut entries)) => {
+                        scan.empty = entries.next().is_none();
+                        collect(path, Some(own), &root_dirs, &mut visited, &mut scan);
+                    }
+                    _ => scan.missing = true,
                 }
             } else if path.is_file() && is_txt(path) {
                 // A song file given directly.
@@ -164,21 +166,18 @@ fn song_dir(dir: &Path, mut txts: Vec<String>, mut files: Vec<FileEntry>) -> Son
     files.sort_by(|a, b| a.filename.cmp(&b.filename));
 
     let mut hasher = DefaultHasher::new();
-    let mut newest_change = None;
     for file in files.iter().filter(|file| !file.filename.starts_with('.')) {
         file.filename.hash(&mut hasher);
         // Follows symlinks, so a replaced target counts as a change.
         match fs::metadata(&file.path) {
             Ok(metadata) => {
                 metadata.len().hash(&mut hasher);
-                let modified = metadata.modified().ok();
-                modified
+                metadata
+                    .modified()
+                    .ok()
                     .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
                     .map(|duration| duration.as_nanos())
                     .hash(&mut hasher);
-                if modified > newest_change {
-                    newest_change = modified;
-                }
             }
             Err(_) => 0u8.hash(&mut hasher),
         }
@@ -189,7 +188,6 @@ fn song_dir(dir: &Path, mut txts: Vec<String>, mut files: Vec<FileEntry>) -> Son
         txts,
         files: Arc::new(files),
         fingerprint: hasher.finish(),
-        newest_change,
     }
 }
 

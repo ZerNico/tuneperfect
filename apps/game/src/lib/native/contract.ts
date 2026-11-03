@@ -134,9 +134,10 @@ export const contract = {
     /** Song folders passed with `--songpath`/`-s`, or `null` when none were given. */
     songPaths: base.output(type<string[] | null>()),
     /**
-     * Grants the configured song folders (and `--songpath` ones) again, like at startup: a folder
-     * that was missing then (an unplugged drive) can be parsed once it's back. Returns the
-     * folders that exist.
+     * Grants the song folders known to the main process (configured or `--songpath` ones at
+     * startup, picked ones since) again: one that was missing (an unplugged drive) can be parsed
+     * once it's back. Returns the ones that exist. Paths written into the settings since startup
+     * aren't granted.
      */
     grantSongFolders: base.output(type<string[]>()),
     /** Quits the app (pending settings are saved first). */

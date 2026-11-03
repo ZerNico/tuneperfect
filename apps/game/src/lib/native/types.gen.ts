@@ -8,6 +8,8 @@ export type LocalSong = {
 	 *  its hash), so it's what tells the same song apart across rescans.
 	 */
 	txtPath: string,
+	/**  The folder the song file is in, exactly as rescans name it (`SongDirGroup::dir`). */
+	songDir: string,
 	audioUrl: string | null,
 	instrumentalUrl: string | null,
 	videoUrl: string | null,

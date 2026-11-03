@@ -11,7 +11,7 @@ import { handleMediaProtocol } from "./protocols/media";
 import { handleRendererProtocol } from "./protocols/renderer";
 import { APP_ORIGIN, originOf, registerSchemes } from "./protocols/schemes";
 import { createRpcHandler, listenForRpc } from "./rpc";
-import { grantSongFolders } from "./song-folders";
+import { SongFolders } from "./song-folders";
 import { JsonStores } from "./store";
 import { cleanUpAfterTauri, migrateFromTauri } from "./tauri-migration";
 import { loadWindowState, saveWindowState } from "./window-state";
@@ -131,7 +131,7 @@ async function start() {
   cleanUpAfterTauri(logger);
   const stores = new JsonStores(dataDir);
   const songPaths = songPathArgs(process.argv);
-  await grantSongFolders(stores, songPaths ?? []);
+  const songFolders = await SongFolders.atStartup(stores, songPaths ?? []);
 
   // Without it YouTube songs can't play, but everything else still works.
   const youtubeEmbed = await startYoutubeEmbedServer([appOrigin]).catch((error: unknown) => {
@@ -158,6 +158,7 @@ async function start() {
   const rpc = createRpcHandler({
     stores,
     songPaths,
+    songFolders,
     youtubePlayerUrl: youtubeEmbed?.playerUrl ?? null,
     log: (level, message) => logger.write(level.toUpperCase(), "webview", message),
   });

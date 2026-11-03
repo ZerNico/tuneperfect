@@ -24,12 +24,6 @@ export function unpackGroups<G extends { songs: ScannedSong[] }>(
   }));
 }
 
-/** The folder a song file is in, as the native side names it (`SongDirGroup.dir`). */
-export function songDir(txtPath: string): string {
-  const slash = Math.max(txtPath.lastIndexOf("/"), txtPath.lastIndexOf("\\"));
-  return slash === -1 ? "" : txtPath.slice(0, slash);
-}
-
 export interface LibraryChanges {
   /** The new song lists of the roots that changed. */
   roots: Map<string, LocalSong[]>;
@@ -62,7 +56,7 @@ export function applyFolderChanges(
   for (const [root, { dirs, added }] of byRoot) {
     const kept: LocalSong[] = [];
     for (const song of library.get(root)!) {
-      if (dirs.has(songDir(song.txtPath))) replaced.set(song.txtPath, null);
+      if (dirs.has(song.songDir)) replaced.set(song.txtPath, null);
       else kept.push(song);
     }
     for (const song of added) replaced.set(song.txtPath, song);
