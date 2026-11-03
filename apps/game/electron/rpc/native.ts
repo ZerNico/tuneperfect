@@ -1,7 +1,7 @@
 import { systemPreferences } from "electron";
 
-import type { ParsedSongs } from "../../native/index";
-import type { ParseSongsEvent, UsdbCatalogEvent } from "../../src/lib/native/contract";
+import type { ParsedSongs, RescannedSongs as NativeRescannedSongs } from "../../native/index";
+import type { ParseSongsEvent, RescannedSongs, UsdbCatalogEvent } from "../../src/lib/native/contract";
 import { SONG_FILES_BASE_URL } from "../../src/lib/native/media";
 import type { SongDirGroup, SongGroup, UsdbSearchEntry } from "../../src/lib/native/types.gen";
 import { native } from "../native";
@@ -48,10 +48,13 @@ export const nativeProcedures = {
         ({ groups, notes, noteRanges }) => ({ type: "done", groups: groups as SongGroup[], notes, noteRanges }),
       ),
     ),
-    rescan: os.songs.rescan.handler(async ({ input }) => {
-      const rescan = await native.rescanSongs(input.paths, SONG_FILES_BASE_URL);
-      return { ...rescan, groups: rescan.groups as SongDirGroup[] };
-    }),
+    // One event rather than a plain result: only stream events keep the notes binary.
+    rescan: os.songs.rescan.handler(({ input }) =>
+      stream<RescannedSongs, NativeRescannedSongs>(
+        () => native.rescanSongs(input.paths, SONG_FILES_BASE_URL),
+        (rescan) => ({ ...rescan, groups: rescan.groups as SongDirGroup[] }),
+      ),
+    ),
   },
   usdb: {
     login: os.usdb.login.handler(({ input }) => native.usdbLogin(input.username, input.password)),

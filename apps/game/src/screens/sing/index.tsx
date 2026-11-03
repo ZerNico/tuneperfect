@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/solid-router";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import IconF1Key from "~icons/sing/f1-key";
 import IconGamepadRT from "~icons/sing/gamepad-rt";
 import IconShiftKey from "~icons/sing/shift-key";
@@ -42,6 +42,8 @@ const describeSong = (song: LocalSong) => ({
 export default function SingScreen() {
   const navigate = useNavigate();
   const previews = createPreviewSlots(currentSong, (song) => song.hash);
+  // Songs added since the library was last checked show up right away.
+  onMount(() => void songsStore.rescan());
 
   const isMedley = createMemo(() => medleyStore.songs().length > 0);
 

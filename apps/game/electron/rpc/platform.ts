@@ -5,6 +5,7 @@ import { app, dialog } from "electron";
 
 import type { UpdateInstallEvent } from "../../src/lib/native/contract";
 import { native } from "../native";
+import { grantSongFolders } from "../song-folders";
 import type { JsonStores } from "../store";
 import { checkForUpdate, installUpdate } from "../updater";
 import { os, stream } from "./base";
@@ -75,6 +76,7 @@ export function platformProcedures({ stores, songPaths, youtubePlayerUrl, log }:
     },
     app: {
       songPaths: os.app.songPaths.handler(() => songPaths),
+      grantSongFolders: os.app.grantSongFolders.handler(() => grantSongFolders(stores, songPaths ?? [])),
       // Quit normally so pending store writes are flushed and recording stops first.
       exit: os.app.exit.handler(() => {
         app.quit();

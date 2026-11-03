@@ -46,7 +46,8 @@ export type ParseSongsEvent =
  * The song folders that changed since the last parse or rescan, each replacing everything its
  * folder had before (no songs: the folder is gone). Notes are packed like `ParseSongsEvent`'s.
  * `missingRoots` are parsed folders that are gone right now (e.g. an unplugged drive); `pending`
- * means some folders were still being written to and a later rescan picks them up.
+ * means some folders were still being written to and a later rescan picks them up. Sent as the
+ * one event of a stream, which (unlike a plain result) keeps the notes binary.
  */
 export type RescannedSongs = {
   groups: SongDirGroup[];
@@ -92,7 +93,7 @@ export const contract = {
      * Re-parses what changed below the already parsed folders among `paths`; pass all of the
      * library's folders (folders left out are forgotten, unparsed ones are left to `parse`).
      */
-    rescan: base.input(v.object({ paths: v.array(v.string()) })).output(type<RescannedSongs>()),
+    rescan: base.input(v.object({ paths: v.array(v.string()) })).output(eventIterator(type<RescannedSongs>())),
   },
   youtube: {
     /** The loopback page that hosts YouTube embeds, or `null` if its server couldn't start. */
@@ -132,6 +133,12 @@ export const contract = {
   app: {
     /** Song folders passed with `--songpath`/`-s`, or `null` when none were given. */
     songPaths: base.output(type<string[] | null>()),
+    /**
+     * Grants the configured song folders (and `--songpath` ones) again, like at startup: a folder
+     * that was missing then (an unplugged drive) can be parsed once it's back. Returns the
+     * folders that exist.
+     */
+    grantSongFolders: base.output(type<string[]>()),
     /** Quits the app (pending settings are saved first). */
     exit: base,
     log: base.input(v.object({ level: v.picklist(["warn", "error"]), message: v.string() })),

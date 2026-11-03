@@ -38,6 +38,7 @@ export default function LoadingScreen() {
     const [_error, songPathArgs] = await tryCatch(native.app.songPaths());
 
     await songsStore.updateLocalSongs(songPathArgs ?? songsStore.paths(), onProgress);
+    songsStore.watch();
 
     navigate({
       to: search().redirect,
