@@ -2,7 +2,7 @@ import { ReactiveMap } from "@solid-primitives/map";
 import type MiniSearch from "minisearch";
 import { batch, createMemo, createRoot, createSignal } from "solid-js";
 
-import { createSongSearchIndex } from "~/hooks/use-song-filter";
+import { createSongSearchIndex, updateSongSearchIndex } from "~/hooks/use-song-filter";
 import { native } from "~/lib/native/client";
 import type { ParseSongsEvent, RescannedSongs } from "~/lib/native/contract";
 import type { SongGroup } from "~/lib/native/types.gen";
@@ -180,13 +180,17 @@ function createSongsStore() {
   /** Songs by hash, for lookups that would otherwise scan the whole library (e.g. phones asking for covers). */
   const songsByHash = createMemo(() => new Map(songs().map((song) => [song.hash, song])));
 
-  // Built on first use and then once per library change, not on every visit of the song select.
+  // Built on first use, then updated with just the songs that changed (a full build of a big
+  // library takes long enough to freeze the song select for a moment).
   let cachedIndex: { songs: LocalSong[]; index: MiniSearch<LocalSong> } | undefined;
   const searchIndex = () => {
     const current = songs();
-    if (cachedIndex?.songs !== current) {
+    if (!cachedIndex) {
       // Keyed like the song select identifies songs (`getId` in screens/sing/index.tsx).
       cachedIndex = { songs: current, index: createSongSearchIndex(current, "txtPath") };
+    } else if (cachedIndex.songs !== current) {
+      updateSongSearchIndex(cachedIndex.index, cachedIndex.songs, current);
+      cachedIndex.songs = current;
     }
     return cachedIndex.index;
   };

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createSongSearchIndex, searchSongIds } from "./use-song-filter";
+import { createSongSearchIndex, searchSongIds, updateSongSearchIndex } from "./use-song-filter";
 
 // The search pulls in i18n, whose settings store talks to the main process on import.
 vi.mock("~/lib/native/client", () => ({
@@ -43,5 +43,27 @@ describe("searchSongIds", () => {
   it("only searches the chosen field", () => {
     expect(search("bohemian", "title")).toEqual(["1"]);
     expect(search("bohemian", "artist")).toEqual(["3"]);
+  });
+});
+
+describe("updateSongSearchIndex", () => {
+  it("ends up finding what a fresh index over the new songs would", () => {
+    const [queen, dontStop, betyars, europapa, halo] = songs;
+    const before = [queen!, dontStop!, betyars!, europapa!];
+    const index = createSongSearchIndex(before, "id");
+    // Halo is added, Europapa removed and "Don't Stop Me Now" edited (a new object, same id).
+    const edited = { ...dontStop!, title: "Bicycle Race" };
+    const after = [queen!, edited, betyars!, halo!];
+    updateSongSearchIndex(index, before, after);
+
+    const fresh = createSongSearchIndex(after, "id");
+    for (const query of ["queen", "halo", "europapa", "stop", "bicycle", "bohemian"]) {
+      expect([...searchSongIds(index, query, "all")].toSorted()).toEqual(
+        [...searchSongIds(fresh, query, "all")].toSorted(),
+      );
+    }
+    expect([...searchSongIds(index, "bicycle", "all")]).toEqual(["2"]);
+    expect(searchSongIds(index, "europapa", "all").size).toBe(0);
+    expect(index.documentCount).toBe(4);
   });
 });
