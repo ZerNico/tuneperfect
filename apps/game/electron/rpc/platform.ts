@@ -76,7 +76,6 @@ export function platformProcedures({ stores, songPaths, songFolders, youtubePlay
     },
     app: {
       songPaths: os.app.songPaths.handler(() => songPaths),
-      grantSongFolders: os.app.grantSongFolders.handler(() => songFolders.regrant()),
       // Quit normally so pending store writes are flushed and recording stops first.
       exit: os.app.exit.handler(() => {
         app.quit();

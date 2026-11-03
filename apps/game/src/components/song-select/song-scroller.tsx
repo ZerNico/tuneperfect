@@ -46,7 +46,7 @@ interface SongScrollerProps<T> {
   items: T[];
   getId: (item: T) => string;
   initialId?: string;
-  /** Where to go when the centered item leaves the list (`previous` is the list before); first item by default. */
+  /** Where the selection goes when the centred item leaves the list (`previous` is the list before); the first item by default. */
   fallbackIndex?: (previous: T[] | undefined, items: T[], missingId: string) => number;
   children: (item: T, index: number, state: Accessor<ScrollerItemState>) => JSX.Element;
   onCenteredItemChange?: (item: T | null, index: number) => void;
@@ -122,39 +122,22 @@ export function SongScroller<T>(props: SongScrollerProps<T>) {
         // Skip if not initialized yet - let the initialization effect handle it
         if (!hasInitialized()) return;
 
+        // The centred item where it is now, or where the selection goes if it's gone.
         const id = currentItemId();
-        const goToFirst = () => {
-          const firstSong = items[0];
-          if (firstSong) {
-            setCurrentItemId(props.getId(firstSong));
-            setOffset(0);
-            props.onCenteredItemChange?.(firstSong, 0);
-          }
-        };
-
-        if (!id) {
-          goToFirst();
-          return;
-        }
-
-        let newSongIndex = items.findIndex((item) => props.getId(item) === id);
-        if (newSongIndex === -1) {
-          const fallback = props.fallbackIndex?.(previous, items, id) ?? 0;
-          const item = items[fallback];
-          if (fallback === 0 || !item) {
-            goToFirst();
-            return;
-          }
-          newSongIndex = fallback;
+        const kept = id ? items.findIndex((item) => props.getId(item) === id) : -1;
+        const index = kept !== -1 ? kept : id ? (props.fallbackIndex?.(previous, items, id) ?? 0) : 0;
+        const item = items[index];
+        if (!item) return;
+        if (kept === -1) {
           setCurrentItemId(props.getId(item));
-          props.onCenteredItemChange?.(item, fallback);
+          props.onCenteredItemChange?.(item, index);
         }
 
-        // Preserve the current "cycle" in infinite scroll
+        // An item that stays (or a neighbour) keeps the current "cycle" of the infinite scroll;
+        // falling back to the first result starts over.
         const pos = currentPosition();
         const length = items.length;
-        const cycle = Math.floor(pos / length);
-        const newPosition = cycle * length + newSongIndex;
+        const newPosition = kept === -1 && index === 0 ? 0 : Math.floor(pos / length) * length + index;
 
         if (newPosition !== pos) {
           setOffset(newPosition * itemWidth());

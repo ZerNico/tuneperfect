@@ -104,7 +104,7 @@ pub async fn parse_songs_from_paths(
 ) -> Result<ParsedLibrary, AppError> {
     // One scan at a time, so a rescan never compares against a half-recorded parse.
     let mut known = state().song_dirs.lock().await;
-    let allowed_paths = allowed(&state().allowlist, paths, log::Level::Warn);
+    let allowed_paths = allowed(&state().allowlist, paths);
     parse(&mut known, allowed_paths, &media_base_url, on_event).await
 }
 
@@ -170,8 +170,8 @@ async fn rescan(
     if known.roots.is_empty() {
         return Ok(Rescan::default());
     }
-    // A root that is gone can't be resolved, so it isn't "allowed" either: that's expected here.
-    let allowed_paths = allowed(allowlist, paths, log::Level::Debug);
+    // A root that is gone can't be resolved, so it isn't "allowed" either.
+    let allowed_paths = allowed(allowlist, paths);
 
     let mut rescan = Rescan {
         missing_roots: known
@@ -258,16 +258,21 @@ async fn rescan(
     Ok(rescan)
 }
 
-/// The paths inside a granted song folder; the others are logged at `level` and left out.
-fn allowed(allowlist: &PathAllowlist, paths: Vec<String>, level: log::Level) -> Vec<String> {
+/// The paths inside a granted song folder; the others are left out. A folder that is gone (an
+/// unplugged drive, looked for again on every rescan) is expected and only logged for debugging.
+fn allowed(allowlist: &PathAllowlist, paths: Vec<String>) -> Vec<String> {
     paths
         .into_iter()
         .filter(|path| {
-            let allowed = allowlist.is_allowed(path);
-            if !allowed {
-                log::log!(level, "Skipping disallowed path: {}", path);
+            if allowlist.is_allowed(path) {
+                return true;
             }
-            allowed
+            if Path::new(path).exists() {
+                log::warn!("Skipping disallowed path: {}", path);
+            } else {
+                log::debug!("Skipping song folder that is gone: {}", path);
+            }
+            false
         })
         .collect()
 }

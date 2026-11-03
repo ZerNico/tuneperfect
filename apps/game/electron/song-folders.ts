@@ -4,22 +4,23 @@ import type { JsonStores } from "./store";
 /**
  * The song folders the native side may read (and `media://` may serve): the configured ones
  * (`settings.json` → `songs.paths`) and `--songpath` ones as of startup, plus folders picked
- * through the dialog. Only these can be granted again later (`regrant`), so the renderer
- * writing a path into the settings doesn't grant it before the next start.
+ * through the dialog. Only these are ever granted, so the renderer writing a path into the
+ * settings doesn't grant it before the next start.
  */
 export class SongFolders {
-  private readonly folders = new Set<string>();
+  private readonly folders: Set<string>;
 
-  /** Grants the configured folders plus `extra` (e.g. `--songpath`). */
+  private constructor(folders: Iterable<string>) {
+    this.folders = new Set(folders);
+    this.grantKnown();
+  }
+
+  /** The configured folders plus `extra` (e.g. `--songpath`), granted. */
   static async atStartup(stores: JsonStores, extra: string[]): Promise<SongFolders> {
     const settings = await stores.read("settings.json");
     const songs = settings?.songs as { paths?: unknown } | undefined;
     const configured = Array.isArray(songs?.paths) ? songs.paths.filter((p) => typeof p === "string") : [];
-
-    const folders = new SongFolders();
-    for (const folder of [...configured, ...extra]) folders.folders.add(folder);
-    folders.regrant();
-    return folders;
+    return new SongFolders([...configured, ...extra]);
   }
 
   /** Grants a folder the user picked; `false` if it doesn't exist. The renderer saves it to the settings. */
@@ -29,11 +30,8 @@ export class SongFolders {
     return true;
   }
 
-  /**
-   * Grants the known folders again, so one that was missing (an unplugged drive) can be parsed
-   * once it's back. Returns the ones that exist.
-   */
-  regrant(): string[] {
-    return [...this.folders].filter((folder) => native.allowDirectory(folder));
+  /** Grants every known folder that exists right now, so one that was missing (an unplugged drive) can be read once it's back. */
+  grantKnown(): void {
+    for (const folder of this.folders) native.allowDirectory(folder);
   }
 }

@@ -136,26 +136,27 @@ export function SongBrowser<T extends SongLike>(props: SongBrowserProps<T>) {
     filters: state.filters,
   });
 
-  // Falls back like the grid and coverflow do (see `fallbackIndex`), so a selected song
-  // dropping out of the results switches straight to the new one (no null in between).
-  // Built once per result list, so moving through the songs is a lookup instead of a search.
-  const itemsById = createMemo(() => new Map(filteredItems().map((item) => [props.getId(item), item])));
-  // A selected song that left the library (not just the results) hands the selection to its
-  // neighbour; one the search or filters hide goes to the first result like before.
+  /**
+   * Where the selection goes when the selected song drops out of the results: a song that left
+   * the library hands it to its neighbour, one the search or filters hide to the first result.
+   * The grid and coverflow ask the same, so all three agree without a null in between.
+   */
   const fallbackIndex = (previous: T[] | undefined, items: T[], missingId: string) => {
     if (!previous || untrack(() => props.items).some((item) => props.getId(item) === missingId)) return 0;
     return nearestSurvivorIndex(previous, items, missingId, props.getId);
   };
 
-  let previousItems: T[] | undefined;
-  const selected = createMemo(() => {
+  // Built once per result list, so moving through the songs is a lookup instead of a search.
+  const itemsById = createMemo(() => new Map(filteredItems().map((item) => [props.getId(item), item])));
+  // Remembers the results it was picked from, for the fallback when they change.
+  const selection = createMemo<{ items: T[]; item: T | null }>((previous) => {
     const id = state.selectedId();
     const items = filteredItems();
     const found = id === null ? undefined : itemsById().get(id);
-    const fallback = found || id === null ? 0 : untrack(() => fallbackIndex(previousItems, items, id));
-    previousItems = items;
-    return found ?? items[fallback] ?? items[0] ?? null;
+    const index = found || id === null ? 0 : untrack(() => fallbackIndex(previous?.items, items, id));
+    return { items, item: found ?? items[index] ?? null };
   });
+  const selected = createMemo(() => selection().item);
   const selectedInfo = createMemo(() => {
     const item = selected();
     return item ? props.describe(item) : null;

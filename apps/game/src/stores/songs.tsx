@@ -36,6 +36,10 @@ async function onlyEvent<T>(events: AsyncIterable<T>): Promise<T> {
   throw new Error("The stream ended without a result");
 }
 
+function sameSet<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
+  return a.size === b.size && [...a].every((item) => b.has(item));
+}
+
 function createSongsStore() {
   const paths = () => settings().songs.paths;
 
@@ -45,7 +49,11 @@ function createSongsStore() {
   /** Folders being parsed right now: neither parsed again nor forgotten by a rescan meanwhile. */
   const parsingRoots = new Set<string>();
   /** Loaded folders that are gone right now (e.g. an unplugged drive): their songs are hidden. */
-  const [missingRoots, setMissingRoots] = createSignal<ReadonlySet<string>>(new Set());
+  const [missingRoots, setMissingRoots] = createSignal<ReadonlySet<string>>(new Set(), { equals: sameSet });
+
+  /** The given folders that are neither loaded nor being parsed. */
+  const unloaded = (roots: Iterable<string>) =>
+    [...roots].filter((root) => !localSongs.has(root) && !parsingRoots.has(root));
 
   const addSongPath = (path: string) => {
     updateSettings("songs", "paths", (prev: string[]) => (prev.includes(path) ? prev : [...prev, path]));
@@ -57,8 +65,9 @@ function createSongsStore() {
     localSongs.delete(path);
   };
 
-  /** Parses the given folders; the ones that can't be read are left out. */
+  /** Parses the given folders; the ones that can't be read (or are gone) are left out. */
   const parseRoots = async (paths: string[], onProgress?: (event: ParseSongsEvent) => void) => {
+    if (paths.length === 0) return [];
     for (const path of paths) parsingRoots.add(path);
     try {
       for await (const event of await native.songs.parse({ paths })) {
@@ -75,8 +84,7 @@ function createSongsStore() {
   const updateLocalSongs = async (paths: string[], onProgress?: (event: ParseSongsEvent) => void) => {
     try {
       for (const path of paths) wantedRoots.add(path);
-      const pathsToUpdate = paths.filter((path) => !localSongs.has(path) && !parsingRoots.has(path));
-      const groups = await parseRoots(pathsToUpdate, onProgress);
+      const groups = await parseRoots(unloaded(paths), onProgress);
       // One library update (and search index rebuild) for all folders.
       batch(() => {
         for (const group of groups) {
@@ -88,16 +96,10 @@ function createSongsStore() {
     }
   };
 
-  /** Wanted folders that couldn't be loaded before (e.g. a drive that wasn't plugged in) and are back. */
-  const returnedRoots = async () => {
-    const unloaded = [...wantedRoots].filter((root) => !localSongs.has(root) && !parsingRoots.has(root));
-    if (unloaded.length === 0) return [];
-    const granted = new Set(await native.app.grantSongFolders());
-    return unloaded.filter((root) => granted.has(root));
-  };
-
   const runRescan = async (): Promise<LibraryUpdate> => {
-    const parsed = await parseRoots(await returnedRoots());
+    // Wanted folders that couldn't be loaded so far (e.g. a drive that wasn't plugged in) are
+    // tried again: the ones still gone are left out of the parse.
+    const parsed = await parseRoots(unloaded(wantedRoots));
     // Every folder the native side knows, in the order they were parsed: the loaded ones
     // (`--songpath` ones included), and the ones parsed but not applied yet.
     const roots = [...new Set([...localSongs.keys(), ...parsingRoots, ...parsed.map((group) => group.path)])];
@@ -114,11 +116,7 @@ function createSongsStore() {
         }
         if (!rescan) continue;
 
-        const missing = new Set(rescan.missingRoots);
-        const current = missingRoots();
-        if (missing.size !== current.size || [...missing].some((root) => !current.has(root))) {
-          setMissingRoots(missing);
-        }
+        setMissingRoots(new Set(rescan.missingRoots));
         if (rescan.groups.length === 0) continue;
         const changes = applyFolderChanges(localSongs, unpackGroups(rescan));
         for (const [root, songs] of changes.roots) {
@@ -165,10 +163,8 @@ function createSongsStore() {
     scheduler.stop();
   };
 
-  const needsUpdate = createMemo(() => {
-    const hasMissingPaths = paths().some((path: string) => !localSongs.has(path));
-    return hasMissingPaths;
-  });
+  /** Whether configured folders aren't loaded yet (e.g. one was just added in the settings). */
+  const needsUpdate = () => unloaded(paths()).length > 0;
 
   // Sorted by artist: the companion app lists `songs.list` (lib/webrtc/router.ts) in this order.
   const songs = createMemo(() => {

@@ -78,7 +78,7 @@ export function createSongSearchIndex<T extends SongLike>(items: T[], idField: k
 }
 
 /**
- * Brings an index built over `previous` up to date with `current`, instead of building it again:
+ * Brings an index built over `previous` up to date with `current`:
  * removes the items that left and adds the new ones (items are compared by identity, so an edited
  * item is a new object). Costs about as much as the items that changed.
  */

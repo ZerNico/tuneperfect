@@ -34,7 +34,7 @@ interface SongGridProps<T> {
   items: T[];
   getId: (item: T) => string;
   initialId?: string;
-  /** Where to go when the selected item leaves the list (`previous` is the list before); first item by default. */
+  /** Where the selection goes when the selected item leaves the list (`previous` is the list before); the first item by default. */
   fallbackIndex?: (previous: T[] | undefined, items: T[], missingId: string) => number;
   /** Called once per card; `selected` is reactive so the card only updates its highlight. */
   renderCard: (item: T, selected: Accessor<boolean>) => JSX.Element;
@@ -126,27 +126,16 @@ export function SongGrid<T>(props: SongGridProps<T>) {
         // Skip if not initialized yet - let the initialization effect handle it
         if (!hasInitialized()) return;
 
-        const currentHash = selectedHash();
-
-        if (currentHash) {
-          const newIndex = items.findIndex((item) => props.getId(item) === currentHash);
-          if (newIndex !== -1) {
-            setSelectedIndex(newIndex);
-            scrollToIndex(newIndex, false);
-            props.onSelectedItemChange?.(items[newIndex]!, newIndex);
-            return;
-          }
-        }
-
-        const fallback = currentHash ? (props.fallbackIndex?.(previous, items, currentHash) ?? 0) : 0;
-        const item = items[fallback] ?? items[0];
-        const index = items[fallback] ? fallback : 0;
+        // The selected item where it is now, or where the selection goes if it's gone.
+        const id = selectedHash();
+        const kept = id ? items.findIndex((item) => props.getId(item) === id) : -1;
+        const index = kept !== -1 ? kept : id ? (props.fallbackIndex?.(previous, items, id) ?? 0) : 0;
+        const item = items[index];
         setSelectedIndex(index);
-        if (item) {
-          setSelectedHash(props.getId(item));
-          if (index !== 0) scrollToIndex(index, false);
-          props.onSelectedItemChange?.(item, index);
-        }
+        if (!item) return;
+        setSelectedHash(props.getId(item));
+        scrollToIndex(index, false);
+        props.onSelectedItemChange?.(item, index);
       },
     ),
   );
