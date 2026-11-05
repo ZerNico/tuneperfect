@@ -34,6 +34,8 @@ interface SongGridProps<T> {
   items: T[];
   getId: (item: T) => string;
   initialId?: string;
+  /** Where the selection goes when the selected item leaves the list (`previous` is the list before); the first item by default. */
+  fallbackIndex?: (previous: T[] | undefined, items: T[], missingId: string) => number;
   /** Called once per card; `selected` is reactive so the card only updates its highlight. */
   renderCard: (item: T, selected: Accessor<boolean>) => JSX.Element;
   onSelectedItemChange?: (item: T | null, index: number) => void;
@@ -120,28 +122,20 @@ export function SongGrid<T>(props: SongGridProps<T>) {
   createEffect(
     on(
       () => props.items,
-      (items) => {
+      (items, previous) => {
         // Skip if not initialized yet - let the initialization effect handle it
         if (!hasInitialized()) return;
 
-        const currentHash = selectedHash();
-
-        if (currentHash) {
-          const newIndex = items.findIndex((item) => props.getId(item) === currentHash);
-          if (newIndex !== -1) {
-            setSelectedIndex(newIndex);
-            scrollToIndex(newIndex, false);
-            props.onSelectedItemChange?.(items[newIndex]!, newIndex);
-            return;
-          }
-        }
-
-        setSelectedIndex(0);
-        const firstSong = items[0];
-        if (firstSong) {
-          setSelectedHash(props.getId(firstSong));
-          props.onSelectedItemChange?.(firstSong, 0);
-        }
+        // The selected item where it is now, or where the selection goes if it's gone.
+        const id = selectedHash();
+        const kept = id ? items.findIndex((item) => props.getId(item) === id) : -1;
+        const index = kept !== -1 ? kept : id ? (props.fallbackIndex?.(previous, items, id) ?? 0) : 0;
+        const item = items[index];
+        setSelectedIndex(index);
+        if (!item) return;
+        setSelectedHash(props.getId(item));
+        scrollToIndex(index, false);
+        props.onSelectedItemChange?.(item, index);
       },
     ),
   );

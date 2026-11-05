@@ -10,7 +10,7 @@ use specta_typescript::Typescript;
 
 use crate::{
     audio::MicrophoneOptions,
-    commands::{microphones::Microphone, songs::ParseEvent, songs::SongGroup},
+    commands::{microphones::Microphone, songs::ParseEvent, songs::SongDirGroup, songs::SongGroup},
     error::AppError,
     usdb::{
         commands::UsdbSyncProgressEvent,
@@ -25,6 +25,7 @@ pub fn export(path: &Path) -> Result<(), String> {
         .register::<Microphone>()
         .register::<MicrophoneOptions>()
         .register::<SongGroup>()
+        .register::<SongDirGroup>()
         .register::<ParseEvent>()
         .register::<UsdbSearchEntry>()
         .register::<UsdbSong>()

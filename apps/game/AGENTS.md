@@ -108,7 +108,9 @@ resources/icons/          # App icons for electron-builder
 - Dev playground: `bun run dev -- --playground` starts rounds straight from a song list; its "simulated singer" field (0–1 accuracy) sings without a mic. It's an in-memory switch the playground sets; the game shares the playground's origin and storage, so nothing stored may turn it on
 - Never hold the `processors` lock while dropping the recorder: dropping it joins the analysis worker, which reads the processors
 - UltraStar song format parsed in both Rust (`native/src/ultrastar/`) and TS (`src/lib/ultrastar/`)
-- Song folders must be granted (dialog pick, `--songpath`, or saved settings) before Rust parses them or `media://` serves them — see `native/src/path_allowlist.rs`
+- Song folders must be granted (dialog pick, `--songpath`, or saved settings at startup) before Rust parses them or `media://` serves them — see `native/src/path_allowlist.rs`. `electron/song-folders.ts` keeps which folders main knows and grants only those, again before every `songs.parse` (so a drive plugged in later can be read). A path written into the settings since startup isn't granted before the next start
+- Library sync: the startup parse records a fingerprint per song folder (`native/src/commands/songs.rs`); `songs.rescan` re-parses only folders whose files changed and returns per-folder replacements (`SongDirGroup`, matched by each song's `songDir`). A changed folder is parsed once it looks the same in two rescans in a row (still copying otherwise). `songsStore` rescans on window focus, when the song select opens and every minute (`src/lib/ultrastar/rescan-scheduler.ts`); a screen that mustn't see the list rebuilt calls `onCleanup(songsStore.hold())` (the game screen does). Folders that are gone hide their songs until they're back, and folders that couldn't be loaded are tried again on every rescan
+- Stream events cross the MessagePort as structured clones, plain results don't: a typed array in a plain result arrives as an object. Return binary data (packed notes) as a stream event, even a single one (`songs.rescan`)
 
 ### WebRTC (host side)
 
@@ -173,6 +175,7 @@ rg -n "export const use" src/hooks/                                # find hooks
 - In-app updates only work in packaged builds with `TUNEPERFECT_UPDATE_ENDPOINT`/`TUNEPERFECT_UPDATE_PUBKEY` set at build time (CI does this)
 - Audio processing happens in Rust — TS only handles UI rendering of pitch/score data
 - The scanned library (`songsStore.songs()`) keeps every song's notes **packed** in `notes` (one binary buffer from the scan; format in `native/src/ultrastar/packed_notes.rs`, unpacked by `src/lib/ultrastar/packed-notes.ts`, change both together). `voices` is empty and `voiceCount` says how many there are; `withVoices(song)` (`src/lib/ultrastar/song-voices.ts`) unpacks them synchronously, and `startRound` does it for every round. As JSON objects, a big library's notes were a gigabyte and didn't fit in one IPC string
+- The song select identifies local songs by `txtPath` (it stays the same when a song is edited, its hash doesn't), and the library search index is keyed the same way; scores, previews and phones use the hash
 - The `~/` import alias resolves to `src/` — always prefer it over relative paths
 
 ## Pre-PR Checks

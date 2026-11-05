@@ -4,7 +4,7 @@ import path from "node:path";
 import { app, dialog } from "electron";
 
 import type { UpdateInstallEvent } from "../../src/lib/native/contract";
-import { native } from "../native";
+import type { SongFolders } from "../song-folders";
 import type { JsonStores } from "../store";
 import { checkForUpdate, installUpdate } from "../updater";
 import { os, stream } from "./base";
@@ -12,6 +12,7 @@ import { os, stream } from "./base";
 export interface PlatformDependencies {
   stores: JsonStores;
   songPaths: string[] | null;
+  songFolders: SongFolders;
   youtubePlayerUrl: string | null;
   log: (level: "warn" | "error", message: string) => void;
 }
@@ -24,7 +25,7 @@ const IMAGE_TYPES: Record<string, string> = {
 };
 
 /** App and OS services: stores, dialogs, the window, updates, the YouTube embed host. */
-export function platformProcedures({ stores, songPaths, youtubePlayerUrl, log }: PlatformDependencies) {
+export function platformProcedures({ stores, songPaths, songFolders, youtubePlayerUrl, log }: PlatformDependencies) {
   return {
     store: {
       read: os.store.read.handler(({ input }) => stores.read(input.file)),
@@ -37,7 +38,7 @@ export function platformProcedures({ stores, songPaths, youtubePlayerUrl, log }:
           ? await dialog.showOpenDialog(context.window, options)
           : await dialog.showOpenDialog(options);
         const folder = result.canceled ? undefined : result.filePaths[0];
-        if (!folder || !native.allowDirectory(folder)) return null;
+        if (!folder || !songFolders.pick(folder)) return null;
         return folder;
       }),
       pickImage: os.dialog.pickImage.handler(async ({ context }) => {

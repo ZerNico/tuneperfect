@@ -79,6 +79,13 @@ pub struct Song {
 pub struct LocalSong {
     #[serde(flatten)]
     pub song: Song,
+    /// The song file, as found below its song folder. Stays put when the song is edited (unlike
+    /// its hash), so it's what tells the same song apart across rescans.
+    #[serde(rename = "txtPath")]
+    pub txt_path: String,
+    /// The folder the song file is in, exactly as rescans name it (`SongDirGroup::dir`).
+    #[serde(rename = "songDir")]
+    pub song_dir: String,
     #[serde(rename = "audioUrl")]
     pub audio_url: Option<String>,
     #[serde(rename = "instrumentalUrl")]

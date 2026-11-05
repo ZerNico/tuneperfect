@@ -77,6 +77,23 @@ export function createSongSearchIndex<T extends SongLike>(items: T[], idField: k
   return index;
 }
 
+/**
+ * Brings an index built over `previous` up to date with `current`:
+ * removes the items that left and adds the new ones (items are compared by identity, so an edited
+ * item is a new object). Costs about as much as the items that changed.
+ */
+export function updateSongSearchIndex<T>(index: MiniSearch<T>, previous: readonly T[], current: readonly T[]) {
+  const before = new Set(previous);
+  const after = new Set(current);
+  // Removals first: an edited item comes back under the same id.
+  for (const item of previous) {
+    if (!after.has(item)) index.remove(item);
+  }
+  for (const item of current) {
+    if (!before.has(item)) index.add(item);
+  }
+}
+
 /** Ids of the songs matching `query`, in `scope` (any search field but the year). */
 export function searchSongIds<T>(index: MiniSearch<T>, query: string, scope: Exclude<SearchFieldScope, "year">) {
   const results = index.search(query, {

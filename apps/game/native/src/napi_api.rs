@@ -181,6 +181,31 @@ pub async fn parse_songs_from_paths(
     })
 }
 
+/// The song folders that changed since the last parse or rescan (see `songs::Rescan`).
+/// `groups` are `SongDirGroup`s, each replacing everything its folder had before.
+#[napi(object)]
+pub struct RescannedSongs {
+    pub groups: Value,
+    pub notes: Uint8Array,
+    pub note_ranges: Uint32Array,
+    pub missing_roots: Vec<String>,
+    pub pending: bool,
+}
+
+/// Re-parses the song folders that changed below the already parsed roots among `paths`.
+/// Pass all of the library's song folders.
+#[napi]
+pub async fn rescan_songs(paths: Vec<String>, media_base_url: String) -> Result<RescannedSongs> {
+    let rescan = songs::rescan_songs(paths, media_base_url).await?;
+    Ok(RescannedSongs {
+        groups: to_json(rescan.changes.groups)?,
+        notes: Uint8Array::new(rescan.changes.notes),
+        note_ranges: Uint32Array::new(rescan.changes.note_ranges),
+        missing_roots: rescan.missing_roots,
+        pending: rescan.pending,
+    })
+}
+
 #[napi]
 pub async fn usdb_login(username: String, password: String) -> Result<bool> {
     Ok(usdb::usdb_login(username, password).await?)

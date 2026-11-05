@@ -12,7 +12,7 @@ const EVENT_ITERATOR_MESSAGE = 3;
 
 export function createRpcHandler(dependencies: PlatformDependencies) {
   const router = os.use(nativeErrors).router({
-    ...nativeProcedures,
+    ...nativeProcedures(dependencies),
     ...platformProcedures(dependencies),
   });
   // Stream events are posted as structured clones instead of JSON text, so the library's packed

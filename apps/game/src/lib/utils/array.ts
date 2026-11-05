@@ -13,3 +13,20 @@ export function toShuffled<T>(array: T[]): T[] {
   }
   return result;
 }
+
+/**
+ * Where the item `id` was in `previous` turned up in `items` after it went away: the index of
+ * its nearest neighbour from `previous` that is still there (the next one first), or 0.
+ */
+export function nearestSurvivorIndex<T>(previous: T[], items: T[], id: string, getId: (item: T) => string): number {
+  const at = previous.findIndex((item) => getId(item) === id);
+  if (at === -1) return 0;
+  const indices = new Map(items.map((item, index) => [getId(item), index]));
+  for (let distance = 1; distance < previous.length; distance++) {
+    for (const neighbour of [previous[at + distance], previous[at - distance]]) {
+      const index = neighbour === undefined ? undefined : indices.get(getId(neighbour));
+      if (index !== undefined) return index;
+    }
+  }
+  return 0;
+}

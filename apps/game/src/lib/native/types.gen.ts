@@ -3,6 +3,13 @@
 export type AppError = { type: "IoError"; data: string } | { type: "LoftyError"; data: string } | { type: "RecorderError"; data: string } | { type: "ProcessorError"; data: string } | { type: "CpalError"; data: string } | { type: "UltrastarError"; data: string } | { type: "UsdbError"; data: string };
 
 export type LocalSong = {
+	/**
+	 *  The song file, as found below its song folder. Stays put when the song is edited (unlike
+	 *  its hash), so it's what tells the same song apart across rescans.
+	 */
+	txtPath: string,
+	/**  The folder the song file is in, exactly as rescans name it (`SongDirGroup::dir`). */
+	songDir: string,
 	audioUrl: string | null,
 	instrumentalUrl: string | null,
 	videoUrl: string | null,
@@ -104,6 +111,16 @@ export type Song = {
 	medleyStart: number | null,
 	medleyEnd: number | null,
 	voices: Voice[],
+};
+
+/**
+ *  Everything that is now in one song folder below `root`. Replaces the songs the folder had
+ *  before; no songs means the folder is gone (or has no playable songs any more).
+ */
+export type SongDirGroup = {
+	root: string,
+	dir: string,
+	songs: LocalSong[],
 };
 
 export type SongGroup = {
